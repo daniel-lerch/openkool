@@ -1,0 +1,313 @@
+/***************************************************************
+*  Copyright notice
+*
+*  (c) 2003-2015 Renzo Lauper (renzo@churchtool.org)
+*  All rights reserved
+*
+*  This script is part of the kOOL project. The kOOL project is
+*  free software; you can redistribute it and/or modify
+*  it under the terms of the GNU General Public License as published by
+*  the Free Software Foundation; either version 2 of the License, or
+*  (at your option) any later version.
+*
+*  The GNU General Public License can be found at
+*  http://www.gnu.org/copyleft/gpl.html.
+*  A copy is found in the textfile GPL.txt and important notices to the license
+*  from the author is found in LICENSE.txt distributed with these scripts.
+*
+*  kOOL is distributed in the hope that it will be useful,
+*  but WITHOUT ANY WARRANTY; without even the implied warranty of
+*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+*  GNU General Public License for more details.
+*
+*  This copyright notice MUST APPEAR in all copies of the script!
+***************************************************************/
+
+
+/**********************************************************************************************************************
+                                                     Page Layout
+ **********************************************************************************************************************/
+
+html {
+	min-height:100%;
+	background:grey;
+}
+body {
+	padding:0px;
+	font-family: 'Lucida Grande', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+	font-size:11px;
+	margin:50px auto;
+	width:1000px;
+	min-height:400px;
+	background:white;
+	border:1px solid black;
+}
+ul {
+	list-style-type: none;
+	padding:1px;
+	clear:both;
+	overflow:hidden;
+}
+h1 {
+	font-size:25pt;
+	margin:13px 10px 10px 16px;
+}
+h3 {
+	font-size:13px;
+	font-weight: bold;
+	padding:0px;
+	margin:0px;
+}
+
+
+/**********************************************************************************************************************
+                                                        Header
+ **********************************************************************************************************************/
+
+#header {
+	position:relative;
+}
+#kool-text {
+	position:absolute;
+	top:1px;
+	left:919px;
+}
+#title {
+	display:inline-block;
+	float:left;
+}
+#logo {
+	margin-left:50px;
+	float:left;
+}
+
+
+/**********************************************************************************************************************
+                                                     Main Content
+ **********************************************************************************************************************/
+
+#main {
+	margin:30px 15px;
+}
+
+
+/**********************************************************************************************************************
+                                                 Consensus Descriptions
+ **********************************************************************************************************************/
+
+#consensus_descriptions {
+	width: 100%;
+	text-align:left;
+	border-top:1px solid gray;
+	border-bottom:1px solid gray;
+}
+#consensus_descriptions td:first-child {
+	width:15%;
+}
+#consensus_descriptions td:nth-child(2) {
+	width:85%;
+}
+
+
+/**********************************************************************************************************************
+                                                  Consensus Entries
+ **********************************************************************************************************************/
+#consensus_entries_wrapper {
+	overflow-x: scroll;
+	width:100%;
+	margin-bottom:10px;
+}
+#consensus_entries {
+	margin:30px auto;
+}
+#consensus_entries td {
+	height:100%;
+	padding:0px;
+	margin:0px
+}
+#consensus_entries td.left_cell, #consensus_entries th {
+	width:120px;
+	border-left:7px solid white;
+}
+#consensus_entries td.left_cell:nth-child(2) {
+	/*border-left:none;*/
+}
+#consensus_entries td.right_cell {
+	width:25px;
+}
+#consensus_entries th {
+	vertical-align: top;
+}
+/*#consensus_entries tr.odd {
+	background-color:lightblue;
+}*/
+.event_header h3 {
+	white-space: nowrap;
+	text-overflow: ellipsis;
+	overflow:hidden;
+	width:145px;
+}
+.event_comment {
+	white-space: nowrap;
+	text-overflow: ellipsis;
+	overflow:hidden;
+	width:145px;
+	font-weight: normal;
+	font-size:0.8em;
+}
+div.person {
+	width:100%;
+	text-align:center;
+}
+div.person p {
+	margin:0px;
+	padding:3px;
+	color:gray;
+}
+ul.team {
+	width:100%;
+	padding:0px;
+	margin:0px;
+	text-align:center;
+}
+ul.team li {
+	padding:0px;
+	margin:0px;
+}
+p.team_members {
+	margin:0px;
+	padding:3px;
+	color:gray;
+}
+.no, .maybe, .yes, .no_answer {
+	background-color:#eee;
+}
+.button.yes.active {
+	background-color: #d1f3d1;
+	color:#065d00;
+}
+.button.maybe.active {
+	background-color: #ffeea6;
+	color:#895e00;
+}
+.button.no.active {
+	background-color: #ffcfcd;
+	color:#6b0500;
+}
+.button.yes:hover {
+	background-color: #d1f3d1;
+}
+.button.maybe:hover {
+	background-color: #ffeea6;
+}
+.button.no:hover {
+	background-color: #ffcfcd;
+}
+.open .button {
+	cursor:pointer;
+}
+.team_members.yes {
+	color:#065d00;
+}
+.team_members.maybe {
+	color:#895e00;
+}
+.team_members.no {
+	color:#6b0500;
+}
+
+
+/**********************************************************************************************************************
+                                                     Notifications
+ **********************************************************************************************************************/
+
+.notification {
+	width:80%;
+	margin:0px auto;
+	text-align:center;
+	padding:2px;
+}
+.notification_error {
+	background-color: #ffcfcd;
+}
+
+.notification_info {
+	background-color: #d1f3d1;
+}
+.notification_warning {
+	background-color: #ffeea6;
+}
+
+
+/**********************************************************************************************************************
+                                                       Tooltip
+ **********************************************************************************************************************/
+
+#tt {
+	position: absolute;
+	display: block;
+	/*background: url(/images/tt_left.gif) top left no-repeat;*/
+	z-index: 9999;
+	border-radius: 5px 5px 5px 5px;
+	background-color:rgba(47, 43, 44, 1);
+}
+#tttop {
+	display: block;
+	height: 5px;
+	margin-left: 5px;
+	border-radius: 5px;
+	overflow: hidden;
+}
+#ttcont {
+	display: block;
+	padding: 2px 12px 3px 7px;
+	margin-left: 5px;
+	color: #fff;
+}
+#ttbot {
+	display: block;
+	height: 5px;
+	margin-left: 5px;
+	overflow: hidden;
+}
+
+#tt p {
+	margin: 0;
+	padding: 0;
+}
+#tt p.title {
+	font-size: 120%;
+	font-weight: bold;
+	margin-bottom: 8px;
+}
+#tt p.datetime {
+	font-size: 90%;
+	margin-bottom: 8px;
+}
+#tt p.comment {
+	font-weight: bold;
+	margin-bottom: 8px;
+}
+#tt p.room {
+	font-size: 90%;
+	margin-bottom: 8px;
+}
+#tt ul {
+	margin: 2px 0;
+	padding: 0 0 0 15px;
+}
+#tt li {
+	margin: 0;
+	padding: 0;
+}
+#tt h1, #tt h2, #tt h3 {
+	font-size: 120%;
+	font-weight: bold;
+	margin: 8px 0;
+}
+#tt p.res_title {
+	margin: 15px 0 0 0;
+}
+#tt div.event_res {
+	font-size: 90%;
+}

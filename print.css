@@ -1,0 +1,121 @@
+body {
+	font-size: 10px;
+	line-height: 12px;
+}
+
+
+a:link, a:active, a:visited, a:hover {
+	text-decoration: none;
+	color: #000;
+}
+
+
+
+table.footer {
+	width: 100%;
+	border-top: 1px solid #000;
+}
+
+
+#login,
+#kool-text,
+#header,
+#lang-select,
+div.menu {
+	display: none;
+}
+
+
+td.main_left {
+	width: 0px;
+	display: none;
+}
+
+td.main_right {
+	width: 0px;
+	display: none;
+}
+
+td.main {
+	vertical-align: top;
+	width: 100%;
+}
+
+
+
+
+table.ko_list td,
+th.ko_list,
+th.ko_list_footer {
+	vertical-align: top;
+	padding: 0;
+	border: none;
+}
+
+th.ko_list,
+th.ko_list_datafields {
+	text-align: left;
+	font-weight: 900;
+	border-bottom: 2px solid #000;
+}
+
+
+tr.ko_list_even td,
+tr.ko_list_odd td {
+	border-bottom: 1px solid #999;
+	padding: 1px;
+}
+div.list-title {
+	padding: 0;
+	margin: 0 0 10px 0;
+}
+
+tr.ko_list_sunday td {
+	border-bottom: 2px solid #999;
+}
+
+div.multisort,
+#multiSort,
+div.list-help,
+div.pagestats {
+	display: none;
+}
+th.list-check,
+th.list-family,
+th.list-version,
+th.list-tracking,
+th.list-tracking_show,
+th.list-mailing,
+th.list-edit,
+th.list-forward,
+th.list-delete,
+th.list-undelete,
+th.list-numberfield,
+td.list-check,
+td.list-family,
+td.list-version,
+td.list-tracking,
+td.list-mailing,
+td.list-edit,
+td.list-edit-overlay,
+td.list-delete,
+td.list-undelete,
+td.list-send,
+tr.ko_list_footer,
+table.list-footer,
+span.list-sorticon {
+	display: none;
+}
+
+
+#ko_list_colitemlist,
+#ko_list_colitemlist_flyout {
+	display: none;
+}
+
+
+
+div.rota-statusall,
+div.rota-header {
+	display: none;
+}

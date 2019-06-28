@@ -1,0 +1,294 @@
+*****************************************************
+* MULTI HOST INSTALLATION OF KOOL - THE CHURCH TOOL *
+*****************************************************
+
+
+INTRODUCTION
+============
+
+As you have downloaded this package you seem to already know about kOOL - the church tool.
+If not, just visit http://www.churchtool.org where you'll find a lot of information about kOOL.
+
+This short guide is meant to get you started with kOOL.
+
+
+
+REQUIREMENTS
+============
+
+Webserver
+---------
+You will mainly need a webserver with Apache, PHP and MySQL or similar.
+The main test sytem is Debian GNU/Linux. Everything should also run on a windows server.
+
+Magic Quotes GPC
+----------------
+magic_quotes_gpc must be disabled in your php.ini in order for kOOL to work properly.
+
+Smarty template enginge
+-----------------------
+The rendering of HTML in kOOL is done through the template engine smarty. On most linux systems smarty should be available as a ready-to-install package.
+Make sure to include the path to smarty in your include_path directive in php.ini and to restart apache. (E.g. include_path = ".:/usr/share/php:/usr/share/php/smarty/libs") Or set the path in ko-config.php ($INCLUDE_PATH_SMARTY) if you can not change php.ini.
+Find out more about smarty on http://www.smarty.net.
+
+Mailserver
+----------
+If you want to use the email sending features of kOOL your server will need a working email server. Any mailserver should do as PHP's mail() function is beeing used to send emails from kOOL.
+Emails are sent on different occasions: Manually to addresses stored in kOOL, moderation requests for events/reservations, rota plans, etc.
+
+
+
+NEWBIE INFORMATION ABOUT THE KOOL FILESYSTEM STRUCTURE
+======================================================
+
+A multi host installation of kOOL consits of these two parts
+  1. The kOOL source
+  2. The kOOL web directory
+
+The source can be reused for all the web directories, so an update to the source will affect all the installations.
+Only files that are specific to a single kOOL installation will be stored in the web directory.
+A typical directory structure will look like this:
+
+/var/lib/kOOL/lib           : kOOL source directory
+/var/www/kOOL_demo          : A demo installation of kOOL in the web root of a virtual host
+   |
+	 --> /kOOL_lib            : A symlink to the kOOL source directory (/var/lib/kOOL/lib)
+
+Most of the other files and directories in the web folder will be links to kOOL_lib. So you only have to change this one symlink if you plan to use another source directory for a kOOL installation.
+
+
+
+INSTALLATION STEP BY STEP
+=========================
+
+The first time
+--------------
+1. Get the kOOL source package from http://www.churchtool.org
+
+2. Create a directory for the kOOL source
+   # mkdir /var/lib/kOOL
+
+3. Copy the source package into this directory
+   # cp kOOL_source_<version>.zip /var/lib/kOOL
+	 and unpack it
+   # unzip kOOL_source_<version>.zip
+
+4. Create the web directory for your kOOL installation
+   # mkdir /var/www/kOOL_demo
+
+5. Copy the installation script into the webfolder
+   # cp /var/lib/kOOL/lib/install/kOOL_setup.sh /var/www/kOOL_demo
+	 Adapt the settings at the top of this script if needed and run it
+	 (Important: Make sure to run this script from inside the web directory)
+   # cd /var/www/kOOL_demo
+   # bash ./kOOL_setup.sh
+
+6. Create an empty database and a MySQL user with access to this database
+
+7. Make your web directory accessible through your apache configuration and start the web based installation:
+   http://<your.kool.server>/install
+
+
+For every further kOOL installation
+-----------------------------------
+Only the steps 4 to 7 are needed for any kOOL installation that will use the same kOOL source.
+
+
+
+
+
+UPDATE AN EXISTING KOOL INSTALLATION
+====================================
+
+1. Download the new source package of kOOL and unpack it into your source directory
+
+2. Update your kOOL database if necessary (check installation notes for this release on http://www.churchtool.org).
+   You can do this by running the update.phpsh script in the install folder.
+
+3. Run the install script (/kOOL/lib/install/kOOL_setup.sh) in all your kOOL web directories
+
+(4. Follow any additional instructions on http://www.churchtool.org for this release of kOOL)
+
+5. You may want to check for new settings in install/default/config/ko-config.php and merge them back into your ko-config.php
+
+
+
+
+
+OPTIONAL ADDITIONAL INSTALLATION STEPS
+======================================
+
+To get the maximum out of your kOOL you need to have access to an LDAP server and be able to install WebDAV on your webserver.
+It is beyond the scope of this short installation instruction to give you the details about these technologies, but below you will find some hints
+
+
+GD Library for PHP
+------------------
+To use the statistical charts in the people module you'll need the have the GD library for PHP installed on your webserver. This should usually ship with your distribution.
+See http://www.php.net/manual/en/book.image.php for details.
+
+
+LaTeX with KOMA scripts
+-----------------------
+The mailmerge feature is only available if LaTeX is installed with the KOMA scripts. kOOL tests for the executable 'pdflatex', so make sure this is available in your PATH. LaTeX with KOMA script should usually ship with your distribution, e.g. as texlive-latex-recommended in Debian.
+For KOMA script see: http://www.komascript.de
+
+
+Scheduler
+------------------------
+In order to let your kOOL installation run tasks periodically like processing mails or sending reminders, you have to add a cronjob which runs the script scheduler.php every few minutes, like so:
+*/5 * * * * /usr/bin/php5 /var/www/kOOL_demo/scheduler.php
+
+
+Mailaccount for mailings
+------------------------
+In order to use the mailing module, you'll need an email domain with one single catch all account. Usually you would want to use your kOOL domain as an email account, e.g. kool.domain.tld. Just create one single email account (e.g. kOOL@kool.domain.tld) and configure it as a catch all account so alle emails to *@kool.domain.tld will arrive in this account. Fill out $MAILING_PARAMETER in your config/ko-config.php with the settings for this email catch all account.
+
+For the mailing script to be able to access the POP3 account, your PHP must be configured with the imap extension. On Debian based systems a simple apt-get install php5-imap should be enough.
+
+
+LDAP-Server
+-----------
+- Used schemas: 
+include         /etc/ldap/schema/core.schema
+include         /etc/ldap/schema/cosine.schema
+include         /etc/ldap/schema/nis.schema
+include         /etc/ldap/schema/inetorgperson.schema
+
+
+- Base structure for LDAP server:
+
+-- demo.ldif ---------------------------------------------------------------
+dn: ou=kOOL_demo,dc=your.ldap.server,dc=com
+objectClass: top
+objectClass: organizationalUnit
+ou: kOOL_demo
+
+dn: ou=login,ou=kOOL_demo,dc=your.ldap.server,dc=com
+objectClass: top
+objectClass: organizationalUnit
+ou: login
+
+dn: cn=kOOL_ldapadmin,ou=login,ou=kOOL_demo,dc=your.ldap.server,dc=com
+objectClass: top
+objectClass: person
+sn: kOOL LDAP Admin
+cn: kOOL_ldapadmin
+userPassword: {SSHA}ENCODED_PASSWORD
+-- demo.ldif ---------------------------------------------------------------
+
+You can generate the encrypted password with the command
+  # slappassword
+Substitute it in the above ldif file and import it into your LDAP directory:
+  # ldapadd -x -v -D cn=admin,dc=your.ldap.server,dc=com -W < demo.ldif
+
+
+- You will need to grant the appropriate access rights to your LDAP directory in /etc/ldap/slapd.conf
+(You might have to remove access lines from your default config file if present, as they might overwrite your settings below them.)
+
+First for the kOOL_ldapadmin account, to be able to manage all the data:
+
+-- slapd.conf --------------------------------------------------------------
+access to attrs=userPassword
+			  by dn="cn=kOOL_ldapadmin,ou=login,ou=kOOL_demo,dc=your.ldap.server,dc=com" write
+				by anonymous auth
+        by * none
+-- slapd.conf --------------------------------------------------------------
+
+
+Then you will have to activate authentication and read access to all kOOL users:
+
+-- slapd.conf --------------------------------------------------------------
+access to dn.subtree="ou=login,ou=kOOL_demo,dc=your.ldap.server,dc=com"
+        by dn="cn=kOOL_ldapadmin,ou=login,ou=kOOL_demo,dc=your.ldap.server,dc=com" write
+        by * auth
+access to dn.subtree="ou=kOOL_demo,dc=your.ldap.server,dc=com"
+        by dn="cn=kOOL_ldapadmin,ou=login,ou=kOOL_demo,dc=your.ldap.server,dc=com" write
+        by dn.children="ou=login,ou=kOOL_demo,dc=your.ldap.server,dc=com" read
+        by * none
+-- slapd.conf --------------------------------------------------------------
+
+
+When your LDAP server is ready you can enable LDAP in kOOL. Add the following lines to your /path/to/kOOL/config/ko-config.php:
+
+-- ko-config.php -----------------------------------------------------------
+$ldap_enabled = TRUE;
+$ldap_admin = "kOOL_ldapadmin";
+$ldap_admin_pw = "PASSWORD";
+$ldap_server = "your.ldap.server.com";
+$ldap_dn = "ou=kOOL_demo,dc=your.ldap.server,dc=com";
+-- ko-config.php -----------------------------------------------------------
+
+
+
+
+WebDAV for webfolders
+---------------------
+You will need to have two apache modules installed:
+- libapache-mod-dav
+- libapache-mod-auth-mysql
+
+The following setting for WebDAV can be done in the general setting of your webserver's configuration
+
+-- httpd.conf -------------------------------------------------------------------------
+<IfModule mod_dav.c>
+  DAVLockDB /var/lock/DAV/apache
+</IfModule>
+-- httpd.conf -------------------------------------------------------------------------
+
+
+Then you have to add the following configuration for every kOOL installation. If you use virtual hosts, you can place this between <VirtualHost> and </VirtualHost>
+This will turn on WebDAV for the given directory /path/to/kOOL/webfolders and set the settings for the authentication through the kOOL database. Of course you will have to add your values for the MySQL host, username, password and database.
+
+-- httpd.conf -------------------------------------------------------------------------
+	<IfModule mod_dav.c>
+    <Directory "/path/to/kOOL/webfolders/">
+      AllowOverride AuthConfig FileInfo Limit Indexes
+      Options Indexes
+      ForceType text/plain
+
+      DAV On
+
+      AuthName "Webfolders kOOL"
+      AuthType Basic
+      AuthMySQL_Host localhost
+      AuthMySQL_User KOOL_MYSQL_USERNAME
+      AuthMySQL_Password KOOL_MYSQL_PASSWORD
+      Auth_MySQL_DB KOOL_MYSQL_DB
+      Auth_MySQL_Password_Table ko_admin
+      Auth_MySQL_Username_Field login
+      Auth_MySQL_Password_Field password
+      Auth_MySQL_Empty_Passwords Off
+      Auth_MySQL_Encryption_Types PHP_MD5
+    </Directory>
+  </IfModule>
+-- httpd.conf -------------------------------------------------------------------------
+
+
+Now make sure that webfolders are enabled in /path/to/kOOL/config/ko-config.php:
+
+-- ko-config.php -----------------------------------------------------------
+define("WEBFOLDERS", TRUE);
+$WEBFOLDERS_BASE = $BASE_PATH."webfolders/";
+$WEBFOLDERS_BASE_HTACCESS = $BASE_PATH.".webfolders/";
+-- ko-config.php -----------------------------------------------------------
+
+
+
+
+
+Settings for Server-Admins
+==========================
+
+As a server admin, the following settings in /kOOL/lib/ko.inc might be interesting for you. They will apply as defaults to all kOOL installations using this source directory:
+
+- $LIB_LANGS: Available languages for this installation of kOOL
+- $LIB_MODULES: Available modules for this installation of kOOL
+
+
+
+
+---------------------------------------
+(c) Renzo Lauper <renzo@churchtool.org>
+
+Last changes: 2010-12-30

@@ -1,0 +1,241 @@
+#! /usr/bin/php -q
+<?php
+/***************************************************************
+*  Copyright notice
+*
+*  (c) 2003-2015 Renzo Lauper (renzo@churchtool.org)
+*  All rights reserved
+*
+*  This script is part of the kOOL project. The kOOL project is
+*  free software; you can redistribute it and/or modify
+*  it under the terms of the GNU General Public License as published by
+*  the Free Software Foundation; either version 2 of the License, or
+*  (at your option) any later version.
+*
+*  The GNU General Public License can be found at
+*  http://www.gnu.org/copyleft/gpl.html.
+*  A copy is found in the textfile GPL.txt and important notices to the license
+*  from the author is found in LICENSE.txt distributed with these scripts.
+*
+*  kOOL is distributed in the hope that it will be useful,
+*  but WITHOUT ANY WARRANTY; without even the implied warranty of
+*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+*  GNU General Public License for more details.
+*
+*  This copyright notice MUST APPEAR in all copies of the script!
+***************************************************************/
+
+/**
+Possible options:
+
+-i: interactive
+-a: automatic
+-u: only updates
+-n: only inserts
+-p: preview
+-h: help
+*/
+
+$ko_menu_akt = 'updater';
+error_reporting(E_ALL ^ E_NOTICE ^ E_WARNING);
+
+//Only allow from cli
+if(!isset($argc) || $argc < 1) exit;
+
+if(FALSE === $options = get_cli_options($argv)) {
+	$options['help'] = TRUE;
+}
+
+if($options['help']) {
+	print_help();
+	exit;
+}
+
+
+if($_SERVER['SCRIPT_FILENAME']) {
+	$ko_path = realpath(dirname($_SERVER['SCRIPT_FILENAME']).'/..');
+} else {
+	$ko_path = '../';
+}
+if(substr($ko_path, -1) != '/') $ko_path .= '/';
+
+require_once($ko_path.'inc/ko.inc');
+require_once($ko_path.'inc/class.dbStructUpdater.php');
+
+//Get all tables
+$result = mysql_query('SHOW TABLES');
+$tables = array();
+while($row = mysql_fetch_assoc($result)) {
+	$tables[] = array_shift($row);
+}
+
+//Get CREATE statement for all tables
+$source = '';
+foreach($tables as $table) {
+	$res = mysql_query('SHOW CREATE TABLE `'.$table.'`');
+	$row = mysql_fetch_assoc($res);
+
+	//Remove collation
+	if(FALSE !== strpos($row['Create Table'], 'COLLATE')) {
+		$row['Create Table'] = preg_replace('/COLLATE \S* /', '', $row['Create Table']);
+	}
+
+	$source .= $row['Create Table'].";\n";
+}
+
+
+//Get dest SQL
+$dest = file_get_contents($ko_path.'/install/kOOL_db.sql');
+
+$updater = new dbStructUpdater($UPDATER_CONF);
+
+if(!$options['only_inserts']) {
+	$updates = $updater->getUpdates($source, $dest);
+}
+
+if(!$options['only_updates']) {
+	$inserts = $updater->getInserts($dest);
+}
+
+
+//Plugins
+/* TODO:
+foreach($PLUGINS as $plugin) {
+	$db_file = $ko_path.'plugins/'.$plugin['name'].'/db.sql';
+	if(file_exists($db_file)) {
+		$destP = file_get_contents($db_file);
+		$updatesP = $updater->getUpdates($source, $destP);
+		print_r($updatesP);
+		$insertsP = $updater->getInserts($destP);
+		print_r($insertsP);
+	}
+}
+exit;
+*/
+
+
+if(!$options['only_inserts']) {
+	if(sizeof($updates) > 0) {
+		print "\n\nALTER\n\n";
+		foreach($updates as $sql) {
+			if($options['preview']) {
+				print $sql."\n";
+			} else if($options['automatic']) {
+				mysql_query($sql);
+				print mysql_error();
+				print "DONE: $sql\n\n";
+			} else if($options['interactive']) {
+				print $sql."\n";
+				$cmd = cli_read_stdin("(y)es apply, (N)o don't apply, (q)uit: ", array('', 'y', 'n', 'q'), 'n');
+				if($cmd == 'y') {
+					mysql_query($sql);
+					print mysql_error();
+					print "DONE: $sql\n";
+				} elseif($cmd == 'q') {
+					print "\n";
+					exit;
+				}
+				print "\n";
+			}
+		}
+		print "\n";
+	}
+}
+if(!$options['only_updates']) {
+	if(sizeof($inserts) > 0) {
+		print "\n\nINSERT\n\n";
+		foreach($inserts as $sql) {
+			if($options['preview']) {
+				print $sql."\n";
+			} else if($options['automatic']) {
+				mysql_query($sql);
+				print mysql_error();
+				print "DONE: $sql\n\n";
+			} else if($options['interactive']) {
+				print $sql."\n";
+				$cmd = cli_read_stdin("(y)es apply, (N)o don't apply, (q)uit: ", array('', 'y', 'n', 'q'), 'n');
+				if($cmd == 'y') {
+					mysql_query($sql);
+					print mysql_error();
+					print "DONE: $sql\n";
+				} elseif($cmd == 'q') {
+					print "\n";
+					exit;
+				}
+				print "\n";
+			}
+		}
+		print "\n";
+	}
+}
+
+
+
+
+function cli_read_stdin($prompt, $valid_inputs, $default = '') { 
+	while(!isset($input) || (is_array($valid_inputs) && !in_array($input, $valid_inputs))) { 
+		echo $prompt; 
+		$input = strtolower(trim(fgets(STDIN))); 
+		if(empty($input) && !empty($default)) { 
+			$input = $default; 
+		} 
+	} 
+	return $input; 
+}//cli_read_stdin()
+
+
+
+
+function get_cli_options($argv) {
+	$options = array(
+		'interactive' => FALSE,
+		'automatic' => FALSE,
+		'only_updates' => FALSE,
+		'only_inserts' => FALSE,
+		'preview' => FALSE,
+		'help' => FALSE,
+	);
+
+	$found = FALSE;
+	foreach($argv as $k => $v) {
+		if($k == 0) continue;
+		if(substr($v, 0, 1) != '-') return FALSE;
+		$v = substr($v, 1);
+		$found = TRUE;
+		for($i=0; $i<strlen($v); $i++) {
+			$o = substr($v, $i, 1);
+			switch($o) {
+				case 'i': $options['interactive'] = TRUE; break;
+				case 'a': $options['automatic'] = TRUE; break;
+				case 'u': $options['only_updates'] = TRUE; break;
+				case 'n': $options['only_inserts'] = TRUE; break;
+				case 'p': $options['preview'] = TRUE; break;
+				case 'h': $options['help'] = TRUE; break;
+				default: return FALSE;
+			}
+		}
+	}
+	//Show help if no options was set
+	if(!$found) $options['help'] = TRUE;
+
+	return $options;
+}//get_cli_options()
+
+
+
+
+function print_help() {
+	print "\n";
+	print "kOOL DB update script\n";
+	print "=====================\n\n";
+	print "/path/to/php update.php [options]\n\n";
+	print "Options\n";
+	print "-------\n";
+	print "-i: Interactive mode: Ask before every DB change\n";
+	print "-a: Automatic mode: Perform all changes without asking\n";
+	print "-u: Only perform db ALTER commands (combine with -a or -i)\n";
+	print "-n: Only perform db INSERT commands (combine with -a or -i)\n";
+	print "-p: Preview: Only show SQL statements but don't change anything\n";
+	print "-h: Show this help\n";
+	print "\n";
+}

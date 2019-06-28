@@ -1,0 +1,42 @@
+%
+% Letter template for kOOL mail merge
+%
+% Changes should not be made in this file but rather in the appropriate lco-file
+% Just add new letter_*.lco files to latex/layouts to make them available in kOOL
+%
+\documentclass[fontsize=12pt,paper=a4,parskip=half,enlargefirstpage=true]{scrlttr2}
+
+% Include layout definitions
+\LoadLetterOption{../layouts/###LAYOUT###}
+
+\begin{document}
+
+% Set some KOMA variables
+\setkomavar{subject}{###SUBJECT###}
+\setkomavar{signature}{###SIGNATURE###}
+\setkomavar{loctime}{###FROM_PLZ### ###FROM_ORT###}
+
+% Set from address
+\setkomavar{fromname}{###FROM_VORNAME### ###FROM_NACHNAME###}
+\setkomavar{fromaddress}{###FROM_ADRESSE###}
+\newkomavar{fromzip}
+\setkomavar{fromzip}{###FROM_PLZ###}
+\newkomavar{fromcity}
+\setkomavar{fromcity}{###FROM_ORT###}
+\setkomavar{fromphone}{###FROM_TELP###}
+\setkomavar{fromemail}{###FROM_EMAIL###}
+\setkomavar{fromurl}{###FROM_WEB###}
+
+\begin{letter}{###FIRM###\\
+###ANREDE###\\
+###VORNAME### ###NACHNAME###\\
+###ADRESSE###\\
+###PLZ### ###ORT###
+}
+\opening{###OPENING###}
+\raggedright
+###TEXT###
+\closing{###CLOSING###}
+\end{letter}
+
+\end{document}

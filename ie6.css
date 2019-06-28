@@ -1,0 +1,5 @@
+/* for IE6 */
+#nav li.sfhover ul {
+	left: auto;
+	margin-left: -70px;
+}

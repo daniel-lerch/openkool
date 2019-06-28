@@ -1,0 +1,63 @@
+\ProvidesFile{letter_default.lco}[2009/10/17 lco (Renzo Lauper)]
+% Pakete
+\usepackage{cmap}        % to make the PDF files "searchable and copyable" in pdf viewer
+\usepackage[ngerman]{babel}    % deutschsprachig
+\usepackage[latin1]{inputenc}    % utf8 encoding
+\usepackage[T1]{fontenc}    % Schriftkodierung
+\usepackage{lmodern}        % Computer Modern-Schrift (TYPE1-tauglich)
+\usepackage{microtype}        % echter Blocksatz
+\usepackage{graphicx}
+\usepackage{xcolor}
+\usepackage{pdfpages}        % Einbinden von PDF Seiten aus PDF Dokument
+\usepackage{fixltx2e}        % Verbessert einige Kernkompetenzen von LaTeX2e
+\KOMAoptions{%
+foldmarks=false,
+backaddress=false,
+enlargefirstpage=true,
+fromalign=left,
+draft=false,
+pagenumber=no
+}
+
+% Don't allow widows and orphans
+\clubpenalty = 10000
+\widowpenalty = 10000
+\displaywidowpenalty = 10000
+
+% Adjust page width
+\setlength{\textwidth}{\useplength{firstheadwidth}}
+\oddsidemargin-15pt
+\evensidemargin-15pt
+\@setplength{firstfootvpos}{270mm}
+
+% Label for from phone
+\setkomavar*{fromphone}{Tel.: }
+
+% Clear location and date so the whole location area stays empty
+\setkomavar{location}{}
+\setkomavar{date}{}
+
+% Don't intend signature
+\renewcommand*{\raggedsignature}{\raggedright}
+\@setplength{sigbeforevskip}{1em}
+\@setplength{sigindent}{92mm}
+
+% Horizontal position for the recipient address
+\@setplength{toaddrhpos}{113mm}
+
+% Add a new field for date and location
+\newkomavar{loctime}
+
+% Create new header with sender address and date and location
+\@setplength{firstheadvpos}{25mm}
+\firsthead{%
+	\parbox[t]{92mm}{
+		\usekomavar{fromname}\\
+		\usekomavar{fromaddress}\\
+		\usekomavar{fromzip} \usekomavar{fromcity}\\
+		\usekomavar*{fromphone}\usekomavar{fromphone}
+	}
+	\parbox[t]{100mm}{
+		\usekomavar{loctime}, \today
+	}
+}

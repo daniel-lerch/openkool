@@ -1,0 +1,38 @@
+%
+% Letter template for kOOL mail merge
+%
+% Changes should not be made in this file but rather in the appropriate lco-file
+% Just add new letter_*.lco files to latex/layouts to make them available in kOOL
+%
+
+\documentclass[11pt,a4paper,landscape]{article}
+
+% Include layout definitions
+% \LoadLetterOption{../layouts/###LAYOUT###}
+
+\usepackage[latin1]{inputenc}
+\usepackage{german,longtable}
+\usepackage{lscape}
+\usepackage{setspace}
+\usepackage[margin=1cm,includeheadfoot,headheight=###HEADER_HEIGHT###cm]{geometry}
+\usepackage{fancyhdr}
+\usepackage{graphicx}
+\pagestyle{fancy}
+
+\begin{document}
+\sffamily
+
+\lhead{\sffamily \renewcommand{\arraystretch}{1} \begin{tabular}[b]{lp{19cm}}
+###LABEL_NAME###: & \textbf{###NAME###} \\
+###LABEL_TIMESPAN###: & \textbf{###TIMESPAN###} \\###DESCRIPTION###
+\end{tabular}
+}
+###LOGO###
+\lfoot{\sffamily \small ###CREATED###}
+\cfoot{\sffamily \small ###LABEL_PAGE### \thepage}
+\rfoot{\sffamily \small ###KOOL_URL###}
+
+\renewcommand{\arraystretch}{1.5}
+###TABLE###
+
+\end{document}
