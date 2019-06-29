@@ -1,4 +1,4 @@
-<?php
+ï»¿<?php
 /***************************************************************
 *  Copyright notice
 *
@@ -101,14 +101,14 @@ function beautyfy_telephone($fields = array(), $do_01_044 = FALSE, $do_10_to_spa
 				$data = str_replace(".", "", $data);
 				$data = str_replace("-", "", $data);
 
-				//Vorwahl Zürich
+				//Vorwahl ZÃ¼rich
 				if($do_01_044) {
 					if(strlen($data) == 9 && substr($data, 0, 2) == "01") {
 						$data = "044".substr($data, 2);
 						$changed = TRUE;
 					}
 				}
-				//Leerschläge bei schweizer Nummern einfügen
+				//LeerschlÃ¤ge bei schweizer Nummern einfÃ¼gen
 				if($do_10_to_spaces) {
 					if(strlen($data) == 10) {
 						$data = substr($data, 0, 3)." ".substr($data, 3, 3)." ".substr($data, 6,2)." ".substr($data, 8, 2);
@@ -154,7 +154,7 @@ beautyfy_telephone($fields, $do_01_044, $do_10_to_spaces);
 function ko_tools_add_submenu($sm, $users, $module, $pos_="") {
 	foreach($sm as $submenu) {
 		foreach($users as $user) {
-			//Globale Submenus für Guest nicht erlauben (z.B. Notizen)
+			//Globale Submenus fÃ¼r Guest nicht erlauben (z.B. Notizen)
 			if($user == ko_get_guest_id() && substr($submenu, 0, 4) == "gsm_") continue;
 
 			$pref1 = explode(",", ko_get_userpref($user, "submenu_".$module."_left"));
@@ -163,7 +163,7 @@ function ko_tools_add_submenu($sm, $users, $module, $pos_="") {
 			$pref4 = explode(",", ko_get_userpref($user, "submenu_".$module."_right_closed"));
 			$all_prefs = array_merge($pref1, $pref2, $pref3, $pref4);
 
-			//Falls sm schon sonst wo (links, rechts oder auch geschlossen) vorhanden ist, nicht doppelt einfügen
+			//Falls sm schon sonst wo (links, rechts oder auch geschlossen) vorhanden ist, nicht doppelt einfÃ¼gen
 			if(in_array($submenu, $all_prefs)) continue;
 
 			//Find position according to defaults in submenu.inc, if not given as argument
@@ -202,10 +202,10 @@ function ko_tools_list_submenus($output=TRUE) {
   $z_limit = "";
   ko_get_logins($login, $z_where, $z_limit, "ORDER BY `login` ASC");
 
-  //Statistik über Suchergebnisse und Anzeige
+  //Statistik Ã¼ber Suchergebnisse und Anzeige
   $smarty->assign('tpl_stats', "1 - ".$rows." ".getLL("list_oftotal")." ".$rows);
 
-  //Links für Prev und Next-Page vorbereiten
+  //Links fÃ¼r Prev und Next-Page vorbereiten
   $smarty->assign('tpl_prevlink_link', '');
   $smarty->assign('tpl_nextlink_link', '');
 
@@ -222,7 +222,7 @@ function ko_tools_list_submenus($output=TRUE) {
   $smarty->assign("show_sort", FALSE);
 
 
-	//Logins in Liste einfüllen
+	//Logins in Liste einfÃ¼llen
   foreach($login as $l_i => $l) {
     //Checkbox
     $tpl_list_data[$l_i]["show_checkbox"] = TRUE;
@@ -278,7 +278,7 @@ function ko_tools_list_submenus($output=TRUE) {
 		$tpl_list_cols[] = ++$counter;
 	}
 
-	//Optionen für Anpassung ganzer Module anzeigen:
+	//Optionen fÃ¼r Anpassung ganzer Module anzeigen:
   $button_code  = '<select name="sel_add_modul" size="0">';
 	foreach($show_modules as $m) {
 		$button_code .= '<option value="'.$m.'">'.getLL("module_".$m).'</option>';
@@ -739,7 +739,7 @@ function ko_tools_plugins_list($output=TRUE) {
 	$plugins_installed = ko_tools_plugins_get_installed($plugins_available);
 
 	$rows = sizeof($plugins_available);
-	//Statistik über Suchergebnisse und Anzeige
+	//Statistik Ã¼ber Suchergebnisse und Anzeige
   $smarty->assign('tpl_stats', "1 - ".$rows." ".getLL("list_oftotal")." ".$rows);
 	$smarty->assign('tpl_prevlink_link', '');
 	$smarty->assign('tpl_nextlink_link', '');

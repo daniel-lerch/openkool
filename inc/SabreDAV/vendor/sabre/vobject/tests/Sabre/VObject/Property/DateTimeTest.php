@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 
 namespace Sabre\VObject\Property;
 use Sabre\VObject\Component;

@@ -1,4 +1,4 @@
-<?php
+ï»¿<?php
 /***************************************************************
 *  Copyright notice
 *
@@ -71,7 +71,7 @@ if(isset($_GET) && isset($_GET["action"])) {
 			$groupid = format_userinput($_GET["group_id"], "uint", FALSE, 0, array(), "gr:");
 			$group = ko_groups_decode($groupid, "group");
 
-			//Gruppe selber hinzufügen
+			//Gruppe selber hinzufÃ¼gen
 			$data[] = array("value" => $groupid, "desc" => $group["name"]);
 
 			//Check for maxcount
@@ -106,7 +106,7 @@ if(isset($_GET) && isset($_GET["action"])) {
 			$groupid = format_userinput($_GET["group_id"], "uint", FALSE, 0, array(), "gr:");
 			$group = ko_groups_decode($groupid, "group");
 
-			//Gruppe selber hinzufügen
+			//Gruppe selber hinzufÃ¼gen
 			$data[] = array("value" => "", "desc" => getLL("all"));
 
 			//Berechtigungen checken

@@ -1,4 +1,4 @@
-{if $person.firm}
+﻿{if $person.firm}
 	<div class="single_view_title">{$person.firm}
 	{if $person.department}<i>{$person.department}</i>{/if}
 	<div class="single_view_subtitle">{$person.vorname} {$person.nachname}</div>
@@ -15,4 +15,4 @@
 <b>TODO:</b> Mehr Infos: Gruppen inkl. Datenfelder, Familie, KG, usw.
 
 <br /><br />
-<a href="javascript:history.back();">&larr; zur�ck</a>
+<a href="javascript:history.back();">&larr; zurück</a>

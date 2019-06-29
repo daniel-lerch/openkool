@@ -1,4 +1,4 @@
-<?php
+ï»¿<?php
 /***************************************************************
 *  Copyright notice
 *
@@ -34,11 +34,11 @@ function ko_tapes_list($output=TRUE) {
 	$rows = db_get_count("ko_tapes", "id", $z_where);
 	ko_get_tapes($tapes, $z_where, $z_limit);
 
-	//Statistik über Suchergebnisse und Anzeige
+	//Statistik Ã¼ber Suchergebnisse und Anzeige
   $stats_end = ($_SESSION["show_limit"]+$_SESSION["show_start"]-1 > $rows) ? $rows : ($_SESSION["show_limit"]+$_SESSION["show_start"]-1);
   $smarty->assign('tpl_stats', $_SESSION["show_start"]." - ".$stats_end." ".getLL("list_oftotal")." ".$rows);
 
-	//Links für Prev und Next-Page vorbereiten
+	//Links fÃ¼r Prev und Next-Page vorbereiten
   if($_SESSION["show_start"] > 1) {
 		$smarty->assign("tpl_prevlink_link", "javascript:sendReq('../tapes/inc/ajax.php', 'action,set_start,sesid', 'setstart,".(($_SESSION["show_start"]-$_SESSION["show_limit"] < 1) ? 1 : ($_SESSION["show_start"]-$_SESSION["show_limit"])).",".session_id()."', do_element);");
   } else {
@@ -72,7 +72,7 @@ function ko_tapes_list($output=TRUE) {
 	$smarty->assign("sesid", session_id());
 
 
-	//Liste füllen
+	//Liste fÃ¼llen
 	foreach($tapes as $l_i => $l) {
 		$group = $l["group_id"];
 
@@ -158,11 +158,11 @@ function ko_tapes_list_tapegroups($output=TRUE) {
 	$rows = db_get_count("ko_tapes_groups", "id", "");
 	ko_get_tapegroups($tapegroups, "", $z_limit);
 
-	//Statistik über Suchergebnisse und Anzeige
+	//Statistik Ã¼ber Suchergebnisse und Anzeige
   $stats_end = ($_SESSION["show_limit"]+$_SESSION["show_start"]-1 > $rows) ? $rows : ($_SESSION["show_limit"]+$_SESSION["show_start"]-1);
   $smarty->assign('tpl_stats', $_SESSION["show_start"]." - ".$stats_end." ".getLL("list_oftotal")." ".$rows);
 
-	//Links für Prev und Next-Page vorbereiten
+	//Links fÃ¼r Prev und Next-Page vorbereiten
   if($_SESSION["show_start"] > 1) {
 		$smarty->assign("tpl_prevlink_link", "javascript:sendReq('../tapes/inc/ajax.php', 'action,set_start,sesid', 'setstart,".(($_SESSION["show_start"]-$_SESSION["show_limit"] < 1) ? 1 : ($_SESSION["show_start"]-$_SESSION["show_limit"])).",".session_id()."', do_element);");
   } else {
@@ -191,7 +191,7 @@ function ko_tapes_list_tapegroups($output=TRUE) {
 	$smarty->assign('sesid', session_id());
 
 
-	//Logins in Liste einfüllen
+	//Logins in Liste einfÃ¼llen
 	foreach($tapegroups as $l_i => $l) {
 		$group = $l_i;
 
@@ -246,11 +246,11 @@ function ko_tapes_list_series($output=TRUE) {
 	$rows = db_get_count("ko_tapes_series", "id", "");
 	ko_get_tapeseries($tapeseries, "", $z_limit);
 
-	//Statistik über Suchergebnisse und Anzeige
+	//Statistik Ã¼ber Suchergebnisse und Anzeige
   $stats_end = ($_SESSION["show_limit"]+$_SESSION["show_start"]-1 > $rows) ? $rows : ($_SESSION["show_limit"]+$_SESSION["show_start"]-1);
   $smarty->assign('tpl_stats', $_SESSION["show_start"]." - ".$stats_end." ".getLL("list_oftotal")." ".$rows);
 
-	//Links für Prev und Next-Page vorbereiten
+	//Links fÃ¼r Prev und Next-Page vorbereiten
   if($_SESSION["show_start"] > 1) {
 		$smarty->assign("tpl_prevlink_link", "javascript:sendReq('../tapes/inc/ajax.php', 'action,set_start,sesid', 'setstart,".(($_SESSION["show_start"]-$_SESSION["show_limit"] < 1) ? 1 : ($_SESSION["show_start"]-$_SESSION["show_limit"])).",".session_id()."', do_element);");
   } else {
@@ -279,7 +279,7 @@ function ko_tapes_list_series($output=TRUE) {
 	$smarty->assign('sesid', session_id());
 
 
-	//Logins in Liste einfüllen
+	//Logins in Liste einfÃ¼llen
 	foreach($tapeseries as $l_i => $l) {
 		//Checkbox
 		$tpl_list_data[$l_i]["show_checkbox"] = TRUE;
@@ -332,10 +332,10 @@ function ko_tapes_list_printlayouts($output=TRUE) {
 	$rows = db_get_count("ko_tapes_printlayout", "id");
 	$layouts = ko_get_tape_printlayout();
 
-	//Statistik über Suchergebnisse und Anzeige
+	//Statistik Ã¼ber Suchergebnisse und Anzeige
   $smarty->assign('tpl_stats', "1 - ".$rows." ".getLL("list_oftotal")." ".$rows);
 
-	//Links für Prev und Next-Page vorbereiten
+	//Links fÃ¼r Prev und Next-Page vorbereiten
   $smarty->assign('tpl_prevlink_link', '');
   $smarty->assign('tpl_nextlink_link', '');
 
@@ -351,7 +351,7 @@ function ko_tapes_list_printlayouts($output=TRUE) {
 	$smarty->assign('hide_listlimiticons', TRUE);
 
 
-	//Liste füllen
+	//Liste fÃ¼llen
 	foreach($layouts as $l_i => $l) {
 		//Checkbox
 		$tpl_list_data[$l_i]["show_checkbox"] = FALSE;
@@ -429,7 +429,7 @@ function ko_tapes_formular_tape($mode, $id=0) {
 				}
 				$gc++;
 			}
-			//Serie erraten, falls gewünscht
+			//Serie erraten, falls gewÃ¼nscht
 			$serie_id = $serie = "";
 			if(ko_get_setting("tapes_guess_series") == 1) {
 				$sc = 1;
@@ -444,7 +444,7 @@ function ko_tapes_formular_tape($mode, $id=0) {
 				}
 			}//if(ko_get_setting(tapes_guess_series))
 
-			//JS erstellen, das das Formular automatisch ausfüllt
+			//JS erstellen, das das Formular automatisch ausfÃ¼llt
 			$map_js = array("\n" => ' ', "\r" => '', "\t" => ' ', "'" => "\'");
 			$list_data[$counter]["rowclick_code"]  = "a = document.getElementsByName('koi[ko_tapes][title][0]'); a[0].value = '".strtr($row["kommentar"], $map_js)."';";
 			$list_data[$counter]["rowclick_code"] .= "b = document.getElementsByName('koi[ko_tapes][date][0]'); b[0].value = '".sql2datum($row["startdatum"])."';";

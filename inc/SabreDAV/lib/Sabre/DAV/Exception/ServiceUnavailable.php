@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 
 namespace Sabre\DAV\Exception;
 
@@ -10,7 +10,7 @@ use Sabre\DAV;
  * This exception is thrown in case the service
  * is currently not available (e.g. down for maintenance).
  *
- * @author Thomas Müller <thomas.mueller@tmit.eu>
+ * @author Thomas MÃ¼ller <thomas.mueller@tmit.eu>
  * @copyright Copyright (C) 2007-2014 fruux GmbH (https://fruux.com/).
  * @license http://sabre.io/license/ Modified BSD License
  */

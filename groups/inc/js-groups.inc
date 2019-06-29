@@ -1,4 +1,4 @@
-<script language="javascript" type="text/javascript">
+﻿<script language="javascript" type="text/javascript">
 <!--
 
 function do_submit_new_datafield(sesid) {

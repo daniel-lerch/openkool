@@ -1,4 +1,4 @@
-<?php
+ï»¿<?php
 /***************************************************************
 *  Copyright notice
 *
@@ -137,7 +137,7 @@ switch($do_action) {
 
 
 
-	//Löschen
+	//LÃ¶schen
 	case 'delete_termin':
 		if(FALSE === ($del_id = format_userinput($_POST['id'], 'uint', TRUE))) {
 			trigger_error('Not allowed del_id: '.$_POST['id'], E_USER_ERROR);
@@ -152,7 +152,7 @@ switch($do_action) {
 
 
 
-	//Ausgewählte Termine löschen
+	//AusgewÃ¤hlte Termine lÃ¶schen
 	case "del_selected":
 	  foreach($_POST["chk"] as $c_i => $c) {
 			if($c) {
@@ -168,7 +168,7 @@ switch($do_action) {
 
 
 
-	//Termingruppe löschen
+	//Termingruppe lÃ¶schen
 	case "delete_gruppe":
 		if(FALSE === ($del_id = format_userinput($_POST["id"], "uint", TRUE))) {
 			trigger_error("Not allowed del_id: ".$_POST["id"], E_USER_ERROR);
@@ -182,11 +182,11 @@ switch($do_action) {
 		$log_message  = $del_eventgruppe["name"].": ".substr($del_eventgruppe["startzeit"],0,-3)."-".substr($del_eventgruppe["endzeit"],0,-3);
 		$log_message .= " in ".$del_eventgruppe["room"].' "'.$del_eventgruppe["beschreibung"].'", '.$del_eventgruppe["farbe"];
 
-		//Gruppe löschen
+		//Gruppe lÃ¶schen
 		db_delete_data("ko_eventgruppen", "WHERE `id` = '$del_id'");
 		ko_log("delete_termingruppe", $log_message);
 
-		//Alle Termine dieser Termingruppe löschen (inkl. zugehöriger Reservationen)
+		//Alle Termine dieser Termingruppe lÃ¶schen (inkl. zugehÃ¶riger Reservationen)
 		$rows = db_select_data("ko_event", "WHERE `eventgruppen_id` = '$del_id'");
 		foreach($rows as $row) {
 			do_del_termin(format_userinput($row["id"], "uint"));
@@ -445,7 +445,7 @@ switch($do_action) {
 		}
 
 
-		//Eingaben überprüfen
+		//Eingaben Ã¼berprÃ¼fen
 		$errorOut = check_daten_entries($data);
 		if($errorOut) continue;
 
@@ -745,7 +745,7 @@ switch($do_action) {
 			}
 			if(sizeof($do_columns) < 1) $notifier->addError(8, $do_action);
 
-			//Zu bearbeitende Einträge
+			//Zu bearbeitende EintrÃ¤ge
 			$do_ids = array();
 			foreach($_POST["chk"] as $c_i => $c) {
 				if(!$c) continue;
@@ -762,7 +762,7 @@ switch($do_action) {
 			}
 			if(sizeof($do_ids) < 1) $notifier->addError(7, $do_action);
 
-			//Daten für Formular-Aufruf vorbereiten
+			//Daten fÃ¼r Formular-Aufruf vorbereiten
 			if(!$notifier->hasErrors()) {
 				$order = "ORDER BY ".$_SESSION["sort_events"]." ".$_SESSION["sort_events_order"];
 				$_SESSION["show_back"] = $_SESSION["show"];
@@ -781,7 +781,7 @@ switch($do_action) {
 			}
 			if(sizeof($do_columns) < 1) $notifier->addError(8, $do_action);
 
-			//Zu bearbeitende Einträge
+			//Zu bearbeitende EintrÃ¤ge
 			$do_ids = array();
 			foreach($_POST["chk"] as $c_i => $c) {
 				if(!$c) continue;
@@ -792,7 +792,7 @@ switch($do_action) {
 			}
 			if(sizeof($do_ids) < 1) $notifier->addError(8, $do_action);
 
-			//Daten für Formular-Aufruf vorbereiten
+			//Daten fÃ¼r Formular-Aufruf vorbereiten
 			if(!$notifier->hasErrors()) {
 				$order = "ORDER BY ".$_SESSION["sort_tg"]." ".$_SESSION["sort_tg_order"];
 				$_SESSION["show_back"] = $_SESSION["show"];
@@ -1518,7 +1518,7 @@ $js_calendar->load_files();
 
 <?php
 /*
- * Gibt bei erfolgreichem Login das Menü aus, sonst einfach die Loginfelder
+ * Gibt bei erfolgreichem Login das MenÃ¼ aus, sonst einfach die Loginfelder
  */
 include($ko_path . "menu.php");
 ?>

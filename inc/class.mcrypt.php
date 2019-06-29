@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 
 class mcrypt {
 	private $mcrypt;     // the resource for the object

@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 /**
  * This file is part of PHPWord - A pure PHP library for reading and writing
  * word processing documents.
@@ -41,7 +41,7 @@ class Field extends AbstractElement
         'NUMPAGES'=>array(
            'properties'=>array(
                'format' => array('Arabic', 'ArabicDash', 'alphabetic', 'ALPHABETIC', 'roman', 'ROMAN'),
-               'numformat' => array('0', '0,00', '#.##0', '#.##0,00', '€ #.##0,00(€ #.##0,00)', '0%', '0,00%')
+               'numformat' => array('0', '0,00', '#.##0', '#.##0,00', 'â‚¬ #.##0,00(â‚¬ #.##0,00)', '0%', '0,00%')
            ),
            'options'=>array('PreserveFormat')
         ),

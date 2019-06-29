@@ -1,4 +1,4 @@
-<?php
+ï»¿<?php
 /***************************************************************
 *  Copyright notice
 *
@@ -432,7 +432,7 @@ switch($do_action) {
       $data['rights_new']  = format_userinput($_POST['sel_rights_new'], 'intlist', FALSE, 0, array(), 'g');
       $data['rights_edit'] = format_userinput($_POST['sel_rights_edit'], 'intlist', FALSE, 0, array(), 'g');
       $data['rights_del']  = format_userinput($_POST['sel_rights_del'], 'intlist', FALSE, 0, array(), 'g');
-      //Rechte aufräumen
+      //Rechte aufrÃ¤umen
       $rv = explode(",", $data["rights_view"]);
       $rn = explode(",", $data["rights_new"]);
       $re = explode(",", $data["rights_edit"]);
@@ -580,7 +580,7 @@ switch($do_action) {
 	break;
 
 
-	//Wirklich löschen
+	//Wirklich lÃ¶schen
 	case "do_delete_role":
 		$del_id = format_userinput($_POST['id'], 'uint');
 
@@ -592,9 +592,9 @@ switch($do_action) {
 		}
 		if($do_del) {
 			ko_get_grouproles($old_role, "AND `id` = '$del_id'");
-			//Rolle löschen
+			//Rolle lÃ¶schen
 			db_delete_data("ko_grouproles", "WHERE `id` = '$del_id'");
-			//Rollen in alle Gruppen löschen, in denen sie vorkommt
+			//Rollen in alle Gruppen lÃ¶schen, in denen sie vorkommt
 			$gruppen = db_select_data("ko_groups", "WHERE `roles` REGEXP '$del_id'");
 			foreach($gruppen as $gruppe) {
 				$roles = explode(",", $gruppe["roles"]);
@@ -618,7 +618,7 @@ switch($do_action) {
 		$del_id = format_userinput($_POST["id"], "uint");
 		if($access['groups']['MAX'] < 3) continue;
 
-		//Prüfen, ob Datenfeld noch irgendwo verwendet wird, dann kann man es nicht löschen
+		//PrÃ¼fen, ob Datenfeld noch irgendwo verwendet wird, dann kann man es nicht lÃ¶schen
 		$num = db_get_count("ko_groups", "id", "AND `datafields` REGEXP '$del_id'");
 		if($num == 0) {
 			$old = db_select_data("ko_groups_datafields", "WHERE `id` = '$del_id'");
@@ -654,41 +654,41 @@ switch($do_action) {
 		$login_id = format_userinput($_POST["id"], "uint");
 		if(!$login_id || ($login_id == ko_get_root_id() && $_SESSION["ses_userid"] != ko_get_root_id()) ) continue;
 
-		//Loop über die drei Rechte-Stufen
+		//Loop Ã¼ber die drei Rechte-Stufen
 		$mode = array('', 'view', 'new', 'edit', 'del');
 		for($i=3; $i>0; $i--) {
 			if(isset($_POST["sel_rights_".$mode[$i]])) {
-				//Nur Änderungen bearbeiten
+				//Nur Ã„nderungen bearbeiten
 				$old = explode(",", format_userinput($_POST["old_sel_rights_".$mode[$i]], "intlist", FALSE, 0, array(), ":"));
 				$new = explode(",", format_userinput($_POST["sel_rights_".$mode[$i]], "intlist", FALSE, 0, array(), ":"));
 				$deleted = array_diff($old, $new);
 				$added = array_diff($new, $old);
 			
-				//Login aus gelöschten Gruppen entfernen
+				//Login aus gelÃ¶schten Gruppen entfernen
 				foreach($deleted as $id) {
 					$id = substr($id, -6);  //Nur letzte ID verwenden, davor steht die Motherline
 					//bisherige Rechte auslesen
 					$group = db_select_data("ko_groups", "WHERE `id` = '$id'", "id,rights_".$mode[$i]);
 					$rights_array = explode(",", $group[$id]["rights_".$mode[$i]]);
-					//Zu löschendes Login finden und entfernen
+					//Zu lÃ¶schendes Login finden und entfernen
 					foreach($rights_array as $index => $right) if($right == $login_id) unset($rights_array[$index]);
-					foreach($rights_array as $a => $b) if(!$b) unset($rights_array[$a]);  //Leere Einträge löschen
+					foreach($rights_array as $a => $b) if(!$b) unset($rights_array[$a]);  //Leere EintrÃ¤ge lÃ¶schen
 					//Neuer Eintrag in Gruppe speichern
 					db_update_data("ko_groups", "WHERE `id` = '$id'", array("rights_".$mode[$i] => implode(",", $rights_array)));
 					$all_groups[$id]['rights_'.$mode[$i]] = implode(',', $rights_array);
 				}
 
-				//Login in neu hinzugefügten Gruppen hinzufügen
+				//Login in neu hinzugefÃ¼gten Gruppen hinzufÃ¼gen
 				foreach($added as $id) {
 					$id = substr($id, -6);  //Nur letzte ID verwenden, davor steht die Motherline
 					//Bestehende Rechte auslesen
 					$group = db_select_data("ko_groups", "WHERE `id` = '$id'", "id,rights_".$mode[$i]);
 					$rights_array = explode(",", $group[$id]["rights_".$mode[$i]]);
-					//Überprüfen, ob Login schon vorhanden ist (sollte nicht)
+					//ÃœberprÃ¼fen, ob Login schon vorhanden ist (sollte nicht)
 					$add = TRUE;
 					foreach($rights_array as $right) if($right == $login_id) $add = FALSE;
 					if($add) $rights_array[] = $login_id;
-					foreach($rights_array as $a => $b) if(!$b) unset($rights_array[$a]);  //Leere Einträge löschen
+					foreach($rights_array as $a => $b) if(!$b) unset($rights_array[$a]);  //Leere EintrÃ¤ge lÃ¶schen
 					//Neue Liste der Logins in Gruppe speichern
 					db_update_data("ko_groups", "WHERE `id` = '$id'", array("rights_".$mode[$i] => implode(",", $rights_array)));
 					$all_groups[$id]['rights_'.$mode[$i]] = implode(',', $rights_array);
@@ -725,7 +725,7 @@ switch($do_action) {
 		if(sizeof($do_columns) < 1) $notifier->addError(8, $do_action);
 
 		if($_SESSION["show"] == "list_groups") {
-			//Zu bearbeitende Einträge
+			//Zu bearbeitende EintrÃ¤ge
 			$do_ids = array();
 			foreach($_POST["chk"] as $c_i => $c) {
 				if($c) {
@@ -737,7 +737,7 @@ switch($do_action) {
 			}
 			if(sizeof($do_ids) < 1) $notifier->addError(2, $do_action);
 
-			//Daten für Formular-Aufruf vorbereiten
+			//Daten fÃ¼r Formular-Aufruf vorbereiten
 			if(!$notifier->hasErrors()) {
 				$order = "ORDER BY ".$_SESSION["sort_groups"]." ".$_SESSION["sort_groups_order"];
 				$_SESSION["show_back"] = $_SESSION["show"];
@@ -747,7 +747,7 @@ switch($do_action) {
 
 		/* Rollen */
 		} else if($_SESSION['show'] == 'list_roles') {
-			//Zu bearbeitende Einträge
+			//Zu bearbeitende EintrÃ¤ge
 			$do_ids = array();
 			foreach($_POST['chk'] as $c_i => $c) {
 				if($c) {
@@ -759,7 +759,7 @@ switch($do_action) {
 			}
 			if(sizeof($do_ids) < 1) $notifier->addError(2, $do_action);
 
-			//Daten für Formular-Aufruf vorbereiten
+			//Daten fÃ¼r Formular-Aufruf vorbereiten
 			if(!$notifier->hasErrors()) {
 				$order = 'ORDER BY name ASC';
 				$_SESSION['show_back'] = $_SESSION['show'];
@@ -889,7 +889,7 @@ include($ko_path.'inc/js-sessiontimeout.inc');
 include('inc/js-groups.inc');
 $js_calendar->load_files();
 
-//Bei der Bearbeitung von Login-Rechten Ajax einbinden und alles für die drei selectmenus
+//Bei der Bearbeitung von Login-Rechten Ajax einbinden und alles fÃ¼r die drei selectmenus
 if($_SESSION['show'] == 'edit_login_rights') {
 	//Show dummy-groups (Platzhalter) because the rights will be propagated downwards to all children
 	$show_all_types = TRUE;
@@ -923,7 +923,7 @@ if($_SESSION['show'] == 'edit_login_rights') {
 
 <?php
 /*
- * Gibt bei erfolgreichem Login das Menü aus, sonst einfach die Loginfelder
+ * Gibt bei erfolgreichem Login das MenÃ¼ aus, sonst einfach die Loginfelder
  */
 include($ko_path . "menu.php");
 ?>

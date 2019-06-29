@@ -1,4 +1,4 @@
-<?php
+ï»¿<?php
 /***************************************************************
 *  Copyright notice
 *
@@ -90,7 +90,7 @@ include($ko_path.'inc/js-sessiontimeout.inc');
 require("$ko_path/inc/smarty.inc");
 
 /*
- * Gibt bei erfolgreichem Login das Menü aus, sonst einfach die Loginfelder
+ * Gibt bei erfolgreichem Login das MenÃ¼ aus, sonst einfach die Loginfelder
  */
 include($ko_path . "menu.php");
 ?>
@@ -139,7 +139,7 @@ switch($do_action) {
 
 
 	/**
-		* Ein Adress-Änderungsantrag wurde abgeschickt
+		* Ein Adress-Ã„nderungsantrag wurde abgeschickt
 		*/
 	case "submit_aa":
 		if(!$_POST["aa_id"]) continue;
@@ -185,7 +185,7 @@ switch($do_action) {
 
 
 	/**
-		* Adress-Änderungs-Felder (oder Liste bei mehreren gleichen Namen) sollen angezeigt werden
+		* Adress-Ã„nderungs-Felder (oder Liste bei mehreren gleichen Namen) sollen angezeigt werden
 		*/
 	case "show_adressaenderung_fields":
 		$aa_display = FALSE;
@@ -193,22 +193,22 @@ switch($do_action) {
 		if($_GET["aa_nachname"]) $aa_use_nachname = format_userinput($_GET["aa_nachname"], "text"); else $aa_use_nachname = "";
 		if($_GET["aa_vorname"]) $aa_use_vorname = format_userinput($_GET["aa_vorname"], "text"); else $aa_use_vorname = "";
 
-		//Name aus Textfeldern auslesen, falls keine übergeben wurden.
+		//Name aus Textfeldern auslesen, falls keine Ã¼bergeben wurden.
 		if(!$aa_use_vorname && $_POST["submit_fm_aa"]) $aa_use_vorname = format_userinput($_POST["txt_fm_aa_vorname"], "text");
 		if(!$aa_use_nachname && $_POST["submit_fm_aa"]) $aa_use_nachname = format_userinput($_POST["txt_fm_aa_nachname"], "text");
 
-		//Vorname und Nachname müssen angegeben werden, denn sonst könnte Datenbank nach bestimmten Namen durchsucht werden...
+		//Vorname und Nachname mÃ¼ssen angegeben werden, denn sonst kÃ¶nnte Datenbank nach bestimmten Namen durchsucht werden...
 		if((!$_POST["txt_fm_aa_nachname"] || !$_POST["txt_fm_aa_vorname"]) && !$aa_use_id) continue;
 
-		//Sicherheitscheck: (Felder nur anzeigen, wenn ID mit Namen und Vornamen übereinstimmen
-		//(so müssen ID, Name und Nachname bekannt sein, um die Felder manuell anzuzeigen)
+		//Sicherheitscheck: (Felder nur anzeigen, wenn ID mit Namen und Vornamen Ã¼bereinstimmen
+		//(so mÃ¼ssen ID, Name und Nachname bekannt sein, um die Felder manuell anzuzeigen)
 		if($aa_use_id > 0) {
 			ko_get_person_by_id($aa_use_id, $p);
 			if($p["vorname"] != $aa_use_vorname || $p["nachname"] != $aa_use_nachname) continue;
 			unset($p);
 		}
 
-		//Auf vorhandenen Eintrag prüfen und ID(s) merken
+		//Auf vorhandenen Eintrag prÃ¼fen und ID(s) merken
 		if(!$aa_use_id) {
 			$ids = ko_fuzzy_search(array("vorname" => $aa_use_vorname, "nachname" => $aa_use_nachname), "ko_leute", 1, FALSE, 3);
 			if(is_array($ids)) $fm_aa_ids = $ids;
@@ -222,9 +222,9 @@ switch($do_action) {
 			$aa_display = TRUE;
 		}
 
-		//Falls mehrere IDs gefunden: Liste anzeigen und einen auswählen lassen. (Adresse und Geburtsdatum)
+		//Falls mehrere IDs gefunden: Liste anzeigen und einen auswÃ¤hlen lassen. (Adresse und Geburtsdatum)
 		//Dies ist auch der Fall, wenn eine neue Person schon vorhanden ist.
-		//Nur 5 identische Namen erlauben, darüber wird es verdächtig... (z.B. SQL-Injection OR 1=1...)
+		//Nur 5 identische Namen erlauben, darÃ¼ber wird es verdÃ¤chtig... (z.B. SQL-Injection OR 1=1...)
 		if(sizeof($fm_aa_ids) > 1 && sizeof($fm_aa_ids < 5)) {
 			$c = 0;
 			foreach ($fm_aa_ids as $i) {
@@ -250,7 +250,7 @@ switch($do_action) {
 		}
 
 
-		//Falls genau eine ID gefunden (auch -1 für neu...), dann diese zum Bearbeiten ausgeben
+		//Falls genau eine ID gefunden (auch -1 fÃ¼r neu...), dann diese zum Bearbeiten ausgeben
 		if(sizeof($fm_aa_ids) == 1) {
 			$smarty->assign("tpl_aa_show", "fields");
 			if($fm_aa_ids[0] > 0) ko_get_person_by_id($fm_aa_ids[0], $p);
@@ -266,7 +266,7 @@ switch($do_action) {
 				if(substr($c["Field"], 0, 1) != "_") {  //Alle Spalten, die mit "_" beginnen, ignorieren
 					$tpl_input[$counter]["name"] = "aa_input_".$c["Field"];
 					$tpl_input[$counter]["desc"] = $col_namen[$c["Field"]];
-					//Vor- und Nachname immer ausgeben, denn diese dürfen immer angezeigt werden, da diese ja vorher selber eingegeben wurden.
+					//Vor- und Nachname immer ausgeben, denn diese dÃ¼rfen immer angezeigt werden, da diese ja vorher selber eingegeben wurden.
 					if($do_fillout || (!$do_fillout && ($c["Field"]=="vorname" || $c["Field"]=="nachname")))
 						$tpl_input[$counter]["value"] = ($fm_aa_ids[0] == -1) ? ${"aa_use_".$c["Field"]} : $p[$c["Field"]];
 					else

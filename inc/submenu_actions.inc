@@ -1,4 +1,4 @@
-<?php
+ï»¿<?php
 /***************************************************************
 *  Copyright notice
 *
@@ -57,7 +57,7 @@ function ko_submenu_actions($sm_module, $action) {
 			$new_left = ko_get_userpref($_SESSION["ses_userid"], "submenu_".$sm_module."_left".$state);
 			$new_left .= ($new_left == "") ? $id : ",".$id;
 			ko_save_userpref($_SESSION["ses_userid"], "submenu_".$sm_module."_left".$state, $new_left);
-			//Und rechts löschen
+			//Und rechts lÃ¶schen
 			$right = ko_get_userpref($_SESSION["ses_userid"], "submenu_".$sm_module."_right".$state);
 			$new_right = "";
 			foreach(explode(",", $right) as $c) {
@@ -87,7 +87,7 @@ function ko_submenu_actions($sm_module, $action) {
 			$new_right = ko_get_userpref($_SESSION["ses_userid"], "submenu_".$sm_module."_right".$state);
 			$new_right .= ($new_right == "") ? $id : ",".$id;
 			ko_save_userpref($_SESSION["ses_userid"], "submenu_".$sm_module."_right".$state, $new_right);
-			//Und rechts löschen
+			//Und rechts lÃ¶schen
 			$left = ko_get_userpref($_SESSION["ses_userid"], "submenu_".$sm_module."_left".$state);
 			$new_left = "";
 			foreach(explode(",", $left) as $c) {

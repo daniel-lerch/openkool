@@ -1,4 +1,4 @@
-<?php
+ï»¿<?php
 /***************************************************************
 *  Copyright notice
 *
@@ -34,7 +34,7 @@ function apply_daten_filter(&$z_where, &$z_limit, $_start="", $_ende="", $_tg=""
 	$use_ende = ($_ende != "") ? $_ende : $_SESSION["filter_ende"];
 	$use_tg = ($_tg != "") ? $_tg : $_SESSION["show_tg"];
 
-	//Permanenten Filter einfügen, falls vorhanden und nur view-Rechte
+	//Permanenten Filter einfÃ¼gen, falls vorhanden und nur view-Rechte
 	$z_where = "";
 	$perm_filter_start = ko_get_setting("daten_perm_filter_start");
 	$perm_filter_ende  = ko_get_setting("daten_perm_filter_ende");
@@ -79,7 +79,7 @@ function apply_daten_filter(&$z_where, &$z_limit, $_start="", $_ende="", $_tg=""
 		if($kota_where != '') $z_where .= " AND ($kota_where) ";
 	}
 
-	//Die gewünschten Termingruppen anzeigen
+	//Die gewÃ¼nschten Termingruppen anzeigen
 	$z_where_add = "";
 	$tgs = array();
 	if(is_array($use_tg)) {
@@ -93,7 +93,7 @@ function apply_daten_filter(&$z_where, &$z_limit, $_start="", $_ende="", $_tg=""
 	if($z_where_add) {
 		$z_where .= " AND ( $z_where_add ) ";
 	} else {
-		//Falls nichts gefunden, ein FALSE-Bedingung einfügen!
+		//Falls nichts gefunden, ein FALSE-Bedingung einfÃ¼gen!
 		$z_where = " AND ( 1=2 ) ";
 	}
 
@@ -506,7 +506,7 @@ function ko_formular_termin($mode, $id, $data=array()) {
 		$data["startzeit"] = $data["start_time"];
 		$data["endzeit"] = $data["end_time"];
 		kota_assign_values("ko_event", $data);
-		//Zeit über $data-Array gesetzt (z.B. aus Wochenansicht)
+		//Zeit Ã¼ber $data-Array gesetzt (z.B. aus Wochenansicht)
 		if(isset($data['start_time'])) $res_startzeit = $data['start_time'];
 		if(isset($data['end_time'])) $res_endzeit = $data['end_time'];
 		
@@ -577,7 +577,7 @@ function ko_formular_termin($mode, $id, $data=array()) {
 	$txt_repeat_monat2 = $_POST["txt_repeat_monat2"] ? format_userinput($_POST["txt_repeat_monat2"], "uint") : 1;
 
 
-	//Select-Inputs für Wiederholungen abfüllen (Auswahl vom letzten Mal wieder setzen
+	//Select-Inputs fÃ¼r Wiederholungen abfÃ¼llen (Auswahl vom letzten Mal wieder setzen
 	$values = array(1, 2, 3, 4, 5, 6);
 	$output = array("1.", "2.", "3.", "4.", "5.", getLL('daten_repeat_monthly2_every_last'));
 	$value = format_userinput($_POST["sel_monat1_nr"], "uint", FALSE, 1);
@@ -1363,7 +1363,7 @@ function check_daten_entries(&$data) {
 		return TRUE;
 	}
 
-	//Datumsformat überprüfen
+	//Datumsformat Ã¼berprÃ¼fen
 	if(!check_datum($data["startdatum"])) {
 		$notifier->addError(1);
 		return TRUE;
@@ -1388,7 +1388,7 @@ function check_daten_entries(&$data) {
 		};
 	}//if(data["enddatum"] != "")
 
-	//Zeit überprüfen
+	//Zeit Ã¼berprÃ¼fen
 	if(trim($data["startzeit"]) == "" || !check_zeit($data["startzeit"])) {
 		//if first time is empty, set second one empty as well (all day event)
 		$data["endzeit"] = "";
@@ -1398,7 +1398,7 @@ function check_daten_entries(&$data) {
 				$notifier->addError(2);
 				return TRUE;
 			}
-			//Bei eintägigem Anlass muss die Endzeit grösser sein als die Startzeit
+			//Bei eintÃ¤gigem Anlass muss die Endzeit grÃ¶sser sein als die Startzeit
 			$time_s1 = str_replace(":", "", $data["startzeit"]);
 			$time_s2 = str_replace(":", "", $data["endzeit"]);
 			if((trim($data["enddatum"]) == "" || $data["startdatum"] == $data["enddatum"]) && (int)$time_s1 > (int)$time_s2) {
@@ -1514,10 +1514,10 @@ function ko_daten_cal_jahr($num=6, $start=1, $output=TRUE) {
 	//Permanente Filter anwenden
 	apply_daten_filter($z_where, $z_limit, 'immer', 'immer');
 
-	//Termine einfüllen
+	//Termine einfÃ¼llen
 	$day_code = $j.str_to_2($m).str_to_2($t);
 	while($day_code < $end_code) {
-		//Wochentag vorausfüllen
+		//Wochentag vorausfÃ¼llen
 		$wt = strftime("%w", mktime(1,1,1, $m, $t, $j));
 		if($wt == 0) $style = "background:#cccccc;";
 		else if($wt == 6) $style = "background:#dddddd;";
@@ -1526,7 +1526,7 @@ function ko_daten_cal_jahr($num=6, $start=1, $output=TRUE) {
 			$day[(int)$g_i]["events"][$m]["days"][$t]["style"] = $style;
 		}
 		
-		//Termine einfüllen
+		//Termine einfÃ¼llen
 		ko_get_events_by_date($t, $m, $j, $dates, $z_where);
 		if(sizeof($dates) > 0) {
 			foreach($gruppen as $g_i => $g) {
@@ -1538,14 +1538,14 @@ function ko_daten_cal_jahr($num=6, $start=1, $output=TRUE) {
 						if($date["startzeit"] == "00:00:00" && $date["endzeit"] == "00:00:00") {
 							$desc .= getLL("time_all_day");
 						}
-						else if($date["startdatum"] != $date["enddatum"]) {  //Mehrtägige Termine
+						else if($date["startdatum"] != $date["enddatum"]) {  //MehrtÃ¤gige Termine
 							if($t == substr($date["startdatum"], 8, 2) && $m == substr($date["startdatum"], 5, 2))
 								$desc .= getLL("time_from")." ".substr($date["startzeit"], 0, -3);
 							else if($t == substr($date["enddatum"], 8, 2) && $m == substr($date["enddatum"], 5, 2))
 								$desc .= getLL("time_to")." ".substr($date["endzeit"], 0, -3);
 							else
 								$desc .= getLL("time_all_day");
-						} else {  //eintägig
+						} else {  //eintÃ¤gig
 							$desc .= ($date["startzeit"] != "00:00:00" ? substr($date["startzeit"], 0, -3) : "") . (($date["endzeit"] != "00:00:00") ? ("-" . substr($date["endzeit"], 0, -3)) : "");
 						}
 						$day_text .= ($desc != "") ? "<br /><b>- ".$desc."</b>" : "<br />";
@@ -1625,7 +1625,7 @@ function do_del_termin($del_id) {
 
 	//Really delete event
 	else {
-		//Die verbundenen Reservationen löschen
+		//Die verbundenen Reservationen lÃ¶schen
 		if($del_event["reservationen"]) {
 			$del_res = explode(",", $del_event["reservationen"]);
 			foreach($del_res as $d) {
@@ -1966,7 +1966,7 @@ function ko_daten_store_event(&$data) {
 				if(!$r) continue;
 				$res_data = array("item_id" => $r)+$res_data;
 
-				//Auf Doppelbelegung prüfen
+				//Auf Doppelbelegung prÃ¼fen
 				$do_res = TRUE;
 				ko_res_check_double($r, $res_data["startdatum"], $res_data["enddatum"], $res_data["startzeit"], $res_data["endzeit"], $double_error_txt);
 				if($double_error_txt) {

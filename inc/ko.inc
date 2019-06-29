@@ -1,4 +1,4 @@
-<?php
+ï»¿<?php
 /***************************************************************
 *  Copyright notice
 *
@@ -29,9 +29,9 @@ define('VERSION', 'R45');
 
 //Reservation: Objekt-Bild
 $RESITEM_IMAGE_WIDTH = 60;
-//Itemlist-Stringlängen-Maximum
+//Itemlist-StringlÃ¤ngen-Maximum
 define("ITEMLIST_LENGTH_MAX", 35);
-//Default-Werte für Logins
+//Default-Werte fÃ¼r Logins
 $DEFAULT_USERPREFS = array(
 		array('key' => 'show_limit_daten',            'value' => '20',                          'type' => ''),
 		array('key' => 'cal_jahr_num',                'value' => '6',                           'type' => ''),
@@ -134,10 +134,10 @@ $LDAP_SCHEMA = array(
 	4 => 'mozillaAddressBookEntry',
 );
 
-//Zugehörigkeiten der Familien-Daten zu den Personendaten
-//Diese Spalten kommen sowohl in ko_leute wie auch in ko_familie vor. ko_leute.* wird jeweils von ko_familie.* überschrieben.
+//ZugehÃ¶rigkeiten der Familien-Daten zu den Personendaten
+//Diese Spalten kommen sowohl in ko_leute wie auch in ko_familie vor. ko_leute.* wird jeweils von ko_familie.* Ã¼berschrieben.
 //Ausser beim Neu-Anlegen einer Person, dann ist es umgekehrt.
-//Nachname ist standardmässig kein Fam-Feld, da es oft verschiedene Namen in Familien geben kann.
+//Nachname ist standardmÃ¤ssig kein Fam-Feld, da es oft verschiedene Namen in Familien geben kann.
 $COLS_LEUTE_UND_FAMILIE = array("adresse", "adresse_zusatz", "plz", "ort", "land", "telp");
 
 //default columns from ko_leute to be hidden in the form
@@ -284,8 +284,8 @@ $COUNTRY_CODES = array(
 	'49' => array('names' => array('de', 'germany', 'deutschland')),
 	'33' => array('names' => array('fr', 'france', 'frankreich')),
 	'39' => array('names' => array('it', 'italy', 'italien', 'italia'), 'keep_zero' => true),
-	'34' => array('names' => array('es', 'spain', 'spanien', 'españa')),
-	'40' => array('names' => array('ro', 'romania', 'roumania', 'rumänien')),
+	'34' => array('names' => array('es', 'spain', 'spanien', 'espaÃ±a')),
+	'40' => array('names' => array('ro', 'romania', 'roumania', 'rumÃ¤nien')),
 );
 
 
@@ -304,7 +304,7 @@ $EMAIL_LOG_TYPES = array('db_error_insert', 'db_error_update', 'mailing_smtp_err
 $LEUTE_NO_FAMILY = false;
 
 
-//Kunden-spezifische Konfiguration einlesen (kann oben stehende Werte überschreiben)
+//Kunden-spezifische Konfiguration einlesen (kann oben stehende Werte Ã¼berschreiben)
 include($ko_path."config/ko-config.php");
 
 
@@ -453,14 +453,14 @@ if(!$db_connection && $ko_menu_akt != "install") {
 }
 
 
-//Submenus (für alle Module)
+//Submenus (fÃ¼r alle Module)
 include($BASE_PATH."inc/submenu.inc");
 
 //Submenu-Behandlung
 include($BASE_PATH."inc/submenu_actions.inc");
 
 
-//Namen für die Frontmodule
+//Namen fÃ¼r die Frontmodule
 $FRONTMODULES = array("daten_cal"       => array("modul" => "daten", "name" => getLL("fm_name_daten_cal")),
 											"geburtstage"     => array("modul" => "leute", "name" => getLL("fm_name_geburtstage")),
 											"mod"             => array("modul" => "leute,reservation,daten", "name" => getLL("fm_name_mod")),
@@ -1644,7 +1644,7 @@ function ko_save_userpref($id, $key, $value, $type="") {
 	//Store in db
 	if(db_get_count('ko_userprefs', 'key', "AND `user_id`= '$id' AND `key` = '$key' AND `type` = '$type'") >= 1) {
 		db_update_data('ko_userprefs', "WHERE `user_id` = '$id' AND `key` = '$key' AND `type` = '$type'", array('value' => $value));
-  } else {  //...sonst neues einfügen
+  } else {  //...sonst neues einfÃ¼gen
 		db_insert_data('ko_userprefs', array('user_id' => $id, 'type' => $type, 'key' => $key, 'value' => $value));
   }
 
@@ -2387,7 +2387,7 @@ function ko_get_moderators_by_eventgroup($gid) {
  ************************************************************************************************************************/
 
 /**
-	* Liefert eine Liste alle vorkommenden Länder in der Personen-Daten
+	* Liefert eine Liste alle vorkommenden LÃ¤nder in der Personen-Daten
 	*/
 function ko_get_all_countries(&$c) {
 	$c = db_select_distinct('ko_leute', 'land', '', "WHERE `deleted` = '0'");
@@ -2507,7 +2507,7 @@ function ko_get_familie($id) {
 
 
 /**
-  * Fügt eine Familien-ID bestehend aus Nachname, Ort und Vornamen zur übergebenen Familie
+  * FÃ¼gt eine Familien-ID bestehend aus Nachname, Ort und Vornamen zur Ã¼bergebenen Familie
 	*/
 function ko_add_fam_id(&$fam, $_members="") {
 	global $COLS_LEUTE_UND_FAMILIE, $FAMFUNCTION_SORT_ORDER;
@@ -2622,7 +2622,7 @@ function ko_get_familien(&$fam) {
 
 
 /**
-  * Aktualisiert eine Familie mit den übergebenen Fam-Daten
+  * Aktualisiert eine Familie mit den Ã¼bergebenen Fam-Daten
 	* und aktualisiert alle Member
 	*/
 function ko_update_familie($famid, $fam_data, $leute_id="") {
@@ -2886,8 +2886,8 @@ function ko_get_birthday_filter() {
 
 /**
   * Liefert die Spaltennamen der ko_leute-DB
-	* Zusätzlich werden noch Module-Spaltennamen (wie z.B. Gruppen) hinzugefügt
-	* mode kann view oder edit sein, jenachdem für welchen Modus die Spalten gemäss ko_admin.leute_admin_spalten verlangt sind
+	* ZusÃ¤tzlich werden noch Module-Spaltennamen (wie z.B. Gruppen) hinzugefÃ¼gt
+	* mode kann view oder edit sein, jenachdem fÃ¼r welchen Modus die Spalten gemÃ¤ss ko_admin.leute_admin_spalten verlangt sind
 	*   (bei all wird auf den Vergleich mit allowed_cols verzichtet)
 	*/
 function ko_get_leute_col_name($groups_hierarchie=FALSE, $add_group_datafields=FALSE, $mode="view", $force=FALSE, &$rawgdata='') {
@@ -3042,9 +3042,9 @@ function ko_get_family_col_name() {
 
 
 /**
-  * Wendet die Leute-Filter an und gibt SQL-WHERE-Clause zurück
-	* Ebenfalls verwendet, um Admin-Filter für Berechtigungen anzuwenden
-	* Muss in ko.inc stehen (und nicht in leute/inc/leute.inc), damit ko_get_admin() immer Zugriff darauf hat --> z.B. für Dropdown-Menüs
+  * Wendet die Leute-Filter an und gibt SQL-WHERE-Clause zurÃ¼ck
+	* Ebenfalls verwendet, um Admin-Filter fÃ¼r Berechtigungen anzuwenden
+	* Muss in ko.inc stehen (und nicht in leute/inc/leute.inc), damit ko_get_admin() immer Zugriff darauf hat --> z.B. fÃ¼r Dropdown-MenÃ¼s
 	*/
 function apply_leute_filter($filter, &$where_code, $add_admin_filter=TRUE, $admin_filter_level='', $_login_id='', $includeAll=FALSE) {
 	global $ko_menu_akt;
@@ -3053,7 +3053,7 @@ function apply_leute_filter($filter, &$where_code, $add_admin_filter=TRUE, $admi
 	if($_login_id != '') $login_id = $_login_id;
 	else $login_id = $_SESSION['ses_userid'];
 
-	//Innerhalb einer Filtergruppe werden die Filter mit OR verknüpft
+	//Innerhalb einer Filtergruppe werden die Filter mit OR verknÃ¼pft
   $where_code = "";
   $q = array();
   if(is_array($filter)) {
@@ -3113,7 +3113,7 @@ function apply_leute_filter($filter, &$where_code, $add_admin_filter=TRUE, $admi
 			}
 
 
-			//Alle AND's am Schluss entfernen (mehrere möglich!)
+			//Alle AND's am Schluss entfernen (mehrere mÃ¶glich!)
 			while(substr(rtrim($f_sql), -4) == " AND") {
 				$f_sql = substr(rtrim($f_sql), 0, -4);
 			}
@@ -3384,7 +3384,7 @@ function apply_leute_filter($filter, &$where_code, $add_admin_filter=TRUE, $admi
 		}//foreach(filter)
 	}//if(is_array(filter))
 
-  //Einzelne Filter-Gruppen mit AND verbinden und letztes OR löschen
+  //Einzelne Filter-Gruppen mit AND verbinden und letztes OR lÃ¶schen
 	$done_adv_link = FALSE;
 	if($filter['use_link_adv'] === TRUE && $filter['link_adv'] != '') {
 		//Replace all numbers with {{d}}
@@ -3434,7 +3434,7 @@ function apply_leute_filter($filter, &$where_code, $add_admin_filter=TRUE, $admi
 				}
 			}
 		}
-		$where_code = substr($where_code, 4);  //Erstes OR löschen
+		$where_code = substr($where_code, 4);  //Erstes OR lÃ¶schen
 	}
 
 	//Admin-Filter anwenden
@@ -3541,7 +3541,7 @@ function ko_get_leute_hidden_sql() {
 
 /**
   * Liefert Formular zu einzelnem Filter
-	* Für Ajax und Submenu.inc
+	* FÃ¼r Ajax und Submenu.inc
 	*/
 function ko_get_leute_filter_form($fid, $showButtons=TRUE) {
 	$code = "";
@@ -3584,8 +3584,8 @@ function ko_get_leute_filter_form($fid, $showButtons=TRUE) {
 
 
 /**
-	* Gibt formatierte Personendaten zurück
-	* data enthält den Wert aus der DB
+	* Gibt formatierte Personendaten zurÃ¼ck
+	* data enthÃ¤lt den Wert aus der DB
 	* col ist die DB-Spalte
 	* p ist eine Referenz auf den ganzen Personendatensatz
 	* all_datafields ist ein Array aller Datenfelder
@@ -3636,7 +3636,7 @@ function map_leute_daten($data, $col, &$p, &$all_datafields, $forceDatafields=FA
 			sort($value);
 			return implode(", \n", $value);
 		}
-	} else if($col == "datafield_id") {  //Angewandte Gruppen-Datenfelder-Filter schön darstellen
+	} else if($col == "datafield_id") {  //Angewandte Gruppen-Datenfelder-Filter schÃ¶n darstellen
 		if(strlen($data) == 6 && format_userinput($data, "uint") == $data) {
 			$df = db_select_data("ko_groups_datafields", "WHERE `id` = '$data'", "*", "", "", TRUE);
 			return $df["description"];
@@ -4385,7 +4385,7 @@ function ko_get_reservationen(&$r, $z_where, $z_limit='', $type='res', $z_sort='
 	else if($type=="mod") $db_table = "ko_reservation_mod";
 	else return;
 
-	//WHERE anwenden, oder falls leer, eine FALSE-Bedingung einfügen
+	//WHERE anwenden, oder falls leer, eine FALSE-Bedingung einfÃ¼gen
 	if($z_where != "") $z_where = "WHERE 1=1 " . $z_where;
 	else $z_where = "WHERE 1=2";  //Nichts anzeigen
 
@@ -5859,7 +5859,7 @@ function ko_rota_get_participation ($id, $teamId) {
 
 /**
 	* Liefert die vorhandenen Shares
-	* Erlaubt die Angaben von zusätzlichen Filtern und Limiten
+	* Erlaubt die Angaben von zusÃ¤tzlichen Filtern und Limiten
 	*/
 function ko_get_shares($filter, $orderBy="", $limit="") {
 	if(!$filter) return FALSE;
@@ -5891,7 +5891,7 @@ function ko_fileshare_send_file($fileid, $rec, $recid) {
 
 
 /**
-  * Liefert alle Ordner für einen Benutzer
+  * Liefert alle Ordner fÃ¼r einen Benutzer
 	*/
 function ko_fileshare_get_folders($userid, $mode="view") {
 	global $access;
@@ -5948,7 +5948,7 @@ function ko_fileshare_get_folder(&$folder, $id) {
 
 
 /**
-  * Stellt eine Grössenangabe schön in B, KB, MB oder GB dar
+  * Stellt eine GrÃ¶ssenangabe schÃ¶n in B, KB, MB oder GB dar
 	*/
 function ko_nice_size($size) {
 	if($size > (1024*1024*1024)) $size = round($size/(1024*1024*1024), 2)."GB";
@@ -5970,7 +5970,7 @@ function ko_fileshare_get_rootline($id, $userid) {
 	if($af["user"] != $userid) {  //Bei Shared-Folders S-Folder als Parent angeben
 		$parent_ = ko_fileshare_get_shareroot($userid);
 		$parent = $parent_["id"];
-	} else {  //Sonst richtigen Parent wählen
+	} else {  //Sonst richtigen Parent wÃ¤hlen
 		$parent = $af["parent"];
 	}
 	$rootline[$id] = $af["name"];
@@ -5986,7 +5986,7 @@ function ko_fileshare_get_rootline($id, $userid) {
 
 
 /**
-  * Liefert ID des Eingang-Folders für einen Benutzer
+  * Liefert ID des Eingang-Folders fÃ¼r einen Benutzer
 	*/
 function ko_fileshare_get_inbox($userid) {
 	return db_select_data('ko_fileshare_folders', "WHERE `user` = '$userid' AND `flag` = 'I'", '*', '', '', TRUE);
@@ -5995,7 +5995,7 @@ function ko_fileshare_get_inbox($userid) {
 
 
 /**
-  * Liefert ID des Shared-Rootfolders für einen Benutzer
+  * Liefert ID des Shared-Rootfolders fÃ¼r einen Benutzer
 	*/
 function ko_fileshare_get_shareroot($userid) {
 	return db_select_data('ko_fileshare_folders', "WHERE `user` = '$userid' AND `flag` = 'S'", '*', '', '', TRUE);
@@ -6023,7 +6023,7 @@ function ko_fileshare_check_inbox_shareroot($id) {
 
 
 /**
-  * Liefert Select-Box für Pfad-Auswahl
+  * Liefert Select-Box fÃ¼r Pfad-Auswahl
 	*/
 function ko_fileshare_get_folder_select($userid, $mode="view", &$values, &$descs, $shareroot=TRUE) {
 	$code = "";
@@ -6050,7 +6050,7 @@ function ko_fileshare_get_folder_select($userid, $mode="view", &$values, &$descs
 
 
 /**
-  * Überprüft einen Ordner auf gewisse Rechte für einen Benutzer
+  * ÃœberprÃ¼ft einen Ordner auf gewisse Rechte fÃ¼r einen Benutzer
 	*/
 function ko_fileshare_check_permission($userid, $folderid, $action) {
 	global $access;
@@ -6102,7 +6102,7 @@ function ko_fileshare_check_permission($userid, $folderid, $action) {
 
 
 /**
-  * Speichert eine Datei als Share-Datei für den definierten User in seiner Inbox
+  * Speichert eine Datei als Share-Datei fÃ¼r den definierten User in seiner Inbox
 	*/
 function ko_fileshare_save_file_as_share($uid, $dateiname) {
 	global $FILESHARE_FOLDER;
@@ -6177,7 +6177,7 @@ function ko_get_preachers(&$preachers) {
 
 
 /**
-  * Falls ID gesetzt ist, kommt nur das Daten-Array zurück ansonsten kommen alle Layoute roh zurück
+  * Falls ID gesetzt ist, kommt nur das Daten-Array zurÃ¼ck ansonsten kommen alle Layoute roh zurÃ¼ck
 	*/
 function ko_get_tape_printlayout($id = "") {
 	if($id != "") {
@@ -6234,7 +6234,7 @@ function ko_get_grouproles(&$roles, $z_where="", $z_limit="") {
 
 
 /**
-  * Liefert alle IDs und Bezeichnungen für alle Rollen in einer Gruppe
+  * Liefert alle IDs und Bezeichnungen fÃ¼r alle Rollen in einer Gruppe
 	*/
 function ko_groups_get_group_id_names($gid, &$groups, &$roles, $do_roles=TRUE) {
 	//Nicht aus Cache holen, sondern neu berechnen
@@ -6283,7 +6283,7 @@ function ko_groups_get_group_id_names($gid, &$groups, &$roles, $do_roles=TRUE) {
 function ko_groups_decode($all, $type, $limit=0) {
 	global $all_groups;
 
-	if(strlen($all) == 6) { //Einzelne Gruppen-ID übergeben
+	if(strlen($all) == 6) { //Einzelne Gruppen-ID Ã¼bergeben
 		$mother_line = array();
 		$base_group = $all;
 	} else { //Sonst handelt es sich um ein g:000001:r000002 usw.
@@ -6416,7 +6416,7 @@ function ko_groups_get_motherline($gid, &$groups) {
 
 
 /**
-  * Erstellt Save-String gemäss POST-Werten und Berechtigungen, damit nicht bearbeitbare nicht rausfliegen
+  * Erstellt Save-String gemÃ¤ss POST-Werten und Berechtigungen, damit nicht bearbeitbare nicht rausfliegen
 	*/
 function ko_groups_get_savestring(&$value, $data, &$log, $_bisher=NULL, $apply_start_stop=TRUE, $do_ezmlm=TRUE) {
 	global $access;
@@ -6425,7 +6425,7 @@ function ko_groups_get_savestring(&$value, $data, &$log, $_bisher=NULL, $apply_s
 	ko_get_access('groups');
 
 	//Behandlung der Gruppen
-	//Einzeln hinzufügen oder löschen, damit Rechte eingehalten werden. (Bestehende, nicht anzeigbare würden sonst gelöscht, da nicht in Formular)
+	//Einzeln hinzufÃ¼gen oder lÃ¶schen, damit Rechte eingehalten werden. (Bestehende, nicht anzeigbare wÃ¼rden sonst gelÃ¶scht, da nicht in Formular)
 	if(isset($_bisher)) {
 		$bisher = explode(",", $_bisher);
 	} else {
@@ -6458,10 +6458,10 @@ function ko_groups_get_savestring(&$value, $data, &$log, $_bisher=NULL, $apply_s
 			}
 		}
 	}
-	//Gelöschte:
+	//GelÃ¶schte:
 	foreach($bisher as $b_i => $b) {
 		$group = ko_groups_decode($b, "group");
-		//Falls col==MODULEgrp ist (also die Funktion aus multiedit heraus aufgerufen wird), nur gewählte Gruppe bearbeiten,
+		//Falls col==MODULEgrp ist (also die Funktion aus multiedit heraus aufgerufen wird), nur gewÃ¤hlte Gruppe bearbeiten,
 		//sonst fallen alle anderen Gruppen-Einteilungen raus
 		if(substr($data["col"], 0, 9) == "MODULEgrp" && $group["id"] != substr($data["col"], 9)) continue;
 	  //Don't work on timed groups
@@ -6810,7 +6810,7 @@ function ko_groups_get_recursive($z_where, $fullarrays=FALSE, $start='NULL') {
 function rec_groups(&$t, &$r, $z_where="", &$not_leaves, $fullarrays=FALSE) {
 	if(!is_array($not_leaves)) $not_leaves = db_select_distinct("ko_groups", "pid");
 
-	//Bei Blättern sofort zurückgeben
+	//Bei BlÃ¤ttern sofort zurÃ¼ckgeben
 	if(!in_array($t["id"], $not_leaves)) return;
 
 	ko_get_groups($children, "AND `pid` = '".$t["id"]."' ".$z_where, "", "ORDER BY name ASC");
@@ -6826,7 +6826,7 @@ function rec_groups(&$t, &$r, $z_where="", &$not_leaves, $fullarrays=FALSE) {
 
 
 /**
-  * Liefert die WHERE-Bedingung für Gruppen gemäss Option, ob abgelaufene Gruppen angezeigt werden dürfen oder nicht
+  * Liefert die WHERE-Bedingung fÃ¼r Gruppen gemÃ¤ss Option, ob abgelaufene Gruppen angezeigt werden dÃ¼rfen oder nicht
 	*/
 function ko_get_groups_zwhere($forceAll=FALSE) {
 	if($forceAll || ko_get_userpref($_SESSION['ses_userid'], 'show_passed_groups') == 1) {
@@ -6840,7 +6840,7 @@ function ko_get_groups_zwhere($forceAll=FALSE) {
 
 
 /**
-  * Erstellt die JS-Einträge für ein Selmenu für das Gruppen-Modul
+  * Erstellt die JS-EintrÃ¤ge fÃ¼r ein Selmenu fÃ¼r das Gruppen-Modul
 	*/
 function ko_selmenu_generate_children_entries($top_id, $list_id, &$all_groups, &$all_roles, $show_all_types=FALSE) {
 	global $access;
@@ -6889,7 +6889,7 @@ function ko_selmenu_generate_children_entries($top_id, $list_id, &$all_groups, &
 	if($top_id == "NULL") {
 		print 'addTopList('.$list_id.', 0, "'.implode(", ", $group_list).'");'."\n";
 	} else {
-		//Muttergruppe für Sublisten-Namen holen
+		//Muttergruppe fÃ¼r Sublisten-Namen holen
 		if($level == 2) {
 			print 'addItem('.$list_id.', '.$counter.', "back", "---'.getLL("groups_list_up").'---");'."\n";
 		} else {
@@ -6904,7 +6904,7 @@ function ko_selmenu_generate_children_entries($top_id, $list_id, &$all_groups, &
 
 
 function ko_update_grouprole_filter() {
-	//Rollen-Filter machen, der nur nach Rolle suchen lässt
+	//Rollen-Filter machen, der nur nach Rolle suchen lÃ¤sst
 	$new_code  = "<select name=\"var1\" size=\"0\">";
 	$new_code .= '<option value="0"></option>';
 
@@ -7139,7 +7139,7 @@ function ko_multiedit_formular($table, $columns="", $ids=0, $order="", $form_dat
 			}
 		}
 
-		//Alle zu bearbeitenden Spalten für diesen Datensatz
+		//Alle zu bearbeitenden Spalten fÃ¼r diesen Datensatz
 		$col_pos = 0;
 		foreach($columns as $col) {
 
@@ -7182,7 +7182,7 @@ function ko_multiedit_formular($table, $columns="", $ids=0, $order="", $form_dat
 				$keep_name_PLUS = "koi[$table][$col"."_PLUS][forAll]";
 			}
 			$col = str_replace("`", "", $col);
-			//Module bearbeiten, damit in row[col] überhaupt etwas steht
+			//Module bearbeiten, damit in row[col] Ã¼berhaupt etwas steht
 			if(substr($col, 0, 6) == "MODULE") {
 				switch(substr($col, 6, 3)) {
 					case "grp":
@@ -7223,7 +7223,7 @@ function ko_multiedit_formular($table, $columns="", $ids=0, $order="", $form_dat
 				$KOTA[$table][$col]['form']['help'] = $help['link'];
 			}
 
-			//Vorbehandlung für versch. Typen
+			//Vorbehandlung fÃ¼r versch. Typen
 			if($type == "date") {  //no JS-DateSelect (used for multiedit)
 				$type = "text";
 			}
@@ -7267,7 +7267,7 @@ function ko_multiedit_formular($table, $columns="", $ids=0, $order="", $form_dat
 
 			else if($type == "checkbox") {
 				$KOTA[$table][$col]["form"]["params"] = $row[$col] ? 'checked="checked"' : '';
-				$row[$col] = 1;  //Für Checkboxen Value immer auf 1 setzen
+				$row[$col] = 1;  //FÃ¼r Checkboxen Value immer auf 1 setzen
 			}
 
 			else if($type == 'switch') {
@@ -10134,7 +10134,7 @@ function ko_export_cal_one_month(&$pdf, $monat, $jahr, $kw, $day, $titel, $show_
 
 	$pdf->AddPage();
 
-	//Spaltenbreiten für Tabelle
+	//Spaltenbreiten fÃ¼r Tabelle
 	$width_kw = 7;
 	$width_day = 39.5;
 	$height_title = 5;
@@ -10229,7 +10229,7 @@ function ko_export_cal_one_month(&$pdf, $monat, $jahr, $kw, $day, $titel, $show_
 			$pdf->SetTextColor(80);
 			$pdf->Text( ($x+$width_day-$pdf->GetStringWidth($thisday["tag"])-$offset_x), $y+$offset_y, $thisday["tag"]);
 			$y_day = $y+$height_dayheader;
-			//Höhe der Termineinträge berechnen
+			//HÃ¶he der TermineintrÃ¤ge berechnen
 			$num_events = sizeof($thisday["inhalt"]);
 			//Add titles
 			if($show_comment) {
@@ -10978,7 +10978,7 @@ function ko_add_color_legend_entry(&$legend, $event, $item) {
 
 
 /**
-  * Generiert Personen-Liste gemäss Einstellungen (Familie, Personen oder gemäss "AlsFamilieExportieren")
+  * Generiert Personen-Liste gemÃ¤ss Einstellungen (Familie, Personen oder gemÃ¤ss "AlsFamilieExportieren")
 	*/
 function ko_generate_export_list($personen, $familien, $mode) {
 	if($mode == "p") {
@@ -11105,7 +11105,7 @@ function ko_export_etiketten($_vorlage, $_start, $_rahmen, $data, $fill_page=0, 
 	for($i = 0; $i < $vorlage["per_row"]; $i++) $cols[] = $col_width;
 	$pdf->SetWidths($cols);
 
-	//Zeilenhöhe
+	//ZeilenhÃ¶he
 	$page_height = $pageH - $vorlage["border_top"] - $vorlage["border_bottom"];
 	$row_height = $page_height / $vorlage["per_col"];
 	$pdf->SetHeight($row_height);
@@ -11174,12 +11174,12 @@ function ko_export_etiketten($_vorlage, $_start, $_rahmen, $data, $fill_page=0, 
 	$done = 0;
 	$page_counter = 0;
 	while(!$last) {
-		for($r = 1; $r <= $vorlage["per_col"]; $r++) {  //über alle Zeilen
+		for($r = 1; $r <= $vorlage["per_col"]; $r++) {  //Ã¼ber alle Zeilen
 			$row = array();
 			if($return_address) $ra_row = array();
 			$do_row = FALSE;
 			if(!$last) {
-				for($c = 1; $c <= $vorlage["per_row"]; $c++) {  //Über alle Spalten
+				for($c = 1; $c <= $vorlage["per_row"]; $c++) {  //Ãœber alle Spalten
 					$cell_counter++;
 					if($firstpage) {  //Auf erster Seite nach erster zu druckenden Etikette suchen
 						if($cell_counter >= $start) $do_label = TRUE;
@@ -12948,8 +12948,8 @@ function ko_task_mailing() {
 
 
 /**
-	* Überprüft und korrigiert ein Datum
-	* Basiert auf PEAR-Klasse zur Überprüfung der Richtigkeit des Datums
+	* ÃœberprÃ¼ft und korrigiert ein Datum
+	* Basiert auf PEAR-Klasse zur ÃœberprÃ¼fung der Richtigkeit des Datums
 	*/
 function check_datum(&$d) {
 	$d = format_userinput($d, "date");
@@ -12967,11 +12967,11 @@ function check_datum(&$d) {
 		$temp = $date[0]; $date[0] = $date[2]; $date[2] = $temp;
 	}
 
-	//Angaben ohne Jahr erlauben, dann einfach aktuelles Jahr einfügen
+	//Angaben ohne Jahr erlauben, dann einfach aktuelles Jahr einfÃ¼gen
 	if(sizeof($date) == 2) $date[2] = $jahr;
 	if($date[2] == "") $date[2] = $jahr;  //Falls noch kein Jahr gefunden, dann einfach auf aktuelles setzen
 
-	//Jahr auf vier Stellen ergänzen, falls nötig (immer 20XX verwenden)
+	//Jahr auf vier Stellen ergÃ¤nzen, falls nÃ¶tig (immer 20XX verwenden)
 	if(strlen($date[2]) == 2) $date[2] = (int)("20".$date[2]);
 	else if(strlen($date[2]) == 1) $date[2] = (int)("200".$date[2]);
 
@@ -12981,7 +12981,7 @@ function check_datum(&$d) {
 
 
 /**
-	* Überprüft eine Zeit auf syntaktische Richtigkeit
+	* ÃœberprÃ¼ft eine Zeit auf syntaktische Richtigkeit
 	*/
 function check_zeit(&$z) {
 	$z = format_userinput($z, "date");
@@ -12999,7 +12999,7 @@ function check_zeit(&$z) {
 
 
 /**
-  * Überprüft auf syntaktisch korrekte Emailadresse
+  * ÃœberprÃ¼ft auf syntaktisch korrekte Emailadresse
 	*/
 function check_email($email) {
 	$email = trim($email);
@@ -13011,7 +13011,7 @@ function check_email($email) {
 
 
 /**
-  * Formatiert eine Natelnummer ins internationale Format für clickatell
+  * Formatiert eine Natelnummer ins internationale Format fÃ¼r clickatell
 	*/
 function check_natel(&$natel) {
 	if(trim($natel) == "") return FALSE;
@@ -13035,7 +13035,7 @@ function check_natel(&$natel) {
 
 
 /**
-	* Fügt einem String eine "0" vorne hinzu, falls der String nur 1 Zeichen enthält
+	* FÃ¼gt einem String eine "0" vorne hinzu, falls der String nur 1 Zeichen enthÃ¤lt
 	*/
 function str_to_2($s) {
 	while(strlen($s) < 2) {
@@ -13152,7 +13152,7 @@ function sqldatetime2datum($s) {
 
 
 /**
-	* Addiert zu einem angegebenen Datum s Monate (inkl. Überlauf-Check)
+	* Addiert zu einem angegebenen Datum s Monate (inkl. Ãœberlauf-Check)
 	*/
 function addmonth(&$m, &$y, $s) {
   $m = (int)$m; $y = (int)$y; $s = (int)$s;
@@ -13181,7 +13181,7 @@ function get_heute(&$t, &$m, &$j) {
 
 
 /**
-	* Formaitert eine Emailadresse für die anzeige im Web
+	* Formaitert eine Emailadresse fÃ¼r die anzeige im Web
 	*/
 function format_email($m) {
 	return strtr($m, array('@' => ' (at) ', '.' => ' (dot) '));
@@ -13189,18 +13189,18 @@ function format_email($m) {
 
 
 /**
-	* Entfernt alle möglichen "gefährlichen" Zeichen aus User-Strings (z.B. bei der Speicherung von Filter-Vorlagen)
+	* Entfernt alle mÃ¶glichen "gefÃ¤hrlichen" Zeichen aus User-Strings (z.B. bei der Speicherung von Filter-Vorlagen)
 	*/
 function format_userinput($s, $type, $enforce=FALSE, $length=0, $replace=array(), $add_own="") {
-	if($replace['umlaute']) $s = strtr($s, array('ä'=>'a','ö'=>'o','ü'=>'u','é'=>'e','è'=>'e','à'=>'a','Ä'=>'A','Ö'=>'O','Ü'=>'U'));
+	if($replace['umlaute']) $s = strtr($s, array('Ã¤'=>'a','Ã¶'=>'o','Ã¼'=>'u','Ã©'=>'e','Ã¨'=>'e','Ã '=>'a','Ã„'=>'A','Ã–'=>'O','Ãœ'=>'U'));
 
 	if($replace['singlequote'] || $replace["allquotes"]) $s = strtr($s, array("'" => '', '`' => ''));
 	if($replace["doublequote"] || $replace["allquotes"]) $s = str_replace('"', "", $s);
 	if($replace["backquote"] || $replace["allquotes"]) $s = str_replace("`", "", $s);
 
-	//Bei falscher Länge abbrechen
+	//Bei falscher LÃ¤nge abbrechen
 	if($length != 0) {
-		if(substr($length, 0, 1) == "=") {  //Falls exakte Länge verlangt...
+		if(substr($length, 0, 1) == "=") {  //Falls exakte LÃ¤nge verlangt...
 			if(strlen($s) != $length) {
 				if($enforce) {
 					$s = "";
@@ -13209,7 +13209,7 @@ function format_userinput($s, $type, $enforce=FALSE, $length=0, $replace=array()
 					$s = substr($s, 0, $length);
 				}
 			}
-		} else {  //...sonst auf maximale Länge prüfen
+		} else {  //...sonst auf maximale LÃ¤nge prÃ¼fen
 			if(strlen($s) > $length) {
 				if($enforce) {
 					$s = "";
@@ -13248,15 +13248,15 @@ function format_userinput($s, $type, $enforce=FALSE, $length=0, $replace=array()
 		break;
 
 		case "alphanum":
-			$allowed = "abcdefghijklmnopqrstuvwxyzöäüABCDEFGHIJKLMNOPQRSTUVWXYZÖÄÜéèëàÉÀÈß1234567890";
+			$allowed = "abcdefghijklmnopqrstuvwxyzÃ¶Ã¤Ã¼ABCDEFGHIJKLMNOPQRSTUVWXYZÃ–Ã„ÃœÃ©Ã¨Ã«Ã Ã‰Ã€ÃˆÃŸ1234567890";
 		break;
 
 		case "alphanum+":
-			$allowed = "abcdefghijklmnopqrstuvwxyzöäüABCDEFGHIJKLMNOPQRSTUVWXYZÖÄÜéèëàÉÀÈß1234567890+-_";
+			$allowed = "abcdefghijklmnopqrstuvwxyzÃ¶Ã¤Ã¼ABCDEFGHIJKLMNOPQRSTUVWXYZÃ–Ã„ÃœÃ©Ã¨Ã«Ã Ã‰Ã€ÃˆÃŸ1234567890+-_";
 		break;
 
 		case "alphanum++":
-			$allowed = "abcdefghijklmnopqrstuvwxyzöäüABCDEFGHIJKLMNOPQRSTUVWXYZÖÄÜéèëàÉÀÈß1234567890+-_ ";
+			$allowed = "abcdefghijklmnopqrstuvwxyzÃ¶Ã¤Ã¼ABCDEFGHIJKLMNOPQRSTUVWXYZÃ–Ã„ÃœÃ©Ã¨Ã«Ã Ã‰Ã€ÃˆÃŸ1234567890+-_ ";
 		break;
 
 		case "email":
@@ -13264,23 +13264,23 @@ function format_userinput($s, $type, $enforce=FALSE, $length=0, $replace=array()
 		break;
 
 		case "dir":
-			$allowed = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZöäüÖÄÜß1234567890-_ ";
+			$allowed = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZÃ¶Ã¤Ã¼Ã–Ã„ÃœÃŸ1234567890-_ ";
 		break;
 
 		case "js":
-			$allowed = "abcdefghijklmnopqrstuvwxyzöäüABCDEFGHIJKLMNOPQRSTUVWXYZÖÄÜéèëàÉÀÈ1234567890-_?+&ß@.;:/'() ";
+			$allowed = "abcdefghijklmnopqrstuvwxyzÃ¶Ã¤Ã¼ABCDEFGHIJKLMNOPQRSTUVWXYZÃ–Ã„ÃœÃ©Ã¨Ã«Ã Ã‰Ã€Ãˆ1234567890-_?+&ÃŸ@.;:/'() ";
 		break;
 
 		case "alpha":
-			$allowed = "abcdefghijklmnopqrstuvwxyzöäüABCDEFGHIJKLMNOPQRSTUVWXYZÖÄÜéèëàÉÀÈß";
+			$allowed = "abcdefghijklmnopqrstuvwxyzÃ¶Ã¤Ã¼ABCDEFGHIJKLMNOPQRSTUVWXYZÃ–Ã„ÃœÃ©Ã¨Ã«Ã Ã‰Ã€ÃˆÃŸ";
 		break;
 
 		case "alpha+":
-			$allowed = "abcdefghijklmnopqrstuvwxyzöäüABCDEFGHIJKLMNOPQRSTUVWXYZÖÄÜéàëèÉÀÈß+-_";
+			$allowed = "abcdefghijklmnopqrstuvwxyzÃ¶Ã¤Ã¼ABCDEFGHIJKLMNOPQRSTUVWXYZÃ–Ã„ÃœÃ©Ã Ã«Ã¨Ã‰Ã€ÃˆÃŸ+-_";
 		break;
 
 		case "alpha++":
-			$allowed = "abcdefghijklmnopqrstuvwxyzöäüABCDEFGHIJKLMNOPQRSTUVWXYZÖÄÜéàëèÉÀÈß+-_ ";
+			$allowed = "abcdefghijklmnopqrstuvwxyzÃ¶Ã¤Ã¼ABCDEFGHIJKLMNOPQRSTUVWXYZÃ–Ã„ÃœÃ©Ã Ã«Ã¨Ã‰Ã€ÃˆÃŸ+-_ ";
 		break;
 
 		case "date":
@@ -13311,7 +13311,7 @@ function format_userinput($s, $type, $enforce=FALSE, $length=0, $replace=array()
       $new .= substr($s, $i, 1);
     } else {
 			if($enforce) {
-				return FALSE;  //Bei ungültigen Zeichen nur abbrechen, wenn enforce true ist.
+				return FALSE;  //Bei ungÃ¼ltigen Zeichen nur abbrechen, wenn enforce true ist.
 			}
 		}
   }
@@ -13330,12 +13330,12 @@ function ko_html($string) {
 															'"' => "&quot;",
 															'>' => "&gt;",
 															'<' => "&lt;",
-															'ö' => "&ouml;",
-															'ä' => "&auml;",
-															'ü' => "&uuml;",
-															'Ö' => "&Ouml;",
-															'Ä' => "&Auml;",
-															'Ü' => "&Uuml;",
+															'Ã¶' => "&ouml;",
+															'Ã¤' => "&auml;",
+															'Ã¼' => "&uuml;",
+															'Ã–' => "&Ouml;",
+															'Ã„' => "&Auml;",
+															'Ãœ' => "&Uuml;",
 															)
 							);
 }//ko_html()
@@ -13343,7 +13343,7 @@ function ko_html($string) {
 
 
 /**
-  * Wendet ko_html-Funktion zweimal an. Z.B. für Overlib-Code
+  * Wendet ko_html-Funktion zweimal an. Z.B. fÃ¼r Overlib-Code
 	*/
 function ko_html2($string) {
 	$r = ko_html(ko_html($string));
@@ -13358,12 +13358,12 @@ function ko_unhtml($string) {
 															"&quot;" => '"',
 															"&gt;" => '>',
 															"&lt;" => '<',
-															"&ouml;" => 'ö',
-															"&auml;" => 'ä',
-															"&uuml;" => 'ü',
-															"&Ouml;" => 'Ö',
-															"&Auml;" => 'Ä',
-															"&Uuml;" => 'Ü',
+															"&ouml;" => 'Ã¶',
+															"&auml;" => 'Ã¤',
+															"&uuml;" => 'Ã¼',
+															"&Ouml;" => 'Ã–',
+															"&Auml;" => 'Ã„',
+															"&Uuml;" => 'Ãœ',
 															"&rsaquo;" => '',
 															"&thinsp;" => '',
 															"&nbsp;" => ' ',
@@ -13402,7 +13402,7 @@ function ko_js_save($s) {
 
 
 /**
-  * Bereitet einen Text für ein Email auf, indem jeder Zeile schliessende \n entfernt werden
+  * Bereitet einen Text fÃ¼r ein Email auf, indem jeder Zeile schliessende \n entfernt werden
 	*/
 function ko_emailtext($input) {
 	$lines = explode("\n", $input);
@@ -13431,9 +13431,9 @@ function array_trim($arr){
 
 
 /**
-  * Erwartet Array eines Datums mit den Einträgen 0=>Tag, 1=>Monat, 2=>Jahr (4-stellig)
-  * Gibt einen Code in der Form JJJJMMTT zurück
-  * Geeignet für Int-Vergleiche von Daten
+  * Erwartet Array eines Datums mit den EintrÃ¤gen 0=>Tag, 1=>Monat, 2=>Jahr (4-stellig)
+  * Gibt einen Code in der Form JJJJMMTT zurÃ¼ck
+  * Geeignet fÃ¼r Int-Vergleiche von Daten
   */
 function date2code($d) {
 	$return = $d[2] . str_to_2($d[1]) . str_to_2($d[0]);
@@ -13450,7 +13450,7 @@ function code2date($d) {
 
 /**
   * Erwartet Datum als .-getrennter String, einen Modus (tag, woche, monat) und ein Inkrement
-  * Gibt Datum als Array zurück (0=>Tag, 1=>Monat, 2=>Jahr)
+  * Gibt Datum als Array zurÃ¼ck (0=>Tag, 1=>Monat, 2=>Jahr)
 	*/
 function add2date($datum, $mode, $inc, $sqlformat=FALSE) {
 	if($sqlformat) {
@@ -13477,7 +13477,7 @@ function add2date($datum, $mode, $inc, $sqlformat=FALSE) {
 		break;
 	}//switch(mode)
 
-	//Ueberläufe korrigieren
+	//UeberlÃ¤ufe korrigieren
 	if($sqlformat) {
 		$r = strftime('%Y-%m-%d', mktime(1, 1, 1, $d[1], $d[0], $d[2]));
 	} else {
@@ -13512,7 +13512,7 @@ function add2time($time, $inc) {
 
 
 /**
-  * Liefert den ersten Montag vor dem übergebenen Datum (YYYY-MM-DD)
+  * Liefert den ersten Montag vor dem Ã¼bergebenen Datum (YYYY-MM-DD)
 	*/
 function date_find_last_monday($date) {
 	$wd = date("w", strtotime($date));
@@ -13532,7 +13532,7 @@ function date_find_next_monday($date) {
 
 
 /**
-  * Liefert den nächsten Sonntag nach dem übergebenen Datum (YYYY-MM-DD)
+  * Liefert den nÃ¤chsten Sonntag nach dem Ã¼bergebenen Datum (YYYY-MM-DD)
 	*/
 function date_find_next_sunday($date) {
 	$wd = date("w", strtotime($date));
@@ -13644,9 +13644,9 @@ function ko_calendar_mwselect($mode) {
 
 
 /**
-	* Liefert wiederholte Termine nach verschiedenen Modi. (für Reservationen und Termine verwendet)
-	* d1 und d2 sind Start- und Enddatum des einzelnen Anlasses (wiederholte mehrtägige Anlässe sind möglich)
-	* repeat_mode enthält den Modus der Wiederholung (keine, taeglich, wochentlich, monatlich1, monatlich2)
+	* Liefert wiederholte Termine nach verschiedenen Modi. (fÃ¼r Reservationen und Termine verwendet)
+	* d1 und d2 sind Start- und Enddatum des einzelnen Anlasses (wiederholte mehrtÃ¤gige AnlÃ¤sse sind mÃ¶glich)
+	* repeat_mode enthÃ¤lt den Modus der Wiederholung (keine, taeglich, wochentlich, monatlich1, monatlich2)
 	* bis_monat und bis_jahr stellen das Ende der Wiederholung dar (inkl.)
 	*/
 function ko_get_wiederholung($d1, $d2, $repeat_mode, $inc, $bis_tag, $bis_monat, $bis_jahr, &$r, $max_repeats='', $holiday_eg=0) {
@@ -13662,7 +13662,7 @@ function ko_get_wiederholung($d1, $d2, $repeat_mode, $inc, $bis_tag, $bis_monat,
 	$bis_jahr = format_userinput($bis_jahr, "uint");
 	if(!$inc) $inc = 1;
 
-	//Datum vorbereiten und Dauer für ein mehrtägiges Ereignis berechnen
+	//Datum vorbereiten und Dauer fÃ¼r ein mehrtÃ¤giges Ereignis berechnen
 	$d1e = explode(".", $d1);
 	$sd_string = date2code($d1e);
 	if($d2 != "") {
@@ -13816,7 +13816,7 @@ function ko_get_new_serie_id($table) {
 
 
 /**
-	* Erstellt einen Log-Eintrag zu definierten Typ. Timestamp und UserID werden automatisch eingefügt
+	* Erstellt einen Log-Eintrag zu definierten Typ. Timestamp und UserID werden automatisch eingefÃ¼gt
 	*/
 function ko_log($type, $msg) {
 	global $EMAIL_LOG_TYPES, $BASE_URL;
@@ -13851,7 +13851,7 @@ function ko_log($type, $msg) {
 
 
 /**
-  * Erstellt Log-Meldung anhang zwei übergebener Arrays, und gibt die Differenzen an
+  * Erstellt Log-Meldung anhang zwei Ã¼bergebener Arrays, und gibt die Differenzen an
 	*/
 function ko_log_diff($type, $data, $old=array()) {
 	$msg = "";
@@ -14101,7 +14101,7 @@ function ko_list_set_sorting($table, $sortCol) {
 
 
 /**
-  * Liefert ein Array aller im Browser eingestellten Sprachen in der Reihenfolge der Prioritäten
+  * Liefert ein Array aller im Browser eingestellten Sprachen in der Reihenfolge der PrioritÃ¤ten
 	*/
 function getBrowserLanguages() {
 	$languages = array();

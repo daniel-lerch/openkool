@@ -1,4 +1,4 @@
-<script language="javascript" type="text/javascript">
+﻿<script language="javascript" type="text/javascript">
 <!--
 var postLocation="/fileshare/pgbar.php";
 var re = /^(\.php)|(\.sh)/;  // disallow shell scripts and php

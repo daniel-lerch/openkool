@@ -1,4 +1,4 @@
-<?php
+ï»¿<?php
 /***************************************************************
 *  Copyright notice
 *
@@ -105,10 +105,10 @@ function ko_res_cal_jahr($num=6, $start=1, $output=TRUE) {
 	$kota_where = kota_apply_filter('ko_reservation');
 	if($kota_where != '') $z_where .= " AND ($kota_where) ";
 
-	//Reservationen einfüllen
+	//Reservationen einfÃ¼llen
   $day_code = $j.str_to_2($m).str_to_2($t);
   while($day_code < $end_code) {
-	  //Wochentag vorausfüllen
+	  //Wochentag vorausfÃ¼llen
     $wt = strftime("%w", mktime(1,1,1, $m, $t, $j));
     if($wt == 0) $style = "background:#cccccc;";
     else if($wt == 6) $style = "background:#dddddd;";
@@ -117,7 +117,7 @@ function ko_res_cal_jahr($num=6, $start=1, $output=TRUE) {
       $day[(int)$g_i]["events"][$m]["days"][$t]["style"] = $style;
     }
 
-		//Termine einfüllen
+		//Termine einfÃ¼llen
     ko_get_res_by_date($t, $m, $j, $dates, TRUE, "res", $z_where);
     if(sizeof($dates) > 0) {
 			foreach($gruppen as $g_i => $g) {
@@ -128,14 +128,14 @@ function ko_res_cal_jahr($num=6, $start=1, $output=TRUE) {
 						$desc = "";
 						if($date["startzeit"] == "00:00:00" && $date["endzeit"] == "00:00:00") {
               $desc .= getLL("time_all_day");
-						} else if($date["startdatum"] != $date["enddatum"]) {  //Mehrtägige Termine
+						} else if($date["startdatum"] != $date["enddatum"]) {  //MehrtÃ¤gige Termine
               if($t == substr($date["startdatum"], 8, 2) && $m == substr($date["startdatum"], 5, 2))
                 $desc .= getLL("time_from")." ".substr($date["startzeit"], 0, -3);
               else if($t == substr($date["enddatum"], 8, 2) && $m == substr($date["enddatum"], 5, 2))
                 $desc .= getLL("time_to")." ".substr($date["endzeit"], 0, -3);
               else
                 $desc .= getLL("time_all_day");
-            } else {  //eintägig
+            } else {  //eintÃ¤gig
               $desc .= ($date["startzeit"] != "00:00:00" ? substr($date["startzeit"], 0, -3) : "") . (($date["endzeit"] != "00:00:00") ? ("-" . substr($date["endzeit"], 0, -3)) : "");
             }
             $day_text .= ($desc != "") ? "<br /><b>- ".$desc."</b>" : "<br />";
@@ -262,8 +262,8 @@ function ko_list_reservations($output=TRUE) {
 
 
 
-//Type ist entweder "res" für eine Liste der normalen Reservationen
-// oder "mod" für eine Liste der zu moderierenden Reservationen
+//Type ist entweder "res" fÃ¼r eine Liste der normalen Reservationen
+// oder "mod" fÃ¼r eine Liste der zu moderierenden Reservationen
 function ko_show_res_liste($type="res", $output=TRUE) {
 	global $smarty, $DATETIME;
 	global $access;
@@ -310,7 +310,7 @@ function ko_show_res_liste($type="res", $output=TRUE) {
 	}
 	ko_get_reservationen($es, $z_where, $z_limit, $type);
 
-	//Statistik über Suchergebnisse und Anzeige
+	//Statistik Ã¼ber Suchergebnisse und Anzeige
 	if($type == 'mod') {
 	  $stats_end = $rows;
 	} else {
@@ -318,7 +318,7 @@ function ko_show_res_liste($type="res", $output=TRUE) {
 	}
   $smarty->assign('tpl_stats', $_SESSION["show_start"]." - ".$stats_end." ".getLL("list_oftotal")." ".$rows);
 
-	//Links für Prev und Next-Page vorbereiten
+	//Links fÃ¼r Prev und Next-Page vorbereiten
 	if($_SESSION["show_start"] > 1 && $type != 'mod') {
 		$smarty->assign("tpl_prevlink_link", "javascript:sendReq('../reservation/inc/ajax.php', 'action,set_start,sesid', 'setstart,".(($_SESSION["show_start"]-$_SESSION["show_limit"] < 1) ? 1 : ($_SESSION["show_start"]-$_SESSION["show_limit"])).",".session_id()."', do_element);");
 	} else {
@@ -393,7 +393,7 @@ function ko_show_res_liste($type="res", $output=TRUE) {
 			//Checkbox
 			$tpl_list_data[$e_i]["show_checkbox"] = TRUE;
 
-			//Für Reservationen Edit- und Delete-Button ausgeben
+			//FÃ¼r Reservationen Edit- und Delete-Button ausgeben
 			if($type=="res") {
 				//Edit-Button
 				if($access['reservation'][$e['item_id']] > 3 || ($e['user_id'] == $_SESSION['ses_userid'] && $_SESSION['ses_userid'] != ko_get_guest_id() && $access['reservation'][$e['item_id']] > 2)) {
@@ -421,7 +421,7 @@ function ko_show_res_liste($type="res", $output=TRUE) {
 				}
 
 
-			} elseif($type=="mod") { //Für Mod-Liste einen Bestätigungs- und einen Delete-Button ausgeben
+			} elseif($type=="mod") { //FÃ¼r Mod-Liste einen BestÃ¤tigungs- und einen Delete-Button ausgeben
 				//Check-Button
 				if($access['reservation'][$e['item_id']] > 4 && !$double) {  //Bei Doppelbelegung kein Check-Button anzeigen
 					$tpl_list_data[$e_i]["show_check_button"] = TRUE;
@@ -579,20 +579,20 @@ function ko_show_items_liste($output=TRUE) {
 
 
 /**
-  * Erstellt das Formular zum Bearbeiten und Hinzufügen von Reservationen
+  * Erstellt das Formular zum Bearbeiten und HinzufÃ¼gen von Reservationen
 	*/
 function ko_formular_reservation($mode, $id, $data=array()) {
 	global $smarty, $KOTA;
 	global $access;
 
-	//Falls eine Reservation editiert werden soll, diese auslesen und die Felder mit seinen Details füllen
+	//Falls eine Reservation editiert werden soll, diese auslesen und die Felder mit seinen Details fÃ¼llen
 	if($mode=="edit" && $id != 0) {
 		if($access['reservation']['MAX'] < 2) return;
 
 	  ko_get_res_by_id($id, $r_);
 	  $r = $r_[$id];
 
-		//Info über Reservation für Moderator
+		//Info Ã¼ber Reservation fÃ¼r Moderator
 		if($access['reservation']['MAX'] > 3) {
 			ko_get_login($r['user_id'], $res_login);
 			$res_info  = getLL('res_info_cdate').': <b>'.sqldatetime2datum($r['cdate']).'</b>';
@@ -655,7 +655,7 @@ function ko_formular_reservation($mode, $id, $data=array()) {
 	$txt_repeat_monat2 = $_POST["txt_repeat_monat2"] ? format_userinput($_POST["txt_repeat_monat2"], "uint") : 1;
 
 
-	//Select-Inputs für Wiederholungen abfüllen (Auswahl vom letzten Mal wieder setzen
+	//Select-Inputs fÃ¼r Wiederholungen abfÃ¼llen (Auswahl vom letzten Mal wieder setzen
 	$values = array(1, 2, 3, 4, 5, 6);
 	$output = array("1.", "2.", "3.", "4.", "5.", getLL('daten_repeat_monthly2_every_last'));
 	$value = format_userinput($_POST["sel_monat1_nr"], "uint", FALSE, 1);
@@ -803,7 +803,7 @@ function ko_formular_reservation($mode, $id, $data=array()) {
 
 
 /**
-  * Erstellt das Formular zum Bearbeiten und Hinzufügen von Reservations-Items
+  * Erstellt das Formular zum Bearbeiten und HinzufÃ¼gen von Reservations-Items
 	*/
 function ko_formular_item($mode, $id) {
 	global $smarty;
@@ -1320,7 +1320,7 @@ function ko_res_settings() {
 
 
 /**
-  * Überprüft auf korrekte Angaben bei der Res-Erfassung
+  * ÃœberprÃ¼ft auf korrekte Angaben bei der Res-Erfassung
 	*/
 function check_entries(&$koi) {
 	if(!$koi["item_id"]) return 9;
@@ -1334,7 +1334,7 @@ function check_entries(&$koi) {
 	if($koi["enddatum"] != "" && $koi["enddatum"] != $koi["startdatum"]) {
 	} else {
 	  if($koi["endzeit"] != "" && !check_zeit($koi["endzeit"])) return 2;
-		//Bei eintägigem Anlass muss die Endzeit grösser sein als die Startzeit
+		//Bei eintÃ¤gigem Anlass muss die Endzeit grÃ¶sser sein als die Startzeit
     $time_s1 = str_replace(":", "", $koi["startzeit"]);
     $time_s2 = str_replace(":", "", $koi["endzeit"]);
     if((trim($koi["enddatum"]) == "" || $koi["startdatum"] == $koi["enddatum"]) && (int)$time_s1 > (int)$time_s2) return 2;
@@ -1352,7 +1352,7 @@ function check_entries(&$koi) {
 
 
 /**
-  * Überprüft auf Doppelbelegungen
+  * ÃœberprÃ¼ft auf Doppelbelegungen
 	*/
 function ko_res_check_double($item, $datum1, $datum2, $zeit1, $zeit2, &$error_txt, $id=0) {
 	$datum1 = sql_datum($datum1);
@@ -1418,7 +1418,7 @@ function ko_res_check_double($item, $datum1, $datum2, $zeit1, $zeit2, &$error_tx
 
 
 /**
-  * Liefert eine textliche Zusammenstellung einer Reservation für die Bestätigungs-Emails
+  * Liefert eine textliche Zusammenstellung einer Reservation fÃ¼r die BestÃ¤tigungs-Emails
 	*/
 function ko_get_res_infotext($data) {
 	$txt = "";
@@ -1435,8 +1435,8 @@ function ko_get_res_infotext($data) {
 
 
 /**
-  * Löscht allfällig leere Reservations-Gruppen.
-	* Wird nach Löschen und Bearbeiten von Res-Items aufgerufen.
+  * LÃ¶scht allfÃ¤llig leere Reservations-Gruppen.
+	* Wird nach LÃ¶schen und Bearbeiten von Res-Items aufgerufen.
 	*/
 function ko_delete_empty_resgroups() {
 	ko_get_resgroups($res_groups);
@@ -1452,8 +1452,8 @@ function ko_delete_empty_resgroups() {
 
 
 /**
-  * Wendet Res-Filter an und gibt WHERE und LIMIT-String für SQL zurück
-	* Wendet permanente Zeitfilter und Filter für die darzustellenden Res-Items an.
+  * Wendet Res-Filter an und gibt WHERE und LIMIT-String fÃ¼r SQL zurÃ¼ck
+	* Wendet permanente Zeitfilter und Filter fÃ¼r die darzustellenden Res-Items an.
 	*/
 function apply_res_filter(&$z_where, &$z_limit, $_start="", $_ende="", $user_id="") {
 	global $access, $KOTA;
@@ -1462,7 +1462,7 @@ function apply_res_filter(&$z_where, &$z_limit, $_start="", $_ende="", $user_id=
   $use_ende = ($_ende != "") ? $_ende : $_SESSION["filter_ende"];
 	$use_items = $_SESSION['show_items'];
 
-	//Permanenten Filter einfügen, falls vorhanden und nur view-Rechte
+	//Permanenten Filter einfÃ¼gen, falls vorhanden und nur view-Rechte
 	$z_where = "";
 	$perm_filter_start = ko_get_setting("res_perm_filter_start");
 	$perm_filter_ende  = ko_get_setting("res_perm_filter_ende");
@@ -1533,13 +1533,13 @@ function apply_res_filter(&$z_where, &$z_limit, $_start="", $_ende="", $user_id=
 
 
 /**
-  * Löscht eine Reservation gemäss der übergebenen ID
-	* Führt Rechte-Check durch
+  * LÃ¶scht eine Reservation gemÃ¤ss der Ã¼bergebenen ID
+	* FÃ¼hrt Rechte-Check durch
 	*/
 function do_del_res($id, $del_serie=FALSE) {
 	global $access;
 
-	//Reservation auslesen für Rechte-Check und Log-Meldung
+	//Reservation auslesen fÃ¼r Rechte-Check und Log-Meldung
   ko_get_res_by_id($id, $r_); $r = $r_[$id];
 
 	//Check access rights

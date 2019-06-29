@@ -1,4 +1,4 @@
-<?php
+ï»¿<?php
 /***************************************************************
 *  Copyright notice
 *
@@ -118,7 +118,7 @@ if(isset($_GET) && isset($_GET["action"])) {
 				}
 			}
 
-			//Neuen HTML-Code für SM ausgeben
+			//Neuen HTML-Code fÃ¼r SM ausgeben
 			print submenu_leute("filter", $pos, "open", 2);
 
 			//group filter
@@ -140,7 +140,7 @@ if(isset($_GET) && isset($_GET["action"])) {
 				ko_save_userpref($_SESSION['ses_userid'], 'show_limit_leute', $_SESSION['show_limit']);
 	    }
 
-			//Neuen HTML-Code für SM ausgeben
+			//Neuen HTML-Code fÃ¼r SM ausgeben
 			print "main_content@@@";
 			if($_SESSION["show"] == "show_all") {
 				print ko_list_personen("liste", FALSE);
@@ -168,7 +168,7 @@ if(isset($_GET) && isset($_GET["action"])) {
 				ko_save_userpref($_SESSION['ses_userid'], 'show_limit_kg', $_SESSION['show_kg_limit']);
 	    }
 
-			//Neuen HTML-Code für SM ausgeben
+			//Neuen HTML-Code fÃ¼r SM ausgeben
 			print "main_content@@@";
 			print ko_list_kg(FALSE);
 		break;
@@ -188,7 +188,7 @@ if(isset($_GET) && isset($_GET["action"])) {
 			if(in_array("filter", explode(",", $_SESSION["submenu_left"]))) $pos = "left";
 			else $pos = "right";
 
-			//Filter löschen, falls Neu Anwenden geklickt wurde
+			//Filter lÃ¶schen, falls Neu Anwenden geklickt wurde
 			if($action == "leutefilternew" || $action == "leutefilterdelall") {
 				//Link speichern
 				$link = $_SESSION["filter"]["link"];
@@ -231,7 +231,7 @@ if(isset($_GET) && isset($_GET["action"])) {
 				$_SESSION["filter"] = $new;
 				$_SESSION['filter']['use_link_adv'] = FALSE;
 			}
-			//Filter-Verknüpfung setzen
+			//Filter-VerknÃ¼pfung setzen
 			else if($action == "leutefilterlink") {
 				if($_GET["link"] == "or") {
 					$_SESSION["filter"]["link"] = "or";
@@ -257,7 +257,7 @@ if(isset($_GET) && isset($_GET["action"])) {
 				}
 				$_SESSION['filter']['use_link_adv'] = FALSE;
 			}
-			//Filter-Vorlage öffnen
+			//Filter-Vorlage Ã¶ffnen
 			else if($action == "leuteopenfilterset") {
 				$name = substr($_GET['name'], 0, 3) == '@G@' ? substr($_GET['name'], 3) : $_GET['name'];
 				$value = substr($_GET['name'], 0, 3) == '@G@' ? (array)ko_get_userpref('-1', '', 'filterset') : (array)ko_get_userpref($_SESSION['ses_userid'], '', 'filterset');
@@ -279,7 +279,7 @@ if(isset($_GET) && isset($_GET["action"])) {
 				}
 			}
 
-			//Neuen HTML-Code für Main ausgeben
+			//Neuen HTML-Code fÃ¼r Main ausgeben
 			print "main_content@@@";
 			if($_SESSION["show"] == "chart") {
 				print ko_leute_chart();
@@ -287,7 +287,7 @@ if(isset($_GET) && isset($_GET["action"])) {
 				print ko_list_personen(($_SESSION["show"] == "show_adressliste"?"adressliste":"liste"), FALSE);
 			}
 
-			//Neuen HTML-Code für SM ausgeben
+			//Neuen HTML-Code fÃ¼r SM ausgeben
 			print "@@@";
 			print submenu_leute("filter", $pos, "open", 2);
 

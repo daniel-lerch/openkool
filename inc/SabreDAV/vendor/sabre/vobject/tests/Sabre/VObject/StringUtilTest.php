@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 
 namespace Sabre\VObject;
 
@@ -14,7 +14,7 @@ class StringUtilTest extends \PHPUnit_Framework_TestCase {
 
     function testIsUTF8() {
 
-        $string = StringUtil::isUTF8('I 💚 SabreDAV');
+        $string = StringUtil::isUTF8('I ðŸ’š SabreDAV');
 
         $this->assertEquals(true, $string);
 
@@ -38,9 +38,9 @@ class StringUtilTest extends \PHPUnit_Framework_TestCase {
 
     function testConvertToUTF8IsUTF8() {
 
-        $string = StringUtil::convertToUTF8('I 💚 SabreDAV');
+        $string = StringUtil::convertToUTF8('I ðŸ’š SabreDAV');
 
-        $this->assertEquals('I 💚 SabreDAV', $string);
+        $this->assertEquals('I ðŸ’š SabreDAV', $string);
 
     }
 

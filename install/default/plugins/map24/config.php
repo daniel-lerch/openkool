@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 $PLUGIN_CONF["map24"] = array(
 	'title' => "Map Plugin for map24.com",
 	'description' => "",

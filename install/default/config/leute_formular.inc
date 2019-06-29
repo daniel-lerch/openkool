@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 $FAMILIE_EXCLUDE  = array("famid", "nachname");
 
 $LEUTE_ENUMPLUS = array();

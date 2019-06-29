@@ -1,4 +1,4 @@
-<?php
+ï»¿<?php
 /***************************************************************
 *  Copyright notice
 *
@@ -63,7 +63,7 @@ if(!$error) {
 	else {
 		$found = "";
 
-		//Auf eingeloggten User prüfen
+		//Auf eingeloggten User prÃ¼fen
 		if($_SESSION["ses_userid"] && $_SESSION["ses_userid"] != ko_get_guest_id()) {
 			//Auf Besitzer testen
 			if($_SESSION["ses_userid"] == $row[$file_id]["user_id"]) {
@@ -84,7 +84,7 @@ if(!$error) {
 			}
 		}//if(_SESSION[ses_userid])
 		else
-		{//Nicht eingeloggt, also externer Empfänger
+		{//Nicht eingeloggt, also externer EmpfÃ¤nger
 			$query = "SELECT * FROM ko_fileshare_sent WHERE `file_id` = '$file_id' AND `recipient_id` = '$recipient_id'";
 			$result2 = mysql_query($query);
 			if(mysql_num_rows($result2) == 0) {
@@ -115,7 +115,7 @@ if($error) {
 	ko_log("fileshare_failed", $log_message);
 	print getLL("fileshare_file_error").": ".$error_txt[$error];
 } else {
-	$log_message = "File: ".$row[$file_id]["filename"]." User: ".$row[$file_id]["user_id"].", Empfänger: ".$found;
+	$log_message = "File: ".$row[$file_id]["filename"]." User: ".$row[$file_id]["user_id"].", EmpfÃ¤nger: ".$found;
 	ko_log("fileshare_done", $log_message);
 }
 

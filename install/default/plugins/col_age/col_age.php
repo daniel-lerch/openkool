@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 function my_leute_add_column_col_age(&$r) {
 	$las = ko_get_leute_admin_spalten($_SESSION['ses_userid'], 'all');
 	if($las === FALSE || (is_array($las['view']) && in_array('geburtsdatum', $las['view']))) {

@@ -1,4 +1,4 @@
-<div id="project_header" name="project_header" style="border:1px solid #666;">
+﻿<div id="project_header" name="project_header" style="border:1px solid #666;">
 <table width="100%">
 <tr>
 <td width="50%" align="left">

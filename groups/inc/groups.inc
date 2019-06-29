@@ -1,4 +1,4 @@
-<?php
+ï»¿<?php
 /***************************************************************
 *  Copyright notice
 *
@@ -32,14 +32,14 @@ function ko_groups_list($output=TRUE) {
 	global $all_groups, $access, $MAILING_PARAMETER;
 
 
-	//Motherline für Listen-Titel
+	//Motherline fÃ¼r Listen-Titel
 	if($_SESSION["show_gid"] == "NULL") {
 		$list_title = '<a href="#">'.getLL("groups_list_top").'</a>';
 	} else {
 		$list_title = '<a href="?action=list_groups&amp;gid=NULL">'.getLL("groups_list_top").'</a>&nbsp;&nbsp;/&nbsp;&nbsp;';
 		$m = ko_groups_get_motherline($_SESSION["show_gid"], $all_groups);
 		$value = array();
-		//Link für jede hierarchisch höher liegende Gruppe
+		//Link fÃ¼r jede hierarchisch hÃ¶her liegende Gruppe
 		foreach($m as $g) {
 			$list_title .= '<a href="?action=list_groups&amp;gid='.$g.'">'.$all_groups[$g]["name"].'</a>&nbsp;&nbsp;/&nbsp;&nbsp;';
 		}
@@ -450,7 +450,7 @@ function ko_groups_formular_group($mode, $id = "") {
 		} else {
 			$p = array("vorname" => $l["login"], "nachname" => "");
 		}
-		//Für die jeweiligen Stufen nur die Benutzer anzeigen, die nicht eh schon globale Rechte für diese Stufe haben
+		//FÃ¼r die jeweiligen Stufen nur die Benutzer anzeigen, die nicht eh schon globale Rechte fÃ¼r diese Stufe haben
 		$all_rights = ko_get_access_all('groups', $l['id'], $max_rights);
 		if($all_rights < 1){
 			$logins_view_values[] = $logins_new_values[] = $logins_edit_values[] = $logins_del_values[] = $l["id"];
@@ -474,7 +474,7 @@ function ko_groups_formular_group($mode, $id = "") {
 
 		$label = getLL('admin_admingroup').': '.$ag['name'];
 		$value = 'g'.$ag['id'];
-		//Für die jeweiligen Stufen nur die Benutzer anzeigen, die nicht eh schon globale Rechte für diese Stufe haben
+		//FÃ¼r die jeweiligen Stufen nur die Benutzer anzeigen, die nicht eh schon globale Rechte fÃ¼r diese Stufe haben
 		if($ag['groups_admin'] < 1) {
 			$logins_view_values[] = $logins_new_values[] = $logins_edit_values[] = $logins_del_values[] = $value;
 			$logins_view_output[] = $logins_new_output[] = $logins_edit_output[] = $logins_del_output[] = $label;
@@ -1043,7 +1043,7 @@ function ko_groups_list_rights() {
 		}
 	}
 
-	//Statistik über Suchergebnisse und Anzeige
+	//Statistik Ã¼ber Suchergebnisse und Anzeige
   $stats_end = $rows;
   $smarty->assign('tpl_stats', "1 - ".$stats_end." ".getLL("list_oftotal")." ".$rows);
 
@@ -1065,7 +1065,7 @@ function ko_groups_list_rights() {
   $smarty->assign("show_sort", FALSE);
 
 
-	//Liste füllen
+	//Liste fÃ¼llen
 	foreach($logins as $l_i => $l) {
 		//Get access rights for this login
 		$user_access = ko_get_access('groups', $l['id'], TRUE, TRUE, 'login', FALSE);
@@ -1152,7 +1152,7 @@ function ko_groups_list_rights() {
 
 
 /**
-  * Fragt vor dem Löschen einer Rolle nochmals genau nach
+  * Fragt vor dem LÃ¶schen einer Rolle nochmals genau nach
 	*/
 function ko_delete_role($id) {
 	if(!$id) return;
@@ -1173,7 +1173,7 @@ function ko_delete_role($id) {
 
 
 /**
-  * Überprüft bestehende Gruppeneinteilungen aller Leute und bereinigt Probleme mit nicht mehr vorhandenen Gruppen/Rollen
+  * ÃœberprÃ¼ft bestehende Gruppeneinteilungen aller Leute und bereinigt Probleme mit nicht mehr vorhandenen Gruppen/Rollen
 	*/
 function ko_update_groups_and_roles($edit_gid='', $edit_rid='') {
 	global $all_groups;
@@ -1224,7 +1224,7 @@ function ko_update_groups_and_roles($edit_gid='', $edit_rid='') {
 			}
 		}//foreach(groups as g_i => group)
 
-		//Falls geändert, so in DB speichern
+		//Falls geÃ¤ndert, so in DB speichern
 		$groups = array_unique($groups);
 		if(implode(",", $groups) != $p["groups"]) {
 			db_update_data("ko_leute", "WHERE `id` = '".$p["id"]."'", array("groups" => implode(",", $groups)));

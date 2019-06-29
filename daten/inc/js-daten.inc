@@ -1,4 +1,4 @@
-<script language="javascript" type="text/javascript">
+﻿<script language="javascript" type="text/javascript">
 <!--
 function event_cal_select_add(text, value, name) {
 	//check for index

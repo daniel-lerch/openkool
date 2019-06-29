@@ -1,4 +1,4 @@
-<div id="project_todo" name="project_todo" style="margin-top:20px;">
+﻿<div id="project_todo" name="project_todo" style="margin-top:20px;">
 <b>Todos</b>
 <div onclick="change_vis_tr('new_todo_entry');">Neuer Eintrag</div>
 <table width="100%" border="0">

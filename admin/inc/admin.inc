@@ -1,4 +1,4 @@
-<?php
+ï»¿<?php
 /***************************************************************
 *  Copyright notice
 *
@@ -40,11 +40,11 @@ function ko_set_logins_list($output=TRUE) {
 	$z_limit = 'LIMIT '.((int)$_SESSION['show_start']-1).', '.$_SESSION['show_limit'];
 	ko_get_logins($login, $z_where, $z_limit);
 
-	//Statistik über Suchergebnisse und Anzeige
+	//Statistik Ã¼ber Suchergebnisse und Anzeige
   $stats_end = ($_SESSION["show_limit"]+$_SESSION["show_start"]-1) > $rows ? $rows : ($_SESSION["show_limit"]+$_SESSION["show_start"]-1);
 	$smarty->assign("tpl_stats", $_SESSION["show_start"]." - ".$stats_end." ".getLL("list_oftotal")." ".$rows);
 
-	//Links für Prev und Next-Page vorbereiten
+	//Links fÃ¼r Prev und Next-Page vorbereiten
   if($_SESSION["show_start"] > 1) {
 		$smarty->assign("tpl_prevlink_link", "javascript:sendReq('../admin/inc/ajax.php', 'action,set_start,sesid', 'setstart,".(($_SESSION["show_start"]-$_SESSION["show_limit"] < 1) ? 1 : ($_SESSION["show_start"]-$_SESSION["show_limit"])).",".session_id()."', do_element);");
   } else {
@@ -78,7 +78,7 @@ function ko_set_logins_list($output=TRUE) {
 	$smarty->assign('sesid', session_id());
 
 
-	//Logins in Liste einfüllen
+	//Logins in Liste einfÃ¼llen
 	$guest_id = (int)ko_get_guest_id();
 	$root_id = (int)ko_get_root_id();
 	foreach($login as $l_i => $l) {
@@ -97,7 +97,7 @@ function ko_set_logins_list($output=TRUE) {
 		$tpl_list_data[$l_i]["onclick_edit"] = "javascript:set_action('edit_login');set_hidden_value('id', '$l_i');this.submit";
 									
 		//Delete-Button
-		if((int)$l_i == $guest_id) {  //ko_guest darf nicht gelöscht werden
+		if((int)$l_i == $guest_id) {  //ko_guest darf nicht gelÃ¶scht werden
 			$tpl_list_data[$l_i]["show_delete_button"] = FALSE;
 		} else {
 			$tpl_list_data[$l_i]["show_delete_button"] = TRUE;
@@ -261,7 +261,7 @@ function ko_show_logs($output=TRUE) {
 		$z_where .= " AND `type` != 'guest' ";
 	}
 
-	//root nur für root anzeigen
+	//root nur fÃ¼r root anzeigen
 	if($_SESSION["ses_username"] != "root") {
 		$z_where .= " AND `user_id` != '".ko_get_root_id()."' ";
 	}
@@ -537,7 +537,7 @@ function ko_login_formular($mode, $id=0, $type="login") {
 				$modules_descs[] = getLL("module_".$m);
 			}
 
-			//Logins anzeigen, von denen Berechtigungen oder Userprefs kopiert werden können
+			//Logins anzeigen, von denen Berechtigungen oder Userprefs kopiert werden kÃ¶nnen
 			if($_SESSION["ses_username"] != "root") $z_where = " AND `login` != 'root' "; else $z_where = "";
 			$z_where .= " AND (`disabled` = '' OR `disabled` = '0')";
 			ko_get_logins($logins, $z_where);
@@ -751,9 +751,9 @@ function ko_login_formular($mode, $id=0, $type="login") {
 			$l_values[$i] = $values_template;
 			$l_descs[$i] = $descs_template;
 			if(isset($laf[$i])) {
-				if(in_array($laf[$i]['value'], $values_template)) {  //Falls Filterset noch vorhanden, diesen auswählen...
+				if(in_array($laf[$i]['value'], $values_template)) {  //Falls Filterset noch vorhanden, diesen auswÃ¤hlen...
 					$l_sel[$i] = $laf[$i]['value'];
-				} else {  //... sonst zu Liste hinzufügen
+				} else {  //... sonst zu Liste hinzufÃ¼gen
 					$l_values[$i][-1] = -1;
 					$l_descs[$i][-1] = $laf[$i]["name"];
 					$l_sel[$i] = -1;
@@ -770,7 +770,7 @@ function ko_login_formular($mode, $id=0, $type="login") {
 		}
 		$rowcounter++;
 
-		//Spalten-Vorlage für Berechtigungen für einzelne Spalten
+		//Spalten-Vorlage fÃ¼r Berechtigungen fÃ¼r einzelne Spalten
 		$col_presets = array_merge((array)ko_get_userpref('-1', '', 'leute_itemset', 'ORDER BY `key` ASC'), (array)ko_get_userpref($_SESSION['ses_userid'], '', 'leute_itemset', 'ORDER BY `key` ASC'));
 		$col_presets_values[] = $col_presets_descs[] = "";
 		foreach($col_presets as $f) {
@@ -851,7 +851,7 @@ function ko_login_formular($mode, $id=0, $type="login") {
 
 
 	/**
-	  * Rechte für Module mit Gruppen-Rechten
+	  * Rechte fÃ¼r Module mit Gruppen-Rechten
 		*/
 	foreach($MODULES_GROUP_ACCESS as $module) {
 		$done_modules[] = $module;
@@ -1049,7 +1049,7 @@ function ko_login_formular($mode, $id=0, $type="login") {
 
 
 	/**
-	  * Rechte für Module ohne Gruppen-Rechten
+	  * Rechte fÃ¼r Module ohne Gruppen-Rechten
 		*/
 	foreach($MODULES as $module) {
 		if(in_array($module, $done_modules)) continue;
@@ -1368,7 +1368,7 @@ function ko_show_set_etiketten($id="") {
 
 	if($access['admin']['MAX'] < 2) return;
 
-	//Select-Felder füllen
+	//Select-Felder fÃ¼llen
 	$pageformat = array('values' => array('A4', 'A5', 'A6', 'C5'),
 		'output' => array('A4', 'A5', 'A6', 'C5'));
 	$pageorientation = array('values' => array('P', 'L'),
@@ -1385,7 +1385,7 @@ function ko_show_set_etiketten($id="") {
 	$font_output = array(); foreach($_fonts as $font) $font_output[] = $font['name'];
 	$ra_fonts = $fonts = array('values' => array_keys($_fonts), 'output' => $font_output);
 
-	//Vorlage-Namen auslesen (für Dropdown-Listen)
+	//Vorlage-Namen auslesen (fÃ¼r Dropdown-Listen)
 	$vorlagen["values"][] = "";
 	$vorlagen["output"][] = "";
 	ko_get_etiketten_vorlagen($vorlagen_);
@@ -1394,7 +1394,7 @@ function ko_show_set_etiketten($id="") {
 		$vorlagen["output"][] = $v["value"];
 	}//foreach(vorlagen as v)
 
-	//Werte für anzuzeigende Vorlage auslesen
+	//Werte fÃ¼r anzuzeigende Vorlage auslesen
 	if($id != "") {
 		ko_get_etiketten_vorlage($id, $v);
 		$vorlagen["value"] = $id;

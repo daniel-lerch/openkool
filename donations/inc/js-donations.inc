@@ -1,4 +1,4 @@
-<script language="javascript" type="text/javascript">
+﻿<script language="javascript" type="text/javascript">
 <!--
 $(document).ready(function() {
 	//Define enter key for filter submenu input elements

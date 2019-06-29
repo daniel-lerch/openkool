@@ -1,4 +1,4 @@
-<?php
+ï»¿<?php
 /***************************************************************
 *  Copyright notice
 *
@@ -41,7 +41,7 @@ if(!ko_module_installed("fileshare")) {
 
 ob_end_flush();
 
-//Endlose Ausführung
+//Endlose AusfÃ¼hrung
 set_time_limit(0);		
 
 
@@ -83,7 +83,7 @@ switch($do_action) {
 		$shares = array();
 		$id = format_userinput($_POST["id"], "alphanum");
 		if(!$id) {
-			//Ausgewählte Dateien finden
+			//AusgewÃ¤hlte Dateien finden
 			foreach($_POST["chk"] as $c_i => $c) {
 				if($c) $shares[] = format_userinput($c_i, "alphanum", FALSE, 32);
 			}
@@ -127,10 +127,10 @@ switch($do_action) {
 			if(!ko_fileshare_check_permission($_SESSION["ses_userid"], $share["parent"], "del_file")) $error = 6;
 
 			if(!$error) {
-				//DB-Eintrag löschen
+				//DB-Eintrag lÃ¶schen
 				db_delete_data("ko_fileshare", "WHERE `id` = '$id' AND `user_id` = '".$_SESSION["ses_userid"]."'");;
 
-				//Datei löschen
+				//Datei lÃ¶schen
 				if(file_exists($FILESHARE_FOLDER.$id)) {
 					system("rm ".$FILESHARE_FOLDER.$id);
 				}
@@ -248,7 +248,7 @@ switch($do_action) {
 				//$save_type = exec("file -ib ".escapeshellcmd($file["tmp_name"][$i]));
       }
 
-			//Dateigrösse holen
+			//DateigrÃ¶sse holen
 			clearstatcache();
 			$file_size = filesize($file["tmp_name"][$i]);
 
@@ -274,13 +274,13 @@ switch($do_action) {
 
 
 	case "submit_send_file":
-		//File-IDs wieder speichern, damit sie nach einem Fehler wieder vorhanden wären
+		//File-IDs wieder speichern, damit sie nach einem Fehler wieder vorhanden wÃ¤ren
 		$file_ids = array();
 		foreach(explode(",", $_POST["hid_files"]) as $f) {
 			$file_ids[] = format_userinput($f, "alphanum", FALSE, 32);
 		}
 
-		//Eingaben überprüfen
+		//Eingaben Ã¼berprÃ¼fen
 		if(!$_POST["txt_absender"]) {
 			$error = 2;
 			continue;
@@ -306,7 +306,7 @@ switch($do_action) {
 			$share_ = ko_get_shares(" AND `id` = '$save_id' ");
 			$share = $share_[0];
 
-			//Interne Empfänger: Neue Datei erstellen
+			//Interne EmpfÃ¤nger: Neue Datei erstellen
 			foreach($rec_logins as $lid) {
       	$new_id = md5($share["filename"].microtime());
 				system("cd $FILESHARE_FOLDER && ln $save_id $new_id");
@@ -322,7 +322,7 @@ switch($do_action) {
 					ko_fileshare_send_file($new_id, $r, $rec_id);
 				}
 			}
-			//Links für Externe Empfänger und Interne, die per Email informiert werden sollen
+			//Links fÃ¼r Externe EmpfÃ¤nger und Interne, die per Email informiert werden sollen
 			foreach($recipients_ext as $r) {
 				$r = trim($r);
 				$rec_id = md5($r.$save_id);
@@ -752,7 +752,7 @@ include($ko_path."fileshare/inc/js-fileshare.inc");
 
 <?php
 /*
- * Gibt bei erfolgreichem Login das Menü aus, sonst einfach die Loginfelder
+ * Gibt bei erfolgreichem Login das MenÃ¼ aus, sonst einfach die Loginfelder
  */
 include($ko_path . "menu.php");
 

@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 $type='TrueType';
 $name='Arial-Black';
 $desc=array('Ascent'=>1101,'Descent'=>-310,'CapHeight'=>716,'Flags'=>32,'FontBBox'=>'[-49 -210 1006 905]','ItalicAngle'=>0,'StemV'=>70,'MissingWidth'=>750);

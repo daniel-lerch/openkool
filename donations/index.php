@@ -1,4 +1,4 @@
-<?php
+ï»¿<?php
 /***************************************************************
 *  Copyright notice
 *
@@ -369,7 +369,7 @@ switch($do_action) {
 
 
 
-	//Löschen
+	//LÃ¶schen
 	case "delete_donation":
 		if($access['donations']['MAX'] < 3) continue;
 
@@ -426,7 +426,7 @@ switch($do_action) {
 		}
 		if(sizeof($do_columns) < 1) $notifier->addError(4, $do_action);
 
-		//Zu bearbeitende Einträge
+		//Zu bearbeitende EintrÃ¤ge
 		$do_ids = array();
 		foreach($_POST["chk"] as $c_i => $c) {
 			$edit_id = format_userinput($c_i, 'uint', TRUE);
@@ -444,7 +444,7 @@ switch($do_action) {
 		}
 		if(sizeof($do_ids) < 1) $notifier->addError(4, $do_action);
 
-		//Daten für Formular-Aufruf vorbereiten
+		//Daten fÃ¼r Formular-Aufruf vorbereiten
 		if(!$notifier->hasErrors()) {
 			$_SESSION["show_back"] = $_SESSION["show"];
 
@@ -723,7 +723,7 @@ $js_calendar->load_files();
 
 <?php
 /*
- * Gibt bei erfolgreichem Login das Menü aus, sonst einfach die Loginfelder
+ * Gibt bei erfolgreichem Login das MenÃ¼ aus, sonst einfach die Loginfelder
  */
 include($ko_path . "menu.php");
 ?>

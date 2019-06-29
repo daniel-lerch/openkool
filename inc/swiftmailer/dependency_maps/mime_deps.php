@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 
 require dirname(__FILE__) . '/../mime_types.php';
 

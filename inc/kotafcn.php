@@ -1,4 +1,4 @@
-<?php
+ï»¿<?php
 /***************************************************************
 *  Copyright notice
 *
@@ -26,7 +26,7 @@
 
 
 /**
-  * Liefert Select-Werte für einzelne Tabelle-Spalten
+  * Liefert Select-Werte fÃ¼r einzelne Tabelle-Spalten
 	*/
 function kota_get_form($table, $column) {
 	global $access;
@@ -476,7 +476,7 @@ function kota_get_form($table, $column) {
 
 
 /**
-  * Speichert die Änderungen von einem Multiedit-Formular
+  * Speichert die Ã„nderungen von einem Multiedit-Formular
 	*/
 function kota_submit_multiedit($rights_level='', $log_type="", $lastchange_col="", &$changes) {
 	global $KOTA, $mysql_pass;
@@ -554,7 +554,7 @@ function kota_submit_multiedit($rights_level='', $log_type="", $lastchange_col="
 	//Prepare query addition to store last change (if given)
 	if($lastchange_col) $lastchange_query = ", `$lastchange_col` = NOW() ";
 
-	//Übergebene Werte
+	//Ãœbergebene Werte
 	$koi = $_POST["koi"][$table];
 
 	//See, whether forAll has been checked
@@ -576,7 +576,7 @@ function kota_submit_multiedit($rights_level='', $log_type="", $lastchange_col="
 		if($col == "forAll") continue;
 
 		$col = format_userinput($col, "js");
-		//Spalten mit _PLUS hinten gehören zu einem Textplus-Feld, werden deshalb schon bearbeitet (in kota_process_data())
+		//Spalten mit _PLUS hinten gehÃ¶ren zu einem Textplus-Feld, werden deshalb schon bearbeitet (in kota_process_data())
 		if(substr($col, -5) == "_PLUS") {
 			//Add id for textplus fields, if they are not present. Can happen, if no values had been entered so far.
 			if(!in_array($col, $test["columns"])) $test["columns"][] = substr($col, 0, -5);
@@ -627,7 +627,7 @@ function kota_submit_multiedit($rights_level='', $log_type="", $lastchange_col="
 				$log_message[$id] .= $log;
 			}
 
-			//Query aufbauen, aber noch nicht ausführen
+			//Query aufbauen, aber noch nicht ausfÃ¼hren
 			if(substr($col, 0, 9) == 'MODULEgrp' && FALSE === strpos($col, ':')) $db_col = 'groups';
 			else $db_col = $col;
 			if($db_col && substr($db_col,-7) != '_DELETE') { // ignore fields which contain information about deletion of FILES
@@ -639,8 +639,8 @@ function kota_submit_multiedit($rights_level='', $log_type="", $lastchange_col="
 	}//foreach(koi as col => values)
 	$test["ids"] = array_unique($test["ids"]);
 
-	//IDs prüfen, die nun nicht mehr vorkommen.
-	//Es könnte sich um Checkboxen handeln, die deaktiviert wurden, denn dann wird der Wert von HTML gar nicht gesetzt
+	//IDs prÃ¼fen, die nun nicht mehr vorkommen.
+	//Es kÃ¶nnte sich um Checkboxen handeln, die deaktiviert wurden, denn dann wird der Wert von HTML gar nicht gesetzt
 	$chk_ids = array_diff(explode(",", $ids), (array)$test["ids"]);
 	foreach($chk_ids as $id) {
 		if(!$id || $new_entry) continue;  //Don't check for new entries
@@ -692,7 +692,7 @@ function kota_submit_multiedit($rights_level='', $log_type="", $lastchange_col="
 	$test["ids"] = array_unique($test["ids"]);
 	$test["columns"] = array_unique($test["columns"]);
 
-	//Übereinstimmung mit Hash-Wert checken
+	//Ãœbereinstimmung mit Hash-Wert checken
 	sort($test["columns"]);
 	sort($test["ids"]);
 	if($new_entry) $test["ids"] = array(0);
@@ -1107,7 +1107,7 @@ function kota_delete_file($value, $data) {
 
 
 /**
-  * Funktionen zur Nach-Behandlung (post) einzelner Formularfelder für Multiedit
+  * Funktionen zur Nach-Behandlung (post) einzelner Formularfelder fÃ¼r Multiedit
 	*/
 function ko_multiedit_familie(&$value, $data) {
 	ko_get_person_by_id($data["id"], $p);
@@ -2063,7 +2063,7 @@ function kota_process_data($table, &$data, $modes, &$log, $id=0) {
 
 		$kota_data = array("table" => $table, "col" => $col, "id" => $id, "dataset" => &$data);
 
-		//Bei Textplus-feldern auf Wert im Text-feld überprüfen und diesen verwenden falls != ""
+		//Bei Textplus-feldern auf Wert im Text-feld Ã¼berprÃ¼fen und diesen verwenden falls != ""
 		if($KOTA[$table][$col]["form"]["type"] == "textplus") {
 			$plus_value = $data[$col."_PLUS"];
 			if(is_array($plus_value)) $plus_value = array_shift($plus_value);

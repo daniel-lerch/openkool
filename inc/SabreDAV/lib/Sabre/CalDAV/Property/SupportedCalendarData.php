@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 
 namespace Sabre\CalDAV\Property;
 use Sabre\DAV;

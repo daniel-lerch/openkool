@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 /**
  * PHPExcel
  *
@@ -162,7 +162,7 @@ class PHPExcel_Reader_SYLK extends PHPExcel_Reader_Abstract implements PHPExcel_
 
 			// explode each row at semicolons while taking into account that literal semicolon (;)
 			// is escaped like this (;;)
-			$rowData = explode("\t",str_replace('¤',';',str_replace(';',"\t",str_replace(';;','¤',rtrim($rowData)))));
+			$rowData = explode("\t",str_replace('Â¤',';',str_replace(';',"\t",str_replace(';;','Â¤',rtrim($rowData)))));
 
 			$dataType = array_shift($rowData);
 			if ($dataType == 'C') {
@@ -250,7 +250,7 @@ class PHPExcel_Reader_SYLK extends PHPExcel_Reader_Abstract implements PHPExcel_
 
 			// explode each row at semicolons while taking into account that literal semicolon (;)
 			// is escaped like this (;;)
-			$rowData = explode("\t",str_replace('¤',';',str_replace(';',"\t",str_replace(';;','¤',rtrim($rowData)))));
+			$rowData = explode("\t",str_replace('Â¤',';',str_replace(';',"\t",str_replace(';;','Â¤',rtrim($rowData)))));
 
 			$dataType = array_shift($rowData);
 			//	Read shared styles

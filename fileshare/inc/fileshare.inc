@@ -1,4 +1,4 @@
-<?php
+ï»¿<?php
 /***************************************************************
 *  Copyright notice
 *
@@ -88,12 +88,12 @@ function ko_fileshare_list_shares($uid, $folderid=0, $output=TRUE) {
 	$smarty->assign("sesid", session_id());
 
 
-	//Statistik über Suchergebnisse und Anzeige
+	//Statistik Ã¼ber Suchergebnisse und Anzeige
   $stats_end = ($_SESSION["show_limit"]+$_SESSION["show_start"]-1 > $rows) ? $rows : ($_SESSION["show_limit"]+$_SESSION["show_start"]-1);
   $smarty->assign('tpl_stats', $_SESSION["show_start"]." - ".$stats_end." ".getLL("list_oftotal")." ".$rows);
 
 
-  //Links für Prev und Next-Page vorbereiten
+  //Links fÃ¼r Prev und Next-Page vorbereiten
 	if($_SESSION["show_start"]> 1) {
 			$smarty->assign("tpl_prevlink_link", "javascript:sendReq('../fileshare/inc/ajax.php', 'action,set_start,sesid', 'setstart,".(($_SESSION["show_start"]-$_SESSION["show_limit"] < 1) ? 1 : ($_SESSION["show_start"]-$_SESSION["show_limit"])).",".session_id()."', do_element);");
   } else {
@@ -366,7 +366,7 @@ function ko_fileshare_formular_send($files) {
 	if($access['fileshare']['MAX'] < 2) return FALSE;
 	$label_sendfiles = "";
 
-	//File-IDs übergeben
+	//File-IDs Ã¼bergeben
 	foreach($files as $file) {
 		$file_ = format_userinput($file, "alphanum", FALSE, 32);
 		if(strlen($file_) == 32) $tpl_files[] = $file;
@@ -392,7 +392,7 @@ function ko_fileshare_formular_send($files) {
 		$imported_recipients = substr($imported_recipients, 0, -1);
 	}
 
-	//Logins für interne Empfänger
+	//Logins fÃ¼r interne EmpfÃ¤nger
 	ko_get_logins($logins, "AND `login` != 'root'");
 	foreach($logins as $login) {
 		if(!ko_module_installed("fileshare", $login["id"])) continue;
@@ -485,7 +485,7 @@ function ko_fileshare_list_webfolders($output=TRUE) {
 	$folders = ko_fileshare_get_webfolders();
 	$rows = sizeof($folders);
 
-	//Statistik über Suchergebnisse und Anzeige
+	//Statistik Ã¼ber Suchergebnisse und Anzeige
   $stats_end = ($_SESSION["show_limit"]+$_SESSION["show_start"]-1) > $rows ? $rows : ($_SESSION["show_limit"]+$_SESSION["show_start"]-1);
 	$smarty->assign("tpl_stats", $_SESSION["show_start"]." - ".$stats_end." ".getLL("list_oftotal")." ".$rows);
 
@@ -512,7 +512,7 @@ function ko_fileshare_list_webfolders($output=TRUE) {
   $smarty->assign("sort", array("show" => FALSE));
 
 
-	//Liste einfüllen
+	//Liste einfÃ¼llen
 	$counter = 0;
 	foreach($folders as $l_i => $l) {
 		$counter++;

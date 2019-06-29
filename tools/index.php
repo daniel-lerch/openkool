@@ -1,4 +1,4 @@
-<?php
+ï»¿<?php
 /***************************************************************
 *  Copyright notice
 *
@@ -370,10 +370,10 @@ switch($do_action) {
 
 	case "delete_leute_col":
 		if(FALSE === $value = format_userinput($_POST["id"], "alphanum+", TRUE)) {
-			trigger_error("Ungültige id für delete_leute_col: ".$_POST["id"], E_USER_ERROR);
+			trigger_error("UngÃ¼ltige id fÃ¼r delete_leute_col: ".$_POST["id"], E_USER_ERROR);
 		}
 
-		//Zu löschende Spalten finden
+		//Zu lÃ¶schende Spalten finden
 		$cols = db_get_columns("ko_leute");
 		$col_namen = unserialize(ko_get_setting("leute_col_name"));
 		$found = FALSE;
@@ -382,11 +382,11 @@ switch($do_action) {
 		}
 		if(!$found) continue;
 
-		//Spalte aus DB löschen
+		//Spalte aus DB lÃ¶schen
 		$query = "ALTER TABLE `ko_leute` DROP `$value`";
 		mysql_query($query);
 
-		//Eintrag in leute_col_namen löschen
+		//Eintrag in leute_col_namen lÃ¶schen
 		foreach($LIB_LANGS as $lang) {
 			unset($col_namen[$lang][$value]);
 		}
@@ -418,10 +418,10 @@ switch($do_action) {
 
 	case "delete_familie_col":
 		if(FALSE === $value = format_userinput($_POST["id"], "alphanum+", TRUE)) {
-			trigger_error("Ungültige id für delete_familie_col: ".$_POST["id"], E_USER_ERROR);
+			trigger_error("UngÃ¼ltige id fÃ¼r delete_familie_col: ".$_POST["id"], E_USER_ERROR);
 		}
 
-		//Zu löschende Spalten finden
+		//Zu lÃ¶schende Spalten finden
 		$cols = db_get_columns("ko_familie");
 		$col_namen = unserialize(ko_get_setting("familie_col_name"));
 		$found = FALSE;
@@ -430,11 +430,11 @@ switch($do_action) {
 		}
 		if(!$found) continue;
 
-		//Spalte aus DB löschen
+		//Spalte aus DB lÃ¶schen
 		$query = "ALTER TABLE `ko_familie` DROP `$value`";
 		mysql_query($query);
 
-		//Eintrag in familie_col_namen löschen
+		//Eintrag in familie_col_namen lÃ¶schen
 		foreach($LIB_LANGS as $lang) {
 			unset($col_namen[$lang][$value]);
 		}
@@ -449,7 +449,7 @@ switch($do_action) {
 
 	case "delete_leute_filter":
 		if(FALSE === $id = format_userinput($_POST["id"], "uint", TRUE)) {
-			trigger_error("Ungültige id für delete_leute_filter: ".$_POST["id"], E_USER_ERROR);
+			trigger_error("UngÃ¼ltige id fÃ¼r delete_leute_filter: ".$_POST["id"], E_USER_ERROR);
 		}
 		db_delete_data('ko_filter', "WHERE `typ` = 'leute' AND `id` = '$id'");
 	break;
@@ -459,11 +459,11 @@ switch($do_action) {
 	case "add_leute_filter":
 	case "reload_leute_filter":
 		if(FALSE === $id = format_userinput($_POST["id"], "alphanum+", TRUE)) {
-			trigger_error("Ungültige id für add_leute_filter: ".$_POST["id"], E_USER_ERROR);
+			trigger_error("UngÃ¼ltige id fÃ¼r add_leute_filter: ".$_POST["id"], E_USER_ERROR);
 		}
 		if($do_action == "reload_leute_filter") {
 			if(FALSE === $fid = format_userinput($_POST["fid"], "alphanum+", TRUE)) {
-				trigger_error("Ungültige fid für reload_leute_filter: ".$_POST["fid"], E_USER_ERROR);
+				trigger_error("UngÃ¼ltige fid fÃ¼r reload_leute_filter: ".$_POST["fid"], E_USER_ERROR);
 			}
 			$del_query = "DELETE FROM ko_filter WHERE `id` = '$fid' LIMIT 1";
 		} else $fid = "";
@@ -551,7 +551,7 @@ switch($do_action) {
 		ko_get_login($lid, $login);
 		if(!$login["login"]) continue;
 
-		//Submenu hinzufügen
+		//Submenu hinzufÃ¼gen
 		ko_tools_add_submenu(array($sm), array($lid), $mid, $pos);
 
 		$notifier->addInfo(1, $do_action);
@@ -723,7 +723,7 @@ switch($do_action) {
 		}
 		if(sizeof($do_columns) < 1) $notifier->addError(4, $do_action);
 
-		//Zu bearbeitende Einträge
+		//Zu bearbeitende EintrÃ¤ge
 		$do_ids = array();
 		foreach($_POST['chk'] as $c_i => $c) {
 			if($c) {
@@ -735,7 +735,7 @@ switch($do_action) {
 		}
 		if(sizeof($do_ids) < 1) $notifier->addError(4, $do_action);
 
-		//Daten für Formular-Aufruf vorbereiten
+		//Daten fÃ¼r Formular-Aufruf vorbereiten
 		if(!$notifier->hasErrors()) {
 			$_SESSION['show_back'] = $_SESSION['show'];
 
@@ -832,7 +832,7 @@ include($ko_path.'inc/js-sessiontimeout.inc');
 
 <?php
 /*
- * Gibt bei erfolgreichem Login das Menü aus, sonst einfach die Loginfelder
+ * Gibt bei erfolgreichem Login das MenÃ¼ aus, sonst einfach die Loginfelder
  */
 include($ko_path . "menu.php");
 ?>
@@ -856,7 +856,7 @@ print ko_get_submenu_code("tools", "left");
 <form action="index.php" method="post" name="formular">
 <input type="hidden" name="action" id="action" value="" />
 <input type="hidden" name="id" id="id" value="" />
-<input type="hidden" name="fid" id="fid" value="" />  <!-- Filter-ID für Leute-Modul -->
+<input type="hidden" name="fid" id="fid" value="" />  <!-- Filter-ID fÃ¼r Leute-Modul -->
 <div name="main_content" id="main_content">
 
 <?php

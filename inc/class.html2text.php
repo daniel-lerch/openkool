@@ -1,4 +1,4 @@
-<?php
+ï»¿<?php
 
 /*************************************************************************
  *                                                                       *
@@ -174,12 +174,12 @@ class html2text
         '/&(apos|rsquo|lsquo|#8216|#8217);/i',   // Single quotes
 		'/&gt;/i',                               // Greater-than
 		'/&lt;/i',                               // Less-than
-		'/&auml;/i',                             // ä
-		'/&uuml;/i',                             // ü
-		'/&ouml;/i',                             // ö
-		'/&Auml;/i',                             // Ä
-		'/&Uuml;/i',                             // Ü
-		'/&Ouml;/i',                             // Ö
+		'/&auml;/i',                             // Ã¤
+		'/&uuml;/i',                             // Ã¼
+		'/&ouml;/i',                             // Ã¶
+		'/&Auml;/i',                             // Ã„
+		'/&Uuml;/i',                             // Ãœ
+		'/&Ouml;/i',                             // Ã–
         '/&(amp|#38);/i',                        // Ampersand
         '/&(copy|#169);/i',                      // Copyright
         '/&(trade|#8482|#153);/i',               // Trademark
@@ -231,12 +231,12 @@ class html2text
         "'",                                    // Single quotes
 		'aNdGrEaTeRtHaN',                              // Greater-than
 		'aNdLeSsThAn',                              // Less-than
-		'ä',
-		'ö',
-		'ü',
-		'Ä',
-		'Ö',
-		'Ü',
+		'Ã¤',
+		'Ã¶',
+		'Ã¼',
+		'Ã„',
+		'Ã–',
+		'Ãœ',
         '&',
         '(c)',
         '(tm)',
@@ -244,8 +244,8 @@ class html2text
         '--',
         '-',
         '*',
-        '£',
-        'EUR',                                  // Euro sign. € ?
+        'Â£',
+        'EUR',                                  // Euro sign. â‚¬ ?
         '',                                     // Unknown/unhandled entities
         ' '                                     // Runs of spaces, post-handling
     );

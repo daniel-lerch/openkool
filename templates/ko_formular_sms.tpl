@@ -1,4 +1,4 @@
-<table width="100%" cellspacing="0">
+﻿<table width="100%" cellspacing="0">
 {if $tpl_show_header}
 	<tr>
 	<td class="subpart_header">

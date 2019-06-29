@@ -1,4 +1,4 @@
-<?php
+ï»¿<?php
 /***************************************************************
 *  Copyright notice
 *
@@ -519,7 +519,7 @@ switch($do_action) {
     //PDF-Datei starten
     define('FPDF_FONTPATH',$ko_path.'fpdf/schriften/');
     require($ko_path.'fpdf/fpdf.php');
-    $pdf = new FPDF('P', 'mm', array($PDF_sizex, $PDF_sizey));  //Breite und Höhe in Millimeter
+    $pdf = new FPDF('P', 'mm', array($PDF_sizex, $PDF_sizey));  //Breite und HÃ¶he in Millimeter
 		$pdf->SetMargins(0, 0);
     $pdf->Open();
 
@@ -537,7 +537,7 @@ switch($do_action) {
 
 
 		$item = format_userinput($_POST["sel_printstart"], "uint");
-		while($item >= $layout["items"]) {  //Überlauf abfangen
+		while($item >= $layout["items"]) {  //Ãœberlauf abfangen
 			$item -= $layout["items"];
 		}
 	
@@ -560,7 +560,7 @@ switch($do_action) {
 		$log_message = "preset: ".$layout_id.", start: ".format_userinput($_POST["sel_printstart"], "uint").", tapes: ".substr($log_tapes,0,-2);
 		ko_log("tapes_print", $log_message);
 		
-		//Queue löschen, falls gewünscht
+		//Queue lÃ¶schen, falls gewÃ¼nscht
 		if(ko_get_setting("tapes_clear_printqueue") == 1) $_SESSION["printqueue"] = array();
 	break;
 
@@ -632,7 +632,7 @@ $js_calendar->load_files();
 
 <?php
 /*
- * Gibt bei erfolgreichem Login das Menü aus, sonst einfach die Loginfelder
+ * Gibt bei erfolgreichem Login das MenÃ¼ aus, sonst einfach die Loginfelder
  */
 include($ko_path . "menu.php");
 ?>

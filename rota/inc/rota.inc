@@ -1,4 +1,4 @@
-<?php
+ï»¿<?php
 /***************************************************************
 *  Copyright notice
 *
@@ -1427,7 +1427,7 @@ function ko_dp_create_dienste_pdf($dienste_, $monate) {
 			$tgs[] = $t;
 		}
 	}
-	//Eventgruppen, die für die gewählten Dienste relevant sind
+	//Eventgruppen, die fÃ¼r die gewÃ¤hlten Dienste relevant sind
 	$tgs = array_unique($tgs);
 
 	//Anzahl Spalten herausfinden
@@ -1508,7 +1508,7 @@ function ko_dp_create_dienste_pdf($dienste_, $monate) {
 			$pdf->setY($PDF_y + $PDF_space_title);
 			$pdf->SetFont('arial', '', $PDF_fontsize_einteilung);
 			foreach($dienste as $d) {
-				//Dienst nur anzeigen, wenn er für diese TG aktiv ist
+				//Dienst nur anzeigen, wenn er fÃ¼r diese TG aktiv ist
 				$d_tgs = explode(",", $d["tg"]);
 				if(!in_array($e["eventgruppen_id"], $d_tgs)) continue;
 				

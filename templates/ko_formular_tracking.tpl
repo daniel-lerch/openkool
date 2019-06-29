@@ -1,4 +1,4 @@
-<div style="padding-left:4px;font-size: 1.2em;font-weight:bold;float:left;">
+﻿<div style="padding-left:4px;font-size: 1.2em;font-weight:bold;float:left;">
 	{$tracking.name}
 	&nbsp;&nbsp;<a href="index.php?action=enter_tracking&amp;id={$tracking.id}"><img src="{$ko_path}images/icon_reload.png" border="0" /></a>
 	{if $help.show}&nbsp;&nbsp;{$help.link}{/if}

@@ -1,4 +1,4 @@
-<?php
+ï»¿<?php
 /***************************************************************
 *  Copyright notice
 *
@@ -165,7 +165,7 @@ switch($do_action) {
 
 
 
-	//Löschen
+	//LÃ¶schen
 	case 'delete_tracking':
 		if($access['tracking']['MAX'] < 4) continue;
 
@@ -377,7 +377,7 @@ switch($do_action) {
 		}
 		if(sizeof($do_columns) < 1) $notifier->addError(4, $do_action);
 
-		//Zu bearbeitende Einträge
+		//Zu bearbeitende EintrÃ¤ge
 		$do_ids = array();
 		foreach($_POST['chk'] as $c_i => $c) {
 			if($c) {
@@ -538,7 +538,7 @@ $js_calendar->load_files();
 
 <?php
 /*
- * Gibt bei erfolgreichem Login das Menü aus, sonst einfach die Loginfelder
+ * Gibt bei erfolgreichem Login das MenÃ¼ aus, sonst einfach die Loginfelder
  */
 include($ko_path.'menu.php');
 ?>

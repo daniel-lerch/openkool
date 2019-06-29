@@ -1,4 +1,4 @@
-<?php
+ï»¿<?php
 /***************************************************************
 *  Copyright notice
 *
@@ -187,7 +187,7 @@ function ko_get_submenu_code($module, $pos) {
 
 	$return = "";
 
-	//Offene Submenüs anzeigen
+	//Offene SubmenÃ¼s anzeigen
 	$new = "";
 	foreach(explode(",",$_SESSION["submenu_".$pos]) as $sm) {
 		if(!in_array($sm, $DISABLE_SM[$module][$_SESSION["show"]]) && $sm != "") {
@@ -200,7 +200,7 @@ function ko_get_submenu_code($module, $pos) {
 		$return .= $r;
 	}
 
-	//Geschlossene Submenüs anzeigen
+	//Geschlossene SubmenÃ¼s anzeigen
 	$new = "";
 	foreach(explode(",",$_SESSION["submenu_".$pos."_closed"]) as $sm) {
 		if(!in_array($sm, $DISABLE_SM[$module][$_SESSION["show"]]) && $sm != "") {
@@ -229,7 +229,7 @@ function submenu($menu, $position, $state, $display=3, $module="") {
 			$submenu["titel"] = getLL("submenu_title_notizen");
 			$submenu["output"][0] = "[notizen]";
 
-			//Alle Notizen in Select abfüllen
+			//Alle Notizen in Select abfÃ¼llen
 			$notizen = ko_get_userpref($_SESSION["ses_userid"], "", ("notizen"));
 			if(is_array($notizen)) {
 				foreach($notizen as $n) {
@@ -287,9 +287,9 @@ function submenu($menu, $position, $state, $display=3, $module="") {
 	* Gibt ein Daten-Submenu mittels dem Template ko_menu.tpl aus.
 	* namen ist eine ,-getrennte Liste der anzuzeigenden Submenus
 	* position ist links oder rechts
-	* state ist geschlossen oder offen (gilt für alle aus namen)
-	* display gibt an, wie der Code zurückgegeben werden soll:
-	* 1: normale Ausgabe über smarty, 2: Rückgabe des HTML-Codes für Ajax, 3: Array für Dropdown-Menu
+	* state ist geschlossen oder offen (gilt fÃ¼r alle aus namen)
+	* display gibt an, wie der Code zurÃ¼ckgegeben werden soll:
+	* 1: normale Ausgabe Ã¼ber smarty, 2: RÃ¼ckgabe des HTML-Codes fÃ¼r Ajax, 3: Array fÃ¼r Dropdown-Menu
 	*/
 function submenu_daten($namen, $position, $state, $display=1) {
 	global $ko_path, $smarty;
@@ -492,7 +492,7 @@ function submenu_daten($namen, $position, $state, $display=1) {
 				$perm_filter_start = ko_get_setting("daten_perm_filter_start");
 				$perm_filter_ende  = ko_get_setting("daten_perm_filter_ende");
 
-				//Code für Select erstellen
+				//Code fÃ¼r Select erstellen
 				get_heute($tag, $monat, $jahr);
 			  addmonth($monat, $jahr, -18);
 
@@ -701,7 +701,7 @@ function submenu_daten($namen, $position, $state, $display=1) {
 				}
 		}//switch($menu)
 
-		//Plugins erlauben, Menuitems hinzuzufügen
+		//Plugins erlauben, Menuitems hinzuzufÃ¼gen
 		hook_submenu("daten", $menu, $submenu, $menucounter, $itemcounter);
 
 		if($found) {
@@ -1347,7 +1347,7 @@ function submenu_leute($namen, $position, $state, $display=1) {
 						continue;
 					}
 
-					//Einrückung bei Gruppen-Spalten separat übergeben, damit es nicht zur truncate-Länge (Smarty) gezählt wird
+					//EinrÃ¼ckung bei Gruppen-Spalten separat Ã¼bergeben, damit es nicht zur truncate-LÃ¤nge (Smarty) gezÃ¤hlt wird
 					$pre = $name = "";
 					while(substr($i, 0, 6) == "&nbsp;") {
 						$pre .= "&nbsp;";
@@ -1738,7 +1738,7 @@ function submenu_leute($namen, $position, $state, $display=1) {
         }
 		}//switch(menu)
 
-		//Plugins erlauben, Menuitems hinzuzufügen
+		//Plugins erlauben, Menuitems hinzuzufÃ¼gen
 		hook_submenu("leute", $menu, $submenu, $menucounter, $itemcounter);
 
 		//Submenu darstellen
@@ -1935,7 +1935,7 @@ function submenu_reservation($namen, $position, $state, $display=1) {
 				$perm_filter_start = ko_get_setting("res_perm_filter_start");
 				$perm_filter_ende  = ko_get_setting("res_perm_filter_ende");
 
-				//Code für Select erstellen
+				//Code fÃ¼r Select erstellen
         get_heute($tag, $monat, $jahr);
         addmonth($monat, $jahr, -18);
 
@@ -2156,7 +2156,7 @@ function submenu_reservation($namen, $position, $state, $display=1) {
         }
 		}//switch(menu)
 
-		//Plugins erlauben, Menuitems hinzuzufügen
+		//Plugins erlauben, Menuitems hinzuzufÃ¼gen
 		hook_submenu("reservation", $menu, $submenu, $menucounter, $itemcounter);
 
 		if($found) {
@@ -2379,7 +2379,7 @@ function submenu_rota($namen, $position, $state, $display=1) {
         }
 		}//switch(menu)
 
-		//Plugins erlauben, Menuitems hinzuzufügen
+		//Plugins erlauben, Menuitems hinzuzufÃ¼gen
 		hook_submenu('rota', $menu, $submenu, $menucounter, $itemcounter);
 
 		if($found) {
@@ -2579,7 +2579,7 @@ function submenu_admin($namen, $position, $state, $display=1) {
 					$submenu[$menucounter]["no_ul"][$itemcounter] = TRUE;
 					$submenu[$menucounter]["html"][$itemcounter++] = '<input type="checkbox" name="chk_hide_guest" id="chk_hide_guest" '.($_SESSION["logs_hide_guest"]?'checked="checked"':"").' onclick="jumpToUrl(\'?action=submit_hide_guest&amp;logs_hide_status=\'+this.checked);" /><label for="chk_hide_guest">'.getLL("admin_logfilter_hide_guest").'</label>';
 
-					//Root: Guest-Einträge löschen
+					//Root: Guest-EintrÃ¤ge lÃ¶schen
 					if($_SESSION["ses_username"] == "root") {
 						$submenu[$menucounter]["output"][$itemcounter] = " ";
 						$submenu[$menucounter]["no_ul"][$itemcounter] = TRUE;
@@ -2595,7 +2595,7 @@ function submenu_admin($namen, $position, $state, $display=1) {
         }
 		}//switch(menu)
 
-		//Plugins erlauben, Menuitems hinzuzufügen
+		//Plugins erlauben, Menuitems hinzuzufÃ¼gen
 		hook_submenu("admin", $menu, $submenu, $menucounter, $itemcounter);
 
     if($found) {
@@ -2688,7 +2688,7 @@ function submenu_fileshare($namen, $position, $state, $display=1) {
 						$submenu[$menucounter]["no_ul"][$itemcounter] = TRUE;
 						$html = '<div id="treeview"><script language="javascript" type="text/javascript">CreateProjectExplorer();</script></div>';
 						$submenu[$menucounter]["html"][$itemcounter] = $html;
-					} else {  //Code für Popup-Menü
+					} else {  //Code fÃ¼r Popup-MenÃ¼
 						$found = TRUE;
 						$submenu[$menucounter]["titel"] = getLL("submenu_fileshare_title_foldertree");
 						$folders = ko_fileshare_get_folders($_SESSION["ses_userid"]);
@@ -2709,7 +2709,7 @@ function submenu_fileshare($namen, $position, $state, $display=1) {
         }
 		}//switch(menu)
 
-		//Plugins erlauben, Menuitems hinzuzufügen
+		//Plugins erlauben, Menuitems hinzuzufÃ¼gen
 		hook_submenu("fileshare", $menu, $submenu, $menucounter, $itemcounter);
 
     if($found) {
@@ -2837,7 +2837,7 @@ function submenu_tools($namen, $position, $state, $display=1) {
         }
 		}//switch(menu)
 
-		//Plugins erlauben, Menuitems hinzuzufügen
+		//Plugins erlauben, Menuitems hinzuzufÃ¼gen
 		hook_submenu("tools", $menu, $submenu, $menucounter, $itemcounter);
 
 		if($found) {
@@ -3087,7 +3087,7 @@ function submenu_tapes($namen, $position, $state, $display=1) {
         }
 		}//switch(menu)
 
-		//Plugins erlauben, Menuitems hinzuzufügen
+		//Plugins erlauben, Menuitems hinzuzufÃ¼gen
 		hook_submenu("tapes", $menu, $submenu, $menucounter, $itemcounter);
 
     if($found) {
@@ -3235,7 +3235,7 @@ function submenu_groups($namen, $position, $state, $display=1) {
         }
 		}//switch(menu)
 
-		//Plugins erlauben, Menuitems hinzuzufügen
+		//Plugins erlauben, Menuitems hinzuzufÃ¼gen
 		hook_submenu("groups", $menu, $submenu, $menucounter, $itemcounter);
 
     if($found) {
@@ -3507,7 +3507,7 @@ function submenu_donations($namen, $position, $state, $display=1) {
         }
 		}//switch(menu)
 
-		//Plugins erlauben, Menuitems hinzuzufügen
+		//Plugins erlauben, Menuitems hinzuzufÃ¼gen
 		hook_submenu("donations", $menu, $submenu, $menucounter, $itemcounter);
 
     if($found) {
@@ -3895,7 +3895,7 @@ function submenu_tracking($namen, $position, $state, $display=1) {
         }
 		}//switch(menu)
 
-		//Plugins erlauben, Menuitems hinzuzufügen
+		//Plugins erlauben, Menuitems hinzuzufÃ¼gen
 		hook_submenu('tracking', $menu, $submenu, $menucounter, $itemcounter);
 
     if($found) {
@@ -4075,7 +4075,7 @@ function submenu_projects($namen, $position, $state, $display=1) {
         }
 		}//switch(menu)
 
-		//Plugins erlauben, Menuitems hinzuzufügen
+		//Plugins erlauben, Menuitems hinzuzufÃ¼gen
 		hook_submenu("projects", $menu, $submenu, $menucounter, $itemcounter);
 
     if($found) {

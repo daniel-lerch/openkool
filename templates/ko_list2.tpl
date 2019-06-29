@@ -1,4 +1,4 @@
-<div id="ko_listh_filterbox"></div>
+﻿<div id="ko_listh_filterbox"></div>
 
 {if $list_warning}
     <div class="warntxt">{$list_warning}</div>

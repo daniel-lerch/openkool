@@ -1,4 +1,4 @@
-<?php
+ï»¿<?php
 /***************************************************************
 *  Copyright notice
 *
@@ -526,7 +526,7 @@ switch($do_action) {
 			ko_save_admin("leute", $id, $leute_save_string, "admingroup");
 			$log_message .= getLL("module_leute").': "'.str_replace(",", ", ", $leute_save_string).'", ';
 
-			//Filter für Stufen
+			//Filter fÃ¼r Stufen
 			$save_filter = ko_get_leute_admin_filter($id, "admingroup");
 			if(!$save_filter) $save_filter = array();
 			$filterset = array_merge((array)ko_get_userpref('-1', '', 'filterset'), (array)ko_get_userpref($_SESSION['ses_userid'], '', 'filterset'));
@@ -637,41 +637,41 @@ switch($do_action) {
 			ko_save_admin('groups', $id, $groups_save_string, 'admingroup');
 			$log_message .= getLL('module_groups').': "'.str_replace(',', ', ', $leute_save_string).'", ';
 
-			//Loop über die drei Rechte-Stufen
+			//Loop Ã¼ber die drei Rechte-Stufen
 			$mode = array('', 'view', 'new', 'edit', 'del');
 			for($i=4; $i>0; $i--) {
 				if(isset($_POST["sel_groups_rights_".$mode[$i]])) {
-					//Nur Änderungen bearbeiten
+					//Nur Ã„nderungen bearbeiten
 					$old = explode(",", format_userinput($_POST["old_sel_groups_rights_".$mode[$i]], "intlist", FALSE, 0, array(), ":"));
 					$new = explode(",", format_userinput($_POST["sel_groups_rights_".$mode[$i]], "intlist", FALSE, 0, array(), ":"));
 					$deleted = array_diff($old, $new);
 					$added = array_diff($new, $old);
 				
-					//Login aus gelöschten Gruppen entfernen
+					//Login aus gelÃ¶schten Gruppen entfernen
 					foreach($deleted as $gid) {
 						$gid = substr($gid, -6);  //Nur letzte ID verwenden, davor steht die Motherline
 						//bisherige Rechte auslesen
 						$group = db_select_data("ko_groups", "WHERE `id` = '$gid'", "id,rights_".$mode[$i]);
 						$rights_array = explode(",", $group[$gid]["rights_".$mode[$i]]);
-						//Zu löschendes Login finden und entfernen
+						//Zu lÃ¶schendes Login finden und entfernen
 						foreach($rights_array as $index => $right) if($right == 'g'.$id) unset($rights_array[$index]);
-						foreach($rights_array as $a => $b) if(!$b) unset($rights_array[$a]);  //Leere Einträge löschen
+						foreach($rights_array as $a => $b) if(!$b) unset($rights_array[$a]);  //Leere EintrÃ¤ge lÃ¶schen
 						//Neuer Eintrag in Gruppe speichern
 						db_update_data("ko_groups", "WHERE `id` = '$gid'", array("rights_".$mode[$i] => implode(",", $rights_array)));
 						$all_groups[$gid]['rights_'.$mode[$i]] = implode(',', $rights_array);
 					}
 
-					//Login in neu hinzugefügten Gruppen hinzufügen
+					//Login in neu hinzugefÃ¼gten Gruppen hinzufÃ¼gen
 					foreach($added as $gid) {
 						$gid = substr($gid, -6);  //Nur letzte ID verwenden, davor steht die Motherline
 						//Bestehende Rechte auslesen
 						$group = db_select_data("ko_groups", "WHERE `id` = '$gid'", "id,rights_".$mode[$i]);
 						$rights_array = explode(",", $group[$gid]["rights_".$mode[$i]]);
-						//Überprüfen, ob Login schon vorhanden ist (sollte nicht)
+						//ÃœberprÃ¼fen, ob Login schon vorhanden ist (sollte nicht)
 						$add = TRUE;
 						foreach($rights_array as $right) if($right == 'g'.$id) $add = FALSE;
 						if($add) $rights_array[] = 'g'.$id;
-						foreach($rights_array as $a => $b) if(!$b) unset($rights_array[$a]);  //Leere Einträge löschen
+						foreach($rights_array as $a => $b) if(!$b) unset($rights_array[$a]);  //Leere EintrÃ¤ge lÃ¶schen
 						//Neue Liste der Logins in Gruppe speichern
 						db_update_data("ko_groups", "WHERE `id` = '$gid'", array("rights_".$mode[$i] => implode(",", $rights_array)));
 						$all_groups[$gid]['rights_'.$mode[$i]] = implode(',', $rights_array);
@@ -782,7 +782,7 @@ switch($do_action) {
 		//root darf nur von root bearbeitet werden
 		if($id == ko_get_root_id() && $_SESSION["ses_username"] != "root") continue;
 
-		//Altes Login speichern (für LDAP)
+		//Altes Login speichern (fÃ¼r LDAP)
 		ko_get_login($id, $old_login);
 	
 		//Login-Name speichern
@@ -859,7 +859,7 @@ switch($do_action) {
 			ko_save_admin("leute", $id, $leute_save_string);
 			$log_message .= getLL("module_leute").': "'.str_replace(",", ", ", $leute_save_string).'", ';
 
-			//Filter für Stufen
+			//Filter fÃ¼r Stufen
 			$save_filter = ko_get_leute_admin_filter($id, "login");
 			$filterset = array_merge((array)ko_get_userpref('-1', '', 'filterset'), (array)ko_get_userpref($_SESSION['ses_userid'], '', 'filterset'));
 			for($i=1; $i < 4; $i++) {
@@ -973,41 +973,41 @@ switch($do_action) {
 			ko_save_admin('groups', $id, $groups_save_string);
 			$log_message .= getLL('module_groups').': "'.str_replace(',', ', ', $leute_save_string).'", ';
 
-			//Loop über die drei Rechte-Stufen
+			//Loop Ã¼ber die drei Rechte-Stufen
 			$mode = array('', 'view', 'new', 'edit', 'del');
 			for($i=4; $i>0; $i--) {
 				if(isset($_POST["sel_groups_rights_".$mode[$i]])) {
-					//Nur Änderungen bearbeiten
+					//Nur Ã„nderungen bearbeiten
 					$old = explode(",", format_userinput($_POST["old_sel_groups_rights_".$mode[$i]], "intlist", FALSE, 0, array(), ":"));
 					$new = explode(",", format_userinput($_POST["sel_groups_rights_".$mode[$i]], "intlist", FALSE, 0, array(), ":"));
 					$deleted = array_diff($old, $new);
 					$added = array_diff($new, $old);
 				
-					//Login aus gelöschten Gruppen entfernen
+					//Login aus gelÃ¶schten Gruppen entfernen
 					foreach($deleted as $gid) {
 						$gid = substr($gid, -6);  //Nur letzte ID verwenden, davor steht die Motherline
 						//bisherige Rechte auslesen
 						$group = db_select_data("ko_groups", "WHERE `id` = '$gid'", "id,rights_".$mode[$i]);
 						$rights_array = explode(",", $group[$gid]["rights_".$mode[$i]]);
-						//Zu löschendes Login finden und entfernen
+						//Zu lÃ¶schendes Login finden und entfernen
 						foreach($rights_array as $index => $right) if($right == $id) unset($rights_array[$index]);
-						foreach($rights_array as $a => $b) if(!$b) unset($rights_array[$a]);  //Leere Einträge löschen
+						foreach($rights_array as $a => $b) if(!$b) unset($rights_array[$a]);  //Leere EintrÃ¤ge lÃ¶schen
 						//Neuer Eintrag in Gruppe speichern
 						db_update_data("ko_groups", "WHERE `id` = '$gid'", array("rights_".$mode[$i] => implode(",", $rights_array)));
 						$all_groups[$gid]['rights_'.$mode[$i]] = implode(',', $rights_array);
 					}
 
-					//Login in neu hinzugefügten Gruppen hinzufügen
+					//Login in neu hinzugefÃ¼gten Gruppen hinzufÃ¼gen
 					foreach($added as $gid) {
 						$gid = substr($gid, -6);  //Nur letzte ID verwenden, davor steht die Motherline
 						//Bestehende Rechte auslesen
 						$group = db_select_data("ko_groups", "WHERE `id` = '$gid'", "id,rights_".$mode[$i]);
 						$rights_array = explode(",", $group[$gid]["rights_".$mode[$i]]);
-						//Überprüfen, ob Login schon vorhanden ist (sollte nicht)
+						//ÃœberprÃ¼fen, ob Login schon vorhanden ist (sollte nicht)
 						$add = TRUE;
 						foreach($rights_array as $right) if($right == $id) $add = FALSE;
 						if($add) $rights_array[] = $id;
-						foreach($rights_array as $a => $b) if(!$b) unset($rights_array[$a]);  //Leere Einträge löschen
+						foreach($rights_array as $a => $b) if(!$b) unset($rights_array[$a]);  //Leere EintrÃ¤ge lÃ¶schen
 						//Neue Liste der Logins in Gruppe speichern
 						db_update_data("ko_groups", "WHERE `id` = '$gid'", array("rights_".$mode[$i] => implode(",", $rights_array)));
 						$all_groups[$gid]['rights_'.$mode[$i]] = implode(',', $rights_array);
@@ -1132,7 +1132,7 @@ switch($do_action) {
 	
 		//Loginname verlangen
 		if(!$txt_name) $notifier->addError(1, $do_action);
-		//Passwörter müssen übereinstimmen
+		//PasswÃ¶rter mÃ¼ssen Ã¼bereinstimmen
 		if($_POST["txt_pwd1"] == "" || $_POST["txt_pwd1"] != $_POST["txt_pwd2"]) $notifier->addError(2, $do_action);
 		//Loginname darf nicht ko_guest sein
 		if($txt_name == "ko_guest" || strlen($_POST["txt_name"]) >= 50) $notifier->addError(3, $do_action);
@@ -1151,7 +1151,7 @@ switch($do_action) {
 				unset($data["id"]);
 				unset($data["leute_id"]);
 			}
-			else {  //Nicht kopieren sondern Module gemäss Auswahl übernehmen
+			else {  //Nicht kopieren sondern Module gemÃ¤ss Auswahl Ã¼bernehmen
 				$save_modules = explode(",", format_userinput($_POST["sel_modules"], "alphanumlist"));
 				foreach($save_modules as $m_i => $m) {
 					if(!in_array($m, $MODULES)) unset($save_modules[$m_i]);
@@ -1190,7 +1190,7 @@ switch($do_action) {
 					ko_save_userpref($id, $pref["key"], $pref["value"], $pref["type"]);
 				}
 			}
-			else {  //Default-Werte für Userprefs einfügen
+			else {  //Default-Werte fÃ¼r Userprefs einfÃ¼gen
 				//Submenus als Userprefs speichern
 				foreach($MODULES as $m) {
 					$sm = implode(",", ko_get_submenus($m."_left"));
@@ -1198,7 +1198,7 @@ switch($do_action) {
 					$sm = implode(",", ko_get_submenus($m."_right"));
 					ko_save_userpref($id, "submenu_".$m."_right", $sm, "");
 				}
-				//Zusätzliche Userpref-Defaults setzen
+				//ZusÃ¤tzliche Userpref-Defaults setzen
 				foreach($DEFAULT_USERPREFS as $d) {
 					ko_save_userpref($id, $d["key"], $d["value"], $d["type"]);
 				}
@@ -1226,7 +1226,7 @@ switch($do_action) {
 			}
 		}//if(!error)
 
-		//Neues Login gleich zum Bearbeiten geben, damit Berechtigungen gesetzt werden können.
+		//Neues Login gleich zum Bearbeiten geben, damit Berechtigungen gesetzt werden kÃ¶nnen.
 		$_SESSION["show"] = $notifier->hasErrors() ? "new_login" : "edit_login";
 	break;
 
@@ -1253,7 +1253,7 @@ switch($do_action) {
 	break;
 
 
-	//Löschen
+	//LÃ¶schen
 	case "delete_login":
 		if($access['admin']['MAX'] < 5) continue;
 
@@ -1291,7 +1291,7 @@ switch($do_action) {
 	case "open_etiketten":
 		if($access['admin']['MAX'] < 2) continue;
 
-		//GET- oder POST-Übergabe testen
+		//GET- oder POST-Ãœbergabe testen
 		if($_POST["sel_vorlage_open"]) {
 			$etiketten_id = format_userinput($_POST["sel_vorlage_open"], "js");
 		} else if($_GET["sel_vorlage_open"]) {
@@ -1301,7 +1301,7 @@ switch($do_action) {
 			continue;
 		}
 
-		//Auf gültige Vorlagen-ID prüfen
+		//Auf gÃ¼ltige Vorlagen-ID prÃ¼fen
 		ko_get_etiketten_vorlage($etiketten_id, $vorlage);
 		if(is_array($vorlage) && $vorlage["name"] != "") {
 			$_SESSION["show"] = "set_etiketten_open";
@@ -1350,7 +1350,7 @@ switch($do_action) {
 			$notifier->addInfo(5, $do_action);
 		} else continue;
 
-		//Verlangte Angaben überprüfen (per_row, per_col)
+		//Verlangte Angaben Ã¼berprÃ¼fen (per_row, per_col)
 		if(!$_POST["txt_per_row"] || !$_POST["txt_per_col"]) {
 			$notifier->addError(7, $do_action);
 			continue;
@@ -1416,7 +1416,7 @@ switch($do_action) {
 
 
 	
-	//Identität annehmen (mit anderem Login einloggen)
+	//IdentitÃ¤t annehmen (mit anderem Login einloggen)
 	case "sudo_login":
 		if($access['admin']['MAX'] < 5) continue;
 
@@ -1446,7 +1446,7 @@ switch($do_action) {
 			continue;
 		}
 
-		//Auf gültiges Login testen
+		//Auf gÃ¼ltiges Login testen
 		$found = FALSE;
 		ko_get_logins($logins, " AND (`disabled` = '' OR `disabled` = '0')");
 		foreach($logins as $l) {
@@ -1459,7 +1459,7 @@ switch($do_action) {
 			continue;
 		}
 
-		//Identität wechseln
+		//IdentitÃ¤t wechseln
 		$_SESSION["ses_userid"] = $sudo_id;
 		ko_get_login($sudo_id, $sudo_l);
 		$_SESSION["ses_username"] = $sudo_l["login"];
@@ -1735,7 +1735,7 @@ if(in_array($_SESSION['show'], array('edit_login', 'edit_admingroup'))) {
 
 <?php
 /*
- * Gibt bei erfolgreichem Login das Menü aus, sonst einfach die Loginfelder
+ * Gibt bei erfolgreichem Login das MenÃ¼ aus, sonst einfach die Loginfelder
  */
 include($ko_path . "menu.php");
 ?>

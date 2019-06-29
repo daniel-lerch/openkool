@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 /***************************************************************
 *  Copyright notice
 *
@@ -224,7 +224,7 @@ switch($do_action) {
 					$sm = implode(",", ko_get_submenus($m."_right"));
 					ko_save_userpref($id, "submenu_".$m."_right", $sm, "");
 				}
-				//Zus�tzliche Userpref-Defaults setzen
+				//Zusätzliche Userpref-Defaults setzen
 				foreach($DEFAULT_USERPREFS as $d) {
 					ko_save_userpref($id, $d["key"], $d["value"], $d["type"]);
 				}

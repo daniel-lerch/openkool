@@ -1,4 +1,4 @@
-{foreach item=hid from=$tpl_hidden_inputs}
+﻿{foreach item=hid from=$tpl_hidden_inputs}
 	<input type="hidden" name="{$hid.name}" value="{$hid.value}" />
 {/foreach}
 {if $tpl_id}

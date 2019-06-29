@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 //============================================================================
 // PostGraph Class. PHP Class to draw bar graphs.
 // Version: 1.0

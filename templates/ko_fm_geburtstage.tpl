@@ -1,4 +1,4 @@
-{include file="ko_fm_header.tpl"}
+﻿{include file="ko_fm_header.tpl"}
 
 
 {if $tpl_fm_pos == 'm'}

@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 
 namespace Sabre\DAV\FSExt;
 use Sabre\DAV;

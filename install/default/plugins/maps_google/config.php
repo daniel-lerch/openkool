@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 $PLUGIN_CONF["maps_google"] = array(
 	'title' => "Map Plugin for maps.google.com",
 	'description' => "",

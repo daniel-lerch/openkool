@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 
 /*
  * Copyleft 2002 Johann Hanne
@@ -2334,7 +2334,7 @@ function _func()
             }
  else {
                 trigger_error("Sintactic error: coma expected in ".
-                                  "function $function, {$num_args}� arg", E_USER_ERROR);
+                                  "function $function, {$num_args}º arg", E_USER_ERROR);
             }
             $result2 = $this->_condition();
             if ($this->isError($result2)) {

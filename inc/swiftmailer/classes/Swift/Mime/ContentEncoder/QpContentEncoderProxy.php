@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 
 /*
  * This file is part of SwiftMailer.
@@ -15,7 +15,7 @@
  *
  * @package    Swift
  * @subpackage Mime
- * @author     Jean-François Simon <jeanfrancois.simon@sensiolabs.com>
+ * @author     Jean-FranÃ§ois Simon <jeanfrancois.simon@sensiolabs.com>
  */
 class Swift_Mime_ContentEncoder_QpContentEncoderProxy implements Swift_Mime_ContentEncoder
 {

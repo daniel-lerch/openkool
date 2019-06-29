@@ -1,4 +1,4 @@
-<?php
+Ôªø<?php
 /***************************************************************
 *  Copyright notice
 *
@@ -25,7 +25,7 @@
 ***************************************************************/
 
 
-//KG-Modul einf¸gen, damit es nicht manuell eingef¸gt werden muss
+//KG-Modul einf√ºgen, damit es nicht manuell eingef√ºgt werden muss
 if(ko_module_installed("kg") && file_exists($ko_path."leute/inc/kg.inc"))
   include($ko_path."leute/inc/kg.inc");
 
@@ -104,7 +104,7 @@ function ko_formular_leute($mode, $id=0, $show_save_as_new=true) {
 		$smarty->assign("fam_sel", $fam_sel);
 		$smarty->assign("famfunction", $function_sel);
 
-		//Familien-Felder (f¸r edit und neu)
+		//Familien-Felder (f√ºr edit und neu)
 		$familie_col_name = ko_get_family_col_name();
 		$familien_cols = db_get_columns("ko_familie");
 		$fc = 0;
@@ -208,7 +208,7 @@ function ko_formular_leute($mode, $id=0, $show_save_as_new=true) {
 						$inputs[$col_counter]["colspan"] = 'colspan="2"';
 						$inputs[$col_counter]["onclick_2_add"] = 'do_update_df_form(\''.$id.'\',\''.session_id().'\');';
 						$inputs[$col_counter]["onclick_del_add"] = 'do_update_df_form(\''.$id.'\',\''.session_id().'\');';
-						//Nur g¸ltige IDs auslesen, Rest wird durch js-groupmenu.inc erledigt
+						//Nur g√ºltige IDs auslesen, Rest wird durch js-groupmenu.inc erledigt
 						//Hier die alten Gruppen immer ausblenden
 						$orig_value = ko_get_userpref($_SESSION['ses_userid'], 'show_passed_groups');
 						ko_save_userpref($_SESSION['ses_userid'], 'show_passed_groups', 0);
@@ -221,7 +221,7 @@ function ko_formular_leute($mode, $id=0, $show_save_as_new=true) {
 							if(!$allow_assign && ($access['groups']['ALL'] > 1 || $access['groups'][$group['id']] > 1)) $allow_assign = true;
 						}
 						$smarty->assign("allow_assign", $allow_assign);
-						//Bestehende Werte einf¸llen
+						//Bestehende Werte einf√ºllen
 						$do_datafields = null;
 						foreach(explode(",", $person["groups"]) as $group) {
 							if($group) {
@@ -388,7 +388,7 @@ function ko_formular_leute($mode, $id=0, $show_save_as_new=true) {
 				$inputs[$col_counter]["type"] = $input_type[$l];
 				$inputs[$col_counter]["name"] = "input_".$l;
 
-				//Bei Edit: Bisherigen Wert einf¸llen:
+				//Bei Edit: Bisherigen Wert einf√ºllen:
 				if($mode == "edit") {
 					if($input_type[$l] == "date") {
 						$inputs[$col_counter]["value"] = ko_html(sql2datum($person[$l]));
@@ -397,7 +397,7 @@ function ko_formular_leute($mode, $id=0, $show_save_as_new=true) {
 					} else {
 						$inputs[$col_counter]["value"] = ko_html($person[$l]);
 					}
-				//Bei Neu: Die _POST-Werte wieder einf¸llen
+				//Bei Neu: Die _POST-Werte wieder einf√ºllen
 				} else if($mode == "neu") {
 					if($_POST["action"] == "submit_neue_person") {
 						$inputs[$col_counter]["value"] = ko_html($_POST["input_".$l]);
@@ -434,7 +434,7 @@ function ko_formular_leute($mode, $id=0, $show_save_as_new=true) {
 							}
 						}
 						else {
-							//Textfeld, das aber als Select mit zus‰tzlichem Textfeld angezeigt werden soll
+							//Textfeld, das aber als Select mit zus√§tzlichem Textfeld angezeigt werden soll
 							if(in_array($l, $LEUTE_TEXTSELECT)) {
 								$inputs[$col_counter]["type"] = "enum";
 
@@ -449,11 +449,11 @@ function ko_formular_leute($mode, $id=0, $show_save_as_new=true) {
 								}
 								$inputs[$col_counter]["value"] = $person[$l];
 
-								//Allf‰llige doppelte Leereintr‰ge rausholen
+								//Allf√§llige doppelte Leereintr√§ge rausholen
 								$inputs[$col_counter]["values"] = array_unique($inputs[$col_counter]["values"]);
 								$inputs[$col_counter]["descs"] = array_unique($inputs[$col_counter]["descs"]);
 
-								//Zus‰tzliches Textfeld erstellen
+								//Zus√§tzliches Textfeld erstellen
 								$inputs[++$col_counter]["desc"] = getLL("form_textplus");
 								$inputs[$col_counter]["type"] = "varchar";
 								$inputs[$col_counter]["name"] = "input_".$l."_2";
@@ -598,7 +598,7 @@ function ko_formular_leute($mode, $id=0, $show_save_as_new=true) {
 /**
   * Stellt die Leute-Liste dar
 	* mode definiert die Ausgabe: liste, my_list, adressliste
-	* output: TRUE=Ausgabe erfolgt direkt, FALSE=HTML wird zur¸ckgegeben (Ajax)
+	* output: TRUE=Ausgabe erfolgt direkt, FALSE=HTML wird zur√ºckgegeben (Ajax)
 	*/
 function ko_list_personen($mode="liste", $output=true) {
 	global $smarty, $ko_path;
@@ -617,7 +617,7 @@ function ko_list_personen($mode="liste", $output=true) {
 	$leute_col_name = ko_get_leute_col_name($groups_hierarchie=false, $add_group_datafields=true);
 
 	if($mode == "my_list") {  //Daten aus _SESSION[my_list] holen
-		//Eigenes z_where gem‰ss den gespeicherten IDs aufbauen
+		//Eigenes z_where gem√§ss den gespeicherten IDs aufbauen
 		foreach($_SESSION['my_list'] as $k => $v) if(!$v) unset($_SESSION['my_list'][$k]);
 		if(sizeof($_SESSION['my_list']) > 0) {
 			$z_where = "AND `id` IN (".implode(',', $_SESSION['my_list']).')';
@@ -746,7 +746,7 @@ function ko_list_personen($mode="liste", $output=true) {
 	$smarty->assign("version_colspan", $cols);
 
 
-	//Statistik ¸ber Suchergebnisse und Anzeige
+	//Statistik √ºber Suchergebnisse und Anzeige
 	if($mode == 'birthdays') {
 		$smarty->assign('hide_listlimiticons', TRUE);
 	  $stats_end = $rows;
@@ -756,7 +756,7 @@ function ko_list_personen($mode="liste", $output=true) {
 	$smarty->assign('tpl_stats', $_SESSION["show_start"]." - ".$stats_end." ".getLL("list_oftotal")." ".$rows);
 
 
-  //Links f¸r Prev und Next-Page vorbereiten
+  //Links f√ºr Prev und Next-Page vorbereiten
   if($_SESSION["show_start"] > 1 && $mode != 'birthdays') {
 		$smarty->assign("tpl_prevlink_link", "javascript:sendReq('../leute/inc/ajax.php', 'action,set_start,sesid', 'setstart,".(($_SESSION["show_start"]-$_SESSION["show_limit"] < 1) ? 1 : ($_SESSION["show_start"]-$_SESSION["show_limit"])).",".session_id()."', do_element);");
   } else {
@@ -938,7 +938,7 @@ function ko_list_personen($mode="liste", $output=true) {
 	//Eigentliche Daten ausgeben
 	$e_i = -1;
 	foreach($es as $e) {
-		//Nur erlaubte Personen ¸berhaupt anzeigen
+		//Nur erlaubte Personen √ºberhaupt anzeigen
 		if($access['leute']['ALL'] < 1 && $access['leute'][$e['id']] < 1) continue;
 
 		$e_i++;
@@ -1006,7 +1006,7 @@ function ko_list_personen($mode="liste", $output=true) {
 
 		//Google Map
 		$maps_link = '';
-		$replace = array('ˆ' => 'oe', '‰' => 'ae', '¸' => 'ue', 'È' => 'e', 'Ë' => 'e', '‡' => 'a', 'Á' => 'c', ' ' => '+');
+		$replace = array('√∂' => 'oe', '√§' => 'ae', '√º' => 'ue', '√©' => 'e', '√®' => 'e', '√†' => 'a', '√ß' => 'c', ' ' => '+');
 		if($e['adresse']) $maps_link .= '+'.str_replace(array_keys($replace), $replace, $e['adresse']);
 		if($e['plz']) $maps_link .= '+'.$e['plz'];
 		if($e['ort']) $maps_link .= '+'.str_replace(array_keys($replace), $replace, $e['ort']);
@@ -1028,7 +1028,7 @@ function ko_list_personen($mode="liste", $output=true) {
 		$tpl_list_data[$e_i]['clipboard_content'] = trim($clipboard_content);
 
 
-		//Anzuzeigende Spalten einf¸llen
+		//Anzuzeigende Spalten einf√ºllen
 		$colcounter = -1;
 		if(in_array($mode, array('liste', 'my_list', 'birthdays'))) {
 			foreach($_SESSION["show_leute_cols"] as $c) {
@@ -1118,7 +1118,7 @@ function ko_list_personen($mode="liste", $output=true) {
 				foreach($c as $cc) {
 					if(substr($cc, 0, 1) == "@") {  //Kommentar (beginnend mit @) direkt ausgeben
 						$tpl_list_data[$e_i]["daten"][$rowcounter] .= "<i>".ko_html(substr($cc, 1))."</i> ";
-					} else if(is_string($cc)) {  //Eintr‰ge als Personendaten formatiert ausgeben
+					} else if(is_string($cc)) {  //Eintr√§ge als Personendaten formatiert ausgeben
 						//Get preferred email
 						if($cc == 'email') {
 							ko_get_leute_email($e, $email);
@@ -1238,7 +1238,7 @@ function ko_list_mod_leute() {
 		if($p["_leute_id"] == -1) {  //Neu
 			$old_p = array();
 			$mutationen[$counter]["name"] = getLL("leute_aa_new").": ".ko_html($p['firm']).' '.ko_html($p["vorname"])." ".ko_html($p["nachname"]);
-		} else {  //bisherige Adresse ge‰ndert
+		} else {  //bisherige Adresse ge√§ndert
 			ko_get_person_by_id($p["_leute_id"], $old_p);
 			$mutationen[$counter]["name"] = ko_html($old_p['firm']).' '.ko_html($old_p["vorname"])." ".ko_html($old_p["nachname"]);
 		}

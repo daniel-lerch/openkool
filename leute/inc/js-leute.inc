@@ -1,4 +1,4 @@
-<script language="javascript" type="text/javascript">
+ï»¿<script language="javascript" type="text/javascript">
 <!--
 function printLength(string) {
 	num_sms = 1;
@@ -57,7 +57,7 @@ function do_fill_grouproles_select() {
 				list.options[i]=null;
 			}
 
-			//Optionen splitten und einfüllen
+			//Optionen splitten und einfÃ¼llen
 			if(responseText != "") {
 				var options = responseText.split("#");
 				for(i=0; i<options.length; i++) {
@@ -368,16 +368,16 @@ function add_markup(input, code) {
   else
   {
 		/*
-    // Abfrage der Einfügeposition
+    // Abfrage der EinfÃ¼geposition
     var pos;
     var re = new RegExp('^[0-9]{0,3}$');
     while(!re.test(pos)) {
-      pos = prompt("Einfügen an Position (0.." + input.value.length + "):", "0");
+      pos = prompt("EinfÃ¼gen an Position (0.." + input.value.length + "):", "0");
     }
     if(pos > input.value.length) {
       pos = input.value.length;
     }
-    // Einfügen des Formatierungscodes
+    // EinfÃ¼gen des Formatierungscodes
     var insText = prompt("Bitte geben Sie den zu formatierenden Text ein:");
     input.value = input.value.substr(0, pos) + aTag + insText + eTag + input.value.substr(pos);
 		*/

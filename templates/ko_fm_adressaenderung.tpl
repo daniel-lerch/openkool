@@ -1,4 +1,4 @@
-{if $tpl_aa_show == "name"}
+﻿{if $tpl_aa_show == "name"}
 	<form action="index.php?action=show_adressaenderung_fields" method="post">
 {/if}
 {if $tpl_aa_show == "fields"}

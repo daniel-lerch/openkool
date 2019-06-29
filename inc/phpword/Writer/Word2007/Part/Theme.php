@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 /**
  * This file is part of PHPWord - A pure PHP library for reading and writing
  * word processing documents.
@@ -115,10 +115,10 @@ class Theme extends AbstractPart
         $str .= '<a:latin typeface="Cambria" />';
         $str .= '<a:ea typeface="" />';
         $str .= '<a:cs typeface="" />';
-        $str .= '<a:font script="Jpan" typeface="ＭＳ ゴシック" />';
-        $str .= '<a:font script="Hang" typeface="맑은 고딕" />';
-        $str .= '<a:font script="Hans" typeface="宋体" />';
-        $str .= '<a:font script="Hant" typeface="新細明體" />';
+        $str .= '<a:font script="Jpan" typeface="ï¼­ï¼³ ã‚´ã‚·ãƒƒã‚¯" />';
+        $str .= '<a:font script="Hang" typeface="ë§‘ì€ ê³ ë”•" />';
+        $str .= '<a:font script="Hans" typeface="å®‹ä½“" />';
+        $str .= '<a:font script="Hant" typeface="æ–°ç´°æ˜Žé«”" />';
         $str .= '<a:font script="Arab" typeface="Times New Roman" />';
         $str .= '<a:font script="Hebr" typeface="Times New Roman" />';
         $str .= '<a:font script="Thai" typeface="Angsana New" />';
@@ -150,10 +150,10 @@ class Theme extends AbstractPart
         $str .= '<a:latin typeface="Calibri" />';
         $str .= '<a:ea typeface="" />';
         $str .= '<a:cs typeface="" />';
-        $str .= '<a:font script="Jpan" typeface="ＭＳ 明朝" />';
-        $str .= '<a:font script="Hang" typeface="맑은 고딕" />';
-        $str .= '<a:font script="Hans" typeface="宋体" />';
-        $str .= '<a:font script="Hant" typeface="新細明體" />';
+        $str .= '<a:font script="Jpan" typeface="ï¼­ï¼³ æ˜Žæœ" />';
+        $str .= '<a:font script="Hang" typeface="ë§‘ì€ ê³ ë”•" />';
+        $str .= '<a:font script="Hans" typeface="å®‹ä½“" />';
+        $str .= '<a:font script="Hant" typeface="æ–°ç´°æ˜Žé«”" />';
         $str .= '<a:font script="Arab" typeface="Arial" />';
         $str .= '<a:font script="Hebr" typeface="Arial" />';
         $str .= '<a:font script="Thai" typeface="Cordia New" />';

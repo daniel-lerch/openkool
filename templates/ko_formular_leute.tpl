@@ -1,4 +1,4 @@
-<input type="hidden" value="{$tpl_id}" name="leute_id" />
+﻿<input type="hidden" value="{$tpl_id}" name="leute_id" />
 <input type="hidden" value="{$tpl_nl_id}" name="add_to_nl" />
 <input type="hidden" value="{$tpl_nl_mod_id}" name="nl_mod_id" />
 <input type="hidden" name="hid_new_family" value="0" />

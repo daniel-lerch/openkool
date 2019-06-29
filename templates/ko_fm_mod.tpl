@@ -1,4 +1,4 @@
-{include file="ko_fm_header.tpl"}
+﻿{include file="ko_fm_header.tpl"}
 
 
 <!-- Reservationen: -->
@@ -12,7 +12,7 @@
 	{/if}
 {/if}
 
-<!-- Adress�nderungen: -->
+<!-- Adressänderungen: -->
 {if $tpl_show_aa}
 	{if $tpl_open_mod_aa}
 		<a href="leute/index.php?action=show_aa" class="fm_mod_highlight">

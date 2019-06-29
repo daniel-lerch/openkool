@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 /**
  * This file is part of PHPWord - A pure PHP library for reading and writing
  * word processing documents.
@@ -162,29 +162,29 @@ class ListItem extends AbstractStyle
             self::TYPE_SQUARE_FILLED => array(
                 'type' => 'hybridMultilevel',
                 'levels' => array(
-                    0 => '1, bullet, , left, 720, 720, 360, Wingdings, default',
+                    0 => '1, bullet, ï‚§, left, 720, 720, 360, Wingdings, default',
                     1 => '1, bullet, o, left, 1440, 1440, 360, Courier New, default',
-                    2 => '1, bullet, , left, 2160, 2160, 360, Wingdings, default',
-                    3 => '1, bullet, , left, 2880, 2880, 360, Symbol, default',
+                    2 => '1, bullet, ï‚§, left, 2160, 2160, 360, Wingdings, default',
+                    3 => '1, bullet, ï‚·, left, 2880, 2880, 360, Symbol, default',
                     4 => '1, bullet, o, left, 3600, 3600, 360, Courier New, default',
-                    5 => '1, bullet, , left, 4320, 4320, 360, Wingdings, default',
-                    6 => '1, bullet, , left, 5040, 5040, 360, Symbol, default',
+                    5 => '1, bullet, ï‚§, left, 4320, 4320, 360, Wingdings, default',
+                    6 => '1, bullet, ï‚·, left, 5040, 5040, 360, Symbol, default',
                     7 => '1, bullet, o, left, 5760, 5760, 360, Courier New, default',
-                    8 => '1, bullet, , left, 6480, 6480, 360, Wingdings, default',
+                    8 => '1, bullet, ï‚§, left, 6480, 6480, 360, Wingdings, default',
                 ),
             ),
             self::TYPE_BULLET_FILLED => array(
                 'type' => 'hybridMultilevel',
                 'levels' => array(
-                    0 => '1, bullet, , left, 720, 720, 360, Symbol, default',
+                    0 => '1, bullet, ï‚·, left, 720, 720, 360, Symbol, default',
                     1 => '1, bullet, o, left, 1440, 1440, 360, Courier New, default',
-                    2 => '1, bullet, , left, 2160, 2160, 360, Wingdings, default',
-                    3 => '1, bullet, , left, 2880, 2880, 360, Symbol, default',
+                    2 => '1, bullet, ï‚§, left, 2160, 2160, 360, Wingdings, default',
+                    3 => '1, bullet, ï‚·, left, 2880, 2880, 360, Symbol, default',
                     4 => '1, bullet, o, left, 3600, 3600, 360, Courier New, default',
-                    5 => '1, bullet, , left, 4320, 4320, 360, Wingdings, default',
-                    6 => '1, bullet, , left, 5040, 5040, 360, Symbol, default',
+                    5 => '1, bullet, ï‚§, left, 4320, 4320, 360, Wingdings, default',
+                    6 => '1, bullet, ï‚·, left, 5040, 5040, 360, Symbol, default',
                     7 => '1, bullet, o, left, 5760, 5760, 360, Courier New, default',
-                    8 => '1, bullet, , left, 6480, 6480, 360, Wingdings, default',
+                    8 => '1, bullet, ï‚§, left, 6480, 6480, 360, Wingdings, default',
                 ),
             ),
             self::TYPE_BULLET_EMPTY => array(
@@ -192,13 +192,13 @@ class ListItem extends AbstractStyle
                 'levels' => array(
                     0 => '1, bullet, o, left, 720, 720, 360, Courier New, default',
                     1 => '1, bullet, o, left, 1440, 1440, 360, Courier New, default',
-                    2 => '1, bullet, , left, 2160, 2160, 360, Wingdings, default',
-                    3 => '1, bullet, , left, 2880, 2880, 360, Symbol, default',
+                    2 => '1, bullet, ï‚§, left, 2160, 2160, 360, Wingdings, default',
+                    3 => '1, bullet, ï‚·, left, 2880, 2880, 360, Symbol, default',
                     4 => '1, bullet, o, left, 3600, 3600, 360, Courier New, default',
-                    5 => '1, bullet, , left, 4320, 4320, 360, Wingdings, default',
-                    6 => '1, bullet, , left, 5040, 5040, 360, Symbol, default',
+                    5 => '1, bullet, ï‚§, left, 4320, 4320, 360, Wingdings, default',
+                    6 => '1, bullet, ï‚·, left, 5040, 5040, 360, Symbol, default',
                     7 => '1, bullet, o, left, 5760, 5760, 360, Courier New, default',
-                    8 => '1, bullet, , left, 6480, 6480, 360, Wingdings, default',
+                    8 => '1, bullet, ï‚§, left, 6480, 6480, 360, Wingdings, default',
                 ),
             ),
             self::TYPE_NUMBER => array(
@@ -206,13 +206,13 @@ class ListItem extends AbstractStyle
                 'levels' => array(
                     0 => '1, decimal, %1., left, 720, 720, 360, , default',
                     1 => '1, bullet, o, left, 1440, 1440, 360, Courier New, default',
-                    2 => '1, bullet, , left, 2160, 2160, 360, Wingdings, default',
-                    3 => '1, bullet, , left, 2880, 2880, 360, Symbol, default',
+                    2 => '1, bullet, ï‚§, left, 2160, 2160, 360, Wingdings, default',
+                    3 => '1, bullet, ï‚·, left, 2880, 2880, 360, Symbol, default',
                     4 => '1, bullet, o, left, 3600, 3600, 360, Courier New, default',
-                    5 => '1, bullet, , left, 4320, 4320, 360, Wingdings, default',
-                    6 => '1, bullet, , left, 5040, 5040, 360, Symbol, default',
+                    5 => '1, bullet, ï‚§, left, 4320, 4320, 360, Wingdings, default',
+                    6 => '1, bullet, ï‚·, left, 5040, 5040, 360, Symbol, default',
                     7 => '1, bullet, o, left, 5760, 5760, 360, Courier New, default',
-                    8 => '1, bullet, , left, 6480, 6480, 360, Wingdings, default',
+                    8 => '1, bullet, ï‚§, left, 6480, 6480, 360, Wingdings, default',
                 ),
             ),
             self::TYPE_NUMBER_NESTED => array(

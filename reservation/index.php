@@ -1,4 +1,4 @@
-<?php
+Ôªø<?php
 /***************************************************************
 *  Copyright notice
 *
@@ -275,7 +275,7 @@ switch($do_action) {
 
 		$txt_group = trim(format_userinput($_POST["koi"]["ko_resitem"]["gruppen_id_PLUS"][$id], "text"));
 
-		//Auf neue Gruppe pr¸fen
+		//Auf neue Gruppe pr√ºfen
 		$found = FALSE;
 		if($txt_group != "") {  //Neue Gruppe erstellen
 			//Sicherstellen, dass der User ALL-Mod-Rechte hat, denn sonst kann er nach der Erstellung
@@ -299,7 +299,7 @@ switch($do_action) {
 				}//if(!found)
 			}//if(allowed)
 
-		} else {  //eine bestehende Gruppe ausgew‰hlt
+		} else {  //eine bestehende Gruppe ausgew√§hlt
 			$new_group = format_userinput($_POST["koi"]["ko_resitem"]["gruppen_id"][$id], "uint");
 			if(trim($new_group) != "") {
 				$allowed = TRUE;
@@ -310,7 +310,7 @@ switch($do_action) {
 		}//if..else(txt_group)
 
 
-		if(($access['reservation']['grp'.$new_group] >= 4 || !$found) && $allowed) {  //Rechte ¸berpr¸fen, ob dieser Gruppe Res-Objekte hinzugef¸gt werden d¸rfen
+		if(($access['reservation']['grp'.$new_group] >= 4 || !$found) && $allowed) {  //Rechte √ºberpr√ºfen, ob dieser Gruppe Res-Objekte hinzugef√ºgt werden d√ºrfen
 			$old_item = db_select_data('ko_resitem', "WHERE `id` = '$id'", '*', '', '', TRUE);
 
 			$_POST["koi"]["ko_resitem"]["gruppen_id"][$id] = $new_group;
@@ -533,7 +533,7 @@ switch($do_action) {
 			}
 			if(sizeof($do_ids) < 1) $notifier->addError(10, $do_action);
 
-			//Daten f¸r Formular-Aufruf vorbereiten
+			//Daten f√ºr Formular-Aufruf vorbereiten
 			if(!$notifier->hasErrors()) {
 				$order = "ORDER BY ".$_SESSION["sort_item"]." ".$_SESSION["sort_item_order"];
 				$_SESSION["show_back"] = $_SESSION["show"];
@@ -552,7 +552,7 @@ switch($do_action) {
 			}
 			if(sizeof($do_columns) < 1) $notifier->addError(8, $do_action);
 
-			//Zu bearbeitende Eintr‰ge
+			//Zu bearbeitende Eintr√§ge
 			$do_ids = array();
 			foreach($_POST["chk"] as $c_i => $c) {
 				if($c) {
@@ -565,7 +565,7 @@ switch($do_action) {
 			}
 			if(sizeof($do_ids) < 1) $notifier->addError(8, $do_action);
 
-			//Daten f¸r Formular-Aufruf vorbereiten
+			//Daten f√ºr Formular-Aufruf vorbereiten
 			if(!$notifier->hasErrors()) {
 				$order = "ORDER BY ".$_SESSION["sort_group"]." ".$_SESSION["sort_group_order"];
 				$_SESSION["show_back"] = $_SESSION["show"];
@@ -584,7 +584,7 @@ switch($do_action) {
 			}
 			if(sizeof($do_columns) < 1) $notifier->addError(58, $do_action);
 
-			//Zu bearbeitende Eintr‰ge
+			//Zu bearbeitende Eintr√§ge
 			$do_ids = array();
 			foreach($_POST["chk"] as $c_i => $c) {
 				if($c) {
@@ -597,7 +597,7 @@ switch($do_action) {
 			}
 			if(sizeof($do_ids) < 1) $notifier->addError(10, $do_action);
 
-			//Daten f¸r Formular-Aufruf vorbereiten
+			//Daten f√ºr Formular-Aufruf vorbereiten
 			if(!$notifier->hasErrors()) {
 				$order = "ORDER BY ".$_SESSION["sort_item"]." ".$_SESSION["sort_item_order"];
 				$_SESSION["show_back"] = $_SESSION["show"];
@@ -683,11 +683,11 @@ switch($do_action) {
 		$id = format_userinput($_POST["id"], "uint");
 
 		if($id) {
-			//Bisheriges Objekt holen, f¸r Logmeldung
+			//Bisheriges Objekt holen, f√ºr Logmeldung
 			ko_get_resitem_by_id($id, $old_item);
-			//Objekt selber lˆschen
+			//Objekt selber l√∂schen
 			db_delete_data("ko_resitem", "WHERE `id`='$id'");
-			//Alle Reservationen f¸r dieses Objekt lˆschen
+			//Alle Reservationen f√ºr dieses Objekt l√∂schen
 			db_delete_data("ko_reservation", "WHERE `item_id`='$id'");
 
 			//Delete this res item from all event groups (don't consider access rights of the current user,
@@ -975,7 +975,7 @@ switch($do_action) {
 			unset($r["id"], $r['_orig_res_id']);
 			$res_data[] = $r;
 
-			//Mod-Eintrag lˆschen
+			//Mod-Eintrag l√∂schen
 			db_delete_data("ko_reservation_mod", "WHERE `id` = '$id'");
 
 			//Log
@@ -1066,7 +1066,7 @@ switch($do_action) {
       $res_text .= ko_get_res_infotext($r)."\n\n";
 		}
 
-		//Benachrichtigung an Beantragenden schicken, falls gew¸nscht:
+		//Benachrichtigung an Beantragenden schicken, falls gew√ºnscht:
 		if($notification) {
 			$smarty->assign("txt_empfaenger", implode(", ", array_unique($email_rec)));
 			$smarty->assign('txt_empfaenger_semicolon', implode('; ', array_unique($email_rec)));
@@ -1414,7 +1414,7 @@ $js_calendar->load_files();
 
 <?php
 /*
- * Gibt bei erfolgreichem Login das Men¸ aus, sonst einfach die Loginfelder
+ * Gibt bei erfolgreichem Login das Men√º aus, sonst einfach die Loginfelder
  */
 include($ko_path . "menu.php");
 ?>
@@ -1436,7 +1436,7 @@ print ko_get_submenu_code("reservation", "left");
 <input type="hidden" name="action" id="action" value="" />
 <input type="hidden" name="id" id="id" value="" />
 <input type="hidden" name="mod_confirm" id="mod_confirm" value="" />  <!-- Confirm a moderated reservation -->
-<input type="hidden" name="res_code" id="res_code" value="" />  <!-- Code f¸r Bearbeitung -->
+<input type="hidden" name="res_code" id="res_code" value="" />  <!-- Code f√ºr Bearbeitung -->
 <input type="hidden" name="new_date" id="new_date" value="" />  <!-- Neue Res an Datum -->
 
 <div name="main_content" id="main_content">

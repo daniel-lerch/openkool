@@ -1,4 +1,4 @@
-#!/usr/bin/env php
+﻿#!/usr/bin/env php
 <?php
 
 namespace Sabre\VObject;

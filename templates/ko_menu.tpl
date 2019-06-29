@@ -1,4 +1,4 @@
-<div class="menu">
+﻿<div class="menu">
 
 <ul id="nav">
 <li><a href="{$ko_path}index.php" class="first">Home</a></li>

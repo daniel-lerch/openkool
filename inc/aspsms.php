@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 
 /*
  * Copyright (C) 2002-2007 Oliver Hitz <oliver@net-track.ch>

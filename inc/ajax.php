@@ -1,4 +1,4 @@
-<?php
+ï»¿<?php
 /***************************************************************
 *  Copyright notice
 *
@@ -61,10 +61,10 @@ if(isset($_GET) && isset($_GET["action"])) {
 
 	switch($action) {
 		case "opensm":
-			//Guest kann Layout nicht ändern
+			//Guest kann Layout nicht Ã¤ndern
 			if($_SESSION["ses_userid"] == ko_get_guest_id()) return FALSE;
 
-			//Übergebene Daten auslesen
+			//Ãœbergebene Daten auslesen
 			$pos = format_userinput($_GET["pos"], "alpha");
 			if(!in_array($pos, array("left", "right"))) return FALSE;
 			$id = format_userinput($_GET["id"], "js");
@@ -76,7 +76,7 @@ if(isset($_GET) && isset($_GET["action"])) {
 			$open = explode(",", ko_get_userpref($_SESSION["ses_userid"], "submenu_".$sm_module."_".$pos));
 			if(in_array($id, $open)) continue;
 
-			//Geschlossenes öffnen
+			//Geschlossenes Ã¶ffnen
 			$new_open = implode(",", $open);
 			$new_closed = "";
 			foreach($closed as $c) {
@@ -90,17 +90,17 @@ if(isset($_GET) && isset($_GET["action"])) {
 			ko_save_userpref($_SESSION["ses_userid"], "submenu_".$sm_module."_".$pos."_closed", substr($new_closed, 0, -1));
 			ko_save_userpref($_SESSION["ses_userid"], "submenu_".$sm_module."_".$pos, $new_open);
 
-			//Neuen HTML-Code für SM ausgeben
+			//Neuen HTML-Code fÃ¼r SM ausgeben
 			eval("\$r=submenu_".$sm_module.'($id, $pos, "open", 2);');
 			print $r;
 		break;
 
 
 		case "closesm":
-			//Guest kann Layout nicht ändern
+			//Guest kann Layout nicht Ã¤ndern
 			if($_SESSION["ses_userid"] == ko_get_guest_id()) return FALSE;
 
-			//Übergebene Daten auslesen
+			//Ãœbergebene Daten auslesen
 			$pos = format_userinput($_GET["pos"], "alpha");
 			if(!in_array($pos, array("left", "right"))) return FALSE;
 			$id = format_userinput($_GET["id"], "js");
@@ -126,7 +126,7 @@ if(isset($_GET) && isset($_GET["action"])) {
 			ko_save_userpref($_SESSION["ses_userid"], "submenu_".$sm_module."_".$pos."_closed", $new_closed);
 			ko_save_userpref($_SESSION["ses_userid"], "submenu_".$sm_module."_".$pos, substr($new_open, 0, -1));
 
-			//Neuen HTML-Code für SM ausgeben
+			//Neuen HTML-Code fÃ¼r SM ausgeben
 			eval("\$r=submenu_".$sm_module.'($id, $pos, "closed", 2);');
 			print $r;
 		break;
@@ -134,10 +134,10 @@ if(isset($_GET) && isset($_GET["action"])) {
 
 
 		case "movesmup":
-			//Guest kann Layout nicht ändern
+			//Guest kann Layout nicht Ã¤ndern
 			if($_SESSION["ses_userid"] == ko_get_guest_id()) return FALSE;
 
-			//Übergebene Daten auslesen
+			//Ãœbergebene Daten auslesen
 			$pos = format_userinput($_GET["pos"], "alpha");
 			if(!in_array($pos, array("left", "right"))) return FALSE;
 			$id = format_userinput($_GET["id"], "js");
@@ -171,17 +171,17 @@ if(isset($_GET) && isset($_GET["action"])) {
 			ko_save_userpref($_SESSION["ses_userid"], "submenu_".$sm_module."_".$pos.$state, implode(",", $array));
 			$_SESSION["submenu_".$pos.$state] = implode(",", $array);
 
-			//Neuen HTML-Code für SM ausgeben
+			//Neuen HTML-Code fÃ¼r SM ausgeben
 			print "main_".$pos."@@@";
 			print ko_get_submenu_code($sm_module, $pos);
 		break;
 
 
 		case "movesmdown":
-			//Guest kann Layout nicht ändern
+			//Guest kann Layout nicht Ã¤ndern
 			if($_SESSION["ses_userid"] == ko_get_guest_id()) return FALSE;
 
-			//Übergebene Daten auslesen
+			//Ãœbergebene Daten auslesen
 			$pos = format_userinput($_GET["pos"], "alpha");
 			if(!in_array($pos, array("left", "right"))) return FALSE;
 			$id = format_userinput($_GET["id"], "js");
@@ -215,22 +215,22 @@ if(isset($_GET) && isset($_GET["action"])) {
 			ko_save_userpref($_SESSION["ses_userid"], "submenu_".$sm_module."_".$pos.$state, implode(",", $array));
 			$_SESSION["submenu_".$pos.$state] = implode(",", $array);
 
-			//Neuen HTML-Code für SM ausgeben
+			//Neuen HTML-Code fÃ¼r SM ausgeben
 			print "main_".$pos."@@@";
 			print ko_get_submenu_code($sm_module, $pos);
 		break;
 
 
 		case "savenote":
-			//Guest kann Layout nicht ändern
+			//Guest kann Layout nicht Ã¤ndern
 			if($_SESSION["ses_userid"] == ko_get_guest_id()) return FALSE;
 
-			//Übergebene Daten auslesen
+			//Ãœbergebene Daten auslesen
 			$pos = format_userinput($_GET["pos"], "alpha");
 			if(!in_array($pos, array("left", "right"))) return FALSE;
 			$sm_module = format_userinput($_GET["mod"], "js");
 
-			if($_GET["notename"] == "" && $_GET["selnote"]) {  //Falls keine Name angegeben, dann die aktuelle Notiz überschreiben...
+			if($_GET["notename"] == "" && $_GET["selnote"]) {  //Falls keine Name angegeben, dann die aktuelle Notiz Ã¼berschreiben...
 	      $save_key = format_userinput($_GET["selnote"], "alphanum++");
 	    } else if($_GET["notename"]) {  //... sonst als neue Notiz speichern
 	      $save_key = format_userinput($_GET["notename"], "alphanum++");
@@ -241,16 +241,16 @@ if(isset($_GET) && isset($_GET["action"])) {
 	    ko_save_userpref($_SESSION["ses_userid"], $save_key, format_userinput($_GET["note"], "text"), "notizen");
 	    $_SESSION["show_notiz"] = $save_key;
 
-			//Neuen HTML-Code für SM ausgeben
+			//Neuen HTML-Code fÃ¼r SM ausgeben
 			print submenu("gsm_notizen", $pos, "", 2, $sm_module);  //State is always open when saving
 		break;
 
 
 		case "opennote":
-			//Guest kann Layout nicht ändern
+			//Guest kann Layout nicht Ã¤ndern
 			if($_SESSION["ses_userid"] == ko_get_guest_id()) return FALSE;
 
-			//Übergebene Daten auslesen
+			//Ãœbergebene Daten auslesen
 			$pos = format_userinput($_GET["pos"], "alpha");
 			if(!in_array($pos, array("left", "right"))) return FALSE;
 			$sm_module = format_userinput($_GET["mod"], "js");
@@ -260,16 +260,16 @@ if(isset($_GET) && isset($_GET["action"])) {
 
 			$_SESSION["show_notiz"] = $save_key;
 
-			//Neuen HTML-Code für SM ausgeben
+			//Neuen HTML-Code fÃ¼r SM ausgeben
 			print submenu("gsm_notizen", $pos, "", 2, $sm_module);  //State is always open when saving
 		break;
 
 
 		case "deletenote":
-			//Guest kann Layout nicht ändern
+			//Guest kann Layout nicht Ã¤ndern
 			if($_SESSION["ses_userid"] == ko_get_guest_id()) return FALSE;
 
-			//Übergebene Daten auslesen
+			//Ãœbergebene Daten auslesen
 			$pos = format_userinput($_GET["pos"], "alpha");
 			if(!in_array($pos, array("left", "right"))) return FALSE;
 			$sm_module = format_userinput($_GET["mod"], "js");
@@ -280,7 +280,7 @@ if(isset($_GET) && isset($_GET["action"])) {
 			ko_delete_userpref($_SESSION["ses_userid"], $del_key, "notizen");
 	    $_SESSION["show_notiz"] = "";
 
-			//Neuen HTML-Code für SM ausgeben
+			//Neuen HTML-Code fÃ¼r SM ausgeben
 			print submenu("gsm_notizen", $pos, "", 2, $sm_module);  //State is always open when saving
 		break;
 

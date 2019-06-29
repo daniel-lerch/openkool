@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 /**
  * PHPExcel
  *
@@ -41,10 +41,10 @@ class PHPExcel_Writer_Excel2007_Theme extends PHPExcel_Writer_Excel2007_WriterPa
 	 *
 	 */
 	private static $_majorFonts = array(
-					'Jpan' => 'ＭＳ Ｐゴシック',
-					'Hang' => '맑은 고딕',
-					'Hans' => '宋体',
-					'Hant' => '新細明體',
+					'Jpan' => 'ï¼­ï¼³ ï¼°ã‚´ã‚·ãƒƒã‚¯',
+					'Hang' => 'ë§‘ì€ ê³ ë”•',
+					'Hans' => 'å®‹ä½“',
+					'Hant' => 'æ–°ç´°æ˜Žé«”',
 					'Arab' => 'Times New Roman',
 					'Hebr' => 'Times New Roman',
 					'Thai' => 'Tahoma',
@@ -79,10 +79,10 @@ class PHPExcel_Writer_Excel2007_Theme extends PHPExcel_Writer_Excel2007_WriterPa
 	 *
 	 */
 	private static $_minorFonts = array(
-					'Jpan' => 'ＭＳ Ｐゴシック',
-					'Hang' => '맑은 고딕',
-					'Hans' => '宋体',
-					'Hant' => '新細明體',
+					'Jpan' => 'ï¼­ï¼³ ï¼°ã‚´ã‚·ãƒƒã‚¯',
+					'Hang' => 'ë§‘ì€ ê³ ë”•',
+					'Hans' => 'å®‹ä½“',
+					'Hant' => 'æ–°ç´°æ˜Žé«”',
 					'Arab' => 'Arial',
 					'Hebr' => 'Arial',
 					'Thai' => 'Tahoma',

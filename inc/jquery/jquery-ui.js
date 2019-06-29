@@ -1,4 +1,4 @@
-/*! jQuery UI - v1.10.4 - 2014-02-24
+﻿/*! jQuery UI - v1.10.4 - 2014-02-24
 * http://jqueryui.com
 * Includes: jquery.ui.core.js, jquery.ui.widget.js, jquery.ui.mouse.js, jquery.ui.position.js, jquery.ui.draggable.js, jquery.ui.droppable.js, jquery.ui.resizable.js, jquery.ui.selectable.js, jquery.ui.sortable.js
 * Copyright 2014 jQuery Foundation and other contributors; Licensed MIT */

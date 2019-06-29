@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 
 /*
  * PHP QR Code encoder

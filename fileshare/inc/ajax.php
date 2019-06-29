@@ -1,4 +1,4 @@
-<?php
+ï»¿<?php
 /***************************************************************
 *  Copyright notice
 *
@@ -74,7 +74,7 @@ if(isset($_GET) && isset($_GET["action"])) {
 
 
 		case "setstart":
-			//Start für Listenansicht setzen
+			//Start fÃ¼r Listenansicht setzen
 			if(FALSE === ($_SESSION["show_start"] = format_userinput($_GET["set_start"], "uint"))) {
     	  $_SESSION["show_start"] = 1;
 	    }
@@ -85,7 +85,7 @@ if(isset($_GET) && isset($_GET["action"])) {
 
 
 		case "setstartwebfolders":
-			//Start für Listenansicht setzen
+			//Start fÃ¼r Listenansicht setzen
 			if(FALSE === ($_SESSION["show_start"] = format_userinput($_GET["set_start"], "uint"))) {
     	  $_SESSION["show_start"] = 1;
 	    }

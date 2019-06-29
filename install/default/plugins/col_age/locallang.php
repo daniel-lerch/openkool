@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 $LL['en']['my_col_age_age'] = 'Age';
 $LL['de']['my_col_age_age'] = 'Alter';
 

@@ -1,4 +1,4 @@
-// JavaScript Document
+﻿// JavaScript Document
 // <script language="JavaScript1.2" type="text/JavaScript">
 // Copyright (c)2005 Rewritten Software.  http://www.rewrittensoftware.com
 // This script is supplied "as is" witrhout any form of warranty. Rewritten Software 

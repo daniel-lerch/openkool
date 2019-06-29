@@ -1,4 +1,4 @@
-<?php
+ï»¿<?php
 /***************************************************************
 *  Copyright notice
 *
@@ -215,7 +215,7 @@ switch($do_action) {
 	case "submit_neue_person":
 	case "submit_edit_person":
 	case "submit_als_neue_person":
-		//Beim Editieren auf korrekte Leute-ID prüfen
+		//Beim Editieren auf korrekte Leute-ID prÃ¼fen
 		if($do_action == "submit_edit_person") {
 			if(!$_POST["leute_id"] || !format_userinput($_POST["leute_id"], "uint", TRUE, 10)) continue;
 			$leute_id = format_userinput($_POST["leute_id"], "uint");
@@ -238,7 +238,7 @@ switch($do_action) {
 
 		if($access['leute']['MAX'] > 1 || (ko_get_setting("login_edit_person") == 1 && $leute_id == ko_get_logged_in_id())) {} else continue;
 
-		//Funktion (kundenspezifisch) einlesen, die Variablen speziell behandeln lässt
+		//Funktion (kundenspezifisch) einlesen, die Variablen speziell behandeln lÃ¤sst
 		if(file_exists($ko_path."leute/inc/my_fcn_leute.inc")) {
 			include($ko_path."leute/inc/my_fcn_leute.inc");
 		}
@@ -271,7 +271,7 @@ switch($do_action) {
 		/* Familien-Daten speichern */
 		$old_famid  = $person["famid"];
 		if(!is_array($allowed_cols["edit"]) || in_array("famid", $allowed_cols["edit"])) {
-			$do_update_familie = FALSE;  //Familiendaten - falls nötig - erst nach Speichern der Person updaten
+			$do_update_familie = FALSE;  //Familiendaten - falls nÃ¶tig - erst nach Speichern der Person updaten
 			$new_familie = FALSE;
 
 			//Neue Familie
@@ -282,11 +282,11 @@ switch($do_action) {
 				$save_famid = format_userinput($_POST["sel_familie"], "uint");
 			}
 
-			//Familie geändert
+			//Familie geÃ¤ndert
 			if($save_famid != $old_famid) {
 				$log_message .= getLL("leute_log_family").": $old_famid --> $save_famid, ";
 
-				//Alte Familie löschen, falls keine Mitglieder mehr
+				//Alte Familie lÃ¶schen, falls keine Mitglieder mehr
 				if($old_famid != 0) {
 					$num = ko_get_personen_by_familie($old_famid, $asdf);
 					if($num <= 1) {
@@ -329,7 +329,7 @@ switch($do_action) {
 
 			//Groups-Modul
 			if($c["Field"] == "groups") {
-				//Nötige rechte Checken
+				//NÃ¶tige rechte Checken
 				$go_on = (ko_module_installed("groups") && $access['groups']['MAX'] > 1);
 				if(!$go_on) continue;
 
@@ -454,7 +454,7 @@ switch($do_action) {
 					}
 					if($value) $log_message .= "$label: '$value', ";
 
-				} else {  //Bei Editieren nur die loggen, die geändert wurden
+				} else {  //Bei Editieren nur die loggen, die geÃ¤ndert wurden
 					$new  = format_userinput($_POST["input_".$c["Field"]], "text");
 					$new2 = format_userinput($_POST["input_".$c["Field"]."_2"], "text");
 					$old  = $c["Type"] == "date" ? map_leute_daten($person[$c["Field"]], $c["Field"], $person) : $person[$c["Field"]];
@@ -489,8 +489,8 @@ switch($do_action) {
 
 
 		//In DB speichern
-		$data["lastchange"] = date("Y-m-d H:i:s");  //LastChange hinzufügen
-	  //Familien-ID hinzufügen
+		$data["lastchange"] = date("Y-m-d H:i:s");  //LastChange hinzufÃ¼gen
+	  //Familien-ID hinzufÃ¼gen
 		if(!is_array($allowed_cols["edit"]) || in_array("famid", $allowed_cols["edit"])) {
 			$data["famid"] = $save_famid;
 			if($data['famid'] <= 0) $data['kinder'] = '0';  //Set number of children to 0 for persons without a family
@@ -504,7 +504,7 @@ switch($do_action) {
 
 
 		//Familien-Daten
-		//Erst nachher updaten, damit Personendaten nicht Familiendaten überschreiben
+		//Erst nachher updaten, damit Personendaten nicht Familiendaten Ã¼berschreiben
 		if($save_famid > 0 || $old_famid > 0) {
 			if($do_update_familie) ko_update_familie($save_famid, $fam_data, $leute_id);
 			else {
@@ -947,7 +947,7 @@ switch($do_action) {
 			}
 			if(sizeof($do_columns) < 1) koNotifier::Instance()->addError(4);
 
-			//Zu bearbeitende Einträge
+			//Zu bearbeitende EintrÃ¤ge
 			$do_ids = array();
 			foreach($_POST["chk"] as $c_i => $c) {
 				if($c) {
@@ -959,7 +959,7 @@ switch($do_action) {
 			}
 			if(sizeof($do_ids) < 1) $notifier->addError(5, $do_action);
 
-			//Daten für Formular-Aufruf vorbereiten
+			//Daten fÃ¼r Formular-Aufruf vorbereiten
 			if(!$notifier->hasErrors()) {
 				if(substr($_SESSION["sort_leute"][0], 0, 6) == "MODULE") {
 					$order = "ORDER BY nachname ASC";
@@ -982,7 +982,7 @@ switch($do_action) {
 			}
 			if(sizeof($do_columns) < 1) $notifier->addError(4, $do_action);
 
-			//Zu bearbeitende Einträge
+			//Zu bearbeitende EintrÃ¤ge
 			$do_ids = array();
 			foreach($_POST["chk"] as $c_i => $c) {
 				if($c) {
@@ -994,7 +994,7 @@ switch($do_action) {
 			}
 			if(sizeof($do_ids) < 1) $notifier->addError(5, $do_action);
 
-			//Daten für Formular-Aufruf vorbereiten
+			//Daten fÃ¼r Formular-Aufruf vorbereiten
 			$order = 'ORDER BY name ASC';  //Default
 			if(!$notifier->hasErrors()) {
 				if(is_string($_SESSION['sort_kg'])) $order = "ORDER BY ".$_SESSION["sort_kg"]." ".$_SESSION["sort_kg_order"];
@@ -1022,7 +1022,7 @@ switch($do_action) {
 
 
 
-	//Löschen
+	//LÃ¶schen
 	case "delete_person":
 		$del_id = format_userinput($_POST["id"], "uint", TRUE);
 		if(!$del_id) continue;
@@ -1185,7 +1185,7 @@ switch($do_action) {
 		}//if(do_ldap)
 
 
-		//Mod-Eintrag löschen
+		//Mod-Eintrag lÃ¶schen
 		db_delete_data("ko_leute_mod", "WHERE `_id`='$mod_aa_id'");
 
 		ko_log_diff("aa_insert", $data, $old_p);
@@ -1369,7 +1369,7 @@ switch($do_action) {
 
 		$_id = format_userinput($_POST["_id"], "uint");
 		ko_get_groupsubscriptions($_p, $_id); $_p = $_p[$_id];
-		//Mod-Eintrag löschen
+		//Mod-Eintrag lÃ¶schen
 		db_delete_data("ko_leute_mod", "WHERE `_id`='$_id'");
 
 		//Store deleted data in log
@@ -1496,7 +1496,7 @@ switch($do_action) {
 				}
 			}
 
-			//TODO: famchk in POST übergeben
+			//TODO: famchk in POST Ã¼bergeben
 			if(isset($_POST["famchk"])) {
 				foreach($_POST["famchk"] as $c_i => $c) {
 					if($c) $famlist[] = format_userinput($c_i, "uint");
@@ -1841,7 +1841,7 @@ switch($do_action) {
 	          ko_export_to_csv($header, $data, $filename);
 					}
 
-					//Fileshare-Datei speichern, falls gewünscht
+					//Fileshare-Datei speichern, falls gewÃ¼nscht
 					if(ko_module_installed("fileshare", $_SESSION["ses_userid"]) && ko_get_userpref($_SESSION["ses_userid"], "save_files_as_share") == 1) {
 						ko_fileshare_save_file_as_share($_SESSION["ses_userid"], $filename);
 					}
@@ -1859,14 +1859,14 @@ switch($do_action) {
 
 					$smarty->assign("ko_path", $ko_path);
 
-					//Leute-cols für Excel-Datei auslesen
+					//Leute-cols fÃ¼r Excel-Datei auslesen
 					$cols = array("anrede", "vorname", "nachname", "adresse", "adresse_zusatz", "plz", "ort", "telp", "telg", "natel");
 		      $header = array();
 		      foreach($cols as $c) {
 		        $header[] = $leute_col_name[$c];
 		      }
 
-					//Empfänger auslesen
+					//EmpfÃ¤nger auslesen
 					$rec_invalid = $rec_invalid_ids = $recipients_names = "";
 					$row = 0;
 					$xls_data = $array_empfaenger = array();
@@ -1933,7 +1933,7 @@ switch($do_action) {
 						$smarty->assign('tpl_senders', $senders);
 					}
 
-					//Empfänger zuweisen
+					//EmpfÃ¤nger zuweisen
 					$array_empfaenger = array_unique($array_empfaenger);
 					foreach($array_empfaenger as $e) {
 						$tpl_recipients .= $e . ",";
@@ -1948,7 +1948,7 @@ switch($do_action) {
 
 
 				case "etiketten":
-					//Vorlage-Namen auslesen (für Dropdown-Listen)
+					//Vorlage-Namen auslesen (fÃ¼r Dropdown-Listen)
 					//$vorlagen["values"][] = "";
 					//$vorlagen["output"][] = "";
 					ko_get_etiketten_vorlagen($vorlagen_);
@@ -2136,7 +2136,7 @@ switch($do_action) {
 
 
 				case "email":
-					//Titeldaten für XLS-Datei
+					//Titeldaten fÃ¼r XLS-Datei
 					$cols = array("anrede", "vorname", "nachname", "adresse", "adresse_zusatz", "plz", "ort", "telp", "telg");
 		      $header = array();
 		      foreach($cols as $c) {
@@ -2147,7 +2147,7 @@ switch($do_action) {
 					$xls_data = $array_empfaenger = array();
 					$ohne_email = "";
 					$row = 0;
-					foreach($es as $l => $p) {  //Loop über alle Leute
+					foreach($es as $l => $p) {  //Loop Ã¼ber alle Leute
 						if(ko_get_leute_email($p, $email)) {
 							$array_empfaenger = array_merge($array_empfaenger, $email);
 						} else {
@@ -2390,9 +2390,9 @@ switch($do_action) {
 		//Etiketten erstellen
 		$filename = ko_export_etiketten($_POST['sel_vorlage'], $_POST['txt_start'], $_POST['rd_rahmen'], $labels_data, ($_POST['chk_fill_page']?$_POST['txt_fill_page']:0), $_POST['txt_multiply'], $retChk == 1, $retSel, $retTxt);
 
-		//Fileshare-Datei speichern, falls gewünscht
+		//Fileshare-Datei speichern, falls gewÃ¼nscht
 		if(ko_module_installed("fileshare", $_SESSION["ses_userid"]) && ko_get_userpref($_SESSION["ses_userid"], "save_files_as_share") == 1) {
-			ko_fileshare_save_file_as_share($_SESSION["ses_userid"], "../".$filename);  //Führendes "../" vorstellen
+			ko_fileshare_save_file_as_share($_SESSION["ses_userid"], "../".$filename);  //FÃ¼hrendes "../" vorstellen
 		}
 
 		//Store return address selection in userprefs
@@ -3125,7 +3125,7 @@ switch($do_action) {
 		if($do_ldap) ko_ldap_close($ldap);
 
 
-		//HOOK: Plugins erlauben, hier einzugreifen, bevor die Session-Daten gelöscht werden
+		//HOOK: Plugins erlauben, hier einzugreifen, bevor die Session-Daten gelÃ¶scht werden
 		hook_action_handler_inline($do_action);
 
 		$notifier->addInfo(15, $do_action);
@@ -3575,7 +3575,7 @@ if($_SESSION["show"] == "neue_person" || $_SESSION["show"] == "edit_person") {
 		$loadcode = "initList($list_id, document.getElementsByName('var1')[0]);";
 		$onload_code = $loadcode.$onload_code;
 	}
-	//Beim Filter die vergangenen Gruppen gemäss Einstellung zeigen
+	//Beim Filter die vergangenen Gruppen gemÃ¤ss Einstellung zeigen
 	//allerdings auch Platzhalter-Gruppen anzeigen
 	$show_all_types = TRUE;
 	include("inc/js-groupmenu.inc");
@@ -3587,7 +3587,7 @@ if($_SESSION["show"] == "neue_person" || $_SESSION["show"] == "edit_person") {
 
 <?php
 /*
- * Gibt bei erfolgreichem Login das Menü aus, sonst einfach die Loginfelder
+ * Gibt bei erfolgreichem Login das MenÃ¼ aus, sonst einfach die Loginfelder
  */
 include($ko_path . "menu.php");
 ?>

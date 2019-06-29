@@ -1,4 +1,4 @@
-Mar 1, 2005 11:15 AST by PM
+﻿Mar 1, 2005 11:15 AST by PM
 
 + For consistency, renamed Math.php to Maths.java, utils to util, 
   tests to test, docs to doc - 

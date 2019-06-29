@@ -1,4 +1,4 @@
-<?php
+ï»¿<?php
 /***************************************************************
 *  Copyright notice
 *
@@ -106,7 +106,7 @@ function hook_include_js($type='') {
 
 
 
-//Erwartet Komma-getrennte Liste der Plugin-Typen und gibt die entsprechenden Include-Datein inkl. Pfad zurück
+//Erwartet Komma-getrennte Liste der Plugin-Typen und gibt die entsprechenden Include-Datein inkl. Pfad zurÃ¼ck
 function hook_get_by_type($type) {
 	global $PLUGINS;
 	global $BASE_PATH;
@@ -130,7 +130,7 @@ function hook_get_by_type($type) {
 		if($ok) {
 	    $temp = $BASE_PATH."plugins/".$m["name"];
 
-			//Dateiname nur gemäss BASE_PATH erlauben
+			//Dateiname nur gemÃ¤ss BASE_PATH erlauben
 			$full_path = realpath($temp);
 	    if(substr($full_path, 0, strlen($BASE_PATH."plugins")) != ($BASE_PATH."plugins")) {
 				trigger_error("Not allowed Hook-File: ".$temp, E_USER_ERROR);

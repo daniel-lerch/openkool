@@ -1,4 +1,4 @@
-<?php
+ï»¿<?php
 /***************************************************************
 *  Copyright notice
 *
@@ -41,10 +41,10 @@ if(sizeof($hooks) > 0) {
 function ko_front_module($uid, $module, $pos = "", $news_id = 0) {
 	global $smarty;
 
-	// Auf genügend Rechte überprüfen, ob das gewünschte Modul angezeigt werden darf
+	// Auf genÃ¼gend Rechte Ã¼berprÃ¼fen, ob das gewÃ¼nschte Modul angezeigt werden darf
 	// TODO...
 
-	// Richtige Funktion aufrufen, die das gewünschte Front-Modul ausgibt
+	// Richtige Funktion aufrufen, die das gewÃ¼nschte Front-Modul ausgibt
 	switch($module) {
 		case "daten_cal":
 			ko_fm_daten_cal($uid, $pos);
@@ -283,7 +283,7 @@ function ko_fm_geburtstage($uid, $pos) {
 		$data[$row] = $p;
 		$data[$row]['geburtsdatum'] = sql2datum($p['geburtsdatum']);
 
-		//Overlib-Text mit ko_html2 für FM
+		//Overlib-Text mit ko_html2 fÃ¼r FM
 		$data[$row]['_tooltip']  = '&lt;b&gt;'.ko_html2($p['vorname']).' '.ko_html2($p['nachname']).'&lt;/b&gt; ';
 		$data[$row]['_tooltip'] .= '('.$p['alter'].')&lt;br /&gt;'.sql2datum($p['geburtsdatum']);
 
@@ -304,7 +304,7 @@ function ko_fm_geburtstage($uid, $pos) {
 
 
 /*
- * Moderationen (Reservationen, Adressänderungen)
+ * Moderationen (Reservationen, AdressÃ¤nderungen)
  */
 function ko_fm_mod($uid) {
 	global $ko_path, $smarty;
@@ -329,7 +329,7 @@ function ko_fm_mod($uid) {
 	}
 
 
-	//Adressänderungen:
+	//AdressÃ¤nderungen:
 	ko_get_access('leute', $uid);
 	if($access['leute']['MAX'] > 1) {
 		$show_aa = TRUE;
@@ -374,22 +374,22 @@ function ko_fm_mod($uid) {
 
 	$smarty->assign("tpl_fm_title", getLL("fm_mod_title"));
 
-	//Text und Link für Reservationen
+	//Text und Link fÃ¼r Reservationen
 	$smarty->assign("tpl_show_res", $show_res_mod);
 	$smarty->assign("tpl_text_res", getLL("fm_mod_open_res")."&nbsp;(".sizeof($res_mod).")<br />");
   $smarty->assign("tpl_open_mod_res", (sizeof($res_mod) > 0) ? TRUE : FALSE);
 
-	//Text und Link für Adressänderungen
+	//Text und Link fÃ¼r AdressÃ¤nderungen
 	$smarty->assign("tpl_show_aa", $show_aa);
 	$smarty->assign("tpl_text_aa", getLL("fm_mod_open_aa")."&nbsp;($aa_mod_count)<br />");
   $smarty->assign("tpl_open_mod_aa", ($aa_mod_count > 0) ? TRUE : FALSE);
 
-	//Text und Link für Gruppen-Anmeldungen
+	//Text und Link fÃ¼r Gruppen-Anmeldungen
 	$smarty->assign("tpl_show_groups", $show_group_mod);
 	$smarty->assign("tpl_text_groups", getLL("fm_mod_open_group")."&nbsp;($num_group_mod)<br />");
   $smarty->assign("tpl_open_mod_groups", ($num_group_mod > 0) ? TRUE : FALSE);
 
-	//Text und Link für Events
+	//Text und Link fÃ¼r Events
 	$smarty->assign("tpl_show_event", $show_event_mod);
 	$smarty->assign("tpl_text_event", getLL("fm_mod_open_events")."&nbsp;(".$num_event_mod.")<br />");
   $smarty->assign("tpl_open_mod_event", $num_event_mod > 0 ? TRUE : FALSE);
@@ -458,7 +458,7 @@ function ko_fm_today($uid, $pos) {
 
 		$done = array();
 		foreach($events_woche as $w_i => $w) {
-			//Termine nicht doppelt anzeigen - würde bei mehrtägigen passieren
+			//Termine nicht doppelt anzeigen - wÃ¼rde bei mehrtÃ¤gigen passieren
 			if(($access['daten']['ALL'] < 1 && $access['daten'][$w['eventgruppen_id']] < 1) || in_array($w["id"], $done)) {
 				unset($events_woche[$w_i]);
 				continue;
@@ -522,7 +522,7 @@ function ko_fm_today($uid, $pos) {
 			$item = $resitems[$w["item_id"]];
 			if(($access['reservation']['ALL'] < 1 && $access['reservation'][$w['item_id']] < 1)
 					|| $w["user_id"] != $_SESSION["ses_userid"]  //Nur eigene anzeigen
-					|| in_array($w["id"], $done)  //mehrtägige Reservationen nicht mehrfach anzeigen
+					|| in_array($w["id"], $done)  //mehrtÃ¤gige Reservationen nicht mehrfach anzeigen
 					) {
 				unset($res_woche[$w_i]);
 				continue;
@@ -562,9 +562,9 @@ function ko_fm_today($uid, $pos) {
 
 
 
-	//Bei Moderatoren die neuen/geänderten seit letztem Login anzeigen
+	//Bei Moderatoren die neuen/geÃ¤nderten seit letztem Login anzeigen
 	if($access['reservation']['MAX'] > 4 && $_SESSION["ses_userid"] != ko_get_guest_id()) {
-		//Alle geänderten aus DB holen
+		//Alle geÃ¤nderten aus DB holen
 		$smarty->assign("title_res_new", getLL("fm_today_res_new"));
 		$z_where = "AND `last_change` > '".$_SESSION["last_login"]."'";
 		ko_get_reservationen($res, $z_where, 'LIMIT 0,50', 'ORDER BY `last_change` DESC');
@@ -604,7 +604,7 @@ function ko_fm_today($uid, $pos) {
 
 
 
-	/* Letzte Leute-Änderungen */
+	/* Letzte Leute-Ã„nderungen */
 	$found = FALSE;
 	$smarty->assign("title_people_new", getLL("fm_today_people_new"));
 	ko_get_access_all('leute', '', $leute_max_rights);

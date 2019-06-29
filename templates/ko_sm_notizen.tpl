@@ -1,4 +1,4 @@
-<tr><td colspan="3" class="submenu">
+﻿<tr><td colspan="3" class="submenu">
 
 <strong><big>&middot;</big></strong>{$notizen_open}<br />
 <select name="sel_notiz" size="0" onchange="sendReq('../inc/ajax.php', 'action,pos,id,mod,sesid,selnote', 'opennote,{$sm.position},{$sm.id},{$sm.mod},{$sm.sesid},'+this.options[this.selectedIndex].value, do_element);">

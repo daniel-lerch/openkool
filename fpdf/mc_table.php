@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 require('fpdf.php');
 
 class PDF_MC_Table extends FPDF {

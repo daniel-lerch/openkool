@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 
 /**
  *  File: calendar.php | (c) dynarch.com 2004

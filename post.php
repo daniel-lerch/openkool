@@ -1,4 +1,4 @@
-<?php
+Ôªø<?php
 /***************************************************************
  *  Copyright notice
  *
@@ -102,7 +102,7 @@ else if ($test == 6) {
 		'_bemerkung' => 'Test Bemerkung',
 		'vorname' => 'John',
 		'nachname' => 'Doe',
-		'_group_datafields' => array('000008' => utf8_encode('Test Eintrag f¸r Datenfeld "test_mod"')),
+		'_group_datafields' => array('000008' => utf8_encode('Test Eintrag f√ºr Datenfeld "test_mod"')),
 	);
 	$_POST['request'] = json_encode($requestArray);
 	$_POST['key'] = md5($_POST['action'] . KOOL_ENCRYPTION_KEY . $_POST['request']);
@@ -115,7 +115,7 @@ else if ($test == 7) {
 		'_bemerkung' => 'Test Bemerkung',
 		'vorname' => 'John',
 		'nachname' => 'Doe',
-		'_group_datafields' => array('000006' => utf8_encode('Test Eintrag f¸r Datenfeld "test_mod"')),
+		'_group_datafields' => array('000006' => utf8_encode('Test Eintrag f√ºr Datenfeld "test_mod"')),
 	);
 	$_POST['request'] = json_encode($requestArray);
 	$_POST['key'] = md5($_POST['action'] . KOOL_ENCRYPTION_KEY . $_POST['request']);

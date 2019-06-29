@@ -1,4 +1,4 @@
-<?php
+ï»¿<?php
 function my_map_map_search_ch($data) {
 	global $ko_path;
 
@@ -9,7 +9,7 @@ function my_map_map_search_ch($data) {
 	if($zip && $city) $link .= "/".$zip."-".$city;
 	else $link .= "/".$zip.$city;
 
-	$replace = array("ö" => "oe", "ä" => "ae", "ü" => "ue", "é" => "e", "è" => "e", "à" => "a", "ç" => "c");
+	$replace = array("Ã¶" => "oe", "Ã¤" => "ae", "Ã¼" => "ue", "Ã©" => "e", "Ã¨" => "e", "Ã " => "a", "Ã§" => "c");
 	$address = strtr($data["adresse"], $replace);
 	if($address) $link .= "/".$address;
 

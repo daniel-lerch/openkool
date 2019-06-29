@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 /**
  *	@package JAMA
  *
@@ -23,33 +23,33 @@ Feel free to correct anything that looks amiss to you.
 
 define('PolymorphicArgumentException', -1);
 $error['EN'][PolymorphicArgumentException] = "Invalid argument pattern for polymorphic function.";
-$error['FR'][PolymorphicArgumentException] = "Modèle inadmissible d'argument pour la fonction polymorphe.".
-$error['DE'][PolymorphicArgumentException] = "Unzulässiges Argumentmuster für polymorphe Funktion.";
+$error['FR'][PolymorphicArgumentException] = "ModÃ¨le inadmissible d'argument pour la fonction polymorphe.".
+$error['DE'][PolymorphicArgumentException] = "UnzulÃ¤ssiges Argumentmuster fÃ¼r polymorphe Funktion.";
 
 define('ArgumentTypeException', -2);
 $error['EN'][ArgumentTypeException] = "Invalid argument type.";
 $error['FR'][ArgumentTypeException] = "Type inadmissible d'argument.";
-$error['DE'][ArgumentTypeException] = "Unzulässige Argumentart.";
+$error['DE'][ArgumentTypeException] = "UnzulÃ¤ssige Argumentart.";
 
 define('ArgumentBoundsException', -3);
 $error['EN'][ArgumentBoundsException] = "Invalid argument range.";
 $error['FR'][ArgumentBoundsException] = "Gamme inadmissible d'argument.";
-$error['DE'][ArgumentBoundsException] = "Unzulässige Argumentstrecke.";
+$error['DE'][ArgumentBoundsException] = "UnzulÃ¤ssige Argumentstrecke.";
 
 define('MatrixDimensionException', -4);
 $error['EN'][MatrixDimensionException] = "Matrix dimensions are not equal.";
-$error['FR'][MatrixDimensionException] = "Les dimensions de Matrix ne sont pas égales.";
-$error['DE'][MatrixDimensionException] = "Matrixmaße sind nicht gleich.";
+$error['FR'][MatrixDimensionException] = "Les dimensions de Matrix ne sont pas Ã©gales.";
+$error['DE'][MatrixDimensionException] = "MatrixmaÃŸe sind nicht gleich.";
 
 define('PrecisionLossException', -5);
 $error['EN'][PrecisionLossException] = "Significant precision loss detected.";
-$error['FR'][PrecisionLossException] = "Perte significative de précision détectée.";
-$error['DE'][PrecisionLossException] = "Bedeutender Präzision Verlust ermittelte.";
+$error['FR'][PrecisionLossException] = "Perte significative de prÃ©cision dÃ©tectÃ©e.";
+$error['DE'][PrecisionLossException] = "Bedeutender PrÃ¤zision Verlust ermittelte.";
 
 define('MatrixSPDException', -6);
 $error['EN'][MatrixSPDException] = "Can only perform operation on symmetric positive definite matrix.";
-$error['FR'][MatrixSPDException] = "Perte significative de précision détectée.";
-$error['DE'][MatrixSPDException] = "Bedeutender Präzision Verlust ermittelte.";
+$error['FR'][MatrixSPDException] = "Perte significative de prÃ©cision dÃ©tectÃ©e.";
+$error['DE'][MatrixSPDException] = "Bedeutender PrÃ¤zision Verlust ermittelte.";
 
 define('MatrixSingularException', -7);
 $error['EN'][MatrixSingularException] = "Can only perform operation on singular matrix.";
