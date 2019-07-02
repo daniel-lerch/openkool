@@ -53,14 +53,11 @@ $ldap_dn = 'ou=kOOL_,dc=your,dc=ldap,dc=server';
 
 //Base
 $BASE_URL  = '';
-$BASE_PATH = '';
+$BASE_PATH = ''; // trailing slash required
 @define('FORCE_SSL', FALSE);
 
 //Smarty
 $smarty_dir = $BASE_PATH;
-
-//Include path for smarty (if installed locally)
-$INCLUDE_PATH_SMARTY = '';
 
 //Set path to pdflatex executable (if installed locally)
 $PDFLATEX_PATH = '';

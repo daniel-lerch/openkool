@@ -25,7 +25,9 @@
 ***************************************************************/
 
 // Smarty Library Dateien laden
-if(FALSE === include("Smarty.class.php")) ko_die("Could not find Smarty. Please install. For more information see http://www.smarty.net");
+if(FALSE === include((empty($BASE_PATH) ? $ko_path : $BASE_PATH)."vendor/smarty/smarty/libs/Smarty.class.php")) {
+	ko_die("Could not find Smarty. Please install libraries via Composer and ensure that $BASE_PATH is set correctly.");
+}
 
 //Load smarty template engine
 if(substr($smarty_dir, -1) != "/") $smarty_dir .= "/";
