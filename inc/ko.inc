@@ -392,9 +392,6 @@ if($BASE_PATH != "" && substr($BASE_PATH, -1) != "/") $BASE_PATH .= "/";
 //Hooks (Plugins)
 include($BASE_PATH."inc/hooks.inc");
 
-//Set include path for smarty
-if($INCLUDE_PATH_SMARTY) set_include_path($INCLUDE_PATH_SMARTY.PATH_SEPARATOR.get_include_path());
-
 
 //Connect to the database
 $db_conn = mysql_connect($mysql_server, $mysql_user, $mysql_pass);

@@ -3,7 +3,7 @@ FROM php:5.6-apache
 RUN set -x \
 # Install necessary packages
     && apt-get update \
-    && apt-get install -y zip unzip vim libc-client-dev libkrb5-dev \
+    && apt-get install -y zip unzip less vim libc-client-dev libkrb5-dev \
     && rm -rf /var/lib/apt/list/* \
 # Install PHP extensions
     && docker-php-ext-configure mysql \
