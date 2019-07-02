@@ -19,8 +19,8 @@
 #
 ################################################################################
 
-$WEB_UID=www-data
-$WEB_GID=www-data
+WEB_UID=www-data
+WEB_GID=www-data
 
 echo "# OpenKool setup script #"
 echo ""
@@ -34,7 +34,7 @@ chown --recursive $WEB_UID:$WEB_GID ../config
 
 echo "Preparing ~/download..."
 if [[ ! -d ../download ]]; then mkdir ../download; fi
-if [[ ! -d ../download/dp ]]; then mkdir ../download/db; fi
+if [[ ! -d ../download/dp ]]; then mkdir ../download/dp; fi
 if [[ ! -d ../download/excel ]]; then mkdir ../download/excel; fi
 if [[ ! -d ../download/pdf ]]; then mkdir ../download/pdf; fi
 if [[ ! -d ../download/word ]]; then mkdir ../download/word; fi
