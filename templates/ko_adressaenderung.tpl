@@ -1,4 +1,4 @@
-﻿{include file="ko_fm_header.tpl"}
+{include file="ko_fm_header.tpl"}
 
 
 <input type="hidden" name="aa_id" id="aa_id" value="" />

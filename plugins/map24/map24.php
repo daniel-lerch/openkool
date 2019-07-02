@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 function my_map_map24($data) {
 	global $ko_path;
 

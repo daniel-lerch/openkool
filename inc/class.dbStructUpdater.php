@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 /**
 TODO: make it work even without ';' delimiters or at least warn about that
 TODO: better parse error reporting

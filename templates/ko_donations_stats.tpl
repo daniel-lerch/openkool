@@ -1,4 +1,4 @@
-﻿<div style="text-align: center;">
+<div style="text-align: center;">
 {foreach from=$tpl_years item=year}
 <a href="index.php?action=set_stats_year&amp;year={$year}">{$year}</a>&nbsp;&nbsp;
 {/foreach}

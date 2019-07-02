@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 /*
 Copyright (c) 2011 Michael Dowling <mtdowling@gmail.com> and contributors
 

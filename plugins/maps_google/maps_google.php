@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 function my_map_maps_google($data) {
 	global $ko_path;
 

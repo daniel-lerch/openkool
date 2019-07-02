@@ -1,4 +1,4 @@
-﻿<tr><td colspan="3">
+<tr><td colspan="3">
 <br /><br />
 <table class="footer" width="100%"> <tr>
 <td align="left" width="33%">

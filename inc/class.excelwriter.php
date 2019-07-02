@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 
 /*
  * Copyleft 2002 Johann Hanne

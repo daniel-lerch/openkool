@@ -1,4 +1,4 @@
-﻿{if !$hide_table_html}<tr><td colspan="3" class="submenu">{/if}
+{if !$hide_table_html}<tr><td colspan="3" class="submenu">{/if}
 {if $show_flyout_header}
 <div class="flyout_header">
 	<b>{$label_flyout_header}</b>

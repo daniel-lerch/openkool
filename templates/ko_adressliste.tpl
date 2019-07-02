@@ -1,4 +1,4 @@
-﻿<div align="right">
+<div align="right">
 {$tpl_stats}
 &nbsp;&nbsp;&nbsp;
 

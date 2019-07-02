@@ -1,4 +1,4 @@
-﻿<script language="javascript" type="text/javascript">
+<script language="javascript" type="text/javascript">
 <!--
 function EG(t1, t2, rota, room, resitems, rest1, rest2, title, kommentar, allow_program) {
 	this.t1 = t1;

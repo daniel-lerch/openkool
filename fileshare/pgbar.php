@@ -1,4 +1,4 @@
-﻿<html>
+<html>
  <head>
   <title>kOOL file upload</title>
  </head>

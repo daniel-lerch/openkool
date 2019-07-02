@@ -1,4 +1,4 @@
-﻿{include file="ko_fm_header.tpl"}
+{include file="ko_fm_header.tpl"}
 
 <table width="100%" cellspacing="0">
 

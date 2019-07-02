@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 require('mc_table.php');
 
 class PDF_leute extends PDF_MC_Table {

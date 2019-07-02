@@ -1,4 +1,4 @@
-﻿{if $tpl_list_title}
+{if $tpl_list_title}
 	<div class="list-title" style="{$tpl_list_title_styles}">{$tpl_list_title}</div>
 {/if}
 

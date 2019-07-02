@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 error_reporting(E_ALL ^ E_NOTICE ^ E_WARNING);
 
 //get kOOL config and vcard

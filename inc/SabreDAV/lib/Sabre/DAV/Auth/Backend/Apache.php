@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 
 namespace Sabre\DAV\Auth\Backend;
 use Sabre\DAV;

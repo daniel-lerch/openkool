@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 
 /**
  * SabreDAV base exception

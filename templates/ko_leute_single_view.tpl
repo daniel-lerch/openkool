@@ -1,4 +1,4 @@
-﻿{if $person.firm}
+{if $person.firm}
 	<div class="single_view_title">{$person.firm}
 	{if $person.department}<i>{$person.department}</i>{/if}
 	<div class="single_view_subtitle">{$person.vorname} {$person.nachname}</div>

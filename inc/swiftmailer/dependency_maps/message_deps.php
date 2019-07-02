@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 
 Swift_DependencyContainer::getInstance()
     ->register('message.message')

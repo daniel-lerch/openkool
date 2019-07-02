@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 
 namespace Sabre\DAVACL\Property;
 use Sabre\DAV;

@@ -1,4 +1,4 @@
-﻿<h2>{$tpl_person_name}: {$tpl_timespan}</h2>
+<h2>{$tpl_person_name}: {$tpl_timespan}</h2>
 {if $tpl_description_needed == true}
 	<table id="consensus_descriptions">
 		<tr>

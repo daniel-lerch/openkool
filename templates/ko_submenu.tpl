@@ -1,4 +1,4 @@
-﻿<div name="sm_{$sm.mod}_{$sm.id}" id="sm_{$sm.mod}_{$sm.id}">
+<div name="sm_{$sm.mod}_{$sm.id}" id="sm_{$sm.mod}_{$sm.id}">
 <table width="100%" cellspacing="0" cellpadding="0">
 	<tr width="100%">
 	<td width="12px" height="13px" valign="bottom">

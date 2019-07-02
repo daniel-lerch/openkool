@@ -1,4 +1,4 @@
-﻿<table width="100%" cellspacing="0"><tr><td class="subpart_header">
+<table width="100%" cellspacing="0"><tr><td class="subpart_header">
 {$tpl_titel}
 </td>
 <td align="left" style="padding-left: 5px;">

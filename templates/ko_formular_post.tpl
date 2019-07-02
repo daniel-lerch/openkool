@@ -1,4 +1,4 @@
-﻿<table width="100%" cellspacing="0">
+<table width="100%" cellspacing="0">
 
 <tr><td colspan="2" class="submenu">
 <div id="nl_post_info" style="visibility:visible;display:block;">

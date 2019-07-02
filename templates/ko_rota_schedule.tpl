@@ -1,4 +1,4 @@
-﻿<div class="list-title">{$title}</div>
+<div class="list-title">{$title}</div>
 
 <div class="list-help">
 	{$help.link}

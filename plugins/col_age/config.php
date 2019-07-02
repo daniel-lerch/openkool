@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 $PLUGIN_CONF['col_age'] = array(
 	'title' => 'New address column showing age',
 	'description' => 'Adds a new column to the address list showing the person\'s age in years.',

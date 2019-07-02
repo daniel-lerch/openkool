@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 $PLUGIN_CONF["map_search_ch"] = array(
 	'title' => "Map Plugin for map.search.ch",
 	'description' => "",

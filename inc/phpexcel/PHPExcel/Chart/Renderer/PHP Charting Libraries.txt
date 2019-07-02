@@ -1,4 +1,4 @@
-﻿ChartDirector
+ChartDirector
 	http://www.advsofteng.com/cdphp.html
 
 GraPHPite

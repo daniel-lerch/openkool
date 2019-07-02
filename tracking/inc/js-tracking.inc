@@ -1,4 +1,4 @@
-﻿<script language="javascript" type="text/javascript">
+<script language="javascript" type="text/javascript">
 <!--
 function tracking_entered_simple(data) {
 	split = data.split('@@@');

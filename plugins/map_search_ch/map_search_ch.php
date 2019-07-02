@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 function my_map_map_search_ch($data) {
 	global $ko_path;
 

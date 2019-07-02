@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 /*
  * This file is part of SwiftMailer.
  * (c) 2009 Fabien Potencier

@@ -1,4 +1,4 @@
-﻿{if $warning}<div class="errortxt">{$warning}</div>{/if}
+{if $warning}<div class="errortxt">{$warning}</div>{/if}
 
 <table width="100%" cellspacing="0"><tr><td class="subpart_header">
 {$tpl_cal_titel}

@@ -1,4 +1,4 @@
-﻿<script language="javascript" type="text/javascript">
+<script language="javascript" type="text/javascript">
 <!--
 function printLength(string) {
 	num_sms = 1;

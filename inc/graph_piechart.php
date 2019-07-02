@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 $show_label = true; // true = show label, false = don't show label.
 $show_percent = true; // true = show percentage, false = don't show percentage.
 $show_text = true; // true = show text, false = don't show text.
