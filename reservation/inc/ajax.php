@@ -25,7 +25,7 @@
 ***************************************************************/
 
 if(!in_array($_GET['action'], array('jsongetreservations', 'jsongetresitems', 'fcsetdate', 'pdfcalendar', 'fceditres', 'fcdelres'))) {
-	//Set session id from GET (session will be started in ko.inc)
+	//Set session id from GET (session will be started in ko.inc.php)
 	if(!isset($_GET["sesid"])) exit;
 	if(FALSE === session_id($_GET["sesid"])) exit;
 }
@@ -36,7 +36,7 @@ header('Content-Type: text/html; charset=ISO-8859-1');
 error_reporting(0);
 $ko_menu_akt = 'reservation';
 $ko_path = "../../";
-require($ko_path."inc/ko.inc");
+require($ko_path."inc/ko.inc.php");
 $ko_path = "../";
 
 ko_get_access('reservation');
@@ -51,7 +51,7 @@ if(sizeof($hooks) > 0) foreach($hooks as $hook) include_once($hook);
 require($BASE_PATH."reservation/inc/reservation.inc");
 
 //Smarty-Templates-Engine laden
-require($BASE_PATH."inc/smarty.inc");
+require($BASE_PATH."inc/smarty.inc.php");
 
 //HOOK: Submenus einlesen
 $hooks = hook_include_sm();

@@ -44,7 +44,7 @@ $ko_menu_akt = 'post.php';
 
 
 require($ko_path."config/ko-config.php");
-require($ko_path."inc/ko.inc");
+require($ko_path."inc/ko.inc.php");
 
 
 

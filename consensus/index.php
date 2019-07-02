@@ -29,9 +29,9 @@ $ko_path = '../';
 $ko_menu_akt = "consensus";
 $SMARTY_RENDER_TEMPLATE = null;
 
-require($ko_path.'inc/ko.inc');
+require($ko_path.'inc/ko.inc.php');
 require($ko_path.'rota/inc/rota.inc');
-require($ko_path.'inc/smarty.inc');
+require($ko_path.'inc/smarty.inc.php');
 require_once('consensus.inc');
 
 

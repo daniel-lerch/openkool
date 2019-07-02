@@ -29,7 +29,7 @@
 header('Content-Type: text/html; charset=ISO-8859-1');
 
 $ko_path = './';
-include($ko_path.'inc/ko.inc');
+include($ko_path.'inc/ko.inc.php');
 
 switch($_GET["action"]) {
 	case "file":

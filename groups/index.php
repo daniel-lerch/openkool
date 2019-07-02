@@ -29,7 +29,7 @@ ob_start();  //Ausgabe-Pufferung starten
 $ko_path = "../";
 $ko_menu_akt = "groups";
 
-include($ko_path . "inc/ko.inc");
+include($ko_path . "inc/ko.inc.php");
 include("inc/groups.inc");
 
 //Redirect to SSL if needed
@@ -834,7 +834,7 @@ switch($do_action) {
 	//Default:
   default:
 	if(!hook_action_handler($do_action))
-    include($ko_path."inc/abuse.inc");
+    include($ko_path."inc/abuse.inc.php");
   break;
 
 
@@ -866,7 +866,7 @@ if(!$_SESSION["show_limit"]) $_SESSION["show_limit"] = ko_get_setting("show_limi
 if(!isset($_SESSION['groups_show_hidden_datafields'])) $_SESSION['groups_show_hidden_datafields'] = ko_get_userpref($_SESSION['ses_userid'], 'groups_show_hidden_datafields');
 
 //Smarty-Templates-Engine laden
-require("$ko_path/inc/smarty.inc");
+require("$ko_path/inc/smarty.inc.php");
 
 //Include submenus
 ko_set_submenues();
@@ -885,7 +885,7 @@ $js_files = array($ko_path.'inc/jquery/jquery.js', $ko_path.'inc/kOOL.js');
 if($_SESSION['show'] == 'edit_login_rights') $js_files[] = $ko_path.'inc/selectmenu.js';
 print ko_include_js($js_files);
 
-include($ko_path.'inc/js-sessiontimeout.inc');
+include($ko_path.'inc/js-sessiontimeout.inc.php');
 include('inc/js-groups.inc');
 $js_calendar->load_files();
 

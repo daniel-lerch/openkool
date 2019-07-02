@@ -72,7 +72,7 @@ if($no_enc) {
 //Get lang
 $_SESSION["lang"] = $req["language"][0];
 
-include($ko_path."inc/ko.inc");
+include($ko_path."inc/ko.inc.php");
 
 //Include KOTA
 ko_include_kota(array('ko_leute', 'ko_kleingruppen'));

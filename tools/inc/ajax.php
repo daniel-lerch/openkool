@@ -24,7 +24,7 @@
 *  This copyright notice MUST APPEAR in all copies of the script!
 ***************************************************************/
 
-//Set session id from GET (session will be started in ko.inc)
+//Set session id from GET (session will be started in ko.inc.php)
 if(!isset($_GET['sesid'])) exit;
 if(FALSE === session_id($_GET['sesid'])) exit;
 
@@ -34,7 +34,7 @@ header('Content-Type: text/html; charset=ISO-8859-1');
 error_reporting(0);
 $ko_menu_akt = 'tools';
 $ko_path = '../../';
-require($ko_path.'inc/ko.inc');
+require($ko_path.'inc/ko.inc.php');
 $ko_path = '../';
 
 ko_include_kota(array('ko_scheduler_tasks'));
@@ -44,7 +44,7 @@ $hooks = hook_include_main('tools');
 if(sizeof($hooks) > 0) foreach($hooks as $hook) include_once($hook);
  
 //Smarty-Templates-Engine laden
-require($BASE_PATH.'inc/smarty.inc');
+require($BASE_PATH.'inc/smarty.inc.php');
  
 require($BASE_PATH.'tools/inc/tools.inc');
 

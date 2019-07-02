@@ -130,7 +130,7 @@ $FAMFUNCTION_SORT_ORDER = array('husband' => 1, 'wife' => 2, 'child' => 3);
 //Define other rectypes as mapping arrays. E.g. for business address fields to be used in exports
 //$RECTYPES['b'] = array('adresse' => 'b_adresse', 'plz' => 'b_plz', 'ort' => 'b_ort');
 
-//Define different colors for single events (see inc/ko.inc for details)
+//Define different colors for single events (see inc/ko.inc.php for details)
 //$EVENT_COLOR = array();
 
 //Conditions under which leute_admin_spalten are not to be applied

@@ -27,7 +27,7 @@
 $ko_path = "../";
 $ko_menu_akt = "ical";
 
-include($ko_path."inc/ko.inc");
+include($ko_path."inc/ko.inc.php");
 include($ko_path."daten/inc/daten.inc");
 ko_include_kota(array('ko_event'));
 

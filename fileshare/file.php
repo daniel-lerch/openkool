@@ -24,9 +24,9 @@
 *  This copyright notice MUST APPEAR in all copies of the script!
 ***************************************************************/
 
-include("../inc/session.inc");
+include("../inc/session.inc.php");
 $ko_path = "../";
-require($ko_path."inc/ko.inc");
+require($ko_path."inc/ko.inc.php");
 
 function sanitize($s) {
   $allowed = "abcdefABCDEF1234567890";  //MD5-Wert ist eine Hex-Zahl

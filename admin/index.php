@@ -29,7 +29,7 @@ ob_start();  //Ausgabe-Pufferung starten
 $ko_path = "../";
 $ko_menu_akt = "admin";
 
-include($ko_path . "inc/ko.inc");
+include($ko_path . "inc/ko.inc.php");
 include("inc/admin.inc");
 
 $notifier = koNotifier::Instance();
@@ -1641,7 +1641,7 @@ switch($do_action) {
 	//Default:
   default:
 	if(!hook_action_handler($do_action))
-    include($ko_path."inc/abuse.inc");
+    include($ko_path."inc/abuse.inc.php");
   break;
 
 
@@ -1682,7 +1682,7 @@ if(!$_SESSION['sort_news_order']) $_SESSION['sort_news_order'] = 'DESC';
 ko_set_submenues();
 
 //Smarty-Templates-Engine laden
-require("$ko_path/inc/smarty.inc");
+require("$ko_path/inc/smarty.inc.php");
 ?>
 <!DOCTYPE html 
   PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
@@ -1698,7 +1698,7 @@ $js_files = array($ko_path.'inc/jquery/jquery.js', $ko_path.'inc/kOOL.js');
 if(in_array($_SESSION['show'], array('edit_login', 'edit_admingroup'))) $js_files[] = $ko_path.'inc/selectmenu.js';
 print ko_include_js($js_files);
 
-include($ko_path.'inc/js-sessiontimeout.inc');
+include($ko_path.'inc/js-sessiontimeout.inc.php');
 $js_calendar->load_files();
 
 //Prepare group double selects when editing a login

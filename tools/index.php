@@ -29,7 +29,7 @@ ob_start();  //Ausgabe-Pufferung starten
 $ko_path = "../";
 $ko_menu_akt = "tools";
 
-include($ko_path.'inc/ko.inc');
+include($ko_path.'inc/ko.inc.php');
 include('inc/tools.inc');
 include($ko_path.'inc/class.mcrypt.php');
 
@@ -48,7 +48,7 @@ $default_lang = $LIB_LANGS[0];
 ko_get_access('tools');
 
 //Smarty-Templates-Engine laden
-require($ko_path.'inc/smarty.inc');
+require($ko_path.'inc/smarty.inc.php');
 
 //kOOL Table Array
 ko_include_kota(array('ko_scheduler_tasks'));
@@ -786,7 +786,7 @@ switch($do_action) {
 	//Default:
   default:
 		if(!hook_action_handler($do_action))
-	    include($ko_path."inc/abuse.inc");
+	    include($ko_path."inc/abuse.inc.php");
   break;
 }//switch(do_action)
 
@@ -823,7 +823,7 @@ ko_set_submenues();
 <?php
 print ko_include_css();
 print ko_include_js(array($ko_path.'inc/jquery/jquery.js', $ko_path.'inc/kOOL.js'));
-include($ko_path.'inc/js-sessiontimeout.inc');
+include($ko_path.'inc/js-sessiontimeout.inc.php');
 //include("inc/js-tools.inc");
 ?>
 </head>

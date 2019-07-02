@@ -29,7 +29,7 @@ ob_start();  //Ausgabe-Pufferung einschalten
 $ko_path = "../";
 $ko_menu_akt = "reservation";
 
-include($ko_path . "inc/ko.inc");
+include($ko_path . "inc/ko.inc.php");
 include("inc/reservation.inc");
 
 //get notifier instance
@@ -75,7 +75,7 @@ if($confirm_link) {
 			$user_lang = ko_get_userpref($_SESSION['ses_userid'], 'lang');
 			if($user_lang != '' && in_array($user_lang, $LANGS)) {
 				$_SESSION['lang'] = $user_lang;
-				include($ko_path.'inc/lang.inc');
+				include($ko_path.'inc/lang.inc.php');
 			}
 		}
 	}
@@ -93,7 +93,7 @@ ko_include_kota(array('ko_reservation', 'ko_resitem'));
 
 
 //Smarty-Templates-Engine laden
-require("$ko_path/inc/smarty.inc");
+require("$ko_path/inc/smarty.inc.php");
 
 
 
@@ -1281,7 +1281,7 @@ switch($do_action) {
 	//Default:
   default:
 		if(!hook_action_handler($do_action))
-      include($ko_path."inc/abuse.inc");
+      include($ko_path."inc/abuse.inc.php");
   break;
 
 }//switch(action)
@@ -1404,7 +1404,7 @@ if($_SESSION['show'] == 'calendar') {
 	print ko_get_resitems_css();
 }
 print ko_include_css();
-include($ko_path.'inc/js-sessiontimeout.inc');
+include($ko_path.'inc/js-sessiontimeout.inc.php');
 include("inc/js-reservation.inc");
 $js_calendar->load_files();
 ?>

@@ -29,7 +29,7 @@ ob_start();  //Ausgabe-Pufferung einschalten
 $ko_path = "../";
 $ko_menu_akt = "fileshare";
 
-include($ko_path . "inc/ko.inc");
+include($ko_path . "inc/ko.inc.php");
 include("inc/fileshare.inc");
 
 //Redirect to SSL if needed
@@ -689,7 +689,7 @@ switch($do_action) {
 	//Default:
   default:
 		if(!hook_action_handler($do_action))
-      include($ko_path."inc/abuse.inc");
+      include($ko_path."inc/abuse.inc.php");
   break;
 
 }//switch(action)
@@ -725,7 +725,7 @@ if(ENABLE_FILESHARE) {
 
 
 //Smarty-Templates-Engine laden
-require("$ko_path/inc/smarty.inc");
+require("$ko_path/inc/smarty.inc.php");
 
 //Include submenus
 ko_set_submenues();
@@ -743,7 +743,7 @@ if(ENABLE_FILESHARE) print '<script language="javascript" type="text/javascript"
 print ko_include_css();
 print ko_include_js(array($ko_path.'inc/jquery/jquery.js', $ko_path.'inc/kOOL.js'));
 
-include($ko_path.'inc/js-sessiontimeout.inc');
+include($ko_path.'inc/js-sessiontimeout.inc.php');
 include($ko_path."fileshare/inc/js-fileshare.inc");
 ?>
 </head>

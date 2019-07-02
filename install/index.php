@@ -34,7 +34,7 @@ if(!file_exists(getcwd()."/ENABLE_INSTALL")) {
 $ko_path = "../";
 $ko_menu_akt = "install";
 
-include($ko_path . "inc/ko.inc");
+include($ko_path . "inc/ko.inc.php");
 //include("inc/install.inc");
 
 $notifier = koNotifier::Instance();
@@ -253,14 +253,14 @@ switch($do_action) {
 
 	//Default:
   default:
-    include($ko_path."inc/abuse.inc");
+    include($ko_path."inc/abuse.inc.php");
   break;
 }//switch(do_action)
 
 
 //Smarty-Templates-Engine laden
 $smarty_dir = $ko_path;
-require("$ko_path/inc/smarty.inc");
+require("$ko_path/inc/smarty.inc.php");
 
 
 ?>
@@ -276,7 +276,7 @@ print ko_include_css();
 
 print ko_include_js(array($ko_path.'inc/jquery/jquery.js', $ko_path.'inc/kOOL.js'));
 
-include($ko_path.'inc/js-sessiontimeout.inc');
+include($ko_path.'inc/js-sessiontimeout.inc.php');
 ?>
 </head>
 

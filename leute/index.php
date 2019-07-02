@@ -29,7 +29,7 @@ ob_start();  //Ausgabe-Pufferung einschalten
 $ko_path = "../";
 $ko_menu_akt = "leute";
 
-include($ko_path . "inc/ko.inc");
+include($ko_path . "inc/ko.inc.php");
 include("inc/leute.inc");
 
 //get notifier instance
@@ -52,7 +52,7 @@ if(ko_module_installed('groups')) {
 }
 
 //Smarty-Templates-Engine laden
-require("$ko_path/inc/smarty.inc");
+require("$ko_path/inc/smarty.inc.php");
 
 
 
@@ -3431,7 +3431,7 @@ switch($do_action) {
 	//Default:
 	default:
 		if(!hook_action_handler($do_action))
-      include($ko_path."inc/abuse.inc");
+      include($ko_path."inc/abuse.inc.php");
 	break;
 
 }//switch(action)
@@ -3552,7 +3552,7 @@ print ko_include_js(array($ko_path.'inc/jquery/jquery.js',
 													),
 										($_SESSION['show'] == 'list_kg' ? 'kg' : $ko_menu_akt));
 
-include($ko_path.'inc/js-sessiontimeout.inc');
+include($ko_path.'inc/js-sessiontimeout.inc.php');
 include("inc/js-leute.inc");
 //Load JS files for js_calendar
 $js_calendar->load_files();

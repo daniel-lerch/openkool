@@ -25,7 +25,7 @@
 ***************************************************************/
 
 if($_GET["action"] != "grouproleselectfilter") {
-	//Set session id from GET (session will be started in ko.inc)
+	//Set session id from GET (session will be started in ko.inc.php)
 	if(!isset($_GET["sesid"])) exit;
 	if(FALSE === session_id($_GET["sesid"])) exit;
 }
@@ -36,7 +36,7 @@ header('Content-Type: text/html; charset=ISO-8859-1');
 error_reporting(0);
 $ko_menu_akt = 'groups';
 $ko_path = "../../";
-require($ko_path."inc/ko.inc");
+require($ko_path."inc/ko.inc.php");
 $ko_path = "../";
 
 //Get access rights
@@ -49,7 +49,7 @@ $hooks = hook_include_main("groups");
 if(sizeof($hooks) > 0) foreach($hooks as $hook) include_once($hook);
 
 //Smarty-Templates-Engine laden
-require($BASE_PATH."inc/smarty.inc");
+require($BASE_PATH."inc/smarty.inc.php");
 
 require($BASE_PATH."groups/inc/groups.inc");
 

@@ -68,7 +68,7 @@ if(!function_exists('quoted_printable_encode')) {
 
 if(isset($_GET['id']) && (int)$_GET['id'] > 0) {
 	$ko_path = '../../';
-	require($ko_path.'inc/ko.inc');
+	require($ko_path.'inc/ko.inc.php');
 
 	$id = format_userinput($_GET['id'], 'uint');
 	if(!$id) exit;

@@ -280,7 +280,7 @@ $WEBFOLDERS_BASE_HTACCESS = $BASE_PATH.".webfolders/";
 Settings for Server-Admins
 ==========================
 
-As a server admin, the following settings in /kOOL/lib/ko.inc might be interesting for you. They will apply as defaults to all kOOL installations using this source directory:
+As a server admin, the following settings in /kOOL/lib/ko.inc.php might be interesting for you. They will apply as defaults to all kOOL installations using this source directory:
 
 - $LIB_LANGS: Available languages for this installation of kOOL
 - $LIB_MODULES: Available modules for this installation of kOOL

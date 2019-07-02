@@ -28,7 +28,7 @@
 //Allow POST as well
 if(isset($_POST['sesid']) && isset($_POST['action'])) $_GET = $_POST;
 
-//Set session id from GET (session will be started in ko.inc)
+//Set session id from GET (session will be started in ko.inc.php)
 if(!isset($_GET["sesid"])) exit;
 if(FALSE === session_id($_GET["sesid"])) exit;
 
@@ -38,10 +38,10 @@ header('Content-Type: text/html; charset=ISO-8859-1');
 error_reporting(0);
 $ko_menu_akt = 'home';
 $ko_path = "../";
-require($ko_path."inc/ko.inc");
+require($ko_path."inc/ko.inc.php");
 
 //Smarty-Templates-Engine laden
-require($BASE_PATH."inc/smarty.inc");
+require($BASE_PATH."inc/smarty.inc.php");
 
 //Include plugin code
 $hooks = hook_include_main('_all');

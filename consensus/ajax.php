@@ -27,7 +27,7 @@
 
 $ko_path = '../';
 
-require($ko_path.'inc/ko.inc');
+require($ko_path.'inc/ko.inc.php');
 require($ko_path.'rota/inc/rota.inc');
 require_once('consensus.inc');
 

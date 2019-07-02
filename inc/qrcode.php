@@ -25,7 +25,7 @@
 ***************************************************************/
 
 $ko_path = '../';
-include($ko_path.'inc/ko.inc');
+include($ko_path.'inc/ko.inc.php');
 include($ko_path.'inc/qrcode/qrlib.php');
 
 $string = base64_decode($_GET['s']);

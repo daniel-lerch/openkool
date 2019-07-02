@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 /***************************************************************
 *  Copyright notice
 *
@@ -351,10 +351,10 @@ $MODULES_GROUP_ACCESS = array('daten', 'reservation', 'tapes', 'donations', 'tra
 
 
 //Session
-include_once($ko_path."inc/session.inc");
+include_once($ko_path."inc/session.inc.php");
 
 //Error reporting
-include($ko_path."inc/error_handling.inc");
+include($ko_path."inc/error_handling.inc.php");
 
 
 if(defined('DEBUG') && DEBUG) {
@@ -390,7 +390,7 @@ if($ko_menu_akt == "install" && !$BASE_PATH) {
 if($BASE_PATH != "" && substr($BASE_PATH, -1) != "/") $BASE_PATH .= "/";
 
 //Hooks (Plugins)
-include($BASE_PATH."inc/hooks.inc");
+include($BASE_PATH."inc/hooks.inc.php");
 
 
 //Connect to the database
@@ -427,7 +427,7 @@ $LIB_LANGS2 = array('en' => array('UK', 'US'),
 										'nl' => array('NL'),
 										'fr' => array('CH'),
 										);
-include($BASE_PATH.'inc/lang.inc');
+include($BASE_PATH.'inc/lang.inc.php');
 if(isset($_DATETIME[$_SESSION['lang'].'_'.$_SESSION['lang2']])) {
 	$DATETIME = $_DATETIME[$_SESSION['lang'].'_'.$_SESSION['lang2']];
 } else {
@@ -451,10 +451,10 @@ if(!$db_connection && $ko_menu_akt != "install") {
 
 
 //Submenus (für alle Module)
-include($BASE_PATH."inc/submenu.inc");
+include($BASE_PATH."inc/submenu.inc.php");
 
 //Submenu-Behandlung
-include($BASE_PATH."inc/submenu_actions.inc");
+include($BASE_PATH."inc/submenu_actions.inc.php");
 
 
 //Namen für die Frontmodule
@@ -469,7 +469,7 @@ $FRONTMODULES = array("daten_cal"       => array("modul" => "daten", "name" => g
 if(ENABLE_FILESHARE) $FRONTMODULES["fileshare"] = array("modul" => "fileshare", "name" => getLL("fm_name_fileshare"));
 
 //Front-Modules
-include($BASE_PATH."inc/front_modules.inc");
+include($BASE_PATH."inc/front_modules.inc.php");
 
 //Read in settings etc
 if($ko_menu_akt != 'scheduler') {
@@ -3041,7 +3041,7 @@ function ko_get_family_col_name() {
 /**
   * Wendet die Leute-Filter an und gibt SQL-WHERE-Clause zurück
 	* Ebenfalls verwendet, um Admin-Filter für Berechtigungen anzuwenden
-	* Muss in ko.inc stehen (und nicht in leute/inc/leute.inc), damit ko_get_admin() immer Zugriff darauf hat --> z.B. für Dropdown-Menüs
+	* Muss in ko.inc.php stehen (und nicht in leute/inc/leute.inc), damit ko_get_admin() immer Zugriff darauf hat --> z.B. für Dropdown-Menüs
 	*/
 function apply_leute_filter($filter, &$where_code, $add_admin_filter=TRUE, $admin_filter_level='', $_login_id='', $includeAll=FALSE) {
 	global $ko_menu_akt;
@@ -3538,7 +3538,7 @@ function ko_get_leute_hidden_sql() {
 
 /**
   * Liefert Formular zu einzelnem Filter
-	* Für Ajax und Submenu.inc
+	* Für Ajax und submenu.inc.php
 	*/
 function ko_get_leute_filter_form($fid, $showButtons=TRUE) {
 	$code = "";
@@ -6978,7 +6978,7 @@ function ko_include_kota($tables=array()) {
 
 	//Include KOTA table definitions for given tables
 	$KOTA_TABLES = $tables;
-	include($BASE_PATH.'inc/kota.inc');
+	include($BASE_PATH.'inc/kota.inc.php');
 
 	//Apply access rights --> unset KOTA columns the current user has no access to
 	foreach($tables as $table) {
@@ -14592,7 +14592,7 @@ function ko_check_login() {
 			$user_lang = ko_get_userpref($_SESSION["ses_userid"], "lang");
 			if($user_lang != "" && in_array($user_lang, $LANGS)) {
 				$_SESSION["lang"] = $user_lang;
-				include($ko_path."inc/lang.inc");
+				include($ko_path."inc/lang.inc.php");
 			}
 
 			//Reread user settings
@@ -14617,7 +14617,7 @@ function ko_check_login() {
 		}
 		session_destroy();
 
-		include("inc/session.inc");
+		include("inc/session.inc.php");
 		$_SESSION = array();
 		$_SESSION['ses_userid'] = ko_get_guest_id();
 		$_SESSION['ses_username'] = 'ko_guest';
@@ -14664,7 +14664,7 @@ function ko_check_login() {
 		if(!$user_lang) $user_lang = $LANGS[0];
 		if($user_lang != '' && in_array($user_lang, $LANGS)) {
 			$_SESSION['lang'] = $user_lang;
-			include($ko_path.'inc/lang.inc');
+			include($ko_path.'inc/lang.inc.php');
 		}
 
 		//Redirect to default page (if set)

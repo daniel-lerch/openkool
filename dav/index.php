@@ -4,7 +4,7 @@ error_reporting(E_ALL ^ E_NOTICE ^ E_WARNING);
 //get kOOL config and vcard
 $ko_path = '../';
 $ko_menu_akt = 'carddav';
-require_once($ko_path.'inc/ko.inc');
+require_once($ko_path.'inc/ko.inc.php');
 require_once($ko_path.'leute/inc/vcard.php');
 
 //Database

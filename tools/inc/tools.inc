@@ -166,7 +166,7 @@ function ko_tools_add_submenu($sm, $users, $module, $pos_="") {
 			//Falls sm schon sonst wo (links, rechts oder auch geschlossen) vorhanden ist, nicht doppelt einfügen
 			if(in_array($submenu, $all_prefs)) continue;
 
-			//Find position according to defaults in submenu.inc, if not given as argument
+			//Find position according to defaults in submenu.inc.php, if not given as argument
 			if($pos_ == "") {
 				$left = ko_get_submenus($module."_left");
 				if(in_array($submenu, $left)) $position = "left";

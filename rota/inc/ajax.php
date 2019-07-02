@@ -25,7 +25,7 @@
 ***************************************************************/
 
 
-//Set session id from GET (session will be started in ko.inc)
+//Set session id from GET (session will be started in ko.inc.php)
 if(!isset($_GET['sesid'])) exit;
 if(FALSE === session_id($_GET['sesid'])) exit;
 
@@ -35,7 +35,7 @@ header('Content-Type: text/html; charset=ISO-8859-1');
 error_reporting(0);
 $ko_menu_akt = 'rota';
 $ko_path = '../../';
-require_once($ko_path.'inc/ko.inc');
+require_once($ko_path.'inc/ko.inc.php');
 $ko_path = '../';
 
 //Rechte auslesen
@@ -49,7 +49,7 @@ ko_include_kota(array('ko_rota_teams'));
 $hooks = hook_include_main('rota');
 if(sizeof($hooks) > 0) foreach($hooks as $hook) include_once($hook);
  
-require($BASE_PATH.'inc/smarty.inc');
+require($BASE_PATH.'inc/smarty.inc.php');
 
 require($BASE_PATH.'rota/inc/rota.inc');
 

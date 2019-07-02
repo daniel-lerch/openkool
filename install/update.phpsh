@@ -59,7 +59,7 @@ if($_SERVER['SCRIPT_FILENAME']) {
 }
 if(substr($ko_path, -1) != '/') $ko_path .= '/';
 
-require_once($ko_path.'inc/ko.inc');
+require_once($ko_path.'inc/ko.inc.php');
 require_once($ko_path.'inc/class.dbStructUpdater.php');
 
 //Get all tables
