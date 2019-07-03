@@ -32,7 +32,7 @@ require($ko_path.'rota/inc/rota.inc.php');
 require_once('consensus.inc.php');
 
 //Send headers to ensure latin1 charset
-header('Content-Type: text/html; charset=ISO-8859-1');
+header('Content-Type: text/html; charset=UTF-8');
 
 
 if(isset($_POST) && isset($_POST["action"])) {

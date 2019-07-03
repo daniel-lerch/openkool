@@ -73,7 +73,7 @@ if(sizeof($hooks) > 0) foreach($hooks as $hook) include($hook);
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="<?php print $_SESSION["lang"]; ?>" lang="<?php print $_SESSION["lang"]; ?>">
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1" />
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
 <link rel="SHORTCUT ICON" href="<?php print $ko_path; ?>images/kOOL_logo.ico" />
 <title><?php print $HTML_TITLE; ?></title>
 <?php
