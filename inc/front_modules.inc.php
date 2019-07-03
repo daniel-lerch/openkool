@@ -118,7 +118,7 @@ function ko_fm_daten_cal($uid, $pos) {
 	global $ko_path, $smarty, $access;
 	
 	ko_get_access('daten');
-	include($ko_path . "daten/inc/daten.inc");
+	include($ko_path . "daten/inc/daten.inc.php");
 
 	$egs = array();
 	if($access['daten']['ALL'] > 0) {
@@ -313,7 +313,7 @@ function ko_fm_mod($uid) {
 	if($uid == ko_get_guest_id()) return FALSE;
 
 	//Reservations awaiting moderation
-	include($ko_path.'reservation/inc/reservation.inc');
+	include($ko_path.'reservation/inc/reservation.inc.php');
 	ko_get_access('reservation', $uid);
 	
   if($access['reservation']['MAX'] > 4) {  //Moderator for at least one item

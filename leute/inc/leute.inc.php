@@ -26,8 +26,8 @@
 
 
 //KG-Modul einfügen, damit es nicht manuell eingefügt werden muss
-if(ko_module_installed("kg") && file_exists($ko_path."leute/inc/kg.inc"))
-  include($ko_path."leute/inc/kg.inc");
+if(ko_module_installed("kg") && file_exists($ko_path."leute/inc/kg.inc.php"))
+  include($ko_path."leute/inc/kg.inc.php");
 
 
 //Define basic chart types for leute module (may be extended by plugins)
@@ -208,7 +208,7 @@ function ko_formular_leute($mode, $id=0, $show_save_as_new=true) {
 						$inputs[$col_counter]["colspan"] = 'colspan="2"';
 						$inputs[$col_counter]["onclick_2_add"] = 'do_update_df_form(\''.$id.'\',\''.session_id().'\');';
 						$inputs[$col_counter]["onclick_del_add"] = 'do_update_df_form(\''.$id.'\',\''.session_id().'\');';
-						//Nur gültige IDs auslesen, Rest wird durch js-groupmenu.inc erledigt
+						//Nur gültige IDs auslesen, Rest wird durch js-groupmenu.inc.php erledigt
 						//Hier die alten Gruppen immer ausblenden
 						$orig_value = ko_get_userpref($_SESSION['ses_userid'], 'show_passed_groups');
 						ko_save_userpref($_SESSION['ses_userid'], 'show_passed_groups', 0);

@@ -30,7 +30,7 @@ $ko_path = "../";
 $ko_menu_akt = "donations";
 
 include($ko_path . "inc/ko.inc.php");
-include("inc/donations.inc");
+include("inc/donations.inc.php");
 
 //Redirect to SSL if needed
 ko_check_ssl();
@@ -714,7 +714,7 @@ ko_set_submenues();
 print ko_include_css();
 print ko_include_js(array($ko_path.'inc/jquery/jquery.js', $ko_path.'inc/kOOL.js', $ko_path.'inc/ckeditor/ckeditor.js', $ko_path.'inc/ckeditor/adapters/jquery.js'));
 include($ko_path.'inc/js-sessiontimeout.inc.php');
-include('inc/js-donations.inc');
+include('inc/js-donations.inc.php');
 $js_calendar->load_files();
 ?>
 </head>

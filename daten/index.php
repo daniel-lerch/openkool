@@ -30,10 +30,10 @@ $ko_path = "../";
 $ko_menu_akt = "daten";
 
 include($ko_path . "inc/ko.inc.php");
-include($ko_path . 'consensus/consensus.inc');
-include("inc/daten.inc");
+include($ko_path . 'consensus/consensus.inc.php');
+include("inc/daten.inc.php");
 if(ko_module_installed("reservation")) 
-	include("../reservation/inc/reservation.inc");
+	include("../reservation/inc/reservation.inc.php");
 
 $notifier = koNotifier::Instance();
 
@@ -1505,11 +1505,11 @@ if($_SESSION['show'] == 'calendar') {
 }
 print ko_include_css();
 include($ko_path.'inc/js-sessiontimeout.inc.php');
-include("inc/js-daten.inc");
+include("inc/js-daten.inc.php");
 
 //Include JS from rota module when editing an event
-if(in_array($_SESSION['show'], array('edit_termin')) && ko_module_installed('rota')) include($ko_path.'rota/inc/js-rota.inc');
-if(in_array($_SESSION["show"], array("neuer_termin"))) include("inc/js-seleventgroup.inc");
+if(in_array($_SESSION['show'], array('edit_termin')) && ko_module_installed('rota')) include($ko_path.'rota/inc/js-rota.inc.php');
+if(in_array($_SESSION["show"], array("neuer_termin"))) include("inc/js-seleventgroup.inc.php");
 $js_calendar->load_files();
 ?>
 </head>

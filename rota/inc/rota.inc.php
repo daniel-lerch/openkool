@@ -25,7 +25,7 @@
 ***************************************************************/
 
 require_once($BASE_PATH."inc/class.kOOL_listview.php");
-require_once($BASE_PATH."consensus/consensus.inc");
+require_once($BASE_PATH."consensus/consensus.inc.php");
 
 
 $ROTA_TIMESPANS = array('1d', '1w', '2w', '1m', '2m', '3m', '6m', '12m');

@@ -30,7 +30,7 @@ $ko_path = '../';
 $ko_menu_akt = 'rota';
 
 include($ko_path . 'inc/ko.inc.php');
-include('inc/rota.inc');
+include('inc/rota.inc.php');
 
 //Redirect to SSL if needed
 ko_check_ssl();
@@ -613,7 +613,7 @@ print ko_include_js(array($ko_path.'inc/jquery/jquery.js', $ko_path.'inc/jquery/
 
 print ko_include_css();
 include($ko_path.'inc/js-sessiontimeout.inc.php');
-include($ko_path.'rota/inc/js-rota.inc');
+include($ko_path.'rota/inc/js-rota.inc.php');
 $js_calendar->load_files();
 ?>
 </head>

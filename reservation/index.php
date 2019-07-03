@@ -30,7 +30,7 @@ $ko_path = "../";
 $ko_menu_akt = "reservation";
 
 include($ko_path . "inc/ko.inc.php");
-include("inc/reservation.inc");
+include("inc/reservation.inc.php");
 
 //get notifier instance
 $notifier = koNotifier::Instance();
@@ -1405,7 +1405,7 @@ if($_SESSION['show'] == 'calendar') {
 }
 print ko_include_css();
 include($ko_path.'inc/js-sessiontimeout.inc.php');
-include("inc/js-reservation.inc");
+include("inc/js-reservation.inc.php");
 $js_calendar->load_files();
 ?>
 </head>

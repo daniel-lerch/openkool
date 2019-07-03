@@ -28,8 +28,8 @@
 $ko_path = '../';
 
 require($ko_path.'inc/ko.inc.php');
-require($ko_path.'rota/inc/rota.inc');
-require_once('consensus.inc');
+require($ko_path.'rota/inc/rota.inc.php');
+require_once('consensus.inc.php');
 
 //Send headers to ensure latin1 charset
 header('Content-Type: text/html; charset=ISO-8859-1');

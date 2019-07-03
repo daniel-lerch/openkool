@@ -29,7 +29,7 @@ cd $(dirname $0)
 
 echo "Preparing ~/config..."
 if [[ ! -d ../config ]]; then mkdir ../config; fi
-cp -f default/config/address.rtf default/config/ko-config.php default/config/leute_formular.inc ../config
+cp -f default/config/address.rtf default/config/ko-config.php default/config/leute_formular.inc.php ../config
 chown --recursive $WEB_UID:$WEB_GID ../config
 
 echo "Preparing ~/download..."

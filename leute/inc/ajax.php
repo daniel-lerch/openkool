@@ -46,8 +46,8 @@ ko_include_kota(array('ko_leute', 'ko_kleingruppen'));
 //Smarty-Templates-Engine laden
 require($BASE_PATH."inc/smarty.inc.php");
 
-require($BASE_PATH."leute/inc/leute.inc");
-if(ko_module_installed("kg")) require($BASE_PATH."leute/inc/kg.inc");
+require($BASE_PATH."leute/inc/leute.inc.php");
+if(ko_module_installed("kg")) require($BASE_PATH."leute/inc/kg.inc.php");
 
 // Plugins einlesen:
 $hooks = hook_include_main("leute,kg");

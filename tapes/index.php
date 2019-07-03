@@ -30,7 +30,7 @@ $ko_path = "../";
 $ko_menu_akt = "tapes";
 
 include($ko_path . "inc/ko.inc.php");
-include("inc/tapes.inc");
+include("inc/tapes.inc.php");
 
 //Redirect to SSL if needed
 ko_check_ssl();
@@ -623,7 +623,7 @@ print ko_include_css();
 print ko_include_js(array($ko_path.'inc/jquery/jquery.js', $ko_path.'inc/kOOL.js'));
 
 include($ko_path.'inc/js-sessiontimeout.inc.php');
-include("inc/js-tapes.inc");
+include("inc/js-tapes.inc.php");
 $js_calendar->load_files();
 ?>
 </head>

@@ -30,9 +30,9 @@ $ko_menu_akt = "consensus";
 $SMARTY_RENDER_TEMPLATE = null;
 
 require($ko_path.'inc/ko.inc.php');
-require($ko_path.'rota/inc/rota.inc');
+require($ko_path.'rota/inc/rota.inc.php');
 require($ko_path.'inc/smarty.inc.php');
-require_once('consensus.inc');
+require_once('consensus.inc.php');
 
 
 $notifier = koNotifier::Instance();
@@ -87,7 +87,7 @@ switch ($do_action) {
 print '<script type="text/javascript" src="' . $ko_path . 'consensus/consensus.js?'.filemtime($ko_path.'consensus/consensus.js').'"></script>';
 print '<script type="text/javascript" src="' . $ko_path . 'inc/jquery/jquery.js?'.filemtime($ko_path.'inc/jquery/jquery.js').'"></script>';
 print '<script type="text/javascript" src="' . $ko_path . 'inc/tooltip.js?'.filemtime($ko_path.'inc/tooltip.js').'"></script>';
-include("js-consensus.inc");
+include("js-consensus.inc.php");
 print '<link rel="stylesheet" type="text/css" href="'.$ko_path.'consensus/consensus.css?'.filemtime($ko_path.'consensus/consensus.css').'" />';
 ?>
 </head>

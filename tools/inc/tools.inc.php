@@ -459,7 +459,7 @@ function ko_tools_list_familie_db() {
 function ko_tools_leute_formular() {
 	global $ko_path, $LEUTE_EXCLUDE;
 
-	$file = file($ko_path."config/leute_formular.inc");
+	$file = file($ko_path."config/leute_formular.inc.php");
 	$content = implode("", $file);
 	print '<textarea cols="100" rows="50" name="txt_leute_formular">';
 	print $content;

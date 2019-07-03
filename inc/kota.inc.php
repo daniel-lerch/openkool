@@ -2474,14 +2474,14 @@ if(in_array('ko_event', $KOTA_TABLES)) {
 
 
 
-//Include kota.inc from web directory (specific to each installation)
-if(file_exists($BASE_PATH."config/kota.inc")) {
-	include($BASE_PATH."config/kota.inc");
+//Include kota.inc.php from web directory (specific to each installation)
+if(file_exists($BASE_PATH."config/kota.inc.php")) {
+	include($BASE_PATH."config/kota.inc.php");
 }
 
 //Allow plugins to change KOTA
 foreach($GLOBALS['PLUGINS'] as $plugin) {
-	$file = $BASE_PATH."plugins/".$plugin["name"]."/kota.inc";
+	$file = $BASE_PATH."plugins/".$plugin["name"]."/kota.inc.php";
 	if(file_exists($file)) include($file);
 }
 

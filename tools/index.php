@@ -30,7 +30,7 @@ $ko_path = "../";
 $ko_menu_akt = "tools";
 
 include($ko_path.'inc/ko.inc.php');
-include('inc/tools.inc');
+include('inc/tools.inc.php');
 include($ko_path.'inc/class.mcrypt.php');
 
 //Redirect to SSL if needed
@@ -584,7 +584,7 @@ switch($do_action) {
 	case "submit_save_leute_formular":
 		$file = $_POST['txt_leute_formular'];
 		if(get_magic_quotes_gpc()) $file = stripslashes($file);
-		$fp = fopen($ko_path."config/leute_formular.inc", "w");
+		$fp = fopen($ko_path."config/leute_formular.inc.php", "w");
 		fputs($fp, $file);
 		fclose($fp);
 		$notifier->addInfo(5, $do_action);
@@ -824,7 +824,7 @@ ko_set_submenues();
 print ko_include_css();
 print ko_include_js(array($ko_path.'inc/jquery/jquery.js', $ko_path.'inc/kOOL.js'));
 include($ko_path.'inc/js-sessiontimeout.inc.php');
-//include("inc/js-tools.inc");
+//include("inc/js-tools.inc.php");
 ?>
 </head>
 

@@ -48,7 +48,7 @@ ko_include_kota(array('ko_reservation', 'ko_resitem'));
 $hooks = hook_include_main("reservation");
 if(sizeof($hooks) > 0) foreach($hooks as $hook) include_once($hook);
 
-require($BASE_PATH."reservation/inc/reservation.inc");
+require($BASE_PATH."reservation/inc/reservation.inc.php");
 
 //Smarty-Templates-Engine laden
 require($BASE_PATH."inc/smarty.inc.php");

@@ -142,6 +142,6 @@ $FAMFUNCTION_SORT_ORDER = array('husband' => 1, 'wife' => 2, 'child' => 3);
 //$LEUTE_NO_FAMILY = false;
 
 //Leute-Formular Layout einlesen
-include($ko_path.'config/leute_formular.inc');
+include($ko_path.'config/leute_formular.inc.php');
 
 ?>

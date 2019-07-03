@@ -30,7 +30,7 @@ $ko_path = "../";
 $ko_menu_akt = "groups";
 
 include($ko_path . "inc/ko.inc.php");
-include("inc/groups.inc");
+include("inc/groups.inc.php");
 
 //Redirect to SSL if needed
 ko_check_ssl();
@@ -886,7 +886,7 @@ if($_SESSION['show'] == 'edit_login_rights') $js_files[] = $ko_path.'inc/selectm
 print ko_include_js($js_files);
 
 include($ko_path.'inc/js-sessiontimeout.inc.php');
-include('inc/js-groups.inc');
+include('inc/js-groups.inc.php');
 $js_calendar->load_files();
 
 //Bei der Bearbeitung von Login-Rechten Ajax einbinden und alles für die drei selectmenus
@@ -898,19 +898,19 @@ if($_SESSION['show'] == 'edit_login_rights') {
 	ko_save_userpref($_SESSION['ses_userid'], 'show_passed_groups', 1);
 	//View
 	$list_id = 1;
-	include($ko_path."leute/inc/js-groupmenu.inc");
+	include($ko_path."leute/inc/js-groupmenu.inc.php");
 	$loadcode = "initList($list_id, document.formular.sel_ds1_sel_rights_view);";
 	//New
 	$list_id = 2;
-	include($ko_path."leute/inc/js-groupmenu.inc");
+	include($ko_path."leute/inc/js-groupmenu.inc.php");
 	$loadcode .= "initList($list_id, document.formular.sel_ds1_sel_rights_new);";
 	//Edit
 	$list_id = 3;
-	include($ko_path."leute/inc/js-groupmenu.inc");
+	include($ko_path."leute/inc/js-groupmenu.inc.php");
 	$loadcode .= "initList($list_id, document.formular.sel_ds1_sel_rights_edit);";
 	//Del
 	$list_id = 4;
-	include($ko_path."leute/inc/js-groupmenu.inc");
+	include($ko_path."leute/inc/js-groupmenu.inc.php");
 	$loadcode .= "initList($list_id, document.formular.sel_ds1_sel_rights_del);";
 	$onload_code = $loadcode.$onload_code;
 	//Reset setting to original value

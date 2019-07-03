@@ -995,7 +995,7 @@ function ko_login_formular($mode, $id=0, $type="login") {
 																 'params' => 'size="0"',
 																 );
 
-		include_once($ko_path.'groups/inc/groups.inc');
+		include_once($ko_path.'groups/inc/groups.inc.php');
 		if(!is_array($all_groups)) ko_get_groups($all_groups);
 		$col = 0;
 		foreach(array('view', 'new', 'edit', 'del') as $level_num => $rights_level) {

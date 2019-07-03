@@ -48,7 +48,7 @@ if(sizeof($hooks) > 0) foreach($hooks as $hook) include_once($hook);
 //Smarty-Templates-Engine laden
 require($BASE_PATH."inc/smarty.inc.php");
 
-require($BASE_PATH."tapes/inc/tapes.inc");
+require($BASE_PATH."tapes/inc/tapes.inc.php");
 
 //HOOK: Submenus einlesen
 $hooks = hook_include_sm();

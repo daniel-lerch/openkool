@@ -28,7 +28,7 @@ $ko_path = "../";
 $ko_menu_akt = "ical";
 
 include($ko_path."inc/ko.inc.php");
-include($ko_path."reservation/inc/reservation.inc");
+include($ko_path."reservation/inc/reservation.inc.php");
 ko_include_kota(array('ko_reservation'));
 
 $auth = FALSE;

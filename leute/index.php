@@ -30,7 +30,7 @@ $ko_path = "../";
 $ko_menu_akt = "leute";
 
 include($ko_path . "inc/ko.inc.php");
-include("inc/leute.inc");
+include("inc/leute.inc.php");
 
 //get notifier instance
 $notifier = koNotifier::Instance();
@@ -1311,7 +1311,7 @@ switch($do_action) {
 			if(in_array('tracking', $MODULES)) {
 				$tracking = db_select_data('ko_tracking', "WHERE `filter` REGEXP '^g".$gid."[:r0-9]*'", '*', '', 'LIMIT 0,1', TRUE);
 				if(isset($tracking['id'])) {
-					include_once($ko_path.'tracking/inc/tracking.inc');
+					include_once($ko_path.'tracking/inc/tracking.inc.php');
 					ko_tracking_set_default($tracking['id'], $lid);
 				}
 			}
@@ -3553,7 +3553,7 @@ print ko_include_js(array($ko_path.'inc/jquery/jquery.js',
 										($_SESSION['show'] == 'list_kg' ? 'kg' : $ko_menu_akt));
 
 include($ko_path.'inc/js-sessiontimeout.inc.php');
-include("inc/js-leute.inc");
+include("inc/js-leute.inc.php");
 //Load JS files for js_calendar
 $js_calendar->load_files();
 
@@ -3565,7 +3565,7 @@ if($_SESSION["show"] == "neue_person" || $_SESSION["show"] == "edit_person") {
 	//Beim Einteilen die vergangenen Gruppen nie anzeigen
 	$orig_value = ko_get_userpref($_SESSION['ses_userid'], 'show_passed_groups');
 	ko_save_userpref($_SESSION['ses_userid'], 'show_passed_groups', 0);
-	include("inc/js-groupmenu.inc");
+	include("inc/js-groupmenu.inc.php");
 	ko_save_userpref($_SESSION['ses_userid'], 'show_passed_groups', $orig_value);
 	$loadcode = "initList($list_id, document.formular.sel_ds0_input_groups);";
 	$onload_code = $loadcode.$onload_code;
@@ -3578,7 +3578,7 @@ if($_SESSION["show"] == "neue_person" || $_SESSION["show"] == "edit_person") {
 	//Beim Filter die vergangenen Gruppen gemäss Einstellung zeigen
 	//allerdings auch Platzhalter-Gruppen anzeigen
 	$show_all_types = TRUE;
-	include("inc/js-groupmenu.inc");
+	include("inc/js-groupmenu.inc.php");
 }
 ?>
 </head>

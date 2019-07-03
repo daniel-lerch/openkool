@@ -51,7 +51,7 @@ if(sizeof($hooks) > 0) foreach($hooks as $hook) include_once($hook);
  
 require($BASE_PATH.'inc/smarty.inc.php');
 
-require($BASE_PATH.'rota/inc/rota.inc');
+require($BASE_PATH.'rota/inc/rota.inc.php');
 
 $hooks = hook_include_sm();
 if(sizeof($hooks) > 0) foreach($hooks as $hook) include($hook);

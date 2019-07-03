@@ -30,7 +30,7 @@ $ko_path = "../";
 $ko_menu_akt = "admin";
 
 include($ko_path . "inc/ko.inc.php");
-include("inc/admin.inc");
+include("inc/admin.inc.php");
 
 $notifier = koNotifier::Instance();
 
@@ -1710,19 +1710,19 @@ if(in_array($_SESSION['show'], array('edit_login', 'edit_admingroup'))) {
 	ko_save_userpref($_SESSION['ses_userid'], 'show_passed_groups', 1);
 	//View
 	$list_id = 1;
-	include($ko_path.'leute/inc/js-groupmenu.inc');
+	include($ko_path.'leute/inc/js-groupmenu.inc.php');
 	$loadcode .= "initList($list_id, document.formular.sel_ds1_sel_groups_rights_view);";
 	//New
 	$list_id = 2;
-	include($ko_path.'leute/inc/js-groupmenu.inc');
+	include($ko_path.'leute/inc/js-groupmenu.inc.php');
 	$loadcode .= "initList($list_id, document.formular.sel_ds1_sel_groups_rights_new);";
 	//Edit
 	$list_id = 3;
-	include($ko_path.'leute/inc/js-groupmenu.inc');
+	include($ko_path.'leute/inc/js-groupmenu.inc.php');
 	$loadcode .= "initList($list_id, document.formular.sel_ds1_sel_groups_rights_edit);";
 	//Del
 	$list_id = 4;
-	include($ko_path.'leute/inc/js-groupmenu.inc');
+	include($ko_path.'leute/inc/js-groupmenu.inc.php');
 	$loadcode .= "initList($list_id, document.formular.sel_ds1_sel_groups_rights_del);";
 	$onload_code = $loadcode.$onload_code;
 	//Reset userpref to original value

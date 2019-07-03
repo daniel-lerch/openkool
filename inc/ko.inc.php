@@ -3041,7 +3041,7 @@ function ko_get_family_col_name() {
 /**
   * Wendet die Leute-Filter an und gibt SQL-WHERE-Clause zurück
 	* Ebenfalls verwendet, um Admin-Filter für Berechtigungen anzuwenden
-	* Muss in ko.inc.php stehen (und nicht in leute/inc/leute.inc), damit ko_get_admin() immer Zugriff darauf hat --> z.B. für Dropdown-Menüs
+	* Muss in ko.inc.php stehen (und nicht in leute/inc/leute.inc.php), damit ko_get_admin() immer Zugriff darauf hat --> z.B. für Dropdown-Menüs
 	*/
 function apply_leute_filter($filter, &$where_code, $add_admin_filter=TRUE, $admin_filter_level='', $_login_id='', $includeAll=FALSE) {
 	global $ko_menu_akt;
@@ -3614,7 +3614,7 @@ function map_leute_daten($data, $col, &$p, &$all_datafields, $forceDatafields=FA
 	}
 
 
-	if($col == "groups") {  //Used for group filters and the groups-column in the excel export (the HTML view is created in leute.inc)
+	if($col == "groups") {  //Used for group filters and the groups-column in the excel export (the HTML view is created in leute.inc.php)
 		$value = NULL;
 		if(substr($data, 0, 1) == "r" || substr($data, 0, 2) == ":r") {  //Rolle
 			ko_get_grouproles($role, "AND `id` = '".substr($data, (strpos($data, "r")+1))."'");
@@ -12588,7 +12588,7 @@ function ko_task_delete_old_downloads() {
 function ko_task_import_events_ical() {
 	global $ko_path, $BASE_PATH;
 
-	require_once($ko_path.'daten/inc/daten.inc');
+	require_once($ko_path.'daten/inc/daten.inc.php');
 
 	//Get event groups to be imported
 	$egs = db_select_data('ko_eventgruppen', "WHERE `type` = '3' AND `ical_url` != ''");

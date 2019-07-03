@@ -347,7 +347,7 @@ switch($_SESSION["show"]) {
 		print '<h1>'.getLL("install_checks_header").'</h1>';
 
 		//Check for filesystem permissions
-		$check_files = array("config/ko-config.php", "config/leute_formular.inc",
+		$check_files = array("config/ko-config.php", "config/leute_formular.inc.php",
 												 "download/excel", "download/pdf",
 												 "my_images",
 												 "templates_c",
