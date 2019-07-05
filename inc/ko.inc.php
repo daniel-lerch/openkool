@@ -4025,10 +4025,10 @@ function ko_get_preferred_fields($type='') {
 
 /**
  * Store an old state of an edited person record in database for versioning
- * @params $id ID of person's dataset
- * @params $data array holding the current data for this record, which will be stored serialized
- " @params $df array holding all datafield data for this user. Will be fetched from db if empty
- * @params $uid int ID of kOOL login to assign this change to, usually ses_userid
+ * @param $id ID of person's dataset
+ * @param $data array holding the current data for this record, which will be stored serialized
+ * @param $df array holding all datafield data for this user. Will be fetched from db if empty
+ * @param $uid int ID of kOOL login to assign this change to, usually ses_userid
  */
 function ko_save_leute_changes($id, $data='', $df='', $uid='') {
 	if(!$id) return FALSE;
@@ -4072,7 +4072,7 @@ function ko_save_leute_changes($id, $data='', $df='', $uid='') {
  * @return array, Array of address data for the given timestamp
  */
 function ko_leute_get_version($version, $id) {
-	if(!$id || !$version) continue;
+	if(!$id || !$version) throw new InvalidArgumentException();
 
 	$old = db_select_data("ko_leute_changes", "WHERE `leute_id` = '$id' AND `date` > '$version 23:59:59'", "*", "ORDER BY `date` ASC", "LIMIT 0, 1", TRUE);
 
