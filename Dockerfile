@@ -23,6 +23,7 @@ RUN set -x \
 # Copy all source files to webroot
 COPY . /var/www/html
 
-# Install PHP libraries
+# Install PHP libraries and run setup
 RUN set -x \
-    && php composer.phar install
+    && php composer.phar install \
+    && bash /var/www/html/install/setup.sh --docker-build
