@@ -484,8 +484,8 @@ switch($do_action) {
 
 		$data = array();
 		if(FALSE === ($id = format_userinput($_POST["id"], "uint", TRUE))) {
-	    trigger_error("Not allowed id: ".$id, E_USER_ERROR);
-    }
+	    	trigger_error("Not allowed id: ".$id, E_USER_ERROR);
+    	}
 		//Gruppen-Name speichern
 		$name = format_userinput($_POST["txt_name"], "js");
 		if($_POST["txt_name"] != "") {
@@ -777,8 +777,8 @@ switch($do_action) {
 		if($access['admin']['MAX'] < 5) continue;
 
 		if(FALSE === ($id = format_userinput($_POST["id"], "uint", TRUE))) {
-	    trigger_error("Not allowed id: ".$id, E_USER_ERROR);
-    }
+	    	trigger_error("Not allowed id: ".$id, E_USER_ERROR);
+    	}
 		//root darf nur von root bearbeitet werden
 		if($id == ko_get_root_id() && $_SESSION["ses_username"] != "root") continue;
 

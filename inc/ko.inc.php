@@ -1,28 +1,22 @@
 ﻿<?php
-/***************************************************************
-*  Copyright notice
+/*******************************************************************************
 *
-*  (c) 2003-2015 Renzo Lauper (renzo@churchtool.org)
-*  All rights reserved
+*    OpenKool - Online church organization tool
 *
-*  This script is part of the kOOL project. The kOOL project is
-*  free software; you can redistribute it and/or modify
-*  it under the terms of the GNU General Public License as published by
-*  the Free Software Foundation; either version 2 of the License, or
-*  (at your option) any later version.
+*    Copyright © 2003-2015 Renzo Lauper (renzo@churchtool.org)
+*    Copyright © 2019      Daniel Lerch
 *
-*  The GNU General Public License can be found at
-*  http://www.gnu.org/copyleft/gpl.html.
-*  A copy is found in the textfile GPL.txt and important notices to the license
-*  from the author is found in LICENSE.txt distributed with these scripts.
+*    This program is free software; you can redistribute it and/or modify
+*    it under the terms of the GNU General Public License as published by
+*    the Free Software Foundation; either version 2 of the License, or
+*    (at your option) any later version.
 *
-*  kOOL is distributed in the hope that it will be useful,
-*  but WITHOUT ANY WARRANTY; without even the implied warranty of
-*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-*  GNU General Public License for more details.
+*    This program is distributed in the hope that it will be useful,
+*    but WITHOUT ANY WARRANTY; without even the implied warranty of
+*    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+*    GNU General Public License for more details.
 *
-*  This copyright notice MUST APPEAR in all copies of the script!
-***************************************************************/
+*******************************************************************************/
 
 define('VERSION', 'R45');
 
@@ -1228,6 +1222,8 @@ function ko_get_leute_admin_filter($id, $mode="login") {
 		$row = db_select_data("ko_admin", "WHERE `id` = '$id'", "leute_admin_filter", "", "", TRUE);
 	} else if($mode == "admingroup") {
 		$row = db_select_data("ko_admingroups", "WHERE `id` = '$id'", "leute_admin_filter", "", "", TRUE);
+	} else {
+		throw new InvalidArgumentException("\$mode must be either 'login' or 'admingroup' but was '$mode'");
 	}
 
 	//Store in cache and return
@@ -7597,7 +7593,7 @@ function ko_multiedit_formular($table, $columns="", $ids=0, $order="", $form_dat
  * Get addresses from ko_leute for a KOTA field of type peoplesearch
  * @param array Array of currently selected IDs
  * @param boolean Set to true to return addresses ordered by name (default).
-                  Set to false to return the addresses in the order of the given IDs
+ *                Set to false to return the addresses in the order of the given IDs
  * @return array Two arrays are returned holding the IDs and labels to be used as options for a select
  */
 function kota_peopleselect($ids, $sort=TRUE) {

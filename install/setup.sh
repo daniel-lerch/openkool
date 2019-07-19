@@ -4,7 +4,7 @@
 #
 #    OpenKool - Online church organization tool
 #
-#    Copyright @ 2003-2015 Renzo Lauper (renzo@churchtool.org)
+#    Copyright © 2003-2015 Renzo Lauper (renzo@churchtool.org)
 #    Copyright © 2019      Daniel Lerch
 #
 #    This program is free software; you can redistribute it and/or modify
