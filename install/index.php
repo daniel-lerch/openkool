@@ -1,28 +1,22 @@
 <?php
-/***************************************************************
-*  Copyright notice
+/*******************************************************************************
 *
-*  (c) 2003-2015 Renzo Lauper (renzo@churchtool.org)
-*  All rights reserved
+*    OpenKool - Online church organization tool
 *
-*  This script is part of the kOOL project. The kOOL project is
-*  free software; you can redistribute it and/or modify
-*  it under the terms of the GNU General Public License as published by
-*  the Free Software Foundation; either version 2 of the License, or
-*  (at your option) any later version.
+*    Copyright © 2003-2015 Renzo Lauper (renzo@churchtool.org)
+*    Copyright © 2019      Daniel Lerch
 *
-*  The GNU General Public License can be found at
-*  http://www.gnu.org/copyleft/gpl.html.
-*  A copy is found in the textfile GPL.txt and important notices to the license
-*  from the author is found in LICENSE.txt distributed with these scripts.
+*    This program is free software; you can redistribute it and/or modify
+*    it under the terms of the GNU General Public License as published by
+*    the Free Software Foundation; either version 2 of the License, or
+*    (at your option) any later version.
 *
-*  kOOL is distributed in the hope that it will be useful,
-*  but WITHOUT ANY WARRANTY; without even the implied warranty of
-*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-*  GNU General Public License for more details.
+*    This program is distributed in the hope that it will be useful,
+*    but WITHOUT ANY WARRANTY; without even the implied warranty of
+*    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+*    GNU General Public License for more details.
 *
-*  This copyright notice MUST APPEAR in all copies of the script!
-***************************************************************/
+*******************************************************************************/
 
 ob_start();  //Ausgabe-Pufferung starten
 
@@ -384,14 +378,14 @@ switch($_SESSION["show"]) {
 	case "set_db":
 		//Try to connect to MySQL-Server
 		if($mysql_user && $mysql_pass && $mysql_server) {
-			$d = mysql_connect($mysql_server, $mysql_user, $mysql_pass);
-			if(!$d) {
-				$error_txt_add .= mysql_error();
+			$link = mysqli_connect($mysql_server, $mysql_user, $mysql_pass);
+			if(!$link) {
+				$error_txt_add .= mysqli_connect_error();
 				$notifier->addError(1, $do_action, array($error_txt_add));
 			} else {
-				$result = mysql_query("SHOW DATABASES");
+				$result = mysqli_query($link, "SHOW DATABASES");
 				$databases = NULL;
-				while($row = mysql_fetch_array($result)) {
+				while($row = mysqli_fetch_array($result)) {
 					$databases[] = $row[0];
 				}
 			}
@@ -426,7 +420,7 @@ switch($_SESSION["show"]) {
 																 "value" => (isset($_POST["txt_server"]) ? ko_html($_POST["txt_server"]) : $mysql_server),
 																 "params" => 'size="40"',
 																 );
-		if($d) {
+		if($link) {
 			$frmgroup[$gc]["row"][$rowcounter++]["inputs"][1] = array("desc" => getLL("install_db_db"),
 																	 "type" => "select",
 																	 "name" => "sel_db",

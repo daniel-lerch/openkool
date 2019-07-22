@@ -8,6 +8,8 @@ RUN set -x \
 # Install PHP extensions
     && docker-php-ext-configure mysql \
     && docker-php-ext-install mysql \
+    && docker-php-ext-configure mysqli \
+    && docker-php-ext-install mysqli \
     && docker-php-ext-configure imap --with-kerberos --with-imap-ssl \
     && docker-php-ext-install imap \
 # Remove temporary packages
