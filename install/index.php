@@ -259,7 +259,6 @@ switch($do_action) {
 
 
 //Smarty-Templates-Engine laden
-$smarty_dir = $ko_path;
 require("$ko_path/inc/smarty.inc.php");
 
 

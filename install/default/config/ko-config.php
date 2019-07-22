@@ -56,9 +56,6 @@ $BASE_URL  = '';
 $BASE_PATH = ''; // trailing slash required
 @define('FORCE_SSL', FALSE);
 
-//Smarty
-$smarty_dir = $BASE_PATH;
-
 //Set path to pdflatex executable (if installed locally)
 $PDFLATEX_PATH = '';
 
