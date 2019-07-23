@@ -318,6 +318,7 @@ $LL["nl"] = array(
 'error_msg_1' => "kOOL kon niet doorgaan door een fatale fout. Er is een foutrapport verzonden naar de ontwikkelaars.",
 'error_msg_2' => "Als deze fout herhaaldelijk optreedt, wordt u vriendelijk verzocht om een gedetailleerd foutrapport te verzenden naar %s, met een beschrijving van alle nodige stappen om de fout te reproduceren.",
 'error_msg_3' => "We verontschuldigen ons voor het ongemak en proberen het probleem zo spoedig mogelijk te verhelpen.",
+'error_msg_4' => "Aanvullende informatie voor ontwikkelaars",
 'error_no_db_1' => "Kan geen verbinding krijgen met de database!",
 'error_no_db_2' => "Mogelijke oorzaken:",
 'error_no_db_reason_1' => "Dit is een nieuwe installatie van kOOL, welke nog niet geconfigureerd is. Als dit zo is, gebruik dan http://pad.naar.uw.kOOL/install om de installatie te starten.",

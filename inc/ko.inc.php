@@ -14137,6 +14137,7 @@ function getLL($string) {
 
 /**
  * Sends an email
+ * @return bool: TRUE when mail was sent successfully, otherwise FALSE
  */
 function ko_send_mail($from, $to, $subject, $body, $files = array(), $cc = array(), $bcc = array()) {
 	try {

@@ -429,6 +429,7 @@ $LL["en"] = array(
 'error_msg_1' => "kOOL could not continue because of a fatal error. An error report has been sent to the developers.",
 'error_msg_2' => "If this error occurs again and again, you are kindly asked to send a detailed bug report to %s, with a description of the necessary steps that lead to this error.",
 'error_msg_3' => "We are sorry for any inconvenience and will try to fix this problem as soon as possible.",
+'error_msg_4' => "Additional information for developers",
 'error_no_db_1' => "Can not connect to database!",
 'error_no_db_2' => "Possible Causes:",
 'error_no_db_reason_1' => "This is a new installation of kOOL, which has not yet been configured. If so, use http://path.to.your.kOOL/install to start the install.",

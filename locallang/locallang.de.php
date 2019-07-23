@@ -308,6 +308,7 @@ $LL["de"] = array(
 'error_msg_1' => "kOOL konnte nicht weiter ausgeführt werden, da ein irreparabler Fehler auftrat. Ein Fehlerbericht wurde an die Entwickler geschickt.",
 'error_msg_2' => "Falls dieser Fehler reproduzierbar auftritt, senden Sie bitte einen genauen Fehlerbericht an %s mit einer Beschreibung des Vorgehens, das zu diesem Fehler führt.",
 'error_msg_3' => "Wir bitten um Verständnis und werden versuchen, diesen Fehler so bald als möglich zu beheben.",
+'error_msg_4' => "Zusätzliche Informationen für Entwickler",
 'error_no_db_1' => "Es ist keine Verbindung zur Datenbank möglich!",
 'error_no_db_2' => "Mögliche Ursachen:",
 'error_no_db_reason_1' => "Dies ist eine neue Installation von kOOL, die noch nicht konfiguriert worden ist. In diesem Fall können Sie die Installation über http://path.to.your.kOOL/install aufrufen.",
