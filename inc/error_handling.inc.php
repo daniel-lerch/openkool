@@ -21,23 +21,30 @@
 // Fehlerbehandlungsfunktion
 function kOOL_ErrorHandler($errno, $errstr, $errfile, $errline) {
 	global $ko_path, $mysql_db, $ko_menu_akt, $FILE_LOGO_BIG;
-
+  
 	$die = FALSE;
+
+	print '<html>';
+	print '<head>';
+	print '<title>' . getLL('error_title') . '</title>';
+	print '<link rel="stylesheet" href="' . $ko_path . 'kOOL.css" />';
+	print '</head>';
+	print '<body>';
 
 	switch($errno) {
 		case E_ERROR:
 		case E_USER_ERROR:
-			print '<table width="50%" align="center" class="error">';
-			print '<tr><td><img src="'.$ko_path.$FILE_LOGO_BIG.'/></td><th>'.getLL("error_title").'</th></tr>';
-			$basic = get_basic_error_information($errno, $errstr, $errfile, $errline);
+			print '<table width="50%" align="center">';
+			print '<tr><td><img src="' . $ko_path . $FILE_LOGO_BIG . '"/></td><th><h1>' . getLL("error_title") . '</h1></th></tr>';
+			$basic = get_basic_error_information($errno, $errstr, debug_backtrace());
 			$additional = get_additional_error_information();
 			foreach ($basic as $key => $value) {
-				print '<tr><td>' . $key . '</td><td>' . $value . '</td></tr>';
+				print '<tr><td>' . $key . '</td><td>' . str_replace("\n", '<br />', $value) . '</td></tr>';
 			}
 			if (!defined("WARRANTY_EMAIL") && WARRANTY_EMAIL != "" && $ko_menu_akt != "install") {
 				print '<tr><td colspan="2">';
 				print getLL("error_msg_1").'<br />';
-				print sprintf(getLL("error_msg_2"), WARRANTY_EMAIL).'<br /><br />';
+				print sprintf(getLL("error_msg_2"), WARRANTY_EMAIL) . '<br /><br />';
 				print getLL("error_msg_3");
 				print '</td></tr>';
 				
@@ -52,7 +59,7 @@ function kOOL_ErrorHandler($errno, $errstr, $errfile, $errline) {
 			}
 			print '<tr><td colspan="2">' . getLL("error_msg_4") . '</td></tr>';
 			foreach ($additional as $key => $value) {
-				print '<tr><td>' . $key . '</td><td>' . $value . '</td></tr>';
+				print '<tr><td>' . $key . '</td><td><pre>' . $value . '</pre></td></tr>';
 			}
 			print '</table>';
 			$die = TRUE;
@@ -69,6 +76,9 @@ function kOOL_ErrorHandler($errno, $errstr, $errfile, $errline) {
 		break;
 	}
 
+	print '</body>';
+	print '</html>';
+
 	if($die) exit();
 }
 
@@ -76,15 +86,14 @@ function kOOL_ErrorHandler($errno, $errstr, $errfile, $errline) {
  * Collects basic information for an error report
  * @return array: An associative array of important properties and their values
  */
-function get_basic_error_information($errno, $errstr, $errfile, $errline) {
+function get_basic_error_information($errno, $errstr, $backtrace) {
 	return array(
 		'Error No.' => $errno,
 		'Error Msg' => $errstr,
-		'Error File' => $errfile,
-		'Error Line' => $errline,
+		'Stacktrace' => format_backtrace($backtrace),
 		'User ID' => $_SESSION["ses_userid"],
 		'DB Name' => $mysql_db,
-		'IP' => $ko_get_user_ip()
+		'IP' => ko_get_user_ip()
 	);
 }
 
@@ -94,7 +103,6 @@ function get_basic_error_information($errno, $errstr, $errfile, $errline) {
  */
 function get_additional_error_information() {
 	return array(
-		'Stacktrace' => debug_get_backtrace(),
 		'$_GET' => var_export($_GET, TRUE),
 		'$_POST' => var_export($_POST, TRUE),
 		'$_SESSION' => var_export($_SESSION, TRUE),
@@ -103,9 +111,9 @@ function get_additional_error_information() {
 	);
 }
 
-function debug_get_backtrace() {
+function format_backtrace($backtrace) {
 	$trace = '';
-	foreach(debug_backtrace() as $k => $v) {
+	foreach($backtrace as $k => $v) {
 		if($v['function'] == "include" || $v['function'] == "include_once" || $v['function'] == "require_once" || $v['function'] == "require") {
 			$trace .= "#".$k." ".$v['function']."(".$v['args'][0].") called at [".$v['file'].":".$v['line']."]\n";
 		} else {
