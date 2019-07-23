@@ -21,19 +21,19 @@
 // Fehlerbehandlungsfunktion
 function kOOL_ErrorHandler($errno, $errstr, $errfile, $errline) {
 	global $ko_path, $mysql_db, $ko_menu_akt, $FILE_LOGO_BIG;
-  
-	$die = FALSE;
 
-	print '<html>';
-	print '<head>';
-	print '<title>' . getLL('error_title') . '</title>';
-	print '<link rel="stylesheet" href="' . $ko_path . 'kOOL.css" />';
-	print '</head>';
-	print '<body>';
+	$die = FALSE;
 
 	switch($errno) {
 		case E_ERROR:
 		case E_USER_ERROR:
+			print '<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">';
+			print '<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="' . print $_SESSION["lang"] . '" lang="' . print $_SESSION["lang"] . '">';
+			print '<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />';
+			print '<title>' . getLL('error_title') . '</title>';
+			print '<link rel="stylesheet" href="' . $ko_path . 'kOOL.css" />';
+			print '</head>';
+			print '<body>';
 			print '<table width="50%" align="center">';
 			print '<tr><td><img src="' . $ko_path . $FILE_LOGO_BIG . '"/></td><th><h1>' . getLL("error_title") . '</h1></th></tr>';
 			$basic = get_basic_error_information($errno, $errstr, debug_backtrace());
@@ -62,6 +62,9 @@ function kOOL_ErrorHandler($errno, $errstr, $errfile, $errline) {
 				print '<tr><td>' . $key . '</td><td><pre>' . $value . '</pre></td></tr>';
 			}
 			print '</table>';
+			print '</body>';
+			print '</html>';
+		
 			$die = TRUE;
 		break;
 
@@ -75,9 +78,6 @@ function kOOL_ErrorHandler($errno, $errstr, $errfile, $errline) {
 			//print '<b>kOOL Notice</b>: '.$errno.': '.$errstr.' in '.$errfile.' ('.$errline.')<br />';
 		break;
 	}
-
-	print '</body>';
-	print '</html>';
 
 	if($die) exit();
 }
