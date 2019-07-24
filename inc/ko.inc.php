@@ -1539,7 +1539,7 @@ function ko_get_root_id() {
 
 
 
-/*
+/**
  * Get a setting from ko_settings
  *
  * @param string Key to get setting for
@@ -7845,7 +7845,7 @@ function db_insert_data($table, $data) {
 		$DEBUG_db->queryCount++;
 		$DEBUG_db->queries[] = array('time' => (microtime(TRUE)-$time_start)*1000, 'sql' => $query);
 	}
-	return Mysql_Insert_ID();
+	return mysql_insert_id();
 }//db_insert_data()
 
 
@@ -13081,20 +13081,20 @@ function sql_zeit($z) {
 
 
 /**
-	* Wandelt das angegebene Datum in ein SQL-Datum um
-	*/
+ * Wandelt das angegebene Datum in ein SQL-Datum um
+ */
 function sql_datum($d) {
 	//Testen, ob Datum schon im SQL-Format ist:
 	$temp = explode("-", $d);
 	if(sizeof($temp) == 3) return format_userinput($d, "date");
 
-  if($d != "") {
-    $date = explode(".", $d);
+	if($d != "") {
+    	$date = explode(".", $d);
 		$r = $date[2] . "-" . $date[1] . "-" . $date[0];
-  } else {
-    $r = "";
-  }
-  return format_userinput($r, "date");
+	} else {
+    	$r = "";
+	}
+	return format_userinput($r, "date");
 }//sql_datum()
 
 
@@ -13195,8 +13195,8 @@ function format_email($m) {
 
 
 /**
-	* Entfernt alle möglichen "gefährlichen" Zeichen aus User-Strings (z.B. bei der Speicherung von Filter-Vorlagen)
-	*/
+ * Entfernt alle möglichen "gefährlichen" Zeichen aus User-Strings (z.B. bei der Speicherung von Filter-Vorlagen)
+ */
 function format_userinput($s, $type, $enforce=FALSE, $length=0, $replace=array(), $add_own="") {
 	if($replace['umlaute']) $s = strtr($s, array('ä'=>'a','ö'=>'o','ü'=>'u','é'=>'e','è'=>'e','à'=>'a','Ä'=>'A','Ö'=>'O','Ü'=>'U'));
 
@@ -13327,23 +13327,22 @@ function format_userinput($s, $type, $enforce=FALSE, $length=0, $replace=array()
 
 
 /**
-  * Formatiert Sonderzeichen in ihre HTML-Entsprechungen
-	* Damit soll XSS in Formularen und sonst verhindert werden
-	*/
+ * Formatiert Sonderzeichen in ihre HTML-Entsprechungen
+ * Damit soll XSS in Formularen und sonst verhindert werden
+ */
 function ko_html($string) {
-	return strtr($string, array('&' => "&amp;",
-															"'" => "&lsquo;",
-															'"' => "&quot;",
-															'>' => "&gt;",
-															'<' => "&lt;",
-															'ö' => "&ouml;",
-															'ä' => "&auml;",
-															'ü' => "&uuml;",
-															'Ö' => "&Ouml;",
-															'Ä' => "&Auml;",
-															'Ü' => "&Uuml;",
-															)
-							);
+	return strtr($string, array(
+		'&' => "&amp;",
+		"'" => "&lsquo;",
+		'"' => "&quot;",
+		'>' => "&gt;",
+		'<' => "&lt;",
+		'ö' => "&ouml;",
+		'ä' => "&auml;",
+		'ü' => "&uuml;",
+		'Ö' => "&Ouml;",
+		'Ä' => "&Auml;",
+		'Ü' => "&Uuml;"));
 }//ko_html()
 
 
@@ -13360,21 +13359,19 @@ function ko_html2($string) {
 
 function ko_unhtml($string) {
 	return strtr($string, array("&amp;" => "&",
-															"&lsquo;" => "'",
-															"&quot;" => '"',
-															"&gt;" => '>',
-															"&lt;" => '<',
-															"&ouml;" => 'ö',
-															"&auml;" => 'ä',
-															"&uuml;" => 'ü',
-															"&Ouml;" => 'Ö',
-															"&Auml;" => 'Ä',
-															"&Uuml;" => 'Ü',
-															"&rsaquo;" => '',
-															"&thinsp;" => '',
-															"&nbsp;" => ' ',
-															)
-	);
+		"&lsquo;" => "'",
+		"&quot;" => '"',
+		"&gt;" => '>',
+		"&lt;" => '<',
+		"&ouml;" => 'ö',
+		"&auml;" => 'ä',
+		"&uuml;" => 'ü',
+		"&Ouml;" => 'Ö',
+		"&Auml;" => 'Ä',
+		"&Uuml;" => 'Ü',
+		"&rsaquo;" => '',
+		"&thinsp;" => '',
+		"&nbsp;" => ' '));
 }//ko_unhtml()
 
 
@@ -13408,8 +13405,8 @@ function ko_js_save($s) {
 
 
 /**
-  * Bereitet einen Text für ein Email auf, indem jeder Zeile schliessende \n entfernt werden
-	*/
+ * Bereitet einen Text für ein Email auf, indem jeder Zeile schliessende \n entfernt werden
+ */
 function ko_emailtext($input) {
 	$lines = explode("\n", $input);
   $text = "";
@@ -13422,8 +13419,8 @@ function ko_emailtext($input) {
 
 
 /**
-  * Trimmt jedes Element eines Arrays
-	*/
+ * Trimmt jedes Element eines Arrays
+ */
 function array_trim($arr){
 	unset($result);
 	foreach($arr as $key => $value){
@@ -13437,10 +13434,10 @@ function array_trim($arr){
 
 
 /**
-  * Erwartet Array eines Datums mit den Einträgen 0=>Tag, 1=>Monat, 2=>Jahr (4-stellig)
-  * Gibt einen Code in der Form JJJJMMTT zurück
-  * Geeignet für Int-Vergleiche von Daten
-  */
+ * Erwartet Array eines Datums mit den Einträgen 0=>Tag, 1=>Monat, 2=>Jahr (4-stellig)
+ * Gibt einen Code in der Form JJJJMMTT zurück
+ * Geeignet für Int-Vergleiche von Daten
+ */
 function date2code($d) {
 	$return = $d[2] . str_to_2($d[1]) . str_to_2($d[0]);
 	return $return;
@@ -13455,9 +13452,9 @@ function code2date($d) {
 
 
 /**
-  * Erwartet Datum als .-getrennter String, einen Modus (tag, woche, monat) und ein Inkrement
-  * Gibt Datum als Array zurück (0=>Tag, 1=>Monat, 2=>Jahr)
-	*/
+ * Erwartet Datum als .-getrennter String, einen Modus (tag, woche, monat) und ein Inkrement
+ * Gibt Datum als Array zurück (0=>Tag, 1=>Monat, 2=>Jahr)
+ */
 function add2date($datum, $mode, $inc, $sqlformat=FALSE) {
 	if($sqlformat) {
 		$d[0] = substr($datum, 8, 2);

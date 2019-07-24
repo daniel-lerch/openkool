@@ -224,19 +224,19 @@ switch($do_action) {
 		}
 		//New person or "save as new person" for an existing one
 		else if($do_action == "submit_als_neue_person" || $do_action == "submit_neue_person") {
+			// TODO: Review that there are no side effects by changing 'neue_person' from update to insert
 			//Create a new entry and store new id
-			db_insert_data("ko_leute", array("id" => "NULL", "crdate" => date("Y-m-d H:i:s"), "cruserid" => $_SESSION["ses_userid"]));
+			//db_insert_data("ko_leute", array("id" => "NULL", "crdate" => date("Y-m-d H:i:s"), "cruserid" => $_SESSION["ses_userid"]));
 			//Simulate editing with new id
-			$action = "submit_edit_person";
-			$leute_id = Mysql_Insert_ID();
+			//$action = "submit_edit_person";
+			$leute_id = 0; //mysql_insert_id();
 		  //Everything as when editing, but a new LDAP entry has to be created
 			$ldap_new_entry = TRUE;
-		}//if(do_action == submit_als_neue_person)
-		else {
-			continue;
 		}
+		else break;
+		
 
-		if($access['leute']['MAX'] > 1 || (ko_get_setting("login_edit_person") == 1 && $leute_id == ko_get_logged_in_id())) {} else continue;
+		if($access['leute']['MAX'] <= 1 && (ko_get_setting("login_edit_person") == 0 || $leute_id == ko_get_logged_in_id())) break;
 
 		//Funktion (kundenspezifisch) einlesen, die Variablen speziell behandeln lässt
 		if(file_exists($ko_path."leute/inc/my_fcn_leute.inc")) {
@@ -250,7 +250,7 @@ switch($do_action) {
 
 
 		//Datenbank-Spalten auslesen
-	  $leute_cols = db_get_columns("ko_leute");
+		$leute_cols = db_get_columns("ko_leute");
 		$col_namen = ko_get_leute_col_name();
 
 		//get the cols, for which this user has edit-rights (saved in allowed_cols[edit])
@@ -316,13 +316,13 @@ switch($do_action) {
 
 
 
-	  foreach($leute_cols as $c_i => $c) {
-	    if(in_array($c["Field"], $LEUTE_EXCLUDE)) continue;
+		foreach($leute_cols as $c) {
+	    	if(in_array($c["Field"], $LEUTE_EXCLUDE)) continue;
 			//don't save not allowed columns (edit)
 			if(is_array($allowed_cols["edit"])) {
-				 if(!in_array($c["Field"], $allowed_cols["edit"])) continue;
+				if(!in_array($c["Field"], $allowed_cols["edit"])) continue;
 			} else if(is_array($allowed_cols['view'])) {
-				 if(!in_array($c["Field"], $allowed_cols["view"])) continue;
+				if(!in_array($c["Field"], $allowed_cols["view"])) continue;
 			}
 
 			$dont_log = FALSE;
@@ -358,11 +358,9 @@ switch($do_action) {
 				}
 			}
 
-
+			// Remove type details e.g. 'tinyint(4) unsigned' to 'tinyint'
 			$endpos = strpos($c["Type"], "(") ? strpos($c["Type"], "(") : strlen($c["Type"]);
-			$endpos2 = strpos($c["Type"], ")") ? strpos($c["Type"], ")") : strlen($c["Type"]);
 			$input_type = substr($c["Type"], 0, $endpos);
-			$input_size = ($endpos && $endpos2) ? substr($c["Type"], ($endpos+1), ($endpos2-$endpos-1)) : 0;
 
 			switch($input_type) {
 
@@ -394,6 +392,8 @@ switch($do_action) {
 						}
 
 						$data[$c["Field"]] = format_userinput($_POST["input_".$c["Field"]."_2"], "text");
+					} else if (in_array($c['Field'], $LEUTE_CHECKBOXES) && empty($_POST['input_' . $c['Field']])) {
+						$data[$c['Field']] = '0'; // Unchecked checkboxes are not submitted in POST requests
 					} else if($KOTA['ko_leute'][$c['Field']]['form']['type'] == 'peoplesearch') {
 						$data[$c['Field']] = format_userinput($_POST['input_'.$c['Field']], 'intlist');
 					} else {
@@ -402,7 +402,9 @@ switch($do_action) {
 				break;
 
 				case "date":
-					$data[$c["Field"]] = sql_datum($_POST["input_".$c["Field"]]);
+					$date_text = $_POST['input_' . $c['Field']];
+					if (empty($date_text)) $date_text = '1000-01-01'; // DATE.MinValue for MySQL
+					$data[$c["Field"]] = sql_datum($date_text);
 				break;
 
 				//picture
@@ -467,14 +469,13 @@ switch($do_action) {
 					}
 				}
 			}//if(!dont_log)
-
-	  }//foreach(leute_cols as c_i => c)
+		}//foreach(leute_cols as c_i => c)
 
 
 		//Check for leute_admin_groups to be added
 		if((!defined('LEUTE_ADMIN_GROUPS_NEW_ONLY') || LEUTE_ADMIN_GROUPS_NEW_ONLY == FALSE)
-				|| in_array($do_action, array("submit_neue_person", "submit_als_neue_person")))
-			{
+			|| in_array($do_action, array("submit_neue_person", "submit_als_neue_person")))
+		{
 			$lag = ko_get_leute_admin_groups($_SESSION["ses_userid"], 'all');
 			if(is_array($lag) && sizeof($lag) > 0) {
 				foreach($lag as $gid) {
@@ -490,7 +491,7 @@ switch($do_action) {
 
 		//In DB speichern
 		$data["lastchange"] = date("Y-m-d H:i:s");  //LastChange hinzufügen
-	  //Familien-ID hinzufügen
+		//Familien-ID hinzufügen
 		if(!is_array($allowed_cols["edit"]) || in_array("famid", $allowed_cols["edit"])) {
 			$data["famid"] = $save_famid;
 			if($data['famid'] <= 0) $data['kinder'] = '0';  //Set number of children to 0 for persons without a family
@@ -499,6 +500,8 @@ switch($do_action) {
 			db_update_data("ko_leute", "WHERE `id` = '$leute_id'", $data);
 		} else {
 			//Not needed? as submit_neue_person is handled as submit_edit_person with id of new empty entry...?
+			$data['crdate'] = date('Y-m-d H:i:s');
+			$data['cruserid'] = $_SESSION['ses_userid'];
 			$leute_id = db_insert_data("ko_leute", $data);
 		}
 

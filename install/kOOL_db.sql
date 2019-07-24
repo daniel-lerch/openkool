@@ -719,7 +719,7 @@ CREATE TABLE `ko_kleingruppen` (
 CREATE TABLE `ko_leute` (
   `id` mediumint(9) unsigned NOT NULL AUTO_INCREMENT,
   `famid` mediumint(9) NOT NULL DEFAULT '0',
-  `anrede` enum('','Mr','Mrs','Miss','Ms') NOT NULL,
+  `anrede` enum('','Mr','Mrs','Miss','Ms') NOT NULL DEFAULT '',
   `firm` varchar(250) NOT NULL,
   `department` varchar(250) NOT NULL,
   `vorname` varchar(50) NOT NULL,
@@ -735,8 +735,8 @@ CREATE TABLE `ko_leute` (
   `fax` varchar(30) NOT NULL,
   `email` varchar(100) NOT NULL,
   `web` varchar(250) NOT NULL,
-  `geburtsdatum` date NOT NULL,
-  `zivilstand` enum('','single','married','separated','divorced','widowed') NOT NULL,
+  `geburtsdatum` date NOT NULL, -- NULL values are represented as 1000-01-01
+  `zivilstand` enum('','single','married','separated','divorced','widowed') NOT NULL DEFAULT '',
   `geschlecht` enum('','m','w') NOT NULL DEFAULT '',
   `memo1` blob NOT NULL,
   `memo2` blob NOT NULL,

@@ -3,6 +3,7 @@ $FAMILIE_EXCLUDE  = array("famid", "nachname");
 
 $LEUTE_ENUMPLUS = array();
 $LEUTE_TEXTSELECT = array("land");
+$LEUTE_CHECKBOXES = array("hidden");
 $LEUTE_LAYOUT   = array(
 	array("anrede", "hidden"),
 	array("firm", "department"),
