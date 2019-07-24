@@ -18,69 +18,6 @@
 *
 *******************************************************************************/
 
-// Fehlerbehandlungsfunktion
-function kOOL_ErrorHandler($errno, $errstr, $errfile, $errline) {
-	global $ko_path, $mysql_db, $ko_menu_akt, $FILE_LOGO_BIG;
-
-	$die = FALSE;
-
-	switch($errno) {
-		case E_ERROR:
-		case E_USER_ERROR:
-			print '<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">';
-			print '<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="' . print $_SESSION["lang"] . '" lang="' . print $_SESSION["lang"] . '">';
-			print '<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />';
-			print '<title>' . getLL('error_title') . '</title>';
-			print '<link rel="stylesheet" href="' . $ko_path . 'kOOL.css" />';
-			print '</head>';
-			print '<body>';
-			print '<table width="50%" align="center">';
-			print '<tr><td><img src="' . $ko_path . $FILE_LOGO_BIG . '"/></td><th><h1>' . getLL("error_title") . '</h1></th></tr>';
-			$basic = get_basic_error_information($errno, $errstr, debug_backtrace());
-			$additional = get_additional_error_information();
-			foreach ($basic as $key => $value) {
-				print '<tr><td>' . $key . '</td><td>' . str_replace("\n", '<br />', $value) . '</td></tr>';
-			}
-			if (!defined("WARRANTY_EMAIL") && WARRANTY_EMAIL != "" && $ko_menu_akt != "install") {
-				print '<tr><td colspan="2">';
-				print getLL("error_msg_1").'<br />';
-				print sprintf(getLL("error_msg_2"), WARRANTY_EMAIL) . '<br /><br />';
-				print getLL("error_msg_3");
-				print '</td></tr>';
-				
-				$mailtext = 'OpenKool Error Report ' . strftime('%d.%m.%Y %H:%M:%S') . "\n\n";
-				foreach ($basic as $key => $value) {
-					$mailtext .= $key . ': ' . $value;
-				}
-				foreach ($additional as $key => $value) {
-					$mailtext .= $key . ': ' . $value;
-				}
-				ko_send_mail(WARRANTY_EMAIL, WARRANTY_EMAIL, 'OpenKool Error', $mailtext);
-			}
-			print '<tr><td colspan="2">' . getLL("error_msg_4") . '</td></tr>';
-			foreach ($additional as $key => $value) {
-				print '<tr><td>' . $key . '</td><td><pre>' . $value . '</pre></td></tr>';
-			}
-			print '</table>';
-			print '</body>';
-			print '</html>';
-		
-			$die = TRUE;
-		break;
-
-		case E_WARNING:
-		case E_USER_WARNING:
-			//print '<b>kOOL Warnung</b>: '.$errno.': '.$errstr.' in '.$errfile.' ('.$errline.')<br />';
-		break;
-
-		case E_NOTICE:
-		case E_USER_NOTICE:
-			//print '<b>kOOL Notice</b>: '.$errno.': '.$errstr.' in '.$errfile.' ('.$errline.')<br />';
-		break;
-	}
-
-	if($die) exit();
-}
 
 /**
  * Collects basic information for an error report
@@ -92,7 +29,6 @@ function get_basic_error_information($errno, $errstr, $backtrace) {
 		'Error Msg' => $errstr,
 		'Stacktrace' => format_backtrace($backtrace),
 		'User ID' => $_SESSION["ses_userid"],
-		'DB Name' => $mysql_db,
 		'IP' => ko_get_user_ip()
 	);
 }
@@ -122,8 +58,96 @@ function format_backtrace($backtrace) {
 	} 
 	return $trace;
 }
-
-
-// auf die benutzerdefinierte Fehlerbehandlung umstellen
-$old_error_handler = set_error_handler("kOOL_ErrorHandler");
 ?>
+
+<!DOCTYPE html 
+  PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="<?php print $_SESSION["lang"]; ?>" lang="<?php print $_SESSION["lang"]; ?>">
+<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+	<title><?php print getLL('error_title'); ?></title>
+	<link rel="stylesheet" href="<?php print $ko_path . 'kOOL.css'; ?>" />
+	<style>
+		table.error {
+			margin: 20px;
+			border-collapse: collapse;
+			line-height: 16pt;
+			font-size: 12pt;
+		}
+		table.error th {
+			padding: 5px;
+		}
+		table.error td {
+			padding: 5px;
+			border: 1px solid black;
+		}
+		table.error td pre {
+			line-height: 14pt;
+			font-size: 10pt;
+			white-space: pre-wrap;
+			/*word-wrap: break-word;*/
+		}
+		table.error tr.additional {
+			display: none;
+		}
+	</style>
+	<script>
+		function expand() {
+			let button = document.getElementById("expand");
+			let display = null;
+			if (button.innerText == "+") {
+				button.innerText = "-";
+				display = "table-row";
+			} else {
+				button.innerText = "+";
+				display = "none";
+			}
+			for (node of document.getElementsByClassName("additional")) {
+				node.style.display = display;
+			}
+		}
+	</script>
+</head>
+<body>
+	<table class="error">
+		<tr>
+			<th><img src="<?php print $ko_path . $FILE_LOGO_BIG; ?>"/></th>
+			<th><h1><?php print getLL("error_title"); ?></h1></th>
+		</tr>
+		<?php
+			$basic = get_basic_error_information($errno, $errstr, $backtrace);
+			$additional = get_additional_error_information();
+			foreach ($basic as $key => $value) {
+				print '<tr><td>' . $key . '</td><td>' . str_replace("\n", '<br />', $value) . '</td></tr>';
+			}
+			if (!defined("WARRANTY_EMAIL") && WARRANTY_EMAIL != "" && $ko_menu_akt != "install") {
+				print '<tr><td colspan="2">';
+				print getLL("error_msg_1").'<br />';
+				print sprintf(getLL("error_msg_2"), WARRANTY_EMAIL) . '<br /><br />';
+				print getLL("error_msg_3");
+				print '</td></tr>';
+
+				$mailtext = 'OpenKool Error Report ' . strftime('%d.%m.%Y %H:%M:%S') . "\n\n";
+				foreach ($basic as $key => $value) {
+					$mailtext .= $key . ': ' . $value;
+				}
+				foreach ($additional as $key => $value) {
+					$mailtext .= $key . ': ' . $value;
+				}
+				ko_send_mail(WARRANTY_EMAIL, WARRANTY_EMAIL, 'OpenKool Error', $mailtext);
+			}
+		?>
+		<tr>
+			<th><button id="expand" onclick="expand()">+</button></th>
+			<th><h1><?php print getLL("error_msg_4"); ?></h1></th>
+		</tr>
+		<?php
+			foreach ($additional as $key => $value) {
+				print '<tr class="additional"><td>' . $key . '</td><td><pre>' . $value . '</pre></td></tr>';
+			}
+		?>
+	</table>
+</body>
+</html>
+<?php die(); ?>

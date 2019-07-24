@@ -348,7 +348,24 @@ $MODULES_GROUP_ACCESS = array('daten', 'reservation', 'tapes', 'donations', 'tra
 include_once($ko_path."inc/session.inc.php");
 
 //Error reporting
-include($ko_path."inc/error_handling.inc.php");
+function ko_error_handler($errno, $errstr, $errfile, $errline) {
+	global $ko_path, $FILE_LOGO_BIG;
+	switch ($errno) {
+		case E_ERROR:
+		case E_USER_ERROR:
+			$backtrace = debug_backtrace();
+			require($ko_path . 'inc/error_handling.inc.php');
+			break;
+		case E_WARNING:
+		case E_USER_WARNING:
+		case E_NOTICE:
+		case E_USER_NOTICE:
+			// TODO: Fix dozens of these errors and enable error page
+			break;
+	}
+}
+
+set_error_handler('ko_error_handler');
 
 
 if(defined('DEBUG') && DEBUG) {
