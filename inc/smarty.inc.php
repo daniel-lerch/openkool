@@ -21,7 +21,7 @@
 // Smarty Library Dateien laden
 $webroot = empty($BASE_PATH) ? $ko_path : $BASE_PATH;
 if(FALSE === include($webroot."vendor/smarty/smarty/libs/Smarty.class.php")) {
-	ko_die("Could not find Smarty. Please install libraries via Composer and ensure that $BASE_PATH is set correctly.");
+	ko_die('Could not find Smarty. Please install libraries via Composer and ensure that $BASE_PATH is set correctly.');
 }
 
 //Load smarty template engine

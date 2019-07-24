@@ -2733,7 +2733,7 @@ function ko_apply_rectype($p, $force_rectype='', &$addp) {
 					//Use data from smallgroup this person is assigned to
 					case 'ko_kleingruppen':
 						list($sgs) = explode(',', $p['smallgroups']);
-						if(!$sgs) continue;
+						if(!$sgs) break;
 						list($sgid, $sgrole) = explode(':', $sgs);
 						$sg = ko_get_smallgroup_by_id($sgid);
 						if(isset($sg[$field])) $p[$pcol] = $sg[$field];
@@ -2741,9 +2741,9 @@ function ko_apply_rectype($p, $force_rectype='', &$addp) {
 
 					//Use columns from another address in ko_leute. Other address defined in $field
 					case 'ko_leute':
-						if(!$p[$field]) continue;
+						if(!$p[$field]) break;
 						$persons = db_select_data('ko_leute', "WHERE `id` IN (".$p[$field].") AND `deleted` = '0' AND `hidden` = '0'");
-						if(sizeof($persons) < 1) continue;
+						if(sizeof($persons) < 1) break;
 						$first = TRUE;
 						foreach($persons as $person) {
 							//Prevent circular dependency
@@ -2762,8 +2762,6 @@ function ko_apply_rectype($p, $force_rectype='', &$addp) {
 							}
 						}
 					break;
-
-					default: continue;
 				}
 			}
 		}
@@ -6714,7 +6712,7 @@ function ko_groups_render_group_datafields($groups, $id, $values=FALSE, $_option
 
 				case "select":
 					$options = unserialize($field["options"]);
-					if(sizeof($options) == 0) continue;
+					if(sizeof($options) == 0) break;
 
 					$html[$df]["content"] .= '<select name="'.$input_name.'" size="0">';
 					$html[$df]["content"] .= '<option value=""></option>';
@@ -6724,7 +6722,7 @@ function ko_groups_render_group_datafields($groups, $id, $values=FALSE, $_option
 
 				case "multiselect":
 					$options = unserialize($field["options"]);
-					if(sizeof($options) == 0) continue;
+					if(sizeof($options) == 0) break;
 
 					$html[$df]["content"] .= '<table><tr><td>';
 					$html[$df]["content"] .= '<input type="hidden" name="'.$input_name.'" value="'.$value.'" />';
@@ -12668,8 +12666,6 @@ function ko_task_reminder($reminderId = null) {
 				}
 
 				break;
-			default:
-				continue;
 		}
 
 
