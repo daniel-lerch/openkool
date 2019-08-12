@@ -274,7 +274,7 @@ CREATE TABLE `ko_familie` (
   `famanrede` varchar(100) NOT NULL DEFAULT '',
   `famfirstname` varchar(100) NOT NULL,
   `famlastname` varchar(100) NOT NULL,
-  `famemail` enum('','husband','wife') NOT NULL,
+  `famemail` enum('','husband','wife') NOT NULL DEFAULT '',
   PRIMARY KEY (`famid`),
   KEY `nachname` (`nachname`)
 ) ENGINE=MyISAM DEFAULT CHARSET=latin1;

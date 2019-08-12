@@ -1,28 +1,22 @@
 <?php
-/***************************************************************
-*  Copyright notice
+/*******************************************************************************
 *
-*  (c) 2003-2015 Renzo Lauper (renzo@churchtool.org)
-*  All rights reserved
+*    OpenKool - Online church organization tool
 *
-*  This script is part of the kOOL project. The kOOL project is
-*  free software; you can redistribute it and/or modify
-*  it under the terms of the GNU General Public License as published by
-*  the Free Software Foundation; either version 2 of the License, or
-*  (at your option) any later version.
+*    Copyright © 2003-2015 Renzo Lauper (renzo@churchtool.org)
+*    Copyright © 2019      Daniel Lerch
 *
-*  The GNU General Public License can be found at
-*  http://www.gnu.org/copyleft/gpl.html.
-*  A copy is found in the textfile GPL.txt and important notices to the license
-*  from the author is found in LICENSE.txt distributed with these scripts.
+*    This program is free software; you can redistribute it and/or modify
+*    it under the terms of the GNU General Public License as published by
+*    the Free Software Foundation; either version 2 of the License, or
+*    (at your option) any later version.
 *
-*  kOOL is distributed in the hope that it will be useful,
-*  but WITHOUT ANY WARRANTY; without even the implied warranty of
-*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-*  GNU General Public License for more details.
+*    This program is distributed in the hope that it will be useful,
+*    but WITHOUT ANY WARRANTY; without even the implied warranty of
+*    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+*    GNU General Public License for more details.
 *
-*  This copyright notice MUST APPEAR in all copies of the script!
-***************************************************************/
+*******************************************************************************/
 
 ob_start();  //Ausgabe-Pufferung einschalten
 
@@ -228,9 +222,9 @@ switch($do_action) {
 			//Create a new entry and store new id
 			//db_insert_data("ko_leute", array("id" => "NULL", "crdate" => date("Y-m-d H:i:s"), "cruserid" => $_SESSION["ses_userid"]));
 			//Simulate editing with new id
-			//$action = "submit_edit_person";
+			$action = "submit_neue_person";
 			$leute_id = 0; //mysql_insert_id();
-		  //Everything as when editing, but a new LDAP entry has to be created
+		  	//Everything as when editing, but a new LDAP entry has to be created
 			$ldap_new_entry = TRUE;
 		}
 		else break;
@@ -276,7 +270,10 @@ switch($do_action) {
 
 			//Neue Familie
 			if($_POST["hid_new_family"] == 1) {
-				$save_famid = db_insert_data("ko_familie", array("nachname" => ""));
+				$save_famid = db_insert_data("ko_familie", array(
+					'famfirstname' => format_userinput($_POST['input_famfirstname'], 'text'),
+					'famlastname' => format_userinput($_POST['input_famlastname'], 'text')
+				));
 				$new_familie = TRUE;
 			} else {
 				$save_famid = format_userinput($_POST["sel_familie"], "uint");
@@ -402,9 +399,7 @@ switch($do_action) {
 				break;
 
 				case "date":
-					$date_text = $_POST['input_' . $c['Field']];
-					if (empty($date_text)) $date_text = '1000-01-01'; // DATE.MinValue for MySQL
-					$data[$c["Field"]] = sql_datum($date_text);
+					$data[$c["Field"]] = sql_datum($_POST['input_' . $c['Field']]);
 				break;
 
 				//picture
@@ -498,8 +493,7 @@ switch($do_action) {
 		}
 		if($action == "submit_edit_person") {
 			db_update_data("ko_leute", "WHERE `id` = '$leute_id'", $data);
-		} else {
-			//Not needed? as submit_neue_person is handled as submit_edit_person with id of new empty entry...?
+		} else { // submit_neue_person
 			$data['crdate'] = date('Y-m-d H:i:s');
 			$data['cruserid'] = $_SESSION['ses_userid'];
 			$leute_id = db_insert_data("ko_leute", $data);
@@ -560,7 +554,7 @@ switch($do_action) {
 			ko_get_person_by_id($leute_id, $ldap_person);
 			if($action == "submit_edit_person" && !$ldap_new_entry) {  //Als neue Person speichern, ist zwar edit, muss aber neu angelegt werden.
 				ko_ldap_add_person($ldap, $ldap_person, $person['id'], TRUE);
-			} else {
+			} else { // submit_neue_person
 				ko_ldap_add_person($ldap, $ldap_person, $leute_id);
 			}
 			ko_ldap_close($ldap);
@@ -3313,10 +3307,10 @@ switch($do_action) {
 	case 'submit_leute_settings':
 		if($access['leute']['MAX'] < 1) break;
 
-    ko_save_userpref($_SESSION['ses_userid'], 'default_view_leute', format_userinput($_POST['sel_leute'], 'js'));
-    ko_save_userpref($_SESSION['ses_userid'], 'show_limit_leute', format_userinput($_POST['txt_limit_leute'], 'uint'));
-    ko_save_userpref($_SESSION['ses_userid'], 'show_limit_kg', format_userinput($_POST['txt_limit_kg'], 'uint'));
-    ko_save_userpref($_SESSION['ses_userid'], 'leute_sort_birthdays', format_userinput($_POST['sel_leute_sort_birthdays'], 'alpha'));
+    	ko_save_userpref($_SESSION['ses_userid'], 'default_view_leute', format_userinput($_POST['sel_leute'], 'js'));
+    	ko_save_userpref($_SESSION['ses_userid'], 'show_limit_leute', format_userinput($_POST['txt_limit_leute'], 'uint'));
+    	ko_save_userpref($_SESSION['ses_userid'], 'show_limit_kg', format_userinput($_POST['txt_limit_kg'], 'uint'));
+    	ko_save_userpref($_SESSION['ses_userid'], 'leute_sort_birthdays', format_userinput($_POST['sel_leute_sort_birthdays'], 'alpha'));
 		ko_save_userpref($_SESSION['ses_userid'], 'hide_leute_filter', format_userinput($_POST['sel_hide_filter'], 'intlist'));
 		ko_save_userpref($_SESSION['ses_userid'], 'leute_fast_filter', format_userinput($_POST['sel_fast_filter'], 'intlist'));
 		ko_save_userpref($_SESSION['ses_userid'], 'leute_children_columns', format_userinput($_POST['sel_children_columns'], 'alphanumlist'));

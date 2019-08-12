@@ -861,8 +861,8 @@ function ko_list_personen($mode="liste", $output=true) {
 	}
 	else return false;
 
-  $smarty->assign("tpl_table_header", $tpl_table_header);
-  $smarty->assign("sort", array("show" => true,
+	$smarty->assign("tpl_table_header", $tpl_table_header);
+	$smarty->assign("sort", array("show" => true,
 																"action" => "setsortleute",
 																"akt" => $_SESSION["sort_leute"][0],
 																"akt_order" => $_SESSION["sort_leute_order"][0])
@@ -947,8 +947,8 @@ function ko_list_personen($mode="liste", $output=true) {
 		$tpl_list_data[$e_i]["rowclass"] = $e["hidden"] ? "ko_list_hidden" : "";
 
 		//Checkbox
-    $tpl_list_data[$e_i]["show_checkbox"] = true;
-    //$tpl_list_data[$e_i]["rowclick_code"] = 'jumpToUrl(\'/leute/index.php?action=single_view&amp;id='.$e["id"].'\');';
+    	$tpl_list_data[$e_i]["show_checkbox"] = true;
+    	//$tpl_list_data[$e_i]["rowclick_code"] = 'jumpToUrl(\'/leute/index.php?action=single_view&amp;id='.$e["id"].'\');';
 
 		//Familien-Checkbox
 		if($e["famid"] > 0) {
@@ -957,20 +957,20 @@ function ko_list_personen($mode="liste", $output=true) {
 
 		//Edit-Button
 		if( !$leute_show_deleted && ($access['leute']['ALL'] > 1 || $access['leute'][$e['id']] > 1 || ($login_edit_person == 1 && $e['id'] == $logged_in_leute_id))) {
-      $tpl_list_data[$e_i]["show_edit_button"] = true;
-      $tpl_list_data[$e_i]['alt_edit'] = $_SESSION['ses_userid'] == ko_get_root_id() ? 'ID: '.$e['id'] : getLL('leute_labels_edit_pers');
-      $tpl_list_data[$e_i]["onclick_edit"] = "javascript:set_action('edit_person', this);set_hidden_value('id', '".$e["id"]."', this);this.submit";
-    } else {
+    		$tpl_list_data[$e_i]["show_edit_button"] = true;
+    		$tpl_list_data[$e_i]['alt_edit'] = $_SESSION['ses_userid'] == ko_get_root_id() ? 'ID: '.$e['id'] : getLL('leute_labels_edit_pers');
+    		$tpl_list_data[$e_i]["onclick_edit"] = "javascript:set_action('edit_person', this);set_hidden_value('id', '".$e["id"]."', this);this.submit";
+    	} else {
 			if($leute_show_deleted) {
 				$tpl_list_data[$e_i]["show_undelete_button"] = true;
 				$tpl_list_data[$e_i]["alt_edit"] = getLL('leute_labels_undel_pers');
 				$tpl_list_data[$e_i]["onclick_edit"] = "javascript:set_action('undelete_person', this);set_hidden_value('id', '".$e["id"]."', this);this.submit";
 			} else {
-		    $tpl_list_data[$e_i]["show_edit_button"] = false;
+			    $tpl_list_data[$e_i]["show_edit_button"] = false;
 			}
-    }
+    	}
 
-    //Delete-Button
+    	//Delete-Button
 		if(($access['leute']['ALL'] > 2 || $access['leute'][$e['id']] > 2) && (!$leute_show_deleted || ko_get_setting('leute_real_delete') == 1)) {
 			$ok = TRUE;
 			if(sizeof($no_delete_columns) > 0) {
@@ -1141,7 +1141,7 @@ function ko_list_personen($mode="liste", $output=true) {
 	}//foreach(es)
 
 	$smarty->assign('tpl_list_cols', $tpl_list_cols);
-  $smarty->assign('tpl_list_data', $tpl_list_data);
+	$smarty->assign('tpl_list_data', $tpl_list_data);
 	$smarty->assign('db_table', 'ko_leute');
 	$smarty->assign('db_cols', $db_cols);
 

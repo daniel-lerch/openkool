@@ -13088,43 +13088,44 @@ function sql_datum($d) {
 	$temp = explode("-", $d);
 	if(sizeof($temp) == 3) return format_userinput($d, "date");
 
-	if($d != "") {
+	if(!empty($d)) {
     	$date = explode(".", $d);
 		$r = $date[2] . "-" . $date[1] . "-" . $date[0];
 	} else {
-    	$r = "";
+    	$r = '0000-00-00';
 	}
 	return format_userinput($r, "date");
 }//sql_datum()
 
 
 /**
-	* Wandelt ein SQL-Datum ins Format TG.MT.JAHR um
-	*/
+ * Converts an SQL DATE to a string with format DD.MM.YYYY.
+ */
 function sql2datum($s) {
-	if($s=="" || $s=="0000-00-00") return "";
+	if (empty($s) || $s == '0000-00-00')
+		return ''; // Return empty string for zero dates
 	$s_ = explode("-", $s);
-	if(sizeof($s_) == 3) {
+	if (sizeof($s_) == 3) {
 		$r = $s_[2].".".$s_[1].".".$s_[0];
-  	return $r;
+  		return $r;
 	} else {
 		return $s;
 	}
-}//sql2datum()
-
+}
 
 
 function sql2datetime($s) {
 	global $DATETIME;
 
-	if($s == '' || $s == '0000-00-00 00:00:00') return '';
+	if (empty($s) || $s == '0000-00-00 00:00:00')
+		return ''; // Return empty string for zero datetimes
 	$ts = strtotime($s);
-	if($ts > 0) {
+	if ($ts > 0) {
 		return strftime($DATETIME['dmY'].' %H:%M', $ts);
 	} else {
 		return $s;
 	}
-}//sql2datum()
+}
 
 
 
