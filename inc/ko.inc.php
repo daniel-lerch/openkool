@@ -1258,21 +1258,22 @@ function ko_get_leute_admin_filter($id, $mode="login") {
 
 
 /**
-  * Returns the columns of ko_leute, for which the user has [view] and [edit] rights.
-	*
-	* Remark: Remember special cols like groups, smallgroups.
-	* They are not included here, but retrieved from the corresponding module-rights
-	*
-	* @param int user id or admingroup id
-	* @param string Get filter for login if set to "login", for admingroup otherwise
-	* @param int address id to check access for
-	* @return array Array with view and edit rights or FALSE if no limitations exist
-	*/
+ * Returns the columns of ko_leute, for which the user has [view] and [edit] rights.
+ *
+ * Remark: Remember special cols like groups, smallgroups.
+ * They are not included here, but retrieved from the corresponding module-rights
+ *
+ * @param int user id or admingroup id
+ * @param string Get filter for login if set to "login", for admingroup otherwise
+ * @param int Person id to check access for. Use -1 for non existent entities.
+ * @return array Array with view and edit rights or FALSE if no limitations exist
+ */
 function ko_get_leute_admin_spalten($userid, $mode="login", $pid=0) {
 	global $FORCE_KO_ADMIN, $LEUTE_ADMIN_SPALTEN_CONDITION;
 
 	//Get from cache
-	if(isset($GLOBALS["kOOL"]["leute_admin_spalten"][$userid][$mode][$pid])) return $GLOBALS["kOOL"]["leute_admin_spalten"][$userid][$mode][$pid];
+	if (isset($GLOBALS["kOOL"]["leute_admin_spalten"][$userid][$mode][$pid]))
+		return $GLOBALS["kOOL"]["leute_admin_spalten"][$userid][$mode][$pid];
 
 	//>0 means editing. -1 means new address (from ko_leute_mod and add_person)
 	if(($pid > 0 || $pid == -1) && is_array($LEUTE_ADMIN_SPALTEN_CONDITION)) {
@@ -13196,7 +13197,12 @@ function format_email($m) {
 
 
 /**
- * Entfernt alle möglichen "gefährlichen" Zeichen aus User-Strings (z.B. bei der Speicherung von Filter-Vorlagen)
+ * Removes all dangerous chars from user input. Used e.g. to save filters.
+ * @param string $s Raw user input. An empty string will be converted to the default value for numeric types.
+ * @param string $type Desired type which defines allowed chars.
+ * @param bool $enforce Return false on rule violations.
+ * @param mixed $length The maximum length. Prepend an '=' sign to specify an exact length.
+ * @param string $add_own Additional allowed chars.
  */
 function format_userinput($s, $type, $enforce=FALSE, $length=0, $replace=array(), $add_own="") {
 	if($replace['umlaute']) $s = strtr($s, array('ä'=>'a','ö'=>'o','ü'=>'u','é'=>'e','è'=>'e','à'=>'a','Ä'=>'A','Ö'=>'O','Ü'=>'U'));
@@ -13232,10 +13238,12 @@ function format_userinput($s, $type, $enforce=FALSE, $length=0, $replace=array()
 	switch($type) {
 		case "uint":
 			$allowed = "1234567890";
+			$default = '0';
 		break;
 
 		case "int":
 			$allowed = "-1234567890";
+			$default = '0';
 		break;
 
 		case "int@":
@@ -13252,6 +13260,7 @@ function format_userinput($s, $type, $enforce=FALSE, $length=0, $replace=array()
 
 		case "float":
 			$allowed = "-1234567890.";
+			$default = '0.0';
 		break;
 
 		case "alphanum":
@@ -13310,19 +13319,20 @@ function format_userinput($s, $type, $enforce=FALSE, $length=0, $replace=array()
 		break;
 	}//switch(type)
 
+	// Empty strings are not allowed for numeric values in databases.
+	if (empty($s) && isset($default)) return $default;
+	
 	if($add_own) $allowed .= $add_own;
 
-  $new = "";
-  for($i=0; $i<strlen($s); $i++) {
-    if(FALSE !== strstr($allowed, substr($s, $i, 1))) {
-      $new .= substr($s, $i, 1);
-    } else {
-			if($enforce) {
-				return FALSE;  //Bei ungültigen Zeichen nur abbrechen, wenn enforce true ist.
-			}
+	$new = "";
+	for($i=0; $i<strlen($s); $i++) {
+	    if(FALSE !== strstr($allowed, substr($s, $i, 1))) {
+    		$new .= substr($s, $i, 1);
+    	} else if($enforce) {
+			return FALSE;  //Bei ungültigen Zeichen nur abbrechen, wenn enforce true ist.
 		}
-  }
-  return $new;
+	}
+	return $new;
 }
 
 

@@ -413,7 +413,7 @@ CREATE TABLE `ko_groups` (
   `ezmlm_moderator` varchar(250) NOT NULL,
   `mailing_alias` varchar(50) NOT NULL,
   `maxcount` mediumint(9) NOT NULL,
-  `count` mediumint(9) NOT NULL,
+  `count` mediumint(9) NOT NULL DEFAULT '0',
   `count_role` text NOT NULL,
   `mailing_mod_role` varchar(15) NOT NULL,
   `mailing_mod_logins` smallint(6) NOT NULL,
