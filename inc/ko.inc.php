@@ -5702,7 +5702,7 @@ function ko_rota_get_scheduled_events($id, $start, $stop, $mode = 'person') {
 
 
 		if (sizeof($teamGroups) != 0) {
-			$res = db_query("select distinct `id` from `ko_groups` g1 where `id` in ('" . implode("','", $teamGroups) . "') and not exists (select `id` from `ko_groups` g2 where g2.`pid` = g1.`id`) order by g1.`id` asc;");
+			$res = db_query("SELECT DISTINCT `id` FROM `ko_groups` g1 WHERE `id` IN ('" . implode("','", $teamGroups) . "') AND NOT EXISTS (SELECT `id` FROM `ko_groups` g2 WHERE g2.`pid` = g1.`id`) ORDER BY g1.`id` ASC;");
 			foreach ($res as $nonLeafTeamGroup) {
 				$nonLeafTeamGroups[] = (int) $nonLeafTeamGroup["id"];
 			}
@@ -5750,7 +5750,7 @@ function ko_rota_get_scheduled_events($id, $start, $stop, $mode = 'person') {
 		$zWhere .= $timeFilterEvents;
 
 		$events = array();
-		$res = db_query("select `ko_event`.`id`,`ko_event`.`startdatum`,`ko_event`.`enddatum`,`ko_event`.`startzeit`,`ko_event`.`endzeit`,`ko_rota_schedulling`.`team_id` from `ko_rota_schedulling`, `ko_event` where `ko_rota_schedulling`.`event_id` = `ko_event`.`id` " . $zWhere);
+		$res = db_query("SELECT `ko_event`.`id`,`ko_event`.`startdatum`,`ko_event`.`enddatum`,`ko_event`.`startzeit`,`ko_event`.`endzeit`,`ko_rota_schedulling`.`team_id` FROM `ko_rota_schedulling`, `ko_event` WHERE `ko_rota_schedulling`.`event_id` = `ko_event`.`id` " . $zWhere);
 		foreach ($res as $k => $event) {
 			if (array_key_exists($events, $event['id'])) {
 				$events[$event['id']]['in_teams'][] = $event['team_id'];
@@ -5774,7 +5774,7 @@ function ko_rota_get_scheduled_events($id, $start, $stop, $mode = 'person') {
 		$zWhere .= " and `event_id` regexp '[0-9]{4}-[0-9]{2}' and `event_id` >= '" . $startDBForm . "' and `event_id` <= '" . $stopDBForm . "'";
 
 		$weeklyEvents = array();
-		$res = db_query("select * from `ko_rota_schedulling` where 1=1 " . $zWhere);
+		$res = db_query("SELECT * FROM `ko_rota_schedulling` WHERE 1=1 " . $zWhere);
 		foreach ($res as $k => $weeklyEvent) {
 			if (array_key_exists($weeklyEvents, $weeklyEvent['event_id'])) {
 				$weeklyEvents[$weeklyEvent['event_id']]['in_teams'][] = $weeklyEvent['team_id'];

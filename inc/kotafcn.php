@@ -1,28 +1,22 @@
 <?php
-/***************************************************************
-*  Copyright notice
+/*******************************************************************************
 *
-*  (c) 2003-2015 Renzo Lauper (renzo@churchtool.org)
-*  All rights reserved
+*    OpenKool - Online church organization tool
 *
-*  This script is part of the kOOL project. The kOOL project is
-*  free software; you can redistribute it and/or modify
-*  it under the terms of the GNU General Public License as published by
-*  the Free Software Foundation; either version 2 of the License, or
-*  (at your option) any later version.
+*    Copyright © 2003-2015 Renzo Lauper (renzo@churchtool.org)
+*    Copyright © 2019      Daniel Lerch
 *
-*  The GNU General Public License can be found at
-*  http://www.gnu.org/copyleft/gpl.html.
-*  A copy is found in the textfile GPL.txt and important notices to the license
-*  from the author is found in LICENSE.txt distributed with these scripts.
+*    This program is free software; you can redistribute it and/or modify
+*    it under the terms of the GNU General Public License as published by
+*    the Free Software Foundation; either version 2 of the License, or
+*    (at your option) any later version.
 *
-*  kOOL is distributed in the hope that it will be useful,
-*  but WITHOUT ANY WARRANTY; without even the implied warranty of
-*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-*  GNU General Public License for more details.
+*    This program is distributed in the hope that it will be useful,
+*    but WITHOUT ANY WARRANTY; without even the implied warranty of
+*    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+*    GNU General Public License for more details.
 *
-*  This copyright notice MUST APPEAR in all copies of the script!
-***************************************************************/
+*******************************************************************************/
 
 
 /**
@@ -489,10 +483,8 @@ function kota_submit_multiedit($rights_level='', $log_type="", $lastchange_col="
 	$query = $log_message = array();
 
 	//new entry
-	$new_entry = FALSE;
-	if($ids == 0) {
-		$new_entry = TRUE;
-
+	$new_entry = $ids == 0;
+	if($new_entry) {
 		$new_data = array('id' => 'NULL');
 		//Add creation date if set in KOTA
 		if($KOTA[$table]['_special_cols']['crdate']) $new_data[$KOTA[$table]['_special_cols']['crdate']] = date('Y-m-d H:i:s');
@@ -501,8 +493,7 @@ function kota_submit_multiedit($rights_level='', $log_type="", $lastchange_col="
 
 		$new_id = $ids = db_insert_data($table, $new_data);
 		$rights = '';  //Access rights to add new entries have to be checked in index.php before calling kota_submit_multiedit()
-	}
-	else {
+	} else {
 		//Prepare to check for access rights to edit the selected items (check for new entries above has to be done in index.php)
 		$rights = array();
 		$module = $KOTA[$table]['_access']['module'];
@@ -2047,10 +2038,10 @@ function kota_assign_values($table, $cols, $pre_process=TRUE) {
 
 
 /**
-  * processes a data array according to the rules in KOTA
-	* modes can be pre, post or list
-	* modes can also be a comma list of the above values, then the first available is applied, but only one
-	*/
+ * Processes a data array according to the rules in KOTA
+ * @param mixed $modes Modes can be pre, post or list.
+ * Modes can also be a comma list of the above values, then the first available is applied, but only one.
+ */
 function kota_process_data($table, &$data, $modes, &$log, $id=0) {
 	global $KOTA;
 
