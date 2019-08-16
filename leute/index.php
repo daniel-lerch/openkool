@@ -218,13 +218,9 @@ switch($do_action) {
 		}
 		//New person or "save as new person" for an existing one
 		else if($do_action == "submit_als_neue_person" || $do_action == "submit_neue_person") {
-			// TODO: Review that there are no side effects by changing 'neue_person' from update to insert
-			//Create a new entry and store new id
-			//db_insert_data("ko_leute", array("id" => "NULL", "crdate" => date("Y-m-d H:i:s"), "cruserid" => $_SESSION["ses_userid"]));
-			//Simulate editing with new id
 			$action = "submit_neue_person";
-			$leute_id = 0; //mysql_insert_id();
-		  	//Everything as when editing, but a new LDAP entry has to be created
+			$leute_id = -1;
+		  	//Almost everything as when editing, but a new LDAP entry has to be created
 			$ldap_new_entry = TRUE;
 		}
 		else break;
@@ -322,39 +318,6 @@ switch($do_action) {
 				if(!in_array($c["Field"], $allowed_cols["view"])) continue;
 			}
 
-			$dont_log = FALSE;
-
-			//Groups-Modul
-			if($c["Field"] == "groups") {
-				//Nötige rechte Checken
-				$go_on = (ko_module_installed("groups") && $access['groups']['MAX'] > 1);
-				if(!$go_on) continue;
-
-				ko_groups_get_savestring($_POST["input_groups"], array("id" => $leute_id), $log, $person["groups"]);
-				//Store current datafields for versioning (stored with ko_save_leute_changes())
-				$datafields = ko_get_datafields($leute_id);
-				//Store datafields in DB
-				ko_groups_save_datafields($_POST["group_datafields"], array("id" => $leute_id, "groups" => $_POST["input_groups"], "old_groups" => $person["groups"]), $log2);
-
-				//Log-Message:
-				$dont_log = TRUE;
-				if(trim($log) != "") $log_message .= getLL("leute_log_groups").": $log";
-				if(trim($log2) != "") $log_message .= getLL("leute_log_datafields").": $log2";
-			}//groups-Modul
-
-			//Small groups
-			if($c['Field'] == 'smallgroups') {
-				$go_on = (ko_module_installed('kg') && $access['kg']['MAX'] > 2);
-				if(!$go_on) continue;
-
-				$bisher   = $person[$c['Field']];
-				$submitted = $_POST['input_'.$c['Field']];
-				$dont_log = TRUE;
-				if( ($bisher || $submitted) && $bisher != $submitted ) {
-					$log_message .= $col_namen[$c['Field']].': '.ko_kgliste($bisher).' --> '.ko_kgliste($submitted).', ';
-				}
-			}
-
 			// Remove type details e.g. 'tinyint(4) unsigned' to 'tinyint'
 			$endpos = strpos($c["Type"], "(") ? strpos($c["Type"], "(") : strlen($c["Type"]);
 			$input_type = substr($c["Type"], 0, $endpos);
@@ -400,34 +363,6 @@ switch($do_action) {
 
 				case "date":
 					$data[$c["Field"]] = sql_datum($_POST['input_' . $c['Field']]);
-				break;
-
-				//picture
-				case "tinytext":
-					if($_FILES["input_".$c["Field"]]["tmp_name"]) {
-						$upload_name = $_FILES["input_".$c["Field"]]["name"];
-						$tmp = $_FILES["input_".$c["Field"]]["tmp_name"];
-						$ext_ = explode(".", $upload_name);
-						$ext = $ext_[sizeof($ext_)-1];
-
-						$path = $BASE_PATH."my_images/";
-						$filename = 'person_'.$c['Field'].'_'.$leute_id.'.'.$ext;
-						$dest = $path.$filename;
-
-						$ret = move_uploaded_file($tmp, $dest);
-						if($ret) {
-							$data[$c["Field"]] = "/my_images/".$filename;
-							chmod($dest, 0644);
-						} else {
-							$data[$c["Field"]] = "";
-						}
-					}
-					//delete picture
-					else if($_POST["input_".$c["Field"]."_DELETE"] == 1) {
-						$data[$c["Field"]] = "";
-						if($person[$c["Field"]] && file_exists($BASE_PATH.$person[$c["Field"]])) unlink($BASE_PATH.$person[$c["Field"]]);
-					}
-					$test["columns"][] = $col;
 				break;
 
 			}//switch(input_type)
@@ -509,6 +444,47 @@ switch($do_action) {
 				ko_update_leute_in_familie($old_famid);
 			}
 			ko_update_familie_filter();
+		}
+
+		// Save group fields and smallgroups after inserting new entities
+		foreach ($leute_cols as $c) {
+			if(in_array($c["Field"], $LEUTE_EXCLUDE)) continue;
+			//don't save not allowed columns (edit)
+			if(is_array($allowed_cols["edit"])) {
+				if(!in_array($c["Field"], $allowed_cols["edit"])) continue;
+			} else if(is_array($allowed_cols['view'])) {
+				if(!in_array($c["Field"], $allowed_cols["view"])) continue;
+			}
+
+			$dont_log = FALSE;
+
+			//Groups-Modul
+			if($c["Field"] == "groups") {
+				//Nötige rechte Checken
+				$go_on = (ko_module_installed("groups") && $access['groups']['MAX'] > 1);
+				if(!$go_on) continue;
+				ko_groups_get_savestring($_POST["input_groups"], array("id" => $leute_id), $log, $person["groups"]);
+				//Store current datafields for versioning (stored with ko_save_leute_changes())
+				$datafields = ko_get_datafields($leute_id);
+				//Store datafields in DB
+				ko_groups_save_datafields($_POST["group_datafields"], array("id" => $leute_id, "groups" => $_POST["input_groups"], "old_groups" => $person["groups"]), $log2);
+				//Log-Message:
+				$dont_log = TRUE;
+				if(trim($log) != "") $log_message .= getLL("leute_log_groups").": $log";
+				if(trim($log2) != "") $log_message .= getLL("leute_log_datafields").": $log2";
+			}
+			
+			//Small groups
+			if($c['Field'] == 'smallgroups') {
+				$go_on = (ko_module_installed('kg') && $access['kg']['MAX'] > 2);
+				if(!$go_on) continue;
+				$bisher = $person[$c['Field']];
+				$submitted = $_POST['input_'.$c['Field']];
+				$dont_log = TRUE;
+				if( ($bisher || $submitted) && $bisher != $submitted ) {
+					$log_message .= $col_namen[$c['Field']].': '.ko_kgliste($bisher).' --> '.ko_kgliste($submitted).', ';
+				}
+			}
 		}
 
 
