@@ -10,10 +10,11 @@ RUN set -x \
     && docker-php-ext-install mysql \
     && docker-php-ext-configure imap --with-kerberos --with-imap-ssl \
     && docker-php-ext-install imap \
-    && docker-php-ext-configure gd --with-jpeg-path=/usr/include \
+    && docker-php-ext-configure gd --with-jpeg-dir=/usr/include \
     && docker-php-ext-install gd \
 # Remove temporary packages
-    && apt-get purge -y --autoremove libc-client-dev libkrb5-dev libpng-dev libjpeg-dev
+    && apt-get purge -y --autoremove libc-client-dev libkrb5-dev
+    # libpng-dev and libjpeg-dev contain shared files and must not be removed
 
 # Install Composer
 RUN set -x \
