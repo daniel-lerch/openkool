@@ -348,7 +348,24 @@ $MODULES_GROUP_ACCESS = array('daten', 'reservation', 'tapes', 'donations', 'tra
 include_once($ko_path."inc/session.inc.php");
 
 //Error reporting
-include($ko_path."inc/error_handling.inc.php");
+function ko_error_handler($errno, $errstr, $errfile, $errline) {
+	global $ko_path, $FILE_LOGO_BIG;
+	switch ($errno) {
+		case E_ERROR:
+		case E_USER_ERROR:
+			$backtrace = debug_backtrace();
+			require($ko_path . 'inc/error_handling.inc.php');
+			break;
+		case E_WARNING:
+		case E_USER_WARNING:
+		case E_NOTICE:
+		case E_USER_NOTICE:
+			// TODO: Fix dozens of these errors and enable error page
+			break;
+	}
+}
+
+set_error_handler('ko_error_handler');
 
 
 if(defined('DEBUG') && DEBUG) {
@@ -1241,21 +1258,22 @@ function ko_get_leute_admin_filter($id, $mode="login") {
 
 
 /**
-  * Returns the columns of ko_leute, for which the user has [view] and [edit] rights.
-	*
-	* Remark: Remember special cols like groups, smallgroups.
-	* They are not included here, but retrieved from the corresponding module-rights
-	*
-	* @param int user id or admingroup id
-	* @param string Get filter for login if set to "login", for admingroup otherwise
-	* @param int address id to check access for
-	* @return array Array with view and edit rights or FALSE if no limitations exist
-	*/
+ * Returns the columns of ko_leute, for which the user has [view] and [edit] rights.
+ *
+ * Remark: Remember special cols like groups, smallgroups.
+ * They are not included here, but retrieved from the corresponding module-rights
+ *
+ * @param int user id or admingroup id
+ * @param string Get filter for login if set to "login", for admingroup otherwise
+ * @param int Person id to check access for. Use -1 for non existent entities.
+ * @return array Array with view and edit rights or FALSE if no limitations exist
+ */
 function ko_get_leute_admin_spalten($userid, $mode="login", $pid=0) {
 	global $FORCE_KO_ADMIN, $LEUTE_ADMIN_SPALTEN_CONDITION;
 
 	//Get from cache
-	if(isset($GLOBALS["kOOL"]["leute_admin_spalten"][$userid][$mode][$pid])) return $GLOBALS["kOOL"]["leute_admin_spalten"][$userid][$mode][$pid];
+	if (isset($GLOBALS["kOOL"]["leute_admin_spalten"][$userid][$mode][$pid]))
+		return $GLOBALS["kOOL"]["leute_admin_spalten"][$userid][$mode][$pid];
 
 	//>0 means editing. -1 means new address (from ko_leute_mod and add_person)
 	if(($pid > 0 || $pid == -1) && is_array($LEUTE_ADMIN_SPALTEN_CONDITION)) {
@@ -1522,7 +1540,7 @@ function ko_get_root_id() {
 
 
 
-/*
+/**
  * Get a setting from ko_settings
  *
  * @param string Key to get setting for
@@ -2733,7 +2751,7 @@ function ko_apply_rectype($p, $force_rectype='', &$addp) {
 					//Use data from smallgroup this person is assigned to
 					case 'ko_kleingruppen':
 						list($sgs) = explode(',', $p['smallgroups']);
-						if(!$sgs) continue;
+						if(!$sgs) break;
 						list($sgid, $sgrole) = explode(':', $sgs);
 						$sg = ko_get_smallgroup_by_id($sgid);
 						if(isset($sg[$field])) $p[$pcol] = $sg[$field];
@@ -2741,9 +2759,9 @@ function ko_apply_rectype($p, $force_rectype='', &$addp) {
 
 					//Use columns from another address in ko_leute. Other address defined in $field
 					case 'ko_leute':
-						if(!$p[$field]) continue;
+						if(!$p[$field]) break;
 						$persons = db_select_data('ko_leute', "WHERE `id` IN (".$p[$field].") AND `deleted` = '0' AND `hidden` = '0'");
-						if(sizeof($persons) < 1) continue;
+						if(sizeof($persons) < 1) break;
 						$first = TRUE;
 						foreach($persons as $person) {
 							//Prevent circular dependency
@@ -2762,8 +2780,6 @@ function ko_apply_rectype($p, $force_rectype='', &$addp) {
 							}
 						}
 					break;
-
-					default: continue;
 				}
 			}
 		}
@@ -5686,7 +5702,7 @@ function ko_rota_get_scheduled_events($id, $start, $stop, $mode = 'person') {
 
 
 		if (sizeof($teamGroups) != 0) {
-			$res = db_query("select distinct `id` from `ko_groups` g1 where `id` in ('" . implode("','", $teamGroups) . "') and not exists (select `id` from `ko_groups` g2 where g2.`pid` = g1.`id`) order by g1.`id` asc;");
+			$res = db_query("SELECT DISTINCT `id` FROM `ko_groups` g1 WHERE `id` IN ('" . implode("','", $teamGroups) . "') AND NOT EXISTS (SELECT `id` FROM `ko_groups` g2 WHERE g2.`pid` = g1.`id`) ORDER BY g1.`id` ASC;");
 			foreach ($res as $nonLeafTeamGroup) {
 				$nonLeafTeamGroups[] = (int) $nonLeafTeamGroup["id"];
 			}
@@ -5734,7 +5750,7 @@ function ko_rota_get_scheduled_events($id, $start, $stop, $mode = 'person') {
 		$zWhere .= $timeFilterEvents;
 
 		$events = array();
-		$res = db_query("select `ko_event`.`id`,`ko_event`.`startdatum`,`ko_event`.`enddatum`,`ko_event`.`startzeit`,`ko_event`.`endzeit`,`ko_rota_schedulling`.`team_id` from `ko_rota_schedulling`, `ko_event` where `ko_rota_schedulling`.`event_id` = `ko_event`.`id` " . $zWhere);
+		$res = db_query("SELECT `ko_event`.`id`,`ko_event`.`startdatum`,`ko_event`.`enddatum`,`ko_event`.`startzeit`,`ko_event`.`endzeit`,`ko_rota_schedulling`.`team_id` FROM `ko_rota_schedulling`, `ko_event` WHERE `ko_rota_schedulling`.`event_id` = `ko_event`.`id` " . $zWhere);
 		foreach ($res as $k => $event) {
 			if (array_key_exists($events, $event['id'])) {
 				$events[$event['id']]['in_teams'][] = $event['team_id'];
@@ -5758,7 +5774,7 @@ function ko_rota_get_scheduled_events($id, $start, $stop, $mode = 'person') {
 		$zWhere .= " and `event_id` regexp '[0-9]{4}-[0-9]{2}' and `event_id` >= '" . $startDBForm . "' and `event_id` <= '" . $stopDBForm . "'";
 
 		$weeklyEvents = array();
-		$res = db_query("select * from `ko_rota_schedulling` where 1=1 " . $zWhere);
+		$res = db_query("SELECT * FROM `ko_rota_schedulling` WHERE 1=1 " . $zWhere);
 		foreach ($res as $k => $weeklyEvent) {
 			if (array_key_exists($weeklyEvents, $weeklyEvent['event_id'])) {
 				$weeklyEvents[$weeklyEvent['event_id']]['in_teams'][] = $weeklyEvent['team_id'];
@@ -6714,7 +6730,7 @@ function ko_groups_render_group_datafields($groups, $id, $values=FALSE, $_option
 
 				case "select":
 					$options = unserialize($field["options"]);
-					if(sizeof($options) == 0) continue;
+					if(sizeof($options) == 0) break;
 
 					$html[$df]["content"] .= '<select name="'.$input_name.'" size="0">';
 					$html[$df]["content"] .= '<option value=""></option>';
@@ -6724,7 +6740,7 @@ function ko_groups_render_group_datafields($groups, $id, $values=FALSE, $_option
 
 				case "multiselect":
 					$options = unserialize($field["options"]);
-					if(sizeof($options) == 0) continue;
+					if(sizeof($options) == 0) break;
 
 					$html[$df]["content"] .= '<table><tr><td>';
 					$html[$df]["content"] .= '<input type="hidden" name="'.$input_name.'" value="'.$value.'" />';
@@ -7830,7 +7846,7 @@ function db_insert_data($table, $data) {
 		$DEBUG_db->queryCount++;
 		$DEBUG_db->queries[] = array('time' => (microtime(TRUE)-$time_start)*1000, 'sql' => $query);
 	}
-	return Mysql_Insert_ID();
+	return mysql_insert_id();
 }//db_insert_data()
 
 
@@ -12668,8 +12684,6 @@ function ko_task_reminder($reminderId = null) {
 				}
 
 				break;
-			default:
-				continue;
 		}
 
 
@@ -13068,50 +13082,51 @@ function sql_zeit($z) {
 
 
 /**
-	* Wandelt das angegebene Datum in ein SQL-Datum um
-	*/
+ * Wandelt das angegebene Datum in ein SQL-Datum um
+ */
 function sql_datum($d) {
 	//Testen, ob Datum schon im SQL-Format ist:
 	$temp = explode("-", $d);
 	if(sizeof($temp) == 3) return format_userinput($d, "date");
 
-  if($d != "") {
-    $date = explode(".", $d);
+	if(!empty($d)) {
+    	$date = explode(".", $d);
 		$r = $date[2] . "-" . $date[1] . "-" . $date[0];
-  } else {
-    $r = "";
-  }
-  return format_userinput($r, "date");
+	} else {
+    	$r = '0000-00-00';
+	}
+	return format_userinput($r, "date");
 }//sql_datum()
 
 
 /**
-	* Wandelt ein SQL-Datum ins Format TG.MT.JAHR um
-	*/
+ * Converts an SQL DATE to a string with format DD.MM.YYYY.
+ */
 function sql2datum($s) {
-	if($s=="" || $s=="0000-00-00") return "";
+	if (empty($s) || $s == '0000-00-00')
+		return ''; // Return empty string for zero dates
 	$s_ = explode("-", $s);
-	if(sizeof($s_) == 3) {
+	if (sizeof($s_) == 3) {
 		$r = $s_[2].".".$s_[1].".".$s_[0];
-  	return $r;
+  		return $r;
 	} else {
 		return $s;
 	}
-}//sql2datum()
-
+}
 
 
 function sql2datetime($s) {
 	global $DATETIME;
 
-	if($s == '' || $s == '0000-00-00 00:00:00') return '';
+	if (empty($s) || $s == '0000-00-00 00:00:00')
+		return ''; // Return empty string for zero datetimes
 	$ts = strtotime($s);
-	if($ts > 0) {
+	if ($ts > 0) {
 		return strftime($DATETIME['dmY'].' %H:%M', $ts);
 	} else {
 		return $s;
 	}
-}//sql2datum()
+}
 
 
 
@@ -13182,8 +13197,13 @@ function format_email($m) {
 
 
 /**
-	* Entfernt alle möglichen "gefährlichen" Zeichen aus User-Strings (z.B. bei der Speicherung von Filter-Vorlagen)
-	*/
+ * Removes all dangerous chars from user input. Used e.g. to save filters.
+ * @param string $s Raw user input. An empty string will be converted to the default value for numeric types.
+ * @param string $type Desired type which defines allowed chars.
+ * @param bool $enforce Return false on rule violations.
+ * @param mixed $length The maximum length. Prepend an '=' sign to specify an exact length.
+ * @param string $add_own Additional allowed chars.
+ */
 function format_userinput($s, $type, $enforce=FALSE, $length=0, $replace=array(), $add_own="") {
 	if($replace['umlaute']) $s = strtr($s, array('ä'=>'a','ö'=>'o','ü'=>'u','é'=>'e','è'=>'e','à'=>'a','Ä'=>'A','Ö'=>'O','Ü'=>'U'));
 
@@ -13218,10 +13238,12 @@ function format_userinput($s, $type, $enforce=FALSE, $length=0, $replace=array()
 	switch($type) {
 		case "uint":
 			$allowed = "1234567890";
+			$default = '0';
 		break;
 
 		case "int":
 			$allowed = "-1234567890";
+			$default = '0';
 		break;
 
 		case "int@":
@@ -13238,6 +13260,7 @@ function format_userinput($s, $type, $enforce=FALSE, $length=0, $replace=array()
 
 		case "float":
 			$allowed = "-1234567890.";
+			$default = '0.0';
 		break;
 
 		case "alphanum":
@@ -13296,41 +13319,41 @@ function format_userinput($s, $type, $enforce=FALSE, $length=0, $replace=array()
 		break;
 	}//switch(type)
 
+	// Empty strings are not allowed for numeric values in databases.
+	if (empty($s) && isset($default)) return $default;
+	
 	if($add_own) $allowed .= $add_own;
 
-  $new = "";
-  for($i=0; $i<strlen($s); $i++) {
-    if(FALSE !== strstr($allowed, substr($s, $i, 1))) {
-      $new .= substr($s, $i, 1);
-    } else {
-			if($enforce) {
-				return FALSE;  //Bei ungültigen Zeichen nur abbrechen, wenn enforce true ist.
-			}
+	$new = "";
+	for($i=0; $i<strlen($s); $i++) {
+	    if(FALSE !== strstr($allowed, substr($s, $i, 1))) {
+    		$new .= substr($s, $i, 1);
+    	} else if($enforce) {
+			return FALSE;  //Bei ungültigen Zeichen nur abbrechen, wenn enforce true ist.
 		}
-  }
-  return $new;
+	}
+	return $new;
 }
 
 
 
 /**
-  * Formatiert Sonderzeichen in ihre HTML-Entsprechungen
-	* Damit soll XSS in Formularen und sonst verhindert werden
-	*/
+ * Formatiert Sonderzeichen in ihre HTML-Entsprechungen
+ * Damit soll XSS in Formularen und sonst verhindert werden
+ */
 function ko_html($string) {
-	return strtr($string, array('&' => "&amp;",
-															"'" => "&lsquo;",
-															'"' => "&quot;",
-															'>' => "&gt;",
-															'<' => "&lt;",
-															'ö' => "&ouml;",
-															'ä' => "&auml;",
-															'ü' => "&uuml;",
-															'Ö' => "&Ouml;",
-															'Ä' => "&Auml;",
-															'Ü' => "&Uuml;",
-															)
-							);
+	return strtr($string, array(
+		'&' => "&amp;",
+		"'" => "&lsquo;",
+		'"' => "&quot;",
+		'>' => "&gt;",
+		'<' => "&lt;",
+		'ö' => "&ouml;",
+		'ä' => "&auml;",
+		'ü' => "&uuml;",
+		'Ö' => "&Ouml;",
+		'Ä' => "&Auml;",
+		'Ü' => "&Uuml;"));
 }//ko_html()
 
 
@@ -13347,21 +13370,19 @@ function ko_html2($string) {
 
 function ko_unhtml($string) {
 	return strtr($string, array("&amp;" => "&",
-															"&lsquo;" => "'",
-															"&quot;" => '"',
-															"&gt;" => '>',
-															"&lt;" => '<',
-															"&ouml;" => 'ö',
-															"&auml;" => 'ä',
-															"&uuml;" => 'ü',
-															"&Ouml;" => 'Ö',
-															"&Auml;" => 'Ä',
-															"&Uuml;" => 'Ü',
-															"&rsaquo;" => '',
-															"&thinsp;" => '',
-															"&nbsp;" => ' ',
-															)
-	);
+		"&lsquo;" => "'",
+		"&quot;" => '"',
+		"&gt;" => '>',
+		"&lt;" => '<',
+		"&ouml;" => 'ö',
+		"&auml;" => 'ä',
+		"&uuml;" => 'ü',
+		"&Ouml;" => 'Ö',
+		"&Auml;" => 'Ä',
+		"&Uuml;" => 'Ü',
+		"&rsaquo;" => '',
+		"&thinsp;" => '',
+		"&nbsp;" => ' '));
 }//ko_unhtml()
 
 
@@ -13395,8 +13416,8 @@ function ko_js_save($s) {
 
 
 /**
-  * Bereitet einen Text für ein Email auf, indem jeder Zeile schliessende \n entfernt werden
-	*/
+ * Bereitet einen Text für ein Email auf, indem jeder Zeile schliessende \n entfernt werden
+ */
 function ko_emailtext($input) {
 	$lines = explode("\n", $input);
   $text = "";
@@ -13409,8 +13430,8 @@ function ko_emailtext($input) {
 
 
 /**
-  * Trimmt jedes Element eines Arrays
-	*/
+ * Trimmt jedes Element eines Arrays
+ */
 function array_trim($arr){
 	unset($result);
 	foreach($arr as $key => $value){
@@ -13424,10 +13445,10 @@ function array_trim($arr){
 
 
 /**
-  * Erwartet Array eines Datums mit den Einträgen 0=>Tag, 1=>Monat, 2=>Jahr (4-stellig)
-  * Gibt einen Code in der Form JJJJMMTT zurück
-  * Geeignet für Int-Vergleiche von Daten
-  */
+ * Erwartet Array eines Datums mit den Einträgen 0=>Tag, 1=>Monat, 2=>Jahr (4-stellig)
+ * Gibt einen Code in der Form JJJJMMTT zurück
+ * Geeignet für Int-Vergleiche von Daten
+ */
 function date2code($d) {
 	$return = $d[2] . str_to_2($d[1]) . str_to_2($d[0]);
 	return $return;
@@ -13442,9 +13463,9 @@ function code2date($d) {
 
 
 /**
-  * Erwartet Datum als .-getrennter String, einen Modus (tag, woche, monat) und ein Inkrement
-  * Gibt Datum als Array zurück (0=>Tag, 1=>Monat, 2=>Jahr)
-	*/
+ * Erwartet Datum als .-getrennter String, einen Modus (tag, woche, monat) und ein Inkrement
+ * Gibt Datum als Array zurück (0=>Tag, 1=>Monat, 2=>Jahr)
+ */
 function add2date($datum, $mode, $inc, $sqlformat=FALSE) {
 	if($sqlformat) {
 		$d[0] = substr($datum, 8, 2);
@@ -14137,6 +14158,7 @@ function getLL($string) {
 
 /**
  * Sends an email
+ * @return bool: TRUE when mail was sent successfully, otherwise FALSE
  */
 function ko_send_mail($from, $to, $subject, $body, $files = array(), $cc = array(), $bcc = array()) {
 	try {

@@ -1,28 +1,22 @@
 <?php
-/***************************************************************
-*  Copyright notice
+/*******************************************************************************
 *
-*  (c) 2003-2015 Renzo Lauper (renzo@churchtool.org)
-*  All rights reserved
+*    OpenKool - Online church organization tool
 *
-*  This script is part of the kOOL project. The kOOL project is
-*  free software; you can redistribute it and/or modify
-*  it under the terms of the GNU General Public License as published by
-*  the Free Software Foundation; either version 2 of the License, or
-*  (at your option) any later version.
+*    Copyright © 2003-2015 Renzo Lauper (renzo@churchtool.org)
+*    Copyright © 2019      Daniel Lerch
 *
-*  The GNU General Public License can be found at
-*  http://www.gnu.org/copyleft/gpl.html.
-*  A copy is found in the textfile GPL.txt and important notices to the license
-*  from the author is found in LICENSE.txt distributed with these scripts.
+*    This program is free software; you can redistribute it and/or modify
+*    it under the terms of the GNU General Public License as published by
+*    the Free Software Foundation; either version 2 of the License, or
+*    (at your option) any later version.
 *
-*  kOOL is distributed in the hope that it will be useful,
-*  but WITHOUT ANY WARRANTY; without even the implied warranty of
-*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-*  GNU General Public License for more details.
+*    This program is distributed in the hope that it will be useful,
+*    but WITHOUT ANY WARRANTY; without even the implied warranty of
+*    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+*    GNU General Public License for more details.
 *
-*  This copyright notice MUST APPEAR in all copies of the script!
-***************************************************************/
+*******************************************************************************/
 
 $ko_path = "./";
 $ko_menu_akt = "home";
@@ -121,7 +115,7 @@ switch($do_action) {
 
 	/**
 		* Ein einzelner News-Eintrag soll in der Mitte gross angezeigt werden
-		(nach Klick auf Link, der erscheint, wenn das News-Modul rechts oder links angezeigt wird).
+		* (nach Klick auf Link, der erscheint, wenn das News-Modul rechts oder links angezeigt wird).
 		*/
 	case "show_single_news":
 		//Einzelne News anzeigen
@@ -142,7 +136,7 @@ switch($do_action) {
 		* Ein Adress-Änderungsantrag wurde abgeschickt
 		*/
 	case "submit_aa":
-		if(!$_POST["aa_id"]) continue;
+		if(!$_POST["aa_id"]) break;
 
 		if(FALSE === ($aa_id = format_userinput($_POST["aa_id"], "int", TRUE))) {
 			trigger_error("invalid aa_id: ".$_POST["aa_id"], E_USER_ERROR);
@@ -198,13 +192,13 @@ switch($do_action) {
 		if(!$aa_use_nachname && $_POST["submit_fm_aa"]) $aa_use_nachname = format_userinput($_POST["txt_fm_aa_nachname"], "text");
 
 		//Vorname und Nachname müssen angegeben werden, denn sonst könnte Datenbank nach bestimmten Namen durchsucht werden...
-		if((!$_POST["txt_fm_aa_nachname"] || !$_POST["txt_fm_aa_vorname"]) && !$aa_use_id) continue;
+		if((!$_POST["txt_fm_aa_nachname"] || !$_POST["txt_fm_aa_vorname"]) && !$aa_use_id) break;
 
 		//Sicherheitscheck: (Felder nur anzeigen, wenn ID mit Namen und Vornamen übereinstimmen
 		//(so müssen ID, Name und Nachname bekannt sein, um die Felder manuell anzuzeigen)
 		if($aa_use_id > 0) {
 			ko_get_person_by_id($aa_use_id, $p);
-			if($p["vorname"] != $aa_use_vorname || $p["nachname"] != $aa_use_nachname) continue;
+			if($p["vorname"] != $aa_use_vorname || $p["nachname"] != $aa_use_nachname) break;
 			unset($p);
 		}
 

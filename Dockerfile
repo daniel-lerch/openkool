@@ -3,7 +3,7 @@ FROM php:5.6-apache
 RUN set -x \
 # Install necessary packages
     && apt-get update \
-    && apt-get install -y zip unzip less vim libc-client-dev libkrb5-dev \
+    && apt-get install -y zip unzip less vim libc-client-dev libkrb5-dev libpng-dev libjpeg-dev \
     && rm -rf /var/lib/apt/list/* \
 # Install PHP extensions
     && docker-php-ext-configure mysql \
@@ -12,8 +12,11 @@ RUN set -x \
     && docker-php-ext-install mysqli \
     && docker-php-ext-configure imap --with-kerberos --with-imap-ssl \
     && docker-php-ext-install imap \
+    && docker-php-ext-configure gd --with-jpeg-dir=/usr/include \
+    && docker-php-ext-install gd \
 # Remove temporary packages
     && apt-get purge -y --autoremove libc-client-dev libkrb5-dev
+    # libpng-dev and libjpeg-dev contain shared files and must not be removed
 
 # Install Composer
 RUN set -x \

@@ -242,6 +242,7 @@ $LL['fr'] = array(
 'error_msg_1' => "kOOL n'a pas pu continuer à cause d'une erreur irréparable.",
 'error_msg_2' => "Au cas ou cette erreur se produit de façon reproductible, veuillez envoyer un rapport détaillé d'erreur à %s  avec une description de la procédure qui mène à cette erreur.",
 'error_msg_3' => "Nous nous excusons pour tout inconvénient, nous allons essayer de corriger cette erreur dès que possible.",
+'error_msg_4' => "Informations complémentaires pour les développeurs",
 'error_not_allowed' => "Aucun droit d'accès",
 'error_title' => "Erreur",
 'export_chart' => "Statistiques",

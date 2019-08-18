@@ -274,7 +274,7 @@ CREATE TABLE `ko_familie` (
   `famanrede` varchar(100) NOT NULL DEFAULT '',
   `famfirstname` varchar(100) NOT NULL,
   `famlastname` varchar(100) NOT NULL,
-  `famemail` enum('','husband','wife') NOT NULL,
+  `famemail` enum('','husband','wife') NOT NULL DEFAULT '',
   PRIMARY KEY (`famid`),
   KEY `nachname` (`nachname`)
 ) ENGINE=MyISAM DEFAULT CHARSET=latin1;
@@ -390,7 +390,7 @@ INSERT INTO `ko_filter` VALUES(80, 'leute', 'hidden', 'hidden', 'status', 0, '`h
 
 CREATE TABLE `ko_grouproles` (
   `id` mediumint(6) unsigned zerofill NOT NULL AUTO_INCREMENT,
-  `name` varchar(200) NOT NULL,
+  `name` varchar(200) NOT NULL DEFAULT '',
   PRIMARY KEY (`id`)
 ) ENGINE=MyISAM DEFAULT CHARSET=latin1;
 
@@ -413,7 +413,7 @@ CREATE TABLE `ko_groups` (
   `ezmlm_moderator` varchar(250) NOT NULL,
   `mailing_alias` varchar(50) NOT NULL,
   `maxcount` mediumint(9) NOT NULL,
-  `count` mediumint(9) NOT NULL,
+  `count` mediumint(9) NOT NULL DEFAULT '0',
   `count_role` text NOT NULL,
   `mailing_mod_role` varchar(15) NOT NULL,
   `mailing_mod_logins` smallint(6) NOT NULL,
@@ -695,22 +695,22 @@ INSERT INTO `ko_help` VALUES(NULL, 'groups', 'kota.ko_groups.linked_group', 'de'
 
 CREATE TABLE `ko_kleingruppen` (
   `id` mediumint(4) unsigned zerofill NOT NULL AUTO_INCREMENT,
-  `name` varchar(250) NOT NULL,
+  `name` varchar(250) NOT NULL DEFAULT '',
   `alter` varchar(20) NOT NULL DEFAULT '',
-  `geschlecht` enum('','m','w','mixed') NOT NULL,
-  `wochentag` enum('','monday','tuesday','wednesday','thursday','friday','saturday','sunday') NOT NULL,
-  `ort` varchar(250) NOT NULL,
-  `zeit` tinytext NOT NULL,
-  `treffen` enum('','weekly','biweekly','once a month','twice a month','threetimes a month') NOT NULL,
+  `geschlecht` enum('','m','w','mixed') NOT NULL DEFAULT '',
+  `wochentag` enum('','monday','tuesday','wednesday','thursday','friday','saturday','sunday') NOT NULL DEFAULT '',
+  `ort` varchar(250) NOT NULL DEFAULT '',
+  `zeit` tinytext NOT NULL DEFAULT '',
+  `treffen` enum('','weekly','biweekly','once a month','twice a month','threetimes a month') NOT NULL DEFAULT '',
   `anz_frei` tinyint(4) NOT NULL DEFAULT '0',
   `kg-gen` mediumint(9) NOT NULL DEFAULT '0',
-  `type` varchar(100) NOT NULL,
-  `region` varchar(100) NOT NULL,
-  `comments` text NOT NULL,
-  `picture` varchar(200) NOT NULL,
-  `url` tinytext NOT NULL,
-  `eventGroupID` mediumint(9) NOT NULL,
-  `mailing_alias` varchar(50) NOT NULL,
+  `type` varchar(100) NOT NULL DEFAULT '',
+  `region` varchar(100) NOT NULL DEFAULT '',
+  `comments` text NOT NULL DEFAULT '',
+  `picture` varchar(200) NOT NULL DEFAULT '',
+  `url` tinytext NOT NULL DEFAULT '',
+  `eventGroupID` mediumint(9) NOT NULL DEFAULT '0',
+  `mailing_alias` varchar(50) NOT NULL DEFAULT '',
   PRIMARY KEY (`id`),
   KEY `type` (`type`,`region`,`eventGroupID`),
   KEY `mailing_alias` (`mailing_alias`)
@@ -719,7 +719,7 @@ CREATE TABLE `ko_kleingruppen` (
 CREATE TABLE `ko_leute` (
   `id` mediumint(9) unsigned NOT NULL AUTO_INCREMENT,
   `famid` mediumint(9) NOT NULL DEFAULT '0',
-  `anrede` enum('','Mr','Mrs','Miss','Ms') NOT NULL,
+  `anrede` enum('','Mr','Mrs','Miss','Ms') NOT NULL DEFAULT '',
   `firm` varchar(250) NOT NULL,
   `department` varchar(250) NOT NULL,
   `vorname` varchar(50) NOT NULL,
@@ -736,7 +736,7 @@ CREATE TABLE `ko_leute` (
   `email` varchar(100) NOT NULL,
   `web` varchar(250) NOT NULL,
   `geburtsdatum` date NOT NULL,
-  `zivilstand` enum('','single','married','separated','divorced','widowed') NOT NULL,
+  `zivilstand` enum('','single','married','separated','divorced','widowed') NOT NULL DEFAULT '',
   `geschlecht` enum('','m','w') NOT NULL DEFAULT '',
   `memo1` blob NOT NULL,
   `memo2` blob NOT NULL,
@@ -883,11 +883,11 @@ CREATE TABLE `ko_news` (
   `type` mediumint(9) NOT NULL DEFAULT '0',
   `title` varchar(255) NOT NULL DEFAULT '',
   `subtitle` varchar(255) NOT NULL DEFAULT '',
-  `text` longtext NOT NULL,
+  `text` mediumtext NOT NULL DEFAULT '',
   `cdate` date NOT NULL DEFAULT '0000-00-00',
   `author` varchar(255) NOT NULL DEFAULT '',
-  `link` varchar(255) NOT NULL,
-  UNIQUE KEY `id` (`id`),
+  `link` varchar(255) NOT NULL DEFAULT '',
+  PRIMARY KEY `id` (`id`),
   KEY `type` (`type`)
 ) ENGINE=MyISAM DEFAULT CHARSET=latin1;
 
@@ -958,15 +958,15 @@ CREATE TABLE `ko_resgruppen` (
 
 CREATE TABLE `ko_resitem` (
   `id` mediumint(9) NOT NULL AUTO_INCREMENT,
-  `name` varchar(100) NOT NULL,
-  `beschreibung` text NOT NULL,
+  `name` varchar(100) NOT NULL DEFAULT '',
+  `beschreibung` text NOT NULL DEFAULT '',
   `bild` varchar(255) NOT NULL DEFAULT '',
   `farbe` varchar(6) NOT NULL DEFAULT '',
   `gruppen_id` smallint(4) NOT NULL DEFAULT '0',
   `moderation` smallint(4) NOT NULL DEFAULT '0',
-  `linked_items` text NOT NULL,
-	`email_recipient` varchar(255) NOT NULL,
-	`email_text` TEXT NOT NULL,
+  `linked_items` text NOT NULL DEFAULT '',
+	`email_recipient` varchar(255) NOT NULL DEFAULT '',
+	`email_text` text NOT NULL DEFAULT '',
   PRIMARY KEY (`id`)
 ) ENGINE=MyISAM DEFAULT CHARSET=latin1;
 
