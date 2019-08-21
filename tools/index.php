@@ -201,7 +201,7 @@ switch($do_action) {
 		//Not in list of available plugins
 		if(!in_array($new_plugin, $plugins_available)) $notifier->addError(2, $do_action);
 		//Already installed
-		if(in_array($new_plugin, $plugins_installed)) continue;
+		if(in_array($new_plugin, $plugins_installed)) break;
 		//Check for config-file
 		$conf_file = $ko_path."plugins/".$new_plugin."/config.php";
 		if(!file_exists($conf_file)) $notifier->addError(3, $do_action);
@@ -238,7 +238,7 @@ switch($do_action) {
 		$plugins_available = ko_tools_plugins_get_available();
 		$plugins_installed = ko_tools_plugins_get_installed($plugins_available);
 		//Not in list of available plugins or not installed
-		if(!in_array($del_plugin, $plugins_available) || !in_array($del_plugin, $plugins_installed)) continue;
+		if(!in_array($del_plugin, $plugins_available) || !in_array($del_plugin, $plugins_installed)) break;
 		//Check for config-file
 		$conf_file = $ko_path."plugins/".$del_plugin."/config.php";
 		if(!file_exists($conf_file)) $notifier->addError(3, $do_action);
@@ -295,8 +295,8 @@ switch($do_action) {
 				if(ko_ldap_check_person($ldap, $id)) ko_ldap_del_person($ldap, $id);
 				//Delete deleted persons
 				if($p["deleted"] == 1) {
-          continue;
-        }
+        			continue;
+        		}
 				//Re-add the entry
 				$r = ko_ldap_add_person($ldap, $p, $p['id']);
 				if($r) $success++;
@@ -338,13 +338,13 @@ switch($do_action) {
 		if(ko_do_ldap()) {
 			$id = format_userinput($_GET["id"], "uint");
 			ko_get_login($id, $login);
-			if(!$login["login"] && $login["password"]) continue;
+			if(!$login["login"] && $login["password"]) break;
 
 			$ldap = ko_ldap_connect();
 			//Delete old Login
 			if(ko_ldap_check_login($ldap, $login["login"])) {
-        ko_ldap_del_login($ldap, $login["login"]);
-      }
+        		ko_ldap_del_login($ldap, $login["login"]);
+    		}
 
 			//Save new login
 			$data["cn"] = $login["login"];
@@ -374,7 +374,7 @@ switch($do_action) {
 		foreach($cols as $c) {
 			if($c["Field"] == $value) $found = TRUE;
 		}
-		if(!$found) continue;
+		if(!$found) break;
 
 		//Spalte aus DB löschen
 		$query = "ALTER TABLE `ko_leute` DROP `$value`";
@@ -422,7 +422,7 @@ switch($do_action) {
 		foreach($cols as $c) {
 			if($c["Field"] == $value) $found = TRUE;
 		}
-		if(!$found) continue;
+		if(!$found) break;
 
 		//Spalte aus DB löschen
 		$query = "ALTER TABLE `ko_familie` DROP `$value`";
@@ -541,9 +541,9 @@ switch($do_action) {
 		$pos = format_userinput($_GET["pos"], "alpha", FALSE, 5);
 
 		//Auf vorhandenes Submenu und Login testen
-		if(!ko_check_submenu($sm, $mid)) continue;
+		if(!ko_check_submenu($sm, $mid)) break;
 		ko_get_login($lid, $login);
-		if(!$login["login"]) continue;
+		if(!$login["login"]) break;
 
 		//Submenu hinzufügen
 		ko_tools_add_submenu(array($sm), array($lid), $mid, $pos);
@@ -555,7 +555,7 @@ switch($do_action) {
 
 	case "add_to_modul":
 		$modul = format_userinput($_POST["sel_add_modul"], "alpha");
-		if(!in_array($modul, $MODULES)) continue;
+		if(!in_array($modul, $MODULES)) break;
 
 		$logins = array();
 		foreach($_POST["chk"] as $c_i => $c) {
@@ -596,14 +596,14 @@ switch($do_action) {
 	case "ll_edit_all":
 		$edit_lang = format_userinput($_GET["lang"], "alpha", FALSE, 2);
 		$edit_mode = $do_action == "ll_edit" ? "empty" : "all";
-		if(!in_array($edit_lang, $LIB_LANGS)) continue;
+		if(!in_array($edit_lang, $LIB_LANGS)) break;
 		else $_SESSION["show"] = "ll_edit";
 	break;
 
 
 	case "ll_edit_submit":
 		$edit_lang = format_userinput($_POST["id"], "alpha", FALSE, 2);
-		if(!in_array($edit_lang, $LIB_LANGS)) continue;
+		if(!in_array($edit_lang, $LIB_LANGS)) break;
 
 		//Include default language definitions
 		include($ko_path."locallang/locallang.".$default_lang.".php");
@@ -657,7 +657,7 @@ switch($do_action) {
 
 	case 'delete_task':
 		$id = format_userinput($_POST['id'], 'uint');
-		if(!$id) continue;
+		if(!$id) break;
 
 		db_delete_data('ko_scheduler_tasks', "WHERE `id` = '$id'");
 	break;
@@ -882,12 +882,12 @@ switch($_SESSION["show"]) {
 	break;
 
 	case "ldap_export":
-		if(!$ldap_enabled) continue;
+		if(!$ldap_enabled) break;
 		else ko_tools_ldap_export();
 	break;
 
 	case "list_ldap_logins":
-		if(!$ldap_enabled) continue;
+		if(!$ldap_enabled) break;
 		else ko_tools_ldap_logins();
 	break;
 

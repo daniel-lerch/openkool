@@ -1,28 +1,22 @@
 <?php
-/***************************************************************
-*  Copyright notice
+/*******************************************************************************
 *
-*  (c) 2003-2015 Renzo Lauper (renzo@churchtool.org)
-*  All rights reserved
+*    OpenKool - Online church organization tool
 *
-*  This script is part of the kOOL project. The kOOL project is
-*  free software; you can redistribute it and/or modify
-*  it under the terms of the GNU General Public License as published by
-*  the Free Software Foundation; either version 2 of the License, or
-*  (at your option) any later version.
+*    Copyright © 2003-2015 Renzo Lauper (renzo@churchtool.org)
+*    Copyright © 2019      Daniel Lerch
 *
-*  The GNU General Public License can be found at
-*  http://www.gnu.org/copyleft/gpl.html.
-*  A copy is found in the textfile GPL.txt and important notices to the license
-*  from the author is found in LICENSE.txt distributed with these scripts.
+*    This program is free software; you can redistribute it and/or modify
+*    it under the terms of the GNU General Public License as published by
+*    the Free Software Foundation; either version 2 of the License, or
+*    (at your option) any later version.
 *
-*  kOOL is distributed in the hope that it will be useful,
-*  but WITHOUT ANY WARRANTY; without even the implied warranty of
-*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-*  GNU General Public License for more details.
+*    This program is distributed in the hope that it will be useful,
+*    but WITHOUT ANY WARRANTY; without even the implied warranty of
+*    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+*    GNU General Public License for more details.
 *
-*  This copyright notice MUST APPEAR in all copies of the script!
-***************************************************************/
+*******************************************************************************/
 
 ob_start();
 
@@ -75,21 +69,21 @@ if($_SERVER['HTTP_REFERER'] != '' && FALSE === strpos($_SERVER['HTTP_REFERER'], 
 switch($do_action) {
 
 	case 'schedule':
-		if($access['rota']['MAX'] < 1) continue;
+		if($access['rota']['MAX'] < 1) break;
 
 		$_SESSION['show'] = 'schedule';
 	break;
 
 
 	case 'settings':
-		if($access['rota']['MAX'] < 2) continue;
+		if($access['rota']['MAX'] < 2) break;
 
 		$_SESSION['show_back'] = $_SESSION['show'];
 		$_SESSION['show'] = 'settings';
 	break;
 
 	case 'submit_rota_settings':
-		if($access['rota']['MAX'] < 2) continue;
+		if($access['rota']['MAX'] < 2) break;
 
 		//User settings
 		ko_save_userpref($_SESSION['ses_userid'], 'default_view_rota', format_userinput($_POST['sel_rota_default_view'], 'js'));
@@ -151,7 +145,7 @@ switch($do_action) {
 
 
 	case 'new_team':
-		if($access['rota']['MAX'] < 5) continue;
+		if($access['rota']['MAX'] < 5) break;
 
 		$_SESSION['show'] = 'new_team';
 		$onload_code = 'form_set_first_input();'.$onload_code;
@@ -159,7 +153,7 @@ switch($do_action) {
 
 
 	case 'submit_new_team':
-		if($access['rota']['MAX'] < 5) continue;
+		if($access['rota']['MAX'] < 5) break;
 
 		$new_id = kota_submit_multiedit('', 'new_rota_team');
 		if(!$notifier->hasErrors() && $new_id) {
@@ -183,7 +177,7 @@ switch($do_action) {
 	
 
 	case 'edit_team':
-		if($access['rota']['MAX'] < 5) continue;
+		if($access['rota']['MAX'] < 5) break;
 
 		$_SESSION['show'] = 'edit_team';
 		$onload_code = 'form_set_first_input();'.$onload_code;
@@ -191,13 +185,13 @@ switch($do_action) {
 
 
 	case 'submit_edit_team':
-		if($access['rota']['MAX'] < 5) continue;
+		if($access['rota']['MAX'] < 5) break;
 
 		list($table, $columns, $id, $hash) = explode('@', $_POST['id']);
 		$id = format_userinput($id, 'uint');
-		if(!$id) continue;
+		if(!$id) break;
 		$old = db_select_data('ko_rota_teams', "WHERE `id` = '$id'", '*', '', '', TRUE);
-		if($old['id'] != $id) continue;
+		if($old['id'] != $id) break;
 
 		kota_submit_multiedit('', 'edit_rota_team');
 
@@ -235,10 +229,10 @@ switch($do_action) {
 
 
 	case 'delete_team':
-		if($access['rota']['MAX'] < 5) continue;
+		if($access['rota']['MAX'] < 5) break;
 
 		$id = format_userinput($_POST['id'], 'uint');
-		if($access['rota']['ALL'] < 5 && $access['rota'][$id] < 5) continue;
+		if($access['rota']['ALL'] < 5 && $access['rota'][$id] < 5) break;
 
 		$old = db_select_data('ko_rota_teams', "WHERE `id` = '$id'", '*', '', '', TRUE);
 		db_delete_data('ko_rota_teams', "WHERE `id` = '$id'");
@@ -264,7 +258,7 @@ switch($do_action) {
 
 
 	case 'multiedit':
-		if($access['rota']['MAX'] < 5) continue;
+		if($access['rota']['MAX'] < 5) break;
 
 		//Columns to be edited
 		$columns = explode(',', format_userinput($_POST['id'], 'alphanumlist'));
@@ -297,7 +291,7 @@ switch($do_action) {
 
 
 	case 'submit_multiedit':
-		if($access['rota']['MAX'] < 5) continue;
+		if($access['rota']['MAX'] < 5) break;
 
 		kota_submit_multiedit(5);
 		if(!$notifier->hasErrors()) $notifier->addInfo(1, $do_action);
@@ -309,7 +303,7 @@ switch($do_action) {
 
 
 	case 'show_filesend':
-		if($access['rota']['MAX'] < 4) continue;
+		if($access['rota']['MAX'] < 4) break;
 
 		$get_data = $_GET;
 		$_SESSION['show'] = 'show_filesend';
@@ -317,7 +311,7 @@ switch($do_action) {
 
 
 	case 'filesend_upload':
-		if($access['rota']['MAX'] < 4) continue;
+		if($access['rota']['MAX'] < 4) break;
 
 		$get_data = $_POST;
 		$_SESSION['show'] = 'show_filesend';
@@ -329,7 +323,7 @@ switch($do_action) {
 			$upload_name = $_FILES['new_file']['name'];
 			$ext_ = explode('.', $upload_name);
 			$ext = strtolower($ext_[sizeof($ext_)-1]);
-			if(in_array($ext, $dissallow_ext)) continue;
+			if(in_array($ext, $dissallow_ext)) break;
 
 			$path = $BASE_PATH.'download/pdf/';
 			$filename = format_userinput($upload_name, 'alphanumlist', FALSE, 0, array(), '.');
@@ -343,7 +337,7 @@ switch($do_action) {
 
 
 	case 'filesend_delfile':
-		if($access['rota']['MAX'] < 4) continue;
+		if($access['rota']['MAX'] < 4) break;
 
 		$get_data = $_POST;
 
@@ -359,7 +353,7 @@ switch($do_action) {
 
 
 	case 'filesend':
-		if($access['rota']['MAX'] < 4) continue;
+		if($access['rota']['MAX'] < 4) break;
 
 		//Get logged in person and he's email addresses
 		$p = ko_get_logged_in_person();
@@ -367,7 +361,7 @@ switch($do_action) {
 
 		//Check for valid sender address
 		$from_email = format_userinput($_POST['sender'], 'email');
-		if(!check_email($from_email) || !in_array($from_email, $emails)) continue;
+		if(!check_email($from_email) || !in_array($from_email, $emails)) break;
 
 		//Build sender header with name and email address
 		$from_name = $p['vorname'] || $p['nachname'] ? $p['vorname'].' '.$p['nachname'] : $p['firm'];

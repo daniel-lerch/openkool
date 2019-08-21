@@ -1,28 +1,22 @@
 <?php
-/***************************************************************
-*  Copyright notice
+/*******************************************************************************
 *
-*  (c) 2003-2015 Renzo Lauper (renzo@churchtool.org)
-*  All rights reserved
+*    OpenKool - Online church organization tool
 *
-*  This script is part of the kOOL project. The kOOL project is
-*  free software; you can redistribute it and/or modify
-*  it under the terms of the GNU General Public License as published by
-*  the Free Software Foundation; either version 2 of the License, or
-*  (at your option) any later version.
+*    Copyright © 2003-2015 Renzo Lauper (renzo@churchtool.org)
+*    Copyright © 2019      Daniel Lerch
 *
-*  The GNU General Public License can be found at
-*  http://www.gnu.org/copyleft/gpl.html.
-*  A copy is found in the textfile GPL.txt and important notices to the license
-*  from the author is found in LICENSE.txt distributed with these scripts.
+*    This program is free software; you can redistribute it and/or modify
+*    it under the terms of the GNU General Public License as published by
+*    the Free Software Foundation; either version 2 of the License, or
+*    (at your option) any later version.
 *
-*  kOOL is distributed in the hope that it will be useful,
-*  but WITHOUT ANY WARRANTY; without even the implied warranty of
-*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-*  GNU General Public License for more details.
+*    This program is distributed in the hope that it will be useful,
+*    but WITHOUT ANY WARRANTY; without even the implied warranty of
+*    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+*    GNU General Public License for more details.
 *
-*  This copyright notice MUST APPEAR in all copies of the script!
-***************************************************************/
+*******************************************************************************/
 
 ob_start();  //Ausgabe-Pufferung starten
 
@@ -66,66 +60,66 @@ switch($do_action) {
 
 	//Anzeigen
 	case "set_allgemein":
-		if($access['admin']['MAX'] < 2) continue;
+		if($access['admin']['MAX'] < 2) break;
 		$_SESSION["show"] = "set_allgemein";
 	break;
 
 	case "set_etiketten":
-		if($access['admin']['MAX'] < 2) continue;
+		if($access['admin']['MAX'] < 2) break;
 		$_SESSION["show"] = "set_etiketten";
 	break;
 
 	case "set_leute_pdf":
-		if($access['admin']['MAX'] < 2) continue;
+		if($access['admin']['MAX'] < 2) break;
 		$_SESSION["show"] = "set_leute_pdf";
 	break;
 
 	case "set_layout":
-		if($access['admin']['MAX'] < 1) continue;
+		if($access['admin']['MAX'] < 1) break;
 		$_SESSION["show"] = "set_layout";
 	break;
 
 	case "set_layout_guest":
-		if($access['admin']['MAX'] < 3) continue;
+		if($access['admin']['MAX'] < 3) break;
 		$_SESSION["show"] = "set_layout_guest";
 	break;
 
 	case "set_show_logins":
-		if($access['admin']['MAX'] < 5) continue;
+		if($access['admin']['MAX'] < 5) break;
 		if($_SESSION['show'] == 'show_logins') $_SESSION['show_start'] = 1;
 		$_SESSION['show'] = 'show_logins';
 	break;
 
 	case "show_logs":
-		if($access['admin']['MAX'] < 4) continue;
+		if($access['admin']['MAX'] < 4) break;
 		if($_SESSION['show'] == 'show_logs') $_SESSION['show_logs_start'] = 1;
 		$_SESSION['show'] = 'show_logs';
 	break;
 
 	case 'show_sms_log':
-		if($access['admin']['MAX'] < 1) continue;
-		if(!ko_module_installed('sms')) continue;
+		if($access['admin']['MAX'] < 1) break;
+		if(!ko_module_installed('sms')) break;
 		$_SESSION['show'] = 'show_sms_log';
 		$_SESSION['show_start'] = 1;
 	break;
 
 	case "submit_log_filter":
-		if($access['admin']['MAX'] < 4) continue;
+		if($access['admin']['MAX'] < 4) break;
 		$_SESSION["log_type"] = $_GET["set_log_filter"];
 	break;
 
 	case "submit_user_filter":
-		if($access['admin']['MAX'] < 4) continue;
+		if($access['admin']['MAX'] < 4) break;
 		$_SESSION["log_user"] = $_GET["set_user_filter"];
 	break;
 
 	case "submit_time_filter":
-		if($access['admin']['MAX'] < 1) continue;
+		if($access['admin']['MAX'] < 1) break;
 		$_SESSION["log_time"] = $_GET["set_time_filter"];
 	break;
 
 	case "submit_hide_guest":
-		if($access['admin']['MAX'] < 4) continue;
+		if($access['admin']['MAX'] < 4) break;
 
 		if($_GET["logs_hide_status"] == "true") {
 			$_SESSION["logs_hide_guest"] = TRUE;
@@ -136,7 +130,7 @@ switch($do_action) {
 	break;
 
 	case "submit_clear_guest":
-		if($_SESSION["ses_userid"] != ko_get_root_id()) continue;
+		if($_SESSION["ses_userid"] != ko_get_root_id()) break;
 		db_delete_data("ko_log", "WHERE `type`='guest'");
 		$notifier->addInfo(7, $do_action);
 	break;
@@ -171,7 +165,7 @@ switch($do_action) {
 
 	//Speichern
 	case "save_set_allgemein":
-		if($access['admin']['MAX'] < 2) continue;
+		if($access['admin']['MAX'] < 2) break;
 
 		if(in_array('leute', $MODULES)) {
 			$login_edit_person = format_userinput($_POST["rd_login_edit_person"], "uint", FALSE, 1);
@@ -217,7 +211,7 @@ switch($do_action) {
 
 
 	case 'submit_sms_sender_id':
-		if(!ko_module_installed('sms') || $SMS_PARAMETER['provider'] != 'aspsms' || !$SMS_PARAMETER['user'] || !$SMS_PARAMETER['pass']) continue;
+		if(!ko_module_installed('sms') || $SMS_PARAMETER['provider'] != 'aspsms' || !$SMS_PARAMETER['user'] || !$SMS_PARAMETER['pass']) break;
 
 		$number = $_POST['sms_sender_id'];
 		$is_number = check_natel($number);
@@ -273,11 +267,11 @@ switch($do_action) {
 
 
 	case 'delete_sms_sender_id':
-		if($access['admin']['MAX'] < 2) continue;
+		if($access['admin']['MAX'] < 2) break;
 
-		if(!ko_module_installed('sms') || $SMS_PARAMETER['provider'] != 'aspsms' || !$SMS_PARAMETER['user'] || !$SMS_PARAMETER['pass']) continue;
+		if(!ko_module_installed('sms') || $SMS_PARAMETER['provider'] != 'aspsms' || !$SMS_PARAMETER['user'] || !$SMS_PARAMETER['pass']) break;
 		$senderID = urldecode($_GET['sender_id']);
-		if(!$senderID) continue;
+		if(!$senderID) break;
 		
 		$sender_ids = explode(',', ko_get_setting('sms_sender_ids'));
 		$new = array();
@@ -294,7 +288,7 @@ switch($do_action) {
 
 
 	case 'submit_sms_sender_id_clickatell':
-		if(!ko_module_installed('sms') || $SMS_PARAMETER['provider'] == 'aspsms' || !$SMS_PARAMETER['user'] || !$SMS_PARAMETER['pass']) continue;
+		if(!ko_module_installed('sms') || $SMS_PARAMETER['provider'] == 'aspsms' || !$SMS_PARAMETER['user'] || !$SMS_PARAMETER['pass']) break;
 
 		//Get all senderIDs
 		$sender_ids = explode(',', ko_get_setting('sms_sender_ids'));
@@ -323,9 +317,9 @@ switch($do_action) {
 
 
 	case "save_set_layout_guest":
-		if($access['admin']['MAX'] < 3) continue;
+		if($access['admin']['MAX'] < 3) break;
 	case "save_set_layout":
-		if($access['admin']['MAX'] < 1) continue;
+		if($access['admin']['MAX'] < 1) break;
 
 		$uid = ($do_action == "save_set_layout") ? $_SESSION["ses_userid"] : ko_get_guest_id();
 
@@ -390,17 +384,17 @@ switch($do_action) {
 
 
 	case "set_show_admingroups":
-		if($access['admin']['MAX'] < 5) continue;
+		if($access['admin']['MAX'] < 5) break;
 
 		$_SESSION["show"] = "show_admingroups";
 	break;
 
 
 	case "delete_admingroup":
-		if($access['admin']['MAX'] < 5) continue;
+		if($access['admin']['MAX'] < 5) break;
 
 		$id = format_userinput($_POST["id"], "uint");
-		if(!$id) continue;
+		if(!$id) break;
 
 		$old = db_select_data('ko_admingroups', "WHERE `id` = '$id'", '*', '', '', TRUE);
 
@@ -429,7 +423,7 @@ switch($do_action) {
 
 
 	case "set_new_admingroup":
-		if($access['admin']['MAX'] < 5) continue;
+		if($access['admin']['MAX'] < 5) break;
 
 		$_SESSION["show"] = "new_admingroup";
 		$onload_code = "form_set_first_input();".$onload_code;
@@ -437,17 +431,17 @@ switch($do_action) {
 
 
 	case "edit_admingroup":
-		if($access['admin']['MAX'] < 5) continue;
+		if($access['admin']['MAX'] < 5) break;
 
 		$edit_id = format_userinput($_POST["id"], "uint");
-		if(!$edit_id) continue;
+		if(!$edit_id) break;
 		$_SESSION["show"] = "edit_admingroup";
 		$onload_code = "form_set_first_input();".$onload_code;
 	break;
 
 
 	case "submit_new_admingroup":
-		if($access['admin']['MAX'] < 5) continue;
+		if($access['admin']['MAX'] < 5) break;
 
 		//Gruppenname verlangen
 		$txt_name = format_userinput($_POST["txt_name"], "text");
@@ -480,7 +474,7 @@ switch($do_action) {
 
 
 	case "submit_edit_admingroup":
-		if($access['admin']['MAX'] < 5) continue;
+		if($access['admin']['MAX'] < 5) break;
 
 		$data = array();
 		if(FALSE === ($id = format_userinput($_POST["id"], "uint", TRUE))) {
@@ -492,7 +486,7 @@ switch($do_action) {
 			ko_save_admin("name", $id, $name, "admingroup");
 		} else {
 			$notifier->addError(12, $do_action);
-			continue;
+			break;
 		}
 		$_old_admingroup = ko_get_admingroups($id);
 		$old_admingroup = $_old_admingroup[$id];
@@ -774,13 +768,13 @@ switch($do_action) {
 
 
 	case "submit_edit_login":
-		if($access['admin']['MAX'] < 5) continue;
+		if($access['admin']['MAX'] < 5) break;
 
 		if(FALSE === ($id = format_userinput($_POST["id"], "uint", TRUE))) {
 	    	trigger_error("Not allowed id: ".$id, E_USER_ERROR);
     	}
 		//root darf nur von root bearbeitet werden
-		if($id == ko_get_root_id() && $_SESSION["ses_username"] != "root") continue;
+		if($id == ko_get_root_id() && $_SESSION["ses_username"] != "root") break;
 
 		//Altes Login speichern (für LDAP)
 		ko_get_login($id, $old_login);
@@ -792,7 +786,7 @@ switch($do_action) {
 			if($id != ko_get_guest_id() && $id != ko_get_root_id()) ko_save_admin("login", $id, $login_name);
 		} else {
 			$notifier->addError(1, $do_action);
-			continue;
+			break;
 		}
 
 		//Passwort neu setzen
@@ -801,7 +795,7 @@ switch($do_action) {
 				ko_save_admin("password", $id, md5($_POST["txt_pwd1"]));
 			} else {
 				$notifier->addError(2, $do_action);
-				continue;
+				break;
 			}
 		}
 
@@ -1126,7 +1120,7 @@ switch($do_action) {
 
 
 	case "submit_neues_login":
-		if($access['admin']['MAX'] < 5) continue;
+		if($access['admin']['MAX'] < 5) break;
 
 		$txt_name = format_userinput($_POST["txt_name"], "js");
 	
@@ -1232,7 +1226,7 @@ switch($do_action) {
 
 
 	case "set_new_login":
-		if($access['admin']['MAX'] < 5) continue;
+		if($access['admin']['MAX'] < 5) break;
 		$_SESSION["show"] = "new_login";
 		$onload_code = "form_set_first_input();".$onload_code;
 	break;
@@ -1241,12 +1235,12 @@ switch($do_action) {
 
 	//Bearbeiten
 	case "edit_login":
-		if($access['admin']['MAX'] < 5) continue;
+		if($access['admin']['MAX'] < 5) break;
 		if(FALSE === ($id = format_userinput($_POST["id"], "uint", TRUE))) {
-	    trigger_error("Not allowed id: ".$id, E_USER_ERROR);
-    }
+	    	trigger_error("Not allowed id: ".$id, E_USER_ERROR);
+    	}
 		//root darf nur von root bearbeitet werden
-		if($id == ko_get_root_id() && $_SESSION["ses_username"] != "root") continue;
+		if($id == ko_get_root_id() && $_SESSION["ses_username"] != "root") break;
 
 		$_SESSION["show"] = "edit_login";
 		//Don't add form_set_first_input() to onload_code, so the username doens't trigger the autocomplete feature for the first password field
@@ -1255,13 +1249,13 @@ switch($do_action) {
 
 	//Löschen
 	case "delete_login":
-		if($access['admin']['MAX'] < 5) continue;
+		if($access['admin']['MAX'] < 5) break;
 
 		if(FALSE === ($id = format_userinput($_POST["id"], "uint", TRUE))) {
-	    trigger_error("Not allowed id: ".$id, E_USER_ERROR);
-    }
-		if((int)$id == (int)ko_get_guest_id()) continue;  //ko_guest may not be deleted
-		if((int)$id == (int)ko_get_root_id()) continue;   //root may not be deleted
+	    	trigger_error("Not allowed id: ".$id, E_USER_ERROR);
+    	}
+		if((int)$id == (int)ko_get_guest_id()) break;  //ko_guest may not be deleted
+		if((int)$id == (int)ko_get_root_id()) break;   //root may not be deleted
 
 		//Get username before deleting it (for logging)
 		$old_login = db_select_data('ko_admin', "WHERE `id` = '$id'", '*', '', '', TRUE);
@@ -1289,7 +1283,7 @@ switch($do_action) {
 
 	//Etiketten-Vorlage
 	case "open_etiketten":
-		if($access['admin']['MAX'] < 2) continue;
+		if($access['admin']['MAX'] < 2) break;
 
 		//GET- oder POST-Übergabe testen
 		if($_POST["sel_vorlage_open"]) {
@@ -1298,7 +1292,7 @@ switch($do_action) {
 			$etiketten_id = format_userinput($_GET["sel_vorlage_open"], "js");
 		} else {
 			$notifier->addError(9, $do_action);
-			continue;
+			break;
 		}
 
 		//Auf gültige Vorlagen-ID prüfen
@@ -1314,11 +1308,11 @@ switch($do_action) {
 
 
 	case "submit_del_etiketten_vorlage":
-		if($access['admin']['MAX'] < 2) continue;
+		if($access['admin']['MAX'] < 2) break;
 		$sel_vorlage = format_userinput($_POST["sel_vorlage_open"], "alphanum");
 		if(!$sel_vorlage || strlen($sel_vorlage) != 32) {
 			$notifier->addError(8, $do_action);
-			continue;
+			break;
 		}
 
 		ko_get_etiketten_vorlage($sel_vorlage, $vorlage);
@@ -1337,7 +1331,7 @@ switch($do_action) {
 
 
 	case "save_etiketten":
-		if($access['admin']['MAX'] < 2) continue;
+		if($access['admin']['MAX'] < 2) break;
 
 		if($_POST["txt_vorlage_neu"]) {  //Neue Vorlage speichern
 			$keys["name"] = format_userinput($_POST["txt_vorlage_neu"], "text");
@@ -1348,12 +1342,12 @@ switch($do_action) {
 			$id = format_userinput($_POST["sel_vorlage_save"], "alphanum");
 			$mode = "edit";
 			$notifier->addInfo(5, $do_action);
-		} else continue;
+		} else break;
 
 		//Verlangte Angaben überprüfen (per_row, per_col)
 		if(!$_POST["txt_per_row"] || !$_POST["txt_per_col"]) {
 			$notifier->addError(7, $do_action);
-			continue;
+			break;
 		}
 
 		$keys['page_format']      = format_userinput($_POST['sel_pageformat'], 'alphanum');
@@ -1418,11 +1412,11 @@ switch($do_action) {
 	
 	//Identität annehmen (mit anderem Login einloggen)
 	case "sudo_login":
-		if($access['admin']['MAX'] < 5) continue;
+		if($access['admin']['MAX'] < 5) break;
 
 		$found = 0;
 		foreach($_POST["chk"] as $c_i => $c) {
-      if($c) {
+    		if($c) {
 				$found++;
 				$sudo_id = format_userinput($c_i, "uint");
 			}
@@ -1431,19 +1425,19 @@ switch($do_action) {
 		//Nur genau eine Selektion erlauben
 		if($found != 1) {
 			$notifier->addError(5, $do_action);
-			continue;
+			break;
 		}
 		
 		//ko_guest nicht erlauben
 		if($sudo_id == ko_get_guest_id()) {
 			$notifier->addError(6, $do_action);
-			continue;
+			break;
 		}
 
 		//root nicht erlauben
 		if($sudo_id == ko_get_root_id()) {
 			$notifier->addError(11, $do_action);
-			continue;
+			break;
 		}
 
 		//Auf gültiges Login testen
@@ -1456,7 +1450,7 @@ switch($do_action) {
 		}
 		if(!$found) {
 			$notifier->addError(11, $do_action);
-			continue;
+			break;
 		}
 
 		//Identität wechseln
@@ -1472,17 +1466,17 @@ switch($do_action) {
 
 	//PDF layouts for address export
 	case "set_leute_pdf_new":
-		if($access['admin']['MAX'] < 2) continue;
+		if($access['admin']['MAX'] < 2) break;
 
 		$_SESSION["show"] = "new_leute_pdf";
 	break;
 
 
 	case "edit_leute_pdf":
-		if($access['admin']['MAX'] < 2) continue;
+		if($access['admin']['MAX'] < 2) break;
 
 		$layout_id = format_userinput($_POST["id"], "uint");
-		if(!$layout_id) continue;
+		if(!$layout_id) break;
 
 		$_SESSION["show"] = "edit_leute_pdf";
 	break;
@@ -1490,7 +1484,7 @@ switch($do_action) {
 
 	case "submit_new_leute_pdf":
 	case "submit_edit_leute_pdf":
-		if($access['admin']['MAX'] < 2) continue;
+		if($access['admin']['MAX'] < 2) break;
 
 		if($do_action == "submit_edit_leute_pdf") {
 			$layout_id = format_userinput($_POST["layout_id"], "uint");
@@ -1545,10 +1539,10 @@ switch($do_action) {
 
 
 	case "delete_leute_pdf":
-		if($access['admin']['MAX'] < 2) continue;
+		if($access['admin']['MAX'] < 2) break;
 
 		$id = format_userinput($_POST["id"], "uint");
-		if(!$id) continue;
+		if(!$id) break;
 
 		$old = db_select_data('ko_pdf_layout', "WHERE `id` = '$id' AND `type` = 'leute'", '*', '', '', TRUE);
 
@@ -1562,14 +1556,14 @@ switch($do_action) {
 
 	//News
 	case 'list_news':
-		if($access['admin']['MAX'] < 2) continue;
+		if($access['admin']['MAX'] < 2) break;
 
 		$_SESSION['show'] = 'list_news';
 	break;
 
 
 	case 'new_news':
-		if($access['admin']['MAX'] < 2) continue;
+		if($access['admin']['MAX'] < 2) break;
 
 		$_SESSION['show'] = 'new_news';
 		$onload_code = 'form_set_first_input();'.$onload_code;
@@ -1578,7 +1572,7 @@ switch($do_action) {
 
 	case 'submit_new_news':
 	case 'submit_as_new_news':
-		if($access['admin']['MAX'] < 2) continue;
+		if($access['admin']['MAX'] < 2) break;
 
 		if($do_action == 'submit_as_new_news') {
 			list($table, $columns, $ids, $hash) = explode('@', $_POST['id']);
@@ -1593,7 +1587,7 @@ switch($do_action) {
 
 
 	case 'edit_news':
-		if($access['admin']['MAX'] < 2) continue;
+		if($access['admin']['MAX'] < 2) break;
 
 		$id = format_userinput($_POST['id'], 'uint');
 		$_SESSION['show'] = 'edit_news';
@@ -1602,7 +1596,7 @@ switch($do_action) {
 
 
 	case 'submit_edit_news':
-		if($access['admin']['MAX'] < 2) continue;
+		if($access['admin']['MAX'] < 2) break;
 
 		kota_submit_multiedit('', 'edit_news');
 		if(!$notifier->hasErrors()) $_SESSION['show'] = 'list_news';
@@ -1610,10 +1604,10 @@ switch($do_action) {
 
 
 	case 'delete_news':
-		if($access['admin']['MAX'] < 2) continue;
+		if($access['admin']['MAX'] < 2) break;
 
 		$id = format_userinput($_POST['id'], 'uint');
-		if(!$id) continue;
+		if(!$id) break;
 
 		$old = db_select_data('ko_news', "WHERE `id` = '$id'", '*', '', '', TRUE);
 		db_delete_data('ko_news', "WHERE `id` = '$id'");
@@ -1624,7 +1618,7 @@ switch($do_action) {
 
 
 	case 'sms_log_mark':
-		if($_SESSION['ses_userid'] != ko_get_root_id()) continue;
+		if($_SESSION['ses_userid'] != ko_get_root_id()) break;
 
 		db_insert_data('ko_log', array('type' => 'sms_mark', 'user_id' => $_SESSION['ses_userid'], 'date' => date('Y-m-d H:m:i')));
 	break;

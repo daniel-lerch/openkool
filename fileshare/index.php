@@ -1,28 +1,22 @@
 <?php
-/***************************************************************
-*  Copyright notice
+/*******************************************************************************
 *
-*  (c) 2003-2015 Renzo Lauper (renzo@churchtool.org)
-*  All rights reserved
+*    OpenKool - Online church organization tool
 *
-*  This script is part of the kOOL project. The kOOL project is
-*  free software; you can redistribute it and/or modify
-*  it under the terms of the GNU General Public License as published by
-*  the Free Software Foundation; either version 2 of the License, or
-*  (at your option) any later version.
+*    Copyright © 2003-2015 Renzo Lauper (renzo@churchtool.org)
+*    Copyright © 2019      Daniel Lerch
 *
-*  The GNU General Public License can be found at
-*  http://www.gnu.org/copyleft/gpl.html.
-*  A copy is found in the textfile GPL.txt and important notices to the license
-*  from the author is found in LICENSE.txt distributed with these scripts.
+*    This program is free software; you can redistribute it and/or modify
+*    it under the terms of the GNU General Public License as published by
+*    the Free Software Foundation; either version 2 of the License, or
+*    (at your option) any later version.
 *
-*  kOOL is distributed in the hope that it will be useful,
-*  but WITHOUT ANY WARRANTY; without even the implied warranty of
-*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-*  GNU General Public License for more details.
+*    This program is distributed in the hope that it will be useful,
+*    but WITHOUT ANY WARRANTY; without even the implied warranty of
+*    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+*    GNU General Public License for more details.
 *
-*  This copyright notice MUST APPEAR in all copies of the script!
-***************************************************************/
+*******************************************************************************/
 
 ob_start();  //Ausgabe-Pufferung einschalten
 
@@ -63,22 +57,22 @@ else $do_action="";
 switch($do_action) {
 
 	case "new_share":
-		if($access['fileshare']['MAX'] < 1) continue;
+		if($access['fileshare']['MAX'] < 1) break;
 		$_SESSION["show"] = "new_share";
 	break;
 
 	case "new_folder":
-		if($access['fileshare']['MAX'] < 3) continue;
+		if($access['fileshare']['MAX'] < 3) break;
 		$_SESSION["show"] = "new_folder";
 	break;
 
 	case "edit_folder":
-		if($access['fileshare']['MAX'] < 3) continue;
+		if($access['fileshare']['MAX'] < 3) break;
 		$_SESSION["show"] = "edit_folder";
 	break;
 
 	case "send_file":
-		if($access['fileshare']['MAX'] < 1) continue;
+		if($access['fileshare']['MAX'] < 1) break;
 
 		$shares = array();
 		$id = format_userinput($_POST["id"], "alphanum");
@@ -105,7 +99,7 @@ switch($do_action) {
 
 	case "delete_share":
 	case "delete_shares":
-		if($access['fileshare']['MAX'] < 2) continue;
+		if($access['fileshare']['MAX'] < 2) break;
 
 		$ids = array();
 		if($do_action == "delete_shares") {
@@ -202,7 +196,7 @@ switch($do_action) {
 		$save_target = format_userinput($sel_target, "uint");
 
 		if(!ko_fileshare_check_permission($_SESSION["ses_userid"], $save_target, "new_file")) $error = 6;
-		if($error) continue;
+		if($error) break;
 
 		$k = count($file['name']);
 		for($i=0 ; $i < $k ; $i++) {
@@ -283,7 +277,7 @@ switch($do_action) {
 		//Eingaben überprüfen
 		if(!$_POST["txt_absender"]) {
 			$error = 2;
-			continue;
+			break;
 		}
 		$links = array();
 
@@ -469,14 +463,14 @@ switch($do_action) {
 
 	// Webfolders
 	case "new_webfolder":
-		if($access['fileshare']['MAX'] < 4 || !WEBFOLDERS) continue;
+		if($access['fileshare']['MAX'] < 4 || !WEBFOLDERS) break;
 		$_SESSION["show"] = "new_webfolder";
 		$onload_code = "form_set_first_input();".$onload_code;
 	break;
 
 	case "submit_new_webfolder":
 	case "submit_edit_webfolder":
-		if($access['fileshare']['MAX'] < 4 || !WEBFOLDERS) continue;
+		if($access['fileshare']['MAX'] < 4 || !WEBFOLDERS) break;
 		$name = format_userinput(urldecode($_POST["txt_name"]), "dir");
 		$path = urldecode($_POST["hid_path"]);
 
@@ -591,7 +585,7 @@ switch($do_action) {
 
 
 	case "clear_webfolder_rights":
-		if($access['fileshare']['MAX'] < 4 || !WEBFOLDERS) continue;
+		if($access['fileshare']['MAX'] < 4 || !WEBFOLDERS) break;
 		
 		$folder = urldecode($_GET["id"]);
 		$folder = realpath($WEBFOLDERS_BASE.$folder);
@@ -609,7 +603,7 @@ switch($do_action) {
 
 
 	case "edit_webfolder":
-		if($access['fileshare']['MAX'] < 4 || !WEBFOLDERS) continue;
+		if($access['fileshare']['MAX'] < 4 || !WEBFOLDERS) break;
 
 		//check for correct passed folder name
 		//$possible_folders = ko_fileshare_get_webfolders();
@@ -630,7 +624,7 @@ switch($do_action) {
 
 
 	case "delete_webfolder":
-		if($access['fileshare']['MAX'] < 4 || !WEBFOLDERS) continue;
+		if($access['fileshare']['MAX'] < 4 || !WEBFOLDERS) break;
 
 		//check for correct passed folder name
 		$possible_folders = ko_fileshare_get_webfolders();
@@ -654,7 +648,7 @@ switch($do_action) {
 
 
 	case "list_webfolders":
-		if($access['fileshare']['MAX'] < 4 || !WEBFOLDERS) continue;
+		if($access['fileshare']['MAX'] < 4 || !WEBFOLDERS) break;
 
 		$_SESSION["show"] = "list_webfolders";
 		$_SESSION["show_start"] = 1;
@@ -663,7 +657,7 @@ switch($do_action) {
 
 
 	case "webfolder_details":
-		if($access['fileshare']['MAX'] < 4 || !WEBFOLDERS) continue;
+		if($access['fileshare']['MAX'] < 4 || !WEBFOLDERS) break;
 
 		//check for correct passed folder name
 		$possible_folders = ko_fileshare_get_webfolders();

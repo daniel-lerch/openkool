@@ -1,28 +1,22 @@
 <?php
-/***************************************************************
-*  Copyright notice
+/*******************************************************************************
 *
-*  (c) 2003-2015 Renzo Lauper (renzo@churchtool.org)
-*  All rights reserved
+*    OpenKool - Online church organization tool
 *
-*  This script is part of the kOOL project. The kOOL project is
-*  free software; you can redistribute it and/or modify
-*  it under the terms of the GNU General Public License as published by
-*  the Free Software Foundation; either version 2 of the License, or
-*  (at your option) any later version.
+*    Copyright © 2003-2015 Renzo Lauper (renzo@churchtool.org)
+*    Copyright © 2019      Daniel Lerch
 *
-*  The GNU General Public License can be found at
-*  http://www.gnu.org/copyleft/gpl.html.
-*  A copy is found in the textfile GPL.txt and important notices to the license
-*  from the author is found in LICENSE.txt distributed with these scripts.
+*    This program is free software; you can redistribute it and/or modify
+*    it under the terms of the GNU General Public License as published by
+*    the Free Software Foundation; either version 2 of the License, or
+*    (at your option) any later version.
 *
-*  kOOL is distributed in the hope that it will be useful,
-*  but WITHOUT ANY WARRANTY; without even the implied warranty of
-*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-*  GNU General Public License for more details.
+*    This program is distributed in the hope that it will be useful,
+*    but WITHOUT ANY WARRANTY; without even the implied warranty of
+*    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+*    GNU General Public License for more details.
 *
-*  This copyright notice MUST APPEAR in all copies of the script!
-***************************************************************/
+*******************************************************************************/
 
 ob_start();  //Ausgabe-Pufferung starten
 
@@ -65,14 +59,14 @@ switch($do_action) {
 	  * Neu
 		*/
 	case "new_tape":
-		if($access['tapes']['MAX'] < 3) continue;
+		if($access['tapes']['MAX'] < 3) break;
 		$_SESSION["show"] = "new_tape";
 		$onload_code = "form_set_first_input();".$onload_code;
 	break;
 
 	
 	case "submit_new_tape":
-		if($access['tapes']['MAX'] < 3) continue;
+		if($access['tapes']['MAX'] < 3) break;
 
 		kota_submit_multiedit("", "new_tape");
 		if(!$notifier->hasErrors()) $_SESSION["show"] = "list_tapes";
@@ -80,7 +74,7 @@ switch($do_action) {
 
 
 	case "submit_edit_tape":
-		if($access['tapes']['MAX'] < 3) continue;
+		if($access['tapes']['MAX'] < 3) break;
 
 		kota_submit_multiedit(3, 'edit_tape');
 		if(!$notifier->hasErrors()) $_SESSION["show"] = "list_tapes";
@@ -88,7 +82,7 @@ switch($do_action) {
 
 
 	case "new_serie":
-		if($access['tapes']['MAX'] < 3) continue;
+		if($access['tapes']['MAX'] < 3) break;
 
 		$_SESSION["show"] = "new_serie";
 		$onload_code = "form_set_first_input();".$onload_code;
@@ -96,7 +90,7 @@ switch($do_action) {
 
 
 	case "submit_new_serie":
-		if($access['tapes']['MAX'] < 3) continue;
+		if($access['tapes']['MAX'] < 3) break;
 
 		kota_submit_multiedit("", "edit_serie");
 		if(!$notifier->hasErrors()) $_SESSION["show"] = "list_series";
@@ -104,7 +98,7 @@ switch($do_action) {
 
 
 	case "submit_edit_serie":
-		if($access['tapes']['MAX'] < 3) continue;
+		if($access['tapes']['MAX'] < 3) break;
 
 		kota_submit_multiedit(0, 'edit_serie');
 		if(!$notifier->hasErrors()) $_SESSION["show"] = "list_series";
@@ -112,7 +106,7 @@ switch($do_action) {
 
 
 	case "new_tapegroup":
-		if($access['tapes']['MAX'] < 4) continue;
+		if($access['tapes']['MAX'] < 4) break;
 
 		$_SESSION["show"] = "new_tapegroup";
 		$onload_code = "form_set_first_input();".$onload_code;
@@ -120,7 +114,7 @@ switch($do_action) {
 
 
 	case "submit_new_tapegroup":
-		if($access['tapes']['MAX'] < 4) continue;
+		if($access['tapes']['MAX'] < 4) break;
 
 		kota_submit_multiedit("", "new_tapegroup");
 		if(!$notifier->hasErrors()) $_SESSION["show"] = "list_tapegroups";
@@ -129,7 +123,7 @@ switch($do_action) {
 
 
 	case "submit_edit_tapegroup":
-		if($access['tapes']['MAX'] < 4) continue;
+		if($access['tapes']['MAX'] < 4) break;
 
 		kota_submit_multiedit(4, 'new_tapegroup');
 		if(!$notifier->hasErrors()) $_SESSION["show"] = "list_tapegroups";
@@ -138,7 +132,7 @@ switch($do_action) {
 
 
 	case "new_printlayout":
-		if($access['tapes']['MAX'] < 4) continue;
+		if($access['tapes']['MAX'] < 4) break;
 
 		$_SESSION["show"] = "new_printlayout";
 		$onload_code = "form_set_first_input();".$onload_code;
@@ -148,14 +142,14 @@ switch($do_action) {
 
 	case "submit_edit_printlayout":
 	case "submit_new_printlayout":
-		if($access['tapes']['MAX'] < 4) continue;
+		if($access['tapes']['MAX'] < 4) break;
 
 		//ID bei Edit
 		if($do_action == "submit_edit_printlayout") {
 			$id = format_userinput($_POST["id"], "uint");
 			if(!$id) {
 				$notifier->addError(6, $do_action);
-				continue;
+				break;
 			}
 		}
 
@@ -163,7 +157,7 @@ switch($do_action) {
 		$save_name = format_userinput($_POST["txt_name"], "js");
 		if($save_name == "") {
 			$notifier->addError(4, $do_action);
-			continue;
+			break;
 		}
 
 		//Formular-Daten in Array speichern
@@ -215,26 +209,26 @@ switch($do_action) {
 	  * Anzeige
 		*/
 	case "list_tapes":
-		if($access['tapes']['MAX'] < 1) continue;
+		if($access['tapes']['MAX'] < 1) break;
 		$_SESSION["show"] = "list_tapes";
 		$_SESSION["show_start"] = 1;
 	break;
 
 
 	case "list_series":
-		if($access['tapes']['MAX'] < 1) continue;
+		if($access['tapes']['MAX'] < 1) break;
 		$_SESSION["show"] = "list_series";
 	break;
 
 
 	case "list_tapegroups":
-		if($access['tapes']['MAX'] < 4) continue;
+		if($access['tapes']['MAX'] < 4) break;
 		$_SESSION["show"] = "list_tapegroups";
 	break;
 
 
 	case "list_printlayouts":
-		if($access['tapes']['MAX'] < 4) continue;
+		if($access['tapes']['MAX'] < 4) break;
 		$_SESSION["show"] = "list_printlayouts";
 	break;
 
@@ -246,14 +240,14 @@ switch($do_action) {
 	  * Einstellungen"
 		*/
 	case "settings":
-		if($access['tapes']['MAX'] < 4) continue;
+		if($access['tapes']['MAX'] < 4) break;
 
 		$_SESSION["show"] = "settings";
 	break;
 
 	
 	case "save_settings":
-		if($access['tapes']['MAX'] < 4) continue;
+		if($access['tapes']['MAX'] < 4) break;
 
 		//Zahl- und Ja/Nein-Werte
 		$new_plus = format_userinput($_POST["txt_new_plus"], "uint");
@@ -482,7 +476,7 @@ switch($do_action) {
 
 
 	case "del_from_printqueue":
-		if($access['tapes']['MAX'] < 2) continue;
+		if($access['tapes']['MAX'] < 2) break;
 		$id = format_userinput($_POST["sel_printqueue"], "uint");
 		if($id > 0) {
 			unset($_SESSION["printqueue"][$id]);
@@ -491,7 +485,7 @@ switch($do_action) {
 
 
 	case "clear_printqueue":
-		if($access['tapes']['MAX'] < 2) continue;
+		if($access['tapes']['MAX'] < 2) break;
 		unset($_SESSION["printqueue"]);
 	break;
 
@@ -531,7 +525,7 @@ switch($do_action) {
 		$used_fonts = array_unique($used_fonts);
 		$fonts = ko_get_pdf_fonts();
 		foreach($fonts as $font) {
-			if(!in_array($font["id"], $used_fonts)) continue;
+			if(!in_array($font["id"], $used_fonts)) break;
 			$pdf->AddFont($font["id"], '', $font["file"]);
 		}
 
