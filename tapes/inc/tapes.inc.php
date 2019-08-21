@@ -475,7 +475,7 @@ function ko_tapes_formular_tape($mode, $id=0) {
 	$form_data["cancel"] = "list_tapes";
 	$form_data["action"] = $mode == "neu" ? "submit_new_tape" : "submit_edit_tape";
 
-	ko_multiedit_formular("ko_tapes", "", $id, "", $form_data);
+	ko_multiedit_formular("ko_tapes", NULL, $id, "", $form_data);
 }//ko_tapes_formular_tape()
 
 
@@ -492,23 +492,23 @@ function ko_tapes_formular_tapegroup($mode, $id = "") {
 	$form_data["cancel"] = "list_tapegroups";
 	$form_data["action"] = $mode == "neu" ? "submit_new_tapegroup" : "submit_edit_tapegroup";
 
-	ko_multiedit_formular("ko_tapes_groups", "", $id, "", $form_data);
+	ko_multiedit_formular("ko_tapes_groups", NULL, $id, "", $form_data);
 }//ko_tapes_formular_tapegroup()
 
 
 
 
 function ko_tapes_formular_serie($mode, $id = "") {
-  global $access, $KOTA;
+	global $access, $KOTA;
 
-  if($access['tapes']['MAX'] < 3) return;
+	if($access['tapes']['MAX'] < 3) return;
 
 	$form_data["title"] =  $mode == "neu" ? getLL("form_tapeseries_title_new") : getLL("form_tapeseries_title_edit");
 	$form_data["submit_value"] = getLL("save");
 	$form_data["cancel"] = "list_series";
 	$form_data["action"] = $mode == "neu" ? "submit_new_serie" : "submit_edit_serie";
 
-	ko_multiedit_formular("ko_tapes_series", "", $id, "", $form_data);
+	ko_multiedit_formular("ko_tapes_series", NULL, $id, "", $form_data);
 }//ko_tapes_formular_tapegroup()
 
 

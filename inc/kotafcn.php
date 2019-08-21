@@ -2042,7 +2042,7 @@ function kota_assign_values($table, $cols, $pre_process=TRUE) {
  * @param mixed $modes Modes can be pre, post or list.
  * Modes can also be a comma list of the above values, then the first available is applied, but only one.
  */
-function kota_process_data($table, &$data, $modes, &$log, $id=0) {
+function kota_process_data($table, &$data, $modes, &$log='', $id=0) {
 	global $KOTA;
 
 	if(!is_array($modes)) $modes = explode(",", $modes);
@@ -2418,7 +2418,7 @@ function kota_ft_get_row($table, $id, $submit, $title='', $field='', $pid='') {
 	//Work with local copy to not interfere with main form
 	$local_smarty = clone $smarty;
 
-	$grp = ko_multiedit_formular($table, '', $id, '', '', TRUE);
+	$grp = ko_multiedit_formular($table, NULL, $id, '', '', TRUE);
 	$local_smarty->assign('tpl_special_submit', $submit);
 	$local_smarty->assign('tpl_titel', $title);
 	$local_smarty->assign('tpl_hide_cancel', TRUE);

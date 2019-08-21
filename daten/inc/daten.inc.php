@@ -1,28 +1,22 @@
 <?php
-/***************************************************************
-*  Copyright notice
+/*******************************************************************************
 *
-*  (c) 2003-2015 Renzo Lauper (renzo@churchtool.org)
-*  All rights reserved
+*    OpenKool - Online church organization tool
 *
-*  This script is part of the kOOL project. The kOOL project is
-*  free software; you can redistribute it and/or modify
-*  it under the terms of the GNU General Public License as published by
-*  the Free Software Foundation; either version 2 of the License, or
-*  (at your option) any later version.
+*    Copyright © 2003-2015 Renzo Lauper (renzo@churchtool.org)
+*    Copyright © 2019      Daniel Lerch
 *
-*  The GNU General Public License can be found at
-*  http://www.gnu.org/copyleft/gpl.html.
-*  A copy is found in the textfile GPL.txt and important notices to the license
-*  from the author is found in LICENSE.txt distributed with these scripts.
+*    This program is free software; you can redistribute it and/or modify
+*    it under the terms of the GNU General Public License as published by
+*    the Free Software Foundation; either version 2 of the License, or
+*    (at your option) any later version.
 *
-*  kOOL is distributed in the hope that it will be useful,
-*  but WITHOUT ANY WARRANTY; without even the implied warranty of
-*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-*  GNU General Public License for more details.
+*    This program is distributed in the hope that it will be useful,
+*    but WITHOUT ANY WARRANTY; without even the implied warranty of
+*    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+*    GNU General Public License for more details.
 *
-*  This copyright notice MUST APPEAR in all copies of the script!
-***************************************************************/
+*******************************************************************************/
 
 require_once($BASE_PATH."inc/class.kOOL_listview.php");
 
@@ -390,7 +384,7 @@ function ko_formular_reminder($mode, $id='') {
 	$form_data['cancel'] = 'list_reminders';
 	$form_data['type'] = '1';
 
-	ko_multiedit_formular('ko_reminder', '', $id, '', $form_data, FALSE, 1);
+	ko_multiedit_formular('ko_reminder', NULL, $id, '', $form_data, FALSE, 1);
 
 }//ko_formular_tool()
 
@@ -678,7 +672,7 @@ function ko_formular_termin($mode, $id, $data=array()) {
 	
 
 	//get first part of form from kota
-	$group = ko_multiedit_formular($table, "", $id, "", "", TRUE);
+	$group = ko_multiedit_formular($table, NULL, $id, "", "", TRUE);
 	$group[$gc]["titel"] = "";
 	$rowcounter = sizeof($group[$gc]["row"])+1;
 
@@ -876,11 +870,11 @@ function ko_formular_termingruppe($mode, $id=0) {
 	$KOTA["ko_eventgruppen"]["room"]["form"]["descs"] = $values;
 	
 	$form_data["title"] = $mode == "neu" ? getLL("daten_new_eventgroup") : getLL("daten_edit_eventgroup");
-  $form_data["submit_value"] = getLL("save");
-  $form_data["action"] = $mode == "neu" ? "submit_neue_gruppe" : "submit_edit_gruppe";
-  $form_data["cancel"] = "all_groups";
+	$form_data["submit_value"] = getLL("save");
+	$form_data["action"] = $mode == "neu" ? "submit_neue_gruppe" : "submit_edit_gruppe";
+	$form_data["cancel"] = "all_groups";
 
-	ko_multiedit_formular("ko_eventgruppen", "", $id, "", $form_data);
+	ko_multiedit_formular("ko_eventgruppen", NULL, $id, "", $form_data);
 }//ko_formular_termingruppe()
 
 
@@ -906,7 +900,7 @@ function ko_formular_googlecal($mode, $id=0) {
 	$form_data['cancel'] = 'all_groups';
 	$form_data['type'] = '1';
 
-	ko_multiedit_formular('ko_eventgruppen', '', $id, '', $form_data, FALSE, 1);
+	ko_multiedit_formular('ko_eventgruppen', NULL, $id, '', $form_data, FALSE, 1);
 }//ko_formular_googlecal()
 
 
@@ -925,7 +919,7 @@ function ko_formular_ical($mode) {
 	$form_data['cancel'] = 'all_groups';
 	$form_data['type'] = '3';
 
-	ko_multiedit_formular('ko_eventgruppen', '', 0, '', $form_data, FALSE, 3);
+	ko_multiedit_formular('ko_eventgruppen', NULL, 0, '', $form_data, FALSE, 3);
 }//ko_formular_ical()
 
 

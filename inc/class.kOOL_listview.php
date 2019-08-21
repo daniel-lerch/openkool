@@ -570,7 +570,7 @@ class kOOL_listview {
 	 * Supply arrays with access rights for the entries to be displayed
 	 * Or set FALSE to disable check for access rights
 	 */
-	function setAccessRights($level, &$access, $chk_col='') {
+	function setAccessRights($level, &$access=array(), $chk_col='') {
 		global $KOTA;
 
 		if($level == FALSE) {

@@ -2729,13 +2729,12 @@ function ko_get_person_by_id($id, &$p, $show_deleted=FALSE) {
  * @param array $addp Will hold additional addresses if rectype uses reference to other addresses, which might be more than one
  * @returns array $p Returns the address with the applied changes to the fields defined for this rectype
  */
-function ko_apply_rectype($p, $force_rectype='', &$addp) {
+function ko_apply_rectype($p, $force_rectype='', &$addp=array()) {
 	global $RECTYPES;
 
 	if(!is_array($p)) return $p;
 
 	$target_rectype = $force_rectype != '' ? $force_rectype : $p['rectype'];
-	$addp = array();
 
 	if($target_rectype && is_array($RECTYPES[$target_rectype])) {
 		foreach($RECTYPES[$target_rectype] as $pcol => $newcol) {
@@ -3592,15 +3591,15 @@ function ko_get_leute_filter_form($fid, $showButtons=TRUE) {
 
 
 /**
-	* Gibt formatierte Personendaten zurück
-	* data enthält den Wert aus der DB
-	* col ist die DB-Spalte
-	* p ist eine Referenz auf den ganzen Personendatensatz
-	* all_datafields ist ein Array aller Datenfelder
-	* forceDatafields: Damit werden die Datenfelder miteinbezogen, auch wenn userpref nicht gesetzt ist. (Z.B. von TYPO3-Ext kool_leute)
-	* options: array with options
-	*/
-function map_leute_daten($data, $col, &$p, &$all_datafields, $forceDatafields=FALSE, $_options) {
+ * Gibt formatierte Personendaten zurück
+ * @param $data enthält den Wert aus der DB
+ * @param $col ist die DB-Spalte
+ * @param $p ist eine Referenz auf den ganzen Personendatensatz
+ * @param array $all_datafields ist ein Array aller Datenfelder
+ * @param bool $forceDatafields: Damit werden die Datenfelder miteinbezogen, auch wenn userpref nicht gesetzt ist. (Z.B. von TYPO3-Ext kool_leute)
+ * @param array $options: array with options
+ */
+function map_leute_daten($data, $col, &$p, &$all_datafields=array(), $forceDatafields=FALSE, $_options=NULL) {
 	global $DATETIME, $KOTA;
 	global $all_groups;
 	global $access, $ko_path;
@@ -7030,19 +7029,19 @@ function ko_include_kota($tables=array()) {
 	* Get information from KOTA to render a form for editing one or more entries
 	*
 	* @param string $table Table to edit
-	* @param string $columns Comma separated list of columns to be edited (empty for all)
+	* @param array $columns List of columns to be edited (empty for all)
 	* @param string $ids Comma separated list of ids to be edited. 0 for a new entry
 	* @param string $order ORDER BY statement to be used if editing multiple entries
 	* @param array $form_data Data for the rendering of the form (like title etc.)
 	* @param boolean $return_only_group Renders form if set to false, only return group array otherwise which can be used to feed ko_formular.tmpl through smarty
 	* @param string $_kota_type Specify kota type for a new entry
 	*/
-function ko_multiedit_formular($table, $columns="", $ids=0, $order="", $form_data="", $return_only_group=FALSE, $_kota_type='') {
+function ko_multiedit_formular($table, $columns=NULL, $ids=0, $order="", $form_data="", $return_only_group=FALSE, $_kota_type='') {
 	global $smarty, $mysql_connection, $mysql_pass;
 	global $KOTA, $js_calendar, $BASE_URL;
 
 	//Columns used in SQL
-	if($columns == "") {  //not multiedit, so take all KOTA-columns
+	if(empty($columns)) {  //not multiedit, so take all KOTA-columns
 		$mode = "single";
 		//Get columns from DB
 		$_table_cols = db_get_columns($table);
@@ -7962,7 +7961,7 @@ function db_delete_data($table, $where) {
  * @param string LIMIT statement
  * @param boolean Returns a single entry if set, otherwise an array of entries is returned with their ids as keys
  */
-function db_select_data($table, $where, $columns="*", $order="", $limit="", $single=FALSE, $no_index=FALSE) {
+function db_select_data($table, $where="", $columns="*", $order="", $limit="", $single=FALSE, $no_index=FALSE) {
 	global $db_connection, $DEBUG_db;
 
 	if(ko_test(__FUNCTION__, func_get_args(), $testreturn) === TRUE) return $testreturn;
@@ -13038,7 +13037,7 @@ function check_email($email) {
 	if(strpos($email, ' ') !== FALSE) {
 		return FALSE;
 	}
-	return ereg('^[A-Za-z0-9\._-]+[@][A-Za-z0-9\._-]+[\.].[A-Za-z0-9]+$', $email) ? TRUE : FALSE;
+	return preg_match('^[A-Za-z0-9\._-]+[@][A-Za-z0-9\._-]+[\.].[A-Za-z0-9]+$', $email) ? TRUE : FALSE;
 }//check_email()
 
 

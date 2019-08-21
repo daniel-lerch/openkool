@@ -878,7 +878,7 @@ function ko_formular_task($mode, $id='') {
 	$form_data['action'] = $mode == 'new' ? 'submit_new_task' : 'submit_edit_task';
 	$form_data['cancel'] = 'scheduler_list';
 
-	ko_multiedit_formular('ko_scheduler_tasks', '', $id, '', $form_data);
+	ko_multiedit_formular('ko_scheduler_tasks', NULL, $id, '', $form_data);
 }//ko_formular_task()
 
 

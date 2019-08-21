@@ -136,11 +136,11 @@ function ko_kg_formular($mode, $id=0) {
 	} else return;
 
 	$form_data["title"] = $mode == "neu" ? getLL("kota_ko_kleingruppen_new") : getLL("kota_ko_kleingruppen_change");
-  $form_data["submit_value"] = getLL("save");
-  $form_data["action"] = $mode == "neu" ? "submit_neue_kg" : "submit_edit_kg";
+	$form_data["submit_value"] = getLL("save");
+	$form_data["action"] = $mode == "neu" ? "submit_neue_kg" : "submit_edit_kg";
 	$form_data["cancel"] = "list_kg";
 
-	ko_multiedit_formular("ko_kleingruppen", "", $id, "", $form_data);
+	ko_multiedit_formular("ko_kleingruppen", NULL, $id, "", $form_data);
 }//ko_kg_formular()
 
 

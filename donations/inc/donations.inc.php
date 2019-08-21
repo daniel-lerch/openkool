@@ -266,7 +266,7 @@ function ko_formular_donation($mode, $id='', $promise=FALSE) {
 	}
 	$form_data['cancel'] = 'list_donations';
 
-	ko_multiedit_formular('ko_donations', '', $id, '', $form_data);
+	ko_multiedit_formular('ko_donations', NULL, $id, '', $form_data);
 }//ko_formular_donation()
 
 
@@ -287,7 +287,7 @@ function ko_formular_account($mode, $id="") {
 	$form_data["action"] = $mode == "new" ? "submit_new_account" : "submit_edit_account";
 	$form_data["cancel"] = "list_accounts";
 
-	ko_multiedit_formular("ko_donations_accounts", "", $id, "", $form_data);
+	ko_multiedit_formular("ko_donations_accounts", NULL, $id, "", $form_data);
 }//ko_formular_account()
 
 

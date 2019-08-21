@@ -1,28 +1,22 @@
 <?php
-/***************************************************************
-*  Copyright notice
+/*******************************************************************************
 *
-*  (c) 2003-2015 Renzo Lauper (renzo@churchtool.org)
-*  All rights reserved
+*    OpenKool - Online church organization tool
 *
-*  This script is part of the kOOL project. The kOOL project is
-*  free software; you can redistribute it and/or modify
-*  it under the terms of the GNU General Public License as published by
-*  the Free Software Foundation; either version 2 of the License, or
-*  (at your option) any later version.
+*    Copyright © 2003-2015 Renzo Lauper (renzo@churchtool.org)
+*    Copyright © 2019      Daniel Lerch
 *
-*  The GNU General Public License can be found at
-*  http://www.gnu.org/copyleft/gpl.html.
-*  A copy is found in the textfile GPL.txt and important notices to the license
-*  from the author is found in LICENSE.txt distributed with these scripts.
+*    This program is free software; you can redistribute it and/or modify
+*    it under the terms of the GNU General Public License as published by
+*    the Free Software Foundation; either version 2 of the License, or
+*    (at your option) any later version.
 *
-*  kOOL is distributed in the hope that it will be useful,
-*  but WITHOUT ANY WARRANTY; without even the implied warranty of
-*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-*  GNU General Public License for more details.
+*    This program is distributed in the hope that it will be useful,
+*    but WITHOUT ANY WARRANTY; without even the implied warranty of
+*    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+*    GNU General Public License for more details.
 *
-*  This copyright notice MUST APPEAR in all copies of the script!
-***************************************************************/
+*******************************************************************************/
 
 
 require_once($BASE_PATH.'inc/class.kOOL_listview.php');
@@ -737,7 +731,7 @@ function ko_formular_reservation($mode, $id, $data=array()) {
 	$KOTA["ko_reservation"]["item_id"]["form"]["params"] = 'size="5" onchange="javascript:changeResItem(this.value);"';
 
 	//get first part of form from kota
-	$group = ko_multiedit_formular("ko_reservation", "", $id, "", "", TRUE);
+	$group = ko_multiedit_formular("ko_reservation", NULL, $id, "", "", TRUE);
 	$group[$gc]["titel"] = "";
 	$rowcounter = sizeof($group[$gc]["row"])+1;
 	
@@ -838,7 +832,7 @@ function ko_formular_item($mode, $id) {
   $form_data["action"] = $mode == "neu" ? "submit_new_item" : "submit_edit_item";
   $form_data["cancel"] = "list_items";
 
-	ko_multiedit_formular("ko_resitem", "", $id, "", $form_data);
+	ko_multiedit_formular("ko_resitem", NULL, $id, "", $form_data);
 }//ko_formular_item()
 
 
@@ -1721,7 +1715,7 @@ function ko_reservation_export_months($num, $month, $year) {
 	} else if($num == 1) {
 		$months[] = $month;
 		$filename = getLL('res_filename_pdf').str_to_2($month).'_'.$year.'_'.strftime('%d%m%Y_%H%M%S', time()).'.pdf';
-	} else break;
+	} else throw new InvalidArgumentException('$num must be either 1 or 12');
 
 	ko_get_resitems($resitems);
 

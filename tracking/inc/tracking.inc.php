@@ -1,28 +1,22 @@
 <?php
-/***************************************************************
-*  Copyright notice
+/*******************************************************************************
 *
-*  (c) 2003-2015 Renzo Lauper (renzo@churchtool.org)
-*  All rights reserved
+*    OpenKool - Online church organization tool
 *
-*  This script is part of the kOOL project. The kOOL project is
-*  free software; you can redistribute it and/or modify
-*  it under the terms of the GNU General Public License as published by
-*  the Free Software Foundation; either version 2 of the License, or
-*  (at your option) any later version.
+*    Copyright © 2003-2015 Renzo Lauper (renzo@churchtool.org)
+*    Copyright © 2019      Daniel Lerch
 *
-*  The GNU General Public License can be found at
-*  http://www.gnu.org/copyleft/gpl.html.
-*  A copy is found in the textfile GPL.txt and important notices to the license
-*  from the author is found in LICENSE.txt distributed with these scripts.
+*    This program is free software; you can redistribute it and/or modify
+*    it under the terms of the GNU General Public License as published by
+*    the Free Software Foundation; either version 2 of the License, or
+*    (at your option) any later version.
 *
-*  kOOL is distributed in the hope that it will be useful,
-*  but WITHOUT ANY WARRANTY; without even the implied warranty of
-*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-*  GNU General Public License for more details.
+*    This program is distributed in the hope that it will be useful,
+*    but WITHOUT ANY WARRANTY; without even the implied warranty of
+*    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+*    GNU General Public License for more details.
 *
-*  This copyright notice MUST APPEAR in all copies of the script!
-***************************************************************/
+*******************************************************************************/
 
 require_once($BASE_PATH.'inc/class.kOOL_listview.php');
 
@@ -145,7 +139,7 @@ function ko_formular_tracking($mode, $id='') {
 	}
 	$form_data['cancel'] = 'list_trackings';
 
-	ko_multiedit_formular('ko_tracking', '', $id, '', $form_data);
+	ko_multiedit_formular('ko_tracking', NULL, $id, '', $form_data);
 }//ko_formular_tracking()
 
 
@@ -679,7 +673,7 @@ function ko_tracking_get_people($filters, &$dates, $tid, $apply_filters=FALSE) {
 		if($apply_filters && (isset($_SESSION['tracking_filter']['filter']) && $_SESSION['tracking_filter']['filter'] != 'all' && $_SESSION['tracking_filter']['filter'] != $filter)) continue;
 
 		//Group ID
-		if(strlen($filter) >= 7 && substr($filter, 0, 1) == 'g' && ereg('[g0-9:r,]*', $filter)) {
+		if(strlen($filter) >= 7 && substr($filter, 0, 1) == 'g' && preg_match('[g0-9:r,]*', $filter)) {
 			$mode = 'group';
 			list($gid, $rid) = explode(':', $filter);
 			if(ko_get_setting('tracking_add_roles') == 1 && strlen($filter) > 7) {  //Role
