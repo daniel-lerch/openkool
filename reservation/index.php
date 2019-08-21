@@ -234,8 +234,13 @@ switch($do_action) {
 				//Check user setting for logged in users
 				$user_email = ko_get_userpref($_SESSION['ses_userid'], 'do_res_email') != 0;
 			}
-			ko_res_store_reservation($data, $user_email);
-			$notifier->addInfo(1, $do_action);
+			ko_res_store_reservation($data, $user_email, $error_text);
+			if (!empty($error_text)) {
+				$notifier->addError(4, $do_action); // TODO: Check if this error code is correct
+				$notifier->addTextError(getLL('res_collision').' <i>'.$double_error_txt.'</i><br />', $do_action);
+			} else {
+				$notifier->addInfo(1, $do_action);
+			}
 		}
 		//Store moderations
 		if(sizeof($mod_data) > 0) {
@@ -1001,8 +1006,8 @@ switch($do_action) {
 			$smarty->assign('txt_empfaenger_semicolon', implode('; ', array_unique($email_rec)));
 			$smarty->assign("tpl_ohne_email", ($r["email"] == "" ? implode(", ", array_unique($noemail_rec)) : getLL("res_mod_no")) );
 			$p = ko_get_logged_in_person();
-      $smarty->assign("tpl_show_bcc_an_mich", ($p["email"] ? TRUE : FALSE));
-      $smarty->assign("tpl_show_send", TRUE);
+    		$smarty->assign("tpl_show_bcc_an_mich", ($p["email"] ? TRUE : FALSE));
+    		$smarty->assign("tpl_show_send", TRUE);
 			$smarty->assign('txt_betreff', ('[kOOL] '.(sizeof($new_ids) > 1 ? getLL('res_emails_mod_confirm_subject') : getLL('res_email_mod_confirm_subject'))) );
 			$smarty->assign('tpl_res_ids', implode(',', $new_ids));
 

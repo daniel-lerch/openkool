@@ -918,7 +918,7 @@ function ko_get_mod_links(&$res, $id) {
 /**
   * Stores a new reservation and sends all necessary emails
 	*/
-function ko_res_store_reservation($data, $send_user_email, &$double_error_txt) {
+function ko_res_store_reservation($data, $send_user_email, &$double_error_txt='') {
 	global $access, $BASE_PATH;
 
 	$ids = array();  //Will hold the ids of the new reservations

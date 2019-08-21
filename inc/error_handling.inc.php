@@ -50,10 +50,12 @@ function get_additional_error_information() {
 function format_backtrace($backtrace) {
 	$trace = '';
 	foreach($backtrace as $k => $v) {
-		if($v['function'] == "include" || $v['function'] == "include_once" || $v['function'] == "require_once" || $v['function'] == "require") {
-			$trace .= "#".$k." ".$v['function']."(".$v['args'][0].") called at [".$v['file'].":".$v['line']."]\n";
+		if(in_array($v['function'], ['include', 'include_once', 'require_once', 'require'])) {
+			$trace .= '#'.$k.' '.$v['function']."(".$v['args'][0].") called at [".$v['file'].":".$v['line']."]\n";
+		} else if (!empty($v['file']) && !empty($v['line'])) {
+			$trace .= '#'.$k.' '.$v['function']."() called at [".$v['file'].":".$v['line']."]\n";
 		} else {
-			$trace .= "#".$k." ".$v['function']."() called at [".$v['file'].":".$v['line']."]\n";
+			$trace .= "#$k ".$v['function']."()\n";
 		}
 	} 
 	return $trace;
