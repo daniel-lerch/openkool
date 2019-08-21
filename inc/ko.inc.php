@@ -405,20 +405,17 @@ include($BASE_PATH."inc/hooks.inc.php");
 
 
 //Connect to the database
-$db_conn = mysql_connect($mysql_server, $mysql_user, $mysql_pass);
-//Test the connection
-$db_connection = $db_conn !== FALSE;
-mysql_select_db($mysql_db);
+$db_connection = mysqli_connect($mysql_server, $mysql_user, $mysql_pass, $mysql_db);
 //Set client-server connection to latin1
-if($ko_menu_akt != 'install') mysql_query('SET NAMES LATIN1');
+if($ko_menu_akt != 'install') mysqli_query($db_connection, 'SET NAMES LATIN1');
 
 //Set user to ko_guest if none logged in yet
 if($db_connection && !in_array($ko_menu_akt, array('scheduler', 'install', 'get.php', 'post.php')) && !$_SESSION['ses_userid']) {
-  $_SESSION['ses_username'] = 'ko_guest';
-  $_SESSION['ses_userid'] = ko_get_guest_id();
+	$_SESSION['ses_username'] = 'ko_guest';
+	$_SESSION['ses_userid'] = ko_get_guest_id();
 
 	//Log guest with IP address (but not form mailing cron job or cli)
-  if(!in_array($ko_menu_akt, array('mailing', 'scheduler', 'get.php', 'post.php', 'ical')) && php_sapi_name() != 'cli') {
+	if(!in_array($ko_menu_akt, array('mailing', 'scheduler', 'get.php', 'post.php', 'ical')) && php_sapi_name() != 'cli') {
 		ko_log('guest', 'ko_guest from '.ko_get_user_ip());
 	}
 
@@ -1548,7 +1545,7 @@ function ko_get_root_id() {
  * @return mixed Value for the specified key
  */
 function ko_get_setting($key, $force=FALSE) {
-	global $LEUTE_NO_FAMILY;
+	global $db_connection, $LEUTE_NO_FAMILY;
 	//Get from cache
 
 	if(!$force && isset($GLOBALS['kOOL']['ko_settings'][$key])) {
@@ -1556,8 +1553,8 @@ function ko_get_setting($key, $force=FALSE) {
 	}
 	else {
 		$query = "SELECT `value` from `ko_settings` WHERE `key` = '$key' LIMIT 1";
-		$result = mysql_query($query);
-		$row = mysql_fetch_row($result);
+		$result = mysqli_query($db_connection, $query);
+		$row = mysqli_fetch_row($db_connection, $result);
 		$result = $row[0];
 	}
 
@@ -1597,16 +1594,18 @@ function ko_set_setting($key, $value) {
 
 
 /**
-	* Get a user preference as stored in ko_userprefs
-	*
-	* @param int user id
-	* @param string Key of user preference
-	* @param string Type of user preference to get
-	* @param string ORDER BY statement to pass to the db
-	* @param boolean Set to true to have the userpref read from DB instead of from cache
-	* @return mixed Value of user preference
-	*/
+ * Get a user preference as stored in ko_userprefs
+ *
+ * @param int user id
+ * @param string Key of user preference
+ * @param string Type of user preference to get
+ * @param string ORDER BY statement to pass to the db
+ * @param boolean Set to true to have the userpref read from DB instead of from cache
+ * @return mixed Value of user preference
+ */
 function ko_get_userpref($id, $key="", $type="", $order="", $force=FALSE) {
+	global $db_connection;
+
 	if($type != "") {
 		if($key != "") {
 			//Look up userpref in GLOBALS
@@ -1621,8 +1620,8 @@ function ko_get_userpref($id, $key="", $type="", $order="", $force=FALSE) {
 			//Get it from DB if not set
 			$query = "SELECT * FROM `ko_userprefs` WHERE `user_id` = '$id' AND `type` = '$type' $order";
 		}
-		$result = mysql_query($query);
-		while($row = mysql_fetch_assoc($result)) {
+		$result = mysqli_query($db_connection, $query);
+		while($row = mysqli_fetch_assoc($result)) {
 			$r[] = $row;
 		}
 		return $r;
@@ -1632,8 +1631,8 @@ function ko_get_userpref($id, $key="", $type="", $order="", $force=FALSE) {
 			return $GLOBALS["kOOL"]["ko_userprefs"][$key];
 		//Get it from DB if not set
 		$query = "SELECT * FROM `ko_userprefs` WHERE `user_id` = '$id' AND `key` = '$key' $order";
-		$result = mysql_query($query);
-		$row = mysql_fetch_assoc($result);
+		$result = mysqli_query($db_connection, $query);
+		$row = mysqli_fetch_assoc($result);
 		return $row['value'];
 	}
 }//ko_get_userpref()
@@ -1695,26 +1694,27 @@ function ko_delete_userpref($id, $key, $type="") {
 
 
 /**
-	* Checks whether a given user preference is set in ko_userprefs
-	*
-	* @param int user id
-	* @param string Key to be checked for
-	* @param string Type of preference to be checked for
-	*/
+ * Checks whether a given user preference is set in ko_userprefs
+ *
+ * @param int user id
+ * @param string Key to be checked for
+ * @param string Type of preference to be checked for
+ */
 function ko_check_userpref($id, $key, $type="") {
+	global $db_connection;
+
 	$id = format_userinput($id, "int");
 	$key = format_userinput($key, "text");
 	$type = format_userinput($type, "alphanum+");
 
 	if($type != "") {
 		$query = "SELECT `key`, `value` FROM `ko_userprefs` WHERE `user_id` = '$id' AND `key` = '$key' AND `type` = '$type'";
-		$result = mysql_query($query);
-		$row = mysql_fetch_assoc($result);
 	} else {
 		$query = "SELECT `value` FROM `ko_userprefs` WHERE `user_id` = '$id' AND `key` = '$key'";
-		$result = mysql_query($query);
-		$row = mysql_fetch_assoc($result);
 	}
+	$result = mysqli_query($db_connection, $query);
+	$row = mysqli_fetch_assoc($result);
+
 	return (sizeof($row) >= 1);
 }//ko_check_userpref()
 
@@ -2591,18 +2591,18 @@ function ko_add_fam_id(&$fam, $_members="") {
 
 
 /**
-  * Liefert alle Familien
-	* inkl. ID
-	*/
+ * Liefert alle Familien
+ * inkl. ID
+ */
 function ko_get_familien(&$fam) {
-	global $ko_menu_akt;
+	global $db_connection, $ko_menu_akt;
 
 	$fam = array();
 
 	//Get all families
 	$query = "SELECT * FROM ko_familie ORDER BY nachname ASC";
-	$result = mysql_query($query);
-	while($row = mysql_fetch_assoc($result)) {
+	$result = mysqli_query($db_connection, $query);
+	while($row = mysqli_fetch_assoc($result)) {
 		$fam[$row["famid"]] = $row;
 	}
 
@@ -2610,8 +2610,8 @@ function ko_get_familien(&$fam) {
 	$members = array();
 	$deleted = ($ko_menu_akt == "leute" && ko_get_userpref($_SESSION["ses_userid"], "leute_show_deleted") == 1) ? " AND `deleted` = '1' " : " AND `deleted` = '0' ";
 	$deleted .= ko_get_leute_hidden_sql();
-	$result = mysql_query("SELECT * FROM ko_leute WHERE `famid` != '0' $deleted ORDER BY `famid` ASC");
-	while($row = mysql_fetch_assoc($result)) {
+	$result = mysqli_query($db_connection, "SELECT * FROM ko_leute WHERE `famid` != '0' $deleted ORDER BY `famid` ASC");
+	while($row = mysqli_fetch_assoc($result)) {
 		$members[$row["famid"]][] = $row;
 	}
 
@@ -2829,15 +2829,17 @@ function ko_get_personen_by_familie($famid, &$p, $function="") {
 
 
 /**
-	* Liefert eine Liste aller (oder wenn id definiert ist nur diesen Eintrag) zu moderierenden Mutationen (aus Tabelle ko_leute_mod)
-	*/
+ * Liefert eine Liste aller (oder wenn id definiert ist nur diesen Eintrag) zu moderierenden Mutationen (aus Tabelle ko_leute_mod)
+ */
 function ko_get_mod_leute(&$r, $id="") {
+	global $db_connection;
+
 	$r = array();
 	$z_where  = "WHERE `_leute_id` <> '0' AND `_group_id` = ''";  //don't show web-group-subscriptions
 	$z_where .= ($id != "") ? " AND `_id`='$id'" : "";
 	$query = "SELECT * FROM `ko_leute_mod` $z_where ORDER BY _crdate DESC";
-	$result = mysql_query($query);
-	while($row = mysql_fetch_assoc($result)) {
+	$result = mysqli_query($db_connection, $query);
+	while($row = mysqli_fetch_assoc($result)) {
 		$r[$row["_id"]] = $row;
 	}
 }//ko_get_mod_leute()
@@ -2848,7 +2850,7 @@ function ko_get_mod_leute(&$r, $id="") {
 	* Liefert eine Liste aller (oder wenn id definiert ist nur diesen Eintrag) zu moderierenden Gruppen-Anmeldungen (aus Tabelle ko_leute_mod)
 	*/
 function ko_get_groupsubscriptions(&$r, $gsid='', $uid='', $gid='') {
-	global $access;
+	global $db_connection, $access;
 
 	// Group rights if uid is given
 	if($uid > 0) {
@@ -2861,8 +2863,8 @@ function ko_get_groupsubscriptions(&$r, $gsid='', $uid='', $gid='') {
 	if($gsid != '') $z_where .= " AND `_id` = '$gsid'";
 	if($gid != '') $z_where .= " AND `_group_id` LIKE '%g$gid%'";
 	$query = "SELECT * FROM `ko_leute_mod` $z_where ORDER BY _crdate DESC";
-	$result = mysql_query($query);
-	while($row = mysql_fetch_assoc($result)) {
+	$result = mysqli_query($db_connection, $query);
+	while($row = mysqli_fetch_assoc($result)) {
 		if($uid) {
 			// Only display subscriptions to groups the given user has level 2 access to
 			if($access['groups']['ALL'] > 1 || $access['groups'][ko_groups_decode($row['_group_id'], 'group_id')] > 1) {
@@ -3051,21 +3053,21 @@ function ko_get_family_col_name() {
 
 
 /**
-  * Wendet die Leute-Filter an und gibt SQL-WHERE-Clause zurück
-	* Ebenfalls verwendet, um Admin-Filter für Berechtigungen anzuwenden
-	* Muss in ko.inc.php stehen (und nicht in leute/inc/leute.inc.php), damit ko_get_admin() immer Zugriff darauf hat --> z.B. für Dropdown-Menüs
-	*/
+ * Wendet die Leute-Filter an und gibt SQL-WHERE-Clause zurück
+ * Ebenfalls verwendet, um Admin-Filter für Berechtigungen anzuwenden
+ * Muss in ko.inc.php stehen (und nicht in leute/inc/leute.inc.php), damit ko_get_admin() immer Zugriff darauf hat --> z.B. für Dropdown-Menüs
+*/
 function apply_leute_filter($filter, &$where_code, $add_admin_filter=TRUE, $admin_filter_level='', $_login_id='', $includeAll=FALSE) {
-	global $ko_menu_akt;
+	global $db_connection, $ko_menu_akt;
 
 	//Set login_id if given as parameter (needed from mailing.php because ses_userid is not set there)
 	if($_login_id != '') $login_id = $_login_id;
 	else $login_id = $_SESSION['ses_userid'];
 
 	//Innerhalb einer Filtergruppe werden die Filter mit OR verknüpft
-  $where_code = "";
-  $q = array();
-  if(is_array($filter)) {
+	$where_code = "";
+	$q = array();
+	if(is_array($filter)) {
 
 		//Move addchildren filter to the end, so it will be applied as the last filter
 		$new = array(); $last = FALSE;
@@ -3393,7 +3395,7 @@ function apply_leute_filter($filter, &$where_code, $add_admin_filter=TRUE, $admi
 		}//foreach(filter)
 	}//if(is_array(filter))
 
-  //Einzelne Filter-Gruppen mit AND verbinden und letztes OR löschen
+	//Einzelne Filter-Gruppen mit AND verbinden und letztes OR löschen
 	$done_adv_link = FALSE;
 	if($filter['use_link_adv'] === TRUE && $filter['link_adv'] != '') {
 		//Replace all numbers with {{d}}
@@ -3422,7 +3424,7 @@ function apply_leute_filter($filter, &$where_code, $add_admin_filter=TRUE, $admi
 		$where_code = str_replace(array_keys($filter_map), array_values($filter_map), $link_adv);
 
 		//Check for valid SQL
-		$result = mysql_query('SELECT `id` FROM `ko_leute` WHERE '.$where_code);
+		$result = mysqli_query($db_connection, 'SELECT `id` FROM `ko_leute` WHERE '.$where_code);
 		if(FALSE === $result) {
 			$where_code = '';
 			$_SESSION['filter']['use_link_adv'] = FALSE;
@@ -4379,9 +4381,11 @@ function ko_get_res_by_date($t="", $m, $j, &$r, $show_all = TRUE, $mode = "res",
 
 
 /**
-	* Liefert alle normalen oder moderierten Reservationen
-	*/
+ * Liefert alle normalen oder moderierten Reservationen
+ */
 function ko_get_reservationen(&$r, $z_where, $z_limit='', $type='res', $z_sort='') {
+	global $db_connection;
+
 	$r = array();
 
 	//Sortierung
@@ -4399,8 +4403,8 @@ function ko_get_reservationen(&$r, $z_where, $z_limit='', $type='res', $z_sort='
 	else $z_where = "WHERE 1=2";  //Nichts anzeigen
 
 	$query = "SELECT $db_table.*,ko_resitem.name AS item_name,ko_resitem.farbe AS item_farbe,ko_resitem.gruppen_id AS gruppen_id FROM $db_table LEFT JOIN ko_resitem ON $db_table.item_id = ko_resitem.id $z_where $sort $z_limit";
-	$result = mysql_query($query);
-	while($row = mysql_fetch_assoc($result)) {
+	$result = mysqli_query($db_connection, $query);
+	while($row = mysqli_fetch_assoc($result)) {
 		$r[$row["id"]] = $row;
 	}//while(row)
 }//ko_get_reservationen()
@@ -4438,10 +4442,11 @@ function ko_get_resitem_name($id) {
 	* Liefert alle Resitems in sortierter Reihenfolge
 	*/
 function ko_get_resitems(&$r, $z_limit="", $z_where="") {
+	global $db_connection;
 	$order = ($_SESSION["sort_group"]) ? (" ORDER BY ".($_SESSION["sort_group"] == "gruppen_id" ? "gruppen_name" : $_SESSION["sort_group"])." ".$_SESSION["sort_group_order"]) : " ORDER BY name ASC ";
 	$query = "SELECT ko_resitem.*,ko_resgruppen.name AS gruppen_name FROM ko_resitem LEFT JOIN ko_resgruppen ON ko_resitem.gruppen_id = ko_resgruppen.id $z_where $order $z_limit";
-	$result = mysql_query($query);
-	while($row = mysql_fetch_assoc($result)) {
+	$result = mysqli_query($db_connection, $query);
+	while($row = mysqli_fetch_assoc($result)) {
 		$r[$row["id"]] = $row;
 	}
 }//ko_get_resitems()
@@ -4644,10 +4649,12 @@ function ko_get_login($id, &$l) {
   * Liefert Etiketten-Einstellungen
 	*/
 function ko_get_etiketten_vorlagen(&$v) {
+	global $db_connection;
+
 	$v = array();
 	$query = "SELECT * FROM `ko_etiketten` WHERE `key` = 'name' ORDER BY `value`";
-	$result = mysql_query($query);
-	while($row = mysql_fetch_assoc($result)) {
+	$result = mysqli_query($db_connection, $query);
+	while($row = mysqli_fetch_assoc($result)) {
 		$v[] = $row;
 	}
 }//ko_get_etiketten_vorlagen()
@@ -4657,10 +4664,12 @@ function ko_get_etiketten_vorlagen(&$v) {
   * Liefert einzelne Etiketten-Vorlagen-Werte
 	*/
 function ko_get_etiketten_vorlage($id, &$v) {
+	global $db_connection;
+
 	$v = array();
 	$query = "SELECT * FROM `ko_etiketten` WHERE `vorlage` = '$id'";
-	$result = mysql_query($query);
-	while($row = mysql_fetch_assoc($result)) {
+	$result = mysqli_query($db_connection, $query);
+	while($row = mysqli_fetch_assoc($result)) {
 		$v[$row["key"]] = $row["value"];
 	}
 }//ko_get_etiketten_vorlagen()
@@ -4704,11 +4713,11 @@ function ko_save_etiketten_vorlage($id, $values, $mode="new") {
  ************************************************************************************************************************/
 
 /**
- * @param _teams An array of team IDs that should be returned. If empty the teams currently set in the SESSION will be used
- * @param event_id An ID of a single event to be returned (may also be an array of event ids
+ * @param $_teams An array of team IDs that should be returned. If empty the teams currently set in the SESSION will be used
+ * @param $event_id An ID of a single event to be returned (may also be an array of event ids
  */
 function ko_rota_get_events($_teams='', $event_id='', $include_weekteams=FALSE) {
-	global $access, $DATETIME, $ko_menu_akt;
+	global $db_connection, $access, $DATETIME, $ko_menu_akt;
 
 	$e = array();
 
@@ -4793,8 +4802,8 @@ function ko_rota_get_events($_teams='', $event_id='', $include_weekteams=FALSE) 
 
 
 	$query = "SELECT e.*,tg.name AS eventgruppen_name, tg.farbe AS eventgruppen_farbe FROM `ko_event` AS e LEFT JOIN ko_eventgruppen AS tg ON e.eventgruppen_id = tg.id ".$where." ORDER BY startdatum ASC, startzeit ASC";
-	$result = mysql_query($query);
-	while($row = mysql_fetch_assoc($result)) {
+	$result = mysqli_query($db_connection, $query);
+	while($row = mysqli_fetch_assoc($result)) {
 		//Set individual event color
 		ko_set_event_color($row);
 
@@ -6142,6 +6151,8 @@ function ko_fileshare_save_file_as_share($uid, $dateiname) {
  ************************************************************************************************************************/
 
 function ko_get_tapes(&$tapes, $z_where = "", $z_limit = "") {
+	global $db_connection;
+
 	if($_SESSION["sort_tapes"] && $_SESSION["sort_tapes_order"]) $sort = " ORDER BY ".$_SESSION["sort_tapes"]." ".$_SESSION["sort_tapes_order"];
 	else $sort = "ORDER BY date DESC";
 
@@ -6153,8 +6164,8 @@ function ko_get_tapes(&$tapes, $z_where = "", $z_limit = "") {
 
 	$query = "SELECT ko_tapes.*, ko_tapes_groups.name as group_name FROM `ko_tapes`, `ko_tapes_groups` $z_where $sort $z_limit";
 
-	$result = mysql_query($query);
-	while($row = mysql_fetch_assoc($result)) {
+	$result = mysqli_query($db_connection, $query);
+	while($row = mysqli_fetch_assoc($result)) {
 		//Serie auslesen, falls eine definiert
 		if($row["serie_id"] > 0) {
 			ko_get_tapeseries($serie, "AND `id` = '".$row["serie_id"]."'");
@@ -6189,13 +6200,15 @@ function ko_get_preachers(&$preachers) {
   * Falls ID gesetzt ist, kommt nur das Daten-Array zurück ansonsten kommen alle Layoute roh zurück
 	*/
 function ko_get_tape_printlayout($id = "") {
+	global $db_connection;
+
 	if($id != "") {
 		$where = "WHERE `id` = '$id'";
 	} else $where = "";
 
 	$query = "SELECT * FROM `ko_tapes_printlayout` $where ORDER BY name ASC";
-	$result = mysql_query($query);
-	while($row = mysql_fetch_assoc($result)) {
+	$result = mysqli_query($db_connection, $query);
+	while($row = mysqli_fetch_assoc($result)) {
 		if($id != "") {
 			$r = unserialize($row["data"]);
 			$r["id"] = $row["id"];
@@ -7028,7 +7041,7 @@ function ko_include_kota($tables=array()) {
 	* @param string $_kota_type Specify kota type for a new entry
 	*/
 function ko_multiedit_formular($table, $columns="", $ids=0, $order="", $form_data="", $return_only_group=FALSE, $_kota_type='') {
-	global $smarty, $mysql_pass;
+	global $smarty, $mysql_connection, $mysql_pass;
 	global $KOTA, $js_calendar, $BASE_URL;
 
 	//Columns used in SQL
@@ -7114,13 +7127,13 @@ function ko_multiedit_formular($table, $columns="", $ids=0, $order="", $form_dat
 
 
 	//Get data from DB
-	$result = mysql_query("SELECT id,$sel_columns FROM `$table` WHERE `id` IN ($sel_ids) $order");
+	$result = mysqli_query($db_connection, "SELECT id,$sel_columns FROM `$table` WHERE `id` IN ($sel_ids) $order");
 
 	//Start building the form
 	$rowcounter = 0;
 	$gc = 0;
 	//Loop through all entries
-	while($new_entry || $showForAll || $row = mysql_fetch_assoc($result)) {
+	while($new_entry || $showForAll || $row = mysqli_fetch_assoc($result)) {
 		if($new_entry) {  //Single edit form
 			$group[$gc] = array();
 		} else if($showForAll) {  //Add edit fields to be applied to all edited rows
@@ -7653,14 +7666,14 @@ function kota_peopleselect($ids, $sort=TRUE) {
  ************************************************************************************************************************/
 
 /**
-	* Get the enum values of a db column
-	*
-	* @param string Table where the enum column is defined
-	* @param string Column to get the enum values from
-	* @return array All the enum values as array
-	*/
+ * Get the enum values of a db column
+ *
+ * @param string Table where the enum column is defined
+ * @param string Column to get the enum values from
+ * @return array All the enum values as array
+ */
 function db_get_enums($table, $col) {
-	global $DEBUG_db;
+	global $db_connection, $DEBUG_db;
 
 	if(isset($GLOBALS["kOOL"]["db_enum"][$table][$col])) {
 		return $GLOBALS["kOOL"]["db_enum"][$table][$col];
@@ -7668,15 +7681,15 @@ function db_get_enums($table, $col) {
 
 	$query = "SHOW COLUMNS FROM $table LIKE '$col'";
 	if(DEBUG_SELECT) $time_start = microtime(TRUE);
-	$result = mysql_query($query);
-	if($result === FALSE) trigger_error('DB ERROR (db_get_enums): '.mysql_errno().': '.mysql_error().', QUERY: '.$query, E_USER_ERROR);
+	$result = mysqli_query($db_connection, $query);
+	if($result === FALSE) trigger_error('DB ERROR (db_get_enums): '.mysqli_errno($db_connection).': '.mysqli_error($db_connection).', QUERY: '.$query, E_USER_ERROR);
 	if(DEBUG_SELECT) {
 		$DEBUG_db->queryCount++;
 		$DEBUG_db->queries[] = array('time' => (microtime(TRUE)-$time_start)*1000, 'sql' => $query);
 	}
-	if(mysql_num_rows($result)>0){
-	  $row=mysql_fetch_row($result);
-	  $options=explode("','",preg_replace("/(enum|set)\('(.+?)'\)/","\\2",$row[1]));
+	if(mysqli_num_rows($db_connection, $result)>0){
+		$row=mysqli_fetch_row($db_connection, $result);
+		$options=explode("','",preg_replace("/(enum|set)\('(.+?)'\)/","\\2",$row[1]));
 	}
 
 	$GLOBALS["kOOL"]["db_enum"][$table][$col] = $options;
@@ -7709,15 +7722,15 @@ function db_get_enums_ll($table, $col) {
 
 
 /**
-	* Get columns of a db table
-	*
-	* @param string Name of database
-	* @param string Name of table
-	* @param string A search string to only show columns that match this value
-	* @return array Columns
-	*/
+ * Get columns of a db table
+ *
+ * @param string Name of database
+ * @param string Name of table
+ * @param string A search string to only show columns that match this value
+ * @return array Columns
+ */
 function db_get_columns($table, $field="") {
-	global $DEBUG_db;
+	global $db_connection, $DEBUG_db;
 
 	$r = array();
 
@@ -7731,14 +7744,14 @@ function db_get_columns($table, $field="") {
 
 	$query = "SHOW COLUMNS FROM $table $like";
 	if(DEBUG_SELECT) $time_start = microtime(TRUE);
-  $result = mysql_query($query);
-	if($result === FALSE) trigger_error('DB ERROR (db_get_columns): '.mysql_errno().': '.mysql_error().', QUERY: '.$query, E_USER_ERROR);
+	$result = mysqli_query($db_connection, $query);
+	if($result === FALSE) trigger_error('DB ERROR (db_get_columns): '.mysqli_errno($db_connection).': '.mysqli_error($db_connection).', QUERY: '.$query, E_USER_ERROR);
 	if(DEBUG_SELECT) {
 		$DEBUG_db->queryCount++;
 		$DEBUG_db->queries[] = array('time' => (microtime(TRUE)-$time_start)*1000, 'sql' => $query);
 	}
-	while($row = mysql_fetch_assoc($result)) {
-    $r[] = $row;
+	while($row = mysqli_fetch_assoc($result)) {
+    	$r[] = $row;
 	}
 
 	//Store value in global cache array
@@ -7750,58 +7763,60 @@ function db_get_columns($table, $field="") {
 
 
 /**
-	* Number of entries in a db table
-	*
-	* @param string Table
-	* @param string Column to count the different values for
-	* @param string WHERE statement to add
-	* @return int Number of different entries
-	*/
+ * Number of entries in a db table
+ *
+ * @param string Table
+ * @param string Column to count the different values for
+ * @param string WHERE statement to add
+ * @return int Number of different entries
+ */
 function db_get_count($table, $field = "id", $z_where = "") {
-	global $DEBUG_db;
+	global $db_connection, $DEBUG_db;
 
 	if($field == '') $field = 'id';
-	$query = "SELECT COUNT(`$field`) as count FROM `$table` ".(($z_where)?" WHERE 1=1 $z_where":"");
+	$query = "SELECT COUNT(`$field`) AS count FROM `$table` ".(($z_where)?" WHERE 1=1 $z_where":"");
 	if(DEBUG_SELECT) $time_start = microtime(TRUE);
-	$result = mysql_query($query);
-	if($result === FALSE) trigger_error('DB ERROR (db_get_count): '.mysql_errno().': '.mysql_error().', QUERY: '.$query, E_USER_ERROR);
+	$result = mysqli_query($db_connection, $query);
+	if($result === FALSE) trigger_error('DB ERROR (db_get_count): '.mysqli_errno($db_connection).': '.mysqli_error($db_connection).', QUERY: '.$query, E_USER_ERROR);
 	if(DEBUG_SELECT) {
 		$DEBUG_db->queryCount++;
 		$DEBUG_db->queries[] = array('time' => (microtime(TRUE)-$time_start)*1000, 'sql' => $query);
 	}
-	$row = mysql_fetch_assoc($result);
+	$row = mysqli_fetch_assoc($result);
 	return $row["count"];
 }//db_get_count()
 
 
 
 /**
-  * Get the next auto_increment value for a table
-	*
-	* @param string Table
-	* @return int Next auto_increment value
-	*/
+ * Get the next auto_increment value for a table
+ *
+ * @param string Table
+ * @return int Next auto_increment value
+ */
 function db_get_next_id($table) {
+	global $db_connection;
+
 	$query = "SHOW TABLE STATUS LIKE '$table'";
-	$result = mysql_query($query);
-	if($result === FALSE) trigger_error('DB ERROR (db_get_next_id): '.mysql_errno().': '.mysql_error().', QUERY: '.$query, E_USER_ERROR);
-	$row = mysql_fetch_assoc($result);
+	$result = mysqli_query($db_connection, $query);
+	if($result === FALSE) trigger_error('DB ERROR (db_get_next_id): '.mysqli_errno($db_connection).': '.mysqli_error($db_connection).', QUERY: '.$query, E_USER_ERROR);
+	$row = mysqli_fetch_assoc($result);
 	return $row["Auto_increment"];
 }
 
 
 
 /**
-  * Inserts data into a database table
-	*
-	* This should be used instead of issuing INSERT queries directly
-	*
-	* @param string Table where the data should be inserted
-	* @param array Data array with the keys beeing the name of the db columns
-	* @return int id of the newly inserted row
-	*/
+ * Inserts data into a database table
+ *
+ * This should be used instead of issuing INSERT queries directly
+ *
+ * @param string Table where the data should be inserted
+ * @param array Data array with the keys beeing the name of the db columns
+ * @return int id of the newly inserted row
+ */
 function db_insert_data($table, $data) {
-	global $DEBUG_db;
+	global $db_connection, $DEBUG_db;
 
 	$columnsTemp = db_get_columns($table);
 	$columns = array();
@@ -7815,6 +7830,7 @@ function db_insert_data($table, $data) {
 		if (!in_array($field, $columns)) {
 			$unset[$field] = $data[$field];
 			unset($data[$field]);
+			trigger_error($field, E_USER_ERROR);
 		}
 	}
 
@@ -7834,33 +7850,33 @@ function db_insert_data($table, $data) {
 		if((string)$value == "NULL") {
 			$query2 .= "NULL, ";
 		} else {
-			$query2 .= "'" . mysql_real_escape_string(stripslashes($value)) . "', ";
+			$query2 .= "'" . mysqli_real_escape_string($db_connection, stripslashes($value)) . "', ";
 		}
 	}
 	$query .= "(" . substr($query1, 0, -2) . ") VALUES (" . substr($query2, 0, -2) . ")";
 
 	if(DEBUG_INSERT) $time_start = microtime(TRUE);
-	$result = mysql_query($query);
-	if($result === FALSE) trigger_error('DB ERROR (db_insert_data): '.mysql_errno().': '.mysql_error().', QUERY: '.$query, E_USER_ERROR);
+	$result = mysqli_query($db_connection, $query);
+	if($result === FALSE) trigger_error('DB ERROR (db_insert_data): '.mysqli_errno($db_connection).': '.mysqli_error($db_connection).', QUERY: '.$query, E_USER_ERROR);
 	if(DEBUG_INSERT) {
 		$DEBUG_db->queryCount++;
 		$DEBUG_db->queries[] = array('time' => (microtime(TRUE)-$time_start)*1000, 'sql' => $query);
 	}
-	return mysql_insert_id();
+	return mysqli_insert_id($db_connection);
 }//db_insert_data()
 
 
 /**
-  * Update data in the database
-	*
-	* This should be used instead of issuing UPDATE queries directly
-	*
-	* @param string Table where the data should be stored
-	* @param string WHERE statement that defines the rows to be updated
-	* @param array Data array with the keys beeing the name of the db columns
-	*/
+ * Update data in the database
+ *
+ * This should be used instead of issuing UPDATE queries directly
+ *
+ * @param string Table where the data should be stored
+ * @param string WHERE statement that defines the rows to be updated
+ * @param array Data array with the keys beeing the name of the db columns
+ */
 function db_update_data($table, $where, $data) {
-	global $DEBUG_db;
+	global $db_connection, $DEBUG_db;
 
 	$columnsTemp = db_get_columns($table);
 	$columns = array();
@@ -7895,7 +7911,7 @@ function db_update_data($table, $where, $data) {
 		if((string)$value == "NULL") {
 			$query .= "`$key` = NULL, ";
 		} else {
-			$query .= "`$key` = '".mysql_real_escape_string(stripslashes($value))."', ";
+			$query .= "`$key` = '".mysqli_real_escape_string($db_connection, stripslashes($value))."', ";
 		}
 	}
 	if(!$found) return FALSE;
@@ -7905,8 +7921,8 @@ function db_update_data($table, $where, $data) {
 	$query .= " $where ";
 
 	if(DEBUG_UPDATE) $time_start = microtime(TRUE);
-	$result = mysql_query($query);
-	if($result === FALSE) trigger_error('DB ERROR (db_update_data): '.mysql_errno().': '.mysql_error().", QUERY: $query", E_USER_ERROR);
+	$result = mysqli_query($db_connection, $query);
+	if($result === FALSE) trigger_error('DB ERROR (db_update_data): '.mysqli_errno($db_connection).': '.mysqli_error($db_connection).", QUERY: $query", E_USER_ERROR);
 	if(DEBUG_UPDATE) {
 		$DEBUG_db->queryCount++;
 		$DEBUG_db->queries[] = array('time' => (microtime(TRUE)-$time_start)*1000, 'sql' => $query);
@@ -7923,12 +7939,12 @@ function db_update_data($table, $where, $data) {
 	* @param string WHERE statement that defines the rows to be deleted
 	*/
 function db_delete_data($table, $where) {
-	global $DEBUG_db;
+	global $db_connection, $DEBUG_db;
 
 	$query = "DELETE FROM $table $where";
 	if(DEBUG_DELETE) $time_start = microtime(TRUE);
-	$result = mysql_query($query);
-	if($result === FALSE) trigger_error('DB ERROR (db_delete_data): '.mysql_errno().': '.mysql_error().", QUERY: $query", E_USER_ERROR);
+	$result = mysqli_query($db_connection, $query);
+	if($result === FALSE) trigger_error('DB ERROR (db_delete_data): '.mysqli_errno($db_connection).': '.mysqli_error($db_connection).", QUERY: $query", E_USER_ERROR);
 	if(DEBUG_DELETE) {
 		$DEBUG_db->queryCount++;
 		$DEBUG_db->queries[] = array('time' => (microtime(TRUE)-$time_start)*1000, 'sql' => $query);
@@ -7938,19 +7954,19 @@ function db_delete_data($table, $where) {
 
 
 /**
-  * Get data from the database
-	*
-	* This should be used instead of issuing SELECT queries directly
-	*
-	* @param string Table where the data should be selected from
-	* @param string WHERE statement that defines the rows to be selected
-	* @param string Comma seperated value with the columns to be selected. * for all of them
-	* @param string ORDER BY statement
-	* @param string LIMIT statement
-	* @param boolean Returns a single entry if set, otherwise an array of entries is returned with their ids as keys
-	*/
+ * Get data from the database
+ *
+ * This should be used instead of issuing SELECT queries directly
+ *
+ * @param string Table where the data should be selected from
+ * @param string WHERE statement that defines the rows to be selected
+ * @param string Comma seperated value with the columns to be selected. * for all of them
+ * @param string ORDER BY statement
+ * @param string LIMIT statement
+ * @param boolean Returns a single entry if set, otherwise an array of entries is returned with their ids as keys
+ */
 function db_select_data($table, $where, $columns="*", $order="", $limit="", $single=FALSE, $no_index=FALSE) {
-	global $DEBUG_db;
+	global $db_connection, $DEBUG_db;
 
 	if(ko_test(__FUNCTION__, func_get_args(), $testreturn) === TRUE) return $testreturn;
 
@@ -7962,16 +7978,16 @@ function db_select_data($table, $where, $columns="*", $order="", $limit="", $sin
 
 	$query = "SELECT $columns FROM $table $where $order $limit";
 	if(DEBUG_SELECT) $time_start = microtime(TRUE);
-	$result = mysql_query($query);
-	if($result === FALSE) trigger_error('DB ERROR (db_select_data): '.mysql_errno().': '.mysql_error(). ' QUERY: '.$query, E_USER_ERROR);
+	$result = mysqli_query($db_connection, $query);
+	if($result === FALSE) trigger_error('DB ERROR (db_select_data): '.mysqli_errno($db_connection).': '.mysqli_error($db_connection). ' QUERY: '.$query, E_USER_ERROR);
 	if(DEBUG_SELECT) {
 		$DEBUG_db->queryCount++;
 		$DEBUG_db->queries[] = array('time' => (microtime(TRUE)-$time_start)*1000, 'sql' => $query);
 	}
-	if(mysql_num_rows($result) == 0) {
+	if(mysqli_num_rows($db_connection, $result) == 0) {
 		return;
-	} else if($single && mysql_num_rows($result) == 1) {
-		$return = mysql_fetch_assoc($result);
+	} else if($single && mysqli_num_rows($db_connection, $result) == 1) {
+		$return = mysqli_fetch_assoc($result);
 		return $return;
 	} else {
 		if($no_index) {
@@ -7983,7 +7999,7 @@ function db_select_data($table, $where, $columns="*", $order="", $limit="", $sin
 			$index = trim(str_replace("`", "", $cols[0]));
 		}
 		$return = array();
-		while($row = mysql_fetch_assoc($result)) {
+		while($row = mysqli_fetch_assoc($result)) {
 			if($index) {
 				$return[$row[$index]] = $row;
 			} else {
@@ -8001,14 +8017,15 @@ function db_select_data($table, $where, $columns="*", $order="", $limit="", $sin
  * @return array: the query result as an array, NULL if there are no matching entries
  */
 function db_query($query, $index = '') {
+	global $db_connection;
 	// TODO: support testing
-	$result = mysql_query($query);
-	if($result === FALSE) trigger_error('DB ERROR (db_select_data): '.mysql_errno().': '.mysql_error(). ' QUERY: '.$query, E_USER_ERROR);
-	if(mysql_num_rows($result) == 0) {
+	$result = mysqli_query($db_connection, $query);
+	if($result === FALSE) trigger_error('DB ERROR (db_select_data): '.mysqli_errno($db_connection).': '.mysqli_error($db_connection). ' QUERY: '.$query, E_USER_ERROR);
+	if(mysqli_num_rows($db_connection, $result) == 0) {
 		return;
 	} else {
 		$return = array();
-		while($row = mysql_fetch_assoc($result)) {
+		while($row = mysqli_fetch_assoc($result)) {
 			if($index) {
 				$return[$row[$index]] = $row;
 			} else {
@@ -8061,7 +8078,7 @@ function db_get_column($table, $where, $column, $split=" ") {
 	* @return array All the different values
 	*/
 function db_select_distinct($table, $col, $order_="", $where="", $case_sensitive=FALSE) {
-	global $DEBUG_db;
+	global $db_connection, $DEBUG_db;
 
 	$r = array();
 
@@ -8070,13 +8087,13 @@ function db_select_distinct($table, $col, $order_="", $where="", $case_sensitive
 	if($case_sensitive) $query = "SELECT DISTINCT BINARY $col AS $col FROM $table $where $order";
 	else $query = "SELECT DISTINCT $col FROM $table $where $order";
 	if(DEBUG_SELECT) $time_start = microtime(TRUE);
-	$result = mysql_query($query);
-	if($result === FALSE) trigger_error('DB ERROR (db_select_distinct): '.mysql_errno().': '.mysql_error().', QUERY: '.$query, E_USER_ERROR);
+	$result = mysqli_query($db_connection, $query);
+	if($result === FALSE) trigger_error('DB ERROR (db_select_distinct): '.mysqli_errno($db_connection).': '.mysqli_error($db_connection).', QUERY: '.$query, E_USER_ERROR);
 	if(DEBUG_SELECT) {
 		$DEBUG_db->queryCount++;
 		$DEBUG_db->queries[] = array('time' => (microtime(TRUE)-$time_start)*1000, 'sql' => $query);
 	}
-	while($row = mysql_fetch_assoc($result)) {
+	while($row = mysqli_fetch_assoc($result)) {
     $r[] = $row[ltrim(rtrim($col, '`'), '`')];
 	}
 	return $r;
@@ -8090,9 +8107,11 @@ function db_select_distinct($table, $col, $order_="", $where="", $case_sensitive
 	* @param string new value
 	*/
 function db_alter_table($table, $change) {
+	global $db_connection;
+
 	$query = "ALTER TABLE `$table` $change";
-	$result = mysql_query($query);
-	if($result === FALSE) trigger_error('DB ERROR (db_alter_table): '.mysql_errno().': '.mysql_error().', QUERY: '.$query, E_USER_ERROR);
+	$result = mysqli_query($db_connection, $query);
+	if($result === FALSE) trigger_error('DB ERROR (db_alter_table): '.mysqli_errno($db_connection).': '.mysqli_error($db_connection).', QUERY: '.$query, E_USER_ERROR);
 }//db_alter_table()
 
 
@@ -8104,14 +8123,16 @@ function db_alter_table($table, $change) {
 	* @param string SQL statement of the entry to be
 	*/
 function db_import_sql($tobe) {
+	global $db_connection;
+
 	$create_code = 'CREATE TABLE `%s` (%s) ENGINE=MyISAM';
 	$alter_code  = 'ALTER TABLE `%s` CHANGE `%s` %s';
 	$add_code    = 'ALTER TABLE `%s` ADD %s';
 
 	//find tables in actual db
 	$is_tables = NULL;
-	$result = mysql_query("SHOW TABLES");
-	while($row = mysql_fetch_row($result)) {
+	$result = mysqli_query($db_connection, "SHOW TABLES");
+	while($row = mysqli_fetch_row($db_connection, $result)) {
 		$is_tables[] = $row[0];
 	}
 
@@ -8142,10 +8163,10 @@ function db_import_sql($tobe) {
 
 
 		//ALTER Statement
-    if(strtoupper(substr($line, 0, 6)) == "ALTER ") {
-      $do_sql[] = $line;
-      continue;
-    }
+		if(strtoupper(substr($line, 0, 6)) == "ALTER ") {
+    		$do_sql[] = $line;
+    		continue;
+    	}
 
 
 		//start of a create table statement
@@ -8157,8 +8178,8 @@ function db_import_sql($tobe) {
 			//find table in current db
 			if(in_array($table, $is_tables)) {
 				//table already exists - get table create definition
-				$result = mysql_query("SHOW CREATE TABLE $table");
-				$row = mysql_fetch_row($result);
+				$result = mysqli_query($db_connection, "SHOW CREATE TABLE $table");
+				$row = mysqli_fetch_row($db_connection, $result);
 				$is = $row[1];
 				$new_table = FALSE;
 			} else {
@@ -8234,8 +8255,8 @@ function db_import_sql($tobe) {
 	foreach($do_sql as $query) {
 		if($query) {
 			if(substr($query, -1) == ",") $query = substr($query, 0, -1);
-			$result = mysql_query($query);
-			if($result === FALSE) trigger_error('DB ERROR (db_import_sql): '.mysql_errno().': '.mysql_error(), E_USER_ERROR);
+			$result = mysqli_query($db_connection, $query);
+			if($result === FALSE) trigger_error('DB ERROR (db_import_sql): '.mysqli_errno($db_connection).': '.mysqli_error($db_connection), E_USER_ERROR);
 		}
 	}
 }//db_import_sql()
@@ -8258,6 +8279,7 @@ function db_import_sql($tobe) {
  * return array IDs of db entries with the best levenshtein difference
  */
 function ko_fuzzy_search($data, $table, $error=1, $case=FALSE, $lev_limit="") {
+	global $db_connection;
 	//Get all DB columns
 	foreach($data as $col => $value) {
 		$cols[] = $col;
@@ -8283,9 +8305,9 @@ function ko_fuzzy_search($data, $table, $error=1, $case=FALSE, $lev_limit="") {
 	$query .= "AND deleted = '0'";
 
 	//Find the best matching db entry
-	$result = mysql_query($query);
+	$result = mysqli_query($db_connection, $query);
 	$best = 100;
-	while($row = mysql_fetch_assoc($result)) {
+	while($row = mysqli_fetch_assoc($result)) {
 		if($case) {
 			$lev = levenshtein($orig, $row["teststring"]);
 		} else {
@@ -11432,6 +11454,8 @@ function ko_check_for_pdftk() {
   * Parses a vCard file (.vcf) and assigns the values to an array to be imported into ko_leute
 	*/
 function ko_parse_vcf($content) {
+	global $db_connection;
+
 	$data = array();
 
 	foreach($content as $line) {
@@ -11501,7 +11525,7 @@ function ko_parse_vcf($content) {
 	//prepare for mysql
 	foreach($data as $key => $value) {
 		foreach($value as $k => $v) {
-			$return[$key][$k] = mysql_real_escape_string($v);
+			$return[$key][$k] = mysqli_real_escape_string($db_connection, $v);
 		}
 	}
 	return $return;
@@ -11557,7 +11581,7 @@ function ko_parse_csv($content, $options, $test=FALSE) {
 			} else {
 				$new_data = array();
 				foreach($dbcols as $col) {
-					$new_data[$col] = mysql_real_escape_string(array_shift($parts));
+					$new_data[$col] = mysqli_real_escape_string($db_connection, array_shift($parts));
 					//create sql-date
 					if(in_array($col, $date_cols)) {
 						$new_data[$col] = sql_datum($new_data[$col]);
@@ -12352,12 +12376,14 @@ function set_cache_sms_balance($balance) {
 
 
 /**
-  * Holt den gecachten SMS-Balance-Wert
-	*/
+ * Holt den gecachten SMS-Balance-Wert
+ */
 function get_cache_sms_balance() {
+	global $db_connection;
+
 	$query = "SELECT `value` FROM `ko_settings` WHERE `key` = 'cache_sms_balance'";
-	$result = mysql_query($query);
-	$value = mysql_fetch_assoc($result);
+	$result = mysqli_query($db_connection, $query);
+	$value = mysqli_fetch_assoc($result);
 	return $value["value"];
 }
 
@@ -13830,20 +13856,21 @@ function ko_get_new_serie_id($table) {
 
 
 /**
-	* Erstellt einen Log-Eintrag zu definierten Typ. Timestamp und UserID werden automatisch eingefügt
-	*/
+ * Erstellt einen Log-Eintrag zu definierten Typ. Timestamp und UserID werden automatisch eingefügt
+ */
 function ko_log($type, $msg) {
-	global $EMAIL_LOG_TYPES, $BASE_URL;
+	global $db_connection, $EMAIL_LOG_TYPES, $BASE_URL;
 
 	//Create db entry
 	$type = format_userinput($type, 'alphanum+', FALSE, 0, array(), '@');
-	db_insert_data('ko_log', array('type' => $type,
-																 'comment' => mysql_real_escape_string($msg),
-																 'user_id' => $_SESSION['ses_userid'],
-																 'date' => date('Y-m-d H:i:s'),
-																 'session_id' => session_id(),
-																 'request_data' => print_r($_REQUEST, TRUE),
-																 ));
+	db_insert_data('ko_log', array(
+		'type' => $type,
+		'comment' => mysqli_real_escape_string($db_connection, $msg),
+		'user_id' => empty($_SESSION['ses_userid']) ? '0' : $_SESSION['ses_userid'],
+		'date' => date('Y-m-d H:i:s'),
+		'session_id' => session_id(),
+		'request_data' => print_r($_REQUEST, TRUE),
+		));
 
 	//Send email notification if activated for given type
 	if(is_array($EMAIL_LOG_TYPES) && in_array($type, $EMAIL_LOG_TYPES) && defined('WARRANTY_EMAIL')) {
