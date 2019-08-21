@@ -1,30 +1,24 @@
 <?php
-/***************************************************************
-*  Copyright notice
+/*******************************************************************************
 *
-*  (c) 2003-2015 Renzo Lauper (renzo@churchtool.org)
-*  All rights reserved
+*    OpenKool - Online church organization tool
 *
-*  This script is part of the kOOL project. The kOOL project is
-*  free software; you can redistribute it and/or modify
-*  it under the terms of the GNU General Public License as published by
-*  the Free Software Foundation; either version 2 of the License, or
-*  (at your option) any later version.
+*    Copyright © 2003-2015 Renzo Lauper (renzo@churchtool.org)
+*    Copyright © 2019      Daniel Lerch
 *
-*  The GNU General Public License can be found at
-*  http://www.gnu.org/copyleft/gpl.html.
-*  A copy is found in the textfile GPL.txt and important notices to the license
-*  from the author is found in LICENSE.txt distributed with these scripts.
+*    This program is free software; you can redistribute it and/or modify
+*    it under the terms of the GNU General Public License as published by
+*    the Free Software Foundation; either version 2 of the License, or
+*    (at your option) any later version.
 *
-*  kOOL is distributed in the hope that it will be useful,
-*  but WITHOUT ANY WARRANTY; without even the implied warranty of
-*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-*  GNU General Public License for more details.
+*    This program is distributed in the hope that it will be useful,
+*    but WITHOUT ANY WARRANTY; without even the implied warranty of
+*    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+*    GNU General Public License for more details.
 *
-*  This copyright notice MUST APPEAR in all copies of the script!
-***************************************************************/
+*******************************************************************************/
 
-if($_GET["action"] != "grouproleselectfilter") {
+if(empty($_GET['action']) || $_GET['action'] != 'grouproleselectfilter') {
 	//Set session id from GET (session will be started in ko.inc.php)
 	if(!isset($_GET["sesid"])) exit;
 	if(FALSE === session_id($_GET["sesid"])) exit;
@@ -129,7 +123,7 @@ if(isset($_GET) && isset($_GET["action"])) {
 
 
 		case 'setsort':
-			if($access['groups']['MAX'] < 3) continue;
+			if($access['groups']['MAX'] < 3) break;
 
 			$_SESSION['sort_groups'] = format_userinput($_GET['sort'], 'alphanum+', TRUE, 30);
 			ko_save_userpref($_SESSION['ses_userid'], 'sort_groups', $_SESSION['sort_groups']);
@@ -141,7 +135,7 @@ if(isset($_GET) && isset($_GET["action"])) {
 		break;
 
 		case "setstart":
-			if($access['groups']['MAX'] < 1) continue;
+			if($access['groups']['MAX'] < 1) break;
 
 			//Set list start
 			if(isset($_GET['set_start'])) {
@@ -159,7 +153,7 @@ if(isset($_GET) && isset($_GET["action"])) {
 
 
 		case "adddatafield":
-			if($access['groups']['MAX'] < 2) continue;
+			if($access['groups']['MAX'] < 2) break;
 
 			$description = format_userinput(urldecode($_GET['descr']), 'text', FALSE, 0, array('allquotes' => TRUE));
 			$type = format_userinput(urldecode($_GET['type']), 'alpha');
@@ -191,7 +185,7 @@ if(isset($_GET) && isset($_GET["action"])) {
 		case "groupdatafieldsfilter":
 			$dfid = format_userinput($_GET["dfid"], "uint");
 			$df = db_select_data("ko_groups_datafields", "WHERE `id` = '$dfid'", "*", "", "", TRUE);
-			if(!$df["type"]) continue;
+			if(!$df["type"]) break;
 
 			switch($df["type"]) {
 				case "checkbox":

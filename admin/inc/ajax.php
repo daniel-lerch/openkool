@@ -1,28 +1,22 @@
 <?php
-/***************************************************************
-*  Copyright notice
+/*******************************************************************************
 *
-*  (c) 2003-2015 Renzo Lauper (renzo@churchtool.org)
-*  All rights reserved
+*    OpenKool - Online church organization tool
 *
-*  This script is part of the kOOL project. The kOOL project is
-*  free software; you can redistribute it and/or modify
-*  it under the terms of the GNU General Public License as published by
-*  the Free Software Foundation; either version 2 of the License, or
-*  (at your option) any later version.
+*    Copyright © 2003-2015 Renzo Lauper (renzo@churchtool.org)
+*    Copyright © 2019      Daniel Lerch
 *
-*  The GNU General Public License can be found at
-*  http://www.gnu.org/copyleft/gpl.html.
-*  A copy is found in the textfile GPL.txt and important notices to the license
-*  from the author is found in LICENSE.txt distributed with these scripts.
+*    This program is free software; you can redistribute it and/or modify
+*    it under the terms of the GNU General Public License as published by
+*    the Free Software Foundation; either version 2 of the License, or
+*    (at your option) any later version.
 *
-*  kOOL is distributed in the hope that it will be useful,
-*  but WITHOUT ANY WARRANTY; without even the implied warranty of
-*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-*  GNU General Public License for more details.
+*    This program is distributed in the hope that it will be useful,
+*    but WITHOUT ANY WARRANTY; without even the implied warranty of
+*    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+*    GNU General Public License for more details.
 *
-*  This copyright notice MUST APPEAR in all copies of the script!
-***************************************************************/
+*******************************************************************************/
 
 //Set session id from GET (session will be started in ko.inc.php)
 if(!isset($_GET["sesid"])) exit;
@@ -67,7 +61,7 @@ if(isset($_GET) && isset($_GET["action"])) {
 	switch($action) {
 
 		case 'setsortlogins':
-			if($access['admin']['MAX'] < 5) continue;
+			if($access['admin']['MAX'] < 5) break;
 
 			$_SESSION['sort_logins'] = format_userinput($_GET['sort'], 'alphanum+', TRUE, 30);
 			$_SESSION['sort_logins_order'] = format_userinput($_GET['sort_order'], 'alpha', TRUE, 4);
@@ -77,7 +71,7 @@ if(isset($_GET) && isset($_GET["action"])) {
 		break;
 
 		case "setsortlog":
-			if($access['admin']['MAX'] < 4) continue;
+			if($access['admin']['MAX'] < 4) break;
 
 			$_SESSION["sort_logs"] = format_userinput($_GET["sort"], "alphanum+", TRUE, 30);
 			$_SESSION["sort_logs_order"] = format_userinput($_GET["sort_order"], "alpha", TRUE, 4);
@@ -89,7 +83,7 @@ if(isset($_GET) && isset($_GET["action"])) {
 
 		case "setstart":
 			if($_SESSION['show'] == 'show_logins' || $_SESSION['show'] == 'show_sms_log') {
-				if($access['admin']['MAX'] < 5) continue;
+				if($access['admin']['MAX'] < 5) break;
 
 				//Set list start
 				if(isset($_GET['set_start'])) {
@@ -109,7 +103,7 @@ if(isset($_GET) && isset($_GET["action"])) {
 				}
 			}
 			else if($_SESSION['show'] == 'show_logs') {
-				if($access['admin']['MAX'] < 4) continue;
+				if($access['admin']['MAX'] < 4) break;
 
 				//Set list start
 				if(isset($_GET['set_start'])) {
@@ -128,20 +122,20 @@ if(isset($_GET) && isset($_GET["action"])) {
 
 
 		case "ablelogin":
-			if($access['admin']['MAX'] < 4) continue;
+			if($access['admin']['MAX'] < 4) break;
 
 			$id = format_userinput($_GET["id"], "uint");
 			if($id == ko_get_root_id()) {
 				print 'ERROR@@@'.getLL('error_admin_disable_root');
-				continue;
+				break;
 			}
 			if($id == ko_get_guest_id()) {
 				print 'ERROR@@@'.getLL('error_admin_disable_guest');
-				continue;
+				break;
 			}
 			if($id == $_SESSION['ses_userid']) {
 				print 'ERROR@@@'.getLL('error_admin_disable_self');
-				continue;
+				break;
 			}
 
 			if($_GET["mode"] == "enabled") {
@@ -152,7 +146,7 @@ if(isset($_GET) && isset($_GET["action"])) {
 				$orig_hash = db_select_data("ko_admin", "WHERE `id` = '$id'", "login,password", "", "", TRUE);
 				$data = array("password" => md5($orig_hash), "disabled" => $orig_hash["password"]);
 				ko_log('disable_login', 'ID: '.$id.', '.$orig_hash['login']);
-			} else continue;
+			} else break;
 
 			db_update_data("ko_admin", "WHERE `id` = '$id'", $data);
 
@@ -162,10 +156,10 @@ if(isset($_GET) && isset($_GET["action"])) {
 
 
 		case 'deletepic':
-			if($access['admin']['MAX'] < 2) continue;
+			if($access['admin']['MAX'] < 2) break;
 
 			$id = format_userinput($_GET['id'], 'alphanum');
-			if(!$id) continue;
+			if(!$id) break;
 
 			//Check for picture for this label preset
 			ko_get_etiketten_vorlage($id, $v);

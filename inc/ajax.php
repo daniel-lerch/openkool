@@ -1,28 +1,22 @@
 <?php
-/***************************************************************
-*  Copyright notice
+/*******************************************************************************
 *
-*  (c) 2003-2015 Renzo Lauper (renzo@churchtool.org)
-*  All rights reserved
+*    OpenKool - Online church organization tool
 *
-*  This script is part of the kOOL project. The kOOL project is
-*  free software; you can redistribute it and/or modify
-*  it under the terms of the GNU General Public License as published by
-*  the Free Software Foundation; either version 2 of the License, or
-*  (at your option) any later version.
+*    Copyright © 2003-2015 Renzo Lauper (renzo@churchtool.org)
+*    Copyright © 2019      Daniel Lerch
 *
-*  The GNU General Public License can be found at
-*  http://www.gnu.org/copyleft/gpl.html.
-*  A copy is found in the textfile GPL.txt and important notices to the license
-*  from the author is found in LICENSE.txt distributed with these scripts.
+*    This program is free software; you can redistribute it and/or modify
+*    it under the terms of the GNU General Public License as published by
+*    the Free Software Foundation; either version 2 of the License, or
+*    (at your option) any later version.
 *
-*  kOOL is distributed in the hope that it will be useful,
-*  but WITHOUT ANY WARRANTY; without even the implied warranty of
-*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-*  GNU General Public License for more details.
+*    This program is distributed in the hope that it will be useful,
+*    but WITHOUT ANY WARRANTY; without even the implied warranty of
+*    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+*    GNU General Public License for more details.
 *
-*  This copyright notice MUST APPEAR in all copies of the script!
-***************************************************************/
+*******************************************************************************/
 
 
 //Allow POST as well
@@ -74,7 +68,7 @@ if(isset($_GET) && isset($_GET["action"])) {
 			//Bestehende SM dieses Benutzers holen
 			$closed = explode(",", ko_get_userpref($_SESSION["ses_userid"], "submenu_".$sm_module."_".$pos."_closed"));
 			$open = explode(",", ko_get_userpref($_SESSION["ses_userid"], "submenu_".$sm_module."_".$pos));
-			if(in_array($id, $open)) continue;
+			if(in_array($id, $open)) break;
 
 			//Geschlossenes öffnen
 			$new_open = implode(",", $open);
@@ -110,7 +104,7 @@ if(isset($_GET) && isset($_GET["action"])) {
 			//Bestehende SM dieses Benutzers holen
 			$open = explode(",", ko_get_userpref($_SESSION["ses_userid"], "submenu_".$sm_module."_".$pos));
 			$closed = explode(",", ko_get_userpref($_SESSION["ses_userid"], "submenu_".$sm_module."_".$pos."_closed"));
-			if(in_array($id, $closed)) continue;
+			if(in_array($id, $closed)) break;
 
 			//Offenes schliessen
 			$new_closed = implode(",", $closed);
@@ -161,7 +155,7 @@ if(isset($_GET) && isset($_GET["action"])) {
 			for($i = 0; $i<sizeof($array); $i++) {
 				if($array[$i] == $id) $index = $i;
 			}
-			//if($index == 0) continue;
+			//if($index == 0) break;
 
 			//Submenu tauschen (resp. nach oben schieben)
 			$temp = $array[($index-1)];
@@ -205,7 +199,7 @@ if(isset($_GET) && isset($_GET["action"])) {
 			for($i = 0; $i<sizeof($array); $i++) {
 				if($array[$i] == $id) $index = $i;
 			}
-			if($index == (sizeof($array)-1)) continue;
+			if($index == (sizeof($array)-1)) break;
 
 			//Submenu tauschen (resp. nach oben schieben)
 			$temp = $array[($index+1)];
@@ -235,7 +229,7 @@ if(isset($_GET) && isset($_GET["action"])) {
 	    } else if($_GET["notename"]) {  //... sonst als neue Notiz speichern
 	      $save_key = format_userinput($_GET["notename"], "alphanum++");
 	    } else {
-	      continue;
+	      break;
 	    }
 						    
 	    ko_save_userpref($_SESSION["ses_userid"], $save_key, format_userinput($_GET["note"], "text"), "notizen");
@@ -255,8 +249,8 @@ if(isset($_GET) && isset($_GET["action"])) {
 			if(!in_array($pos, array("left", "right"))) return FALSE;
 			$sm_module = format_userinput($_GET["mod"], "js");
 
-      $save_key = format_userinput($_GET["selnote"], "alphanum++");
-			if(!$save_key) continue;
+    		$save_key = format_userinput($_GET["selnote"], "alphanum++");
+			if(!$save_key) break;
 
 			$_SESSION["show_notiz"] = $save_key;
 
@@ -274,11 +268,11 @@ if(isset($_GET) && isset($_GET["action"])) {
 			if(!in_array($pos, array("left", "right"))) return FALSE;
 			$sm_module = format_userinput($_GET["mod"], "js");
 
-      $del_key = format_userinput($_GET["selnote"], "alphanum++");
-			if(!$del_key) continue;
+    		$del_key = format_userinput($_GET["selnote"], "alphanum++");
+			if(!$del_key) break;
 
 			ko_delete_userpref($_SESSION["ses_userid"], $del_key, "notizen");
-	    $_SESSION["show_notiz"] = "";
+	    	$_SESSION["show_notiz"] = "";
 
 			//Neuen HTML-Code für SM ausgeben
 			print submenu("gsm_notizen", $pos, "", 2, $sm_module);  //State is always open when saving
@@ -307,7 +301,7 @@ if(isset($_GET) && isset($_GET["action"])) {
 			$col = format_userinput(str_replace(';', ',', $col), 'alphanumlist');
 			$cols = explode(',', $col);
 
-			if($table == '' || $id <= 0 || $col == '') continue;
+			if($table == '' || $id <= 0 || $col == '') break;
 
 			//Get access and KOTA for this module
 			ko_get_access($module);
@@ -318,10 +312,10 @@ if(isset($_GET) && isset($_GET["action"])) {
 			foreach($cols as $ci => $column) {
 				if($KOTA[$table][$column]['form']['noinline'] === TRUE) unset($cols[$ci]);
 			}
-			if(sizeof($cols) == 0) continue;
+			if(sizeof($cols) == 0) break;
 
 			//Access check
-			if(!$KOTA[$table]['_access']['level'] || !isset($KOTA[$table]['_access']['chk_col'])) continue;
+			if(!$KOTA[$table]['_access']['level'] || !isset($KOTA[$table]['_access']['chk_col'])) break;
 
 			$entry = db_select_data($table, "WHERE `id` = '$id'", '*', '', '', TRUE);
 			$chk_col = $KOTA[$table]['_access']['chk_col'];
@@ -367,7 +361,7 @@ if(isset($_GET) && isset($_GET["action"])) {
 				if(FALSE === eval(strtr($KOTA[$table]['_access']['condition'], $entry))) $ok = FALSE;
 			}
 
-			if(!$ok) continue;
+			if(!$ok) break;
 
 
 			if($table == 'ko_leute' && substr($col, 0, 9) == 'MODULEgrp' && FALSE !== strpos($col, ':')) {
@@ -425,12 +419,12 @@ if(isset($_GET) && isset($_GET["action"])) {
 				//Find current entry for GDF
 				$dfid = substr($col, 16, 6);
 				$gid = substr($col, 9, 6);
-				if($access['groups']['ALL'] < 2 && $access['groups'][$gid] < 2) continue;
+				if($access['groups']['ALL'] < 2 && $access['groups'][$gid] < 2) break;
 				$dfdata = db_select_data('ko_groups_datafields_data', "WHERE `datafield_id` = '$dfid' AND `person_id` = '$id' AND `group_id` = '$gid' AND `deleted` = '0'");
 
 				//Check if this person is assigned to the given group
 				$person = db_select_data($table, "WHERE `id` = '$id'", '*', '', '', TRUE);
-				if(FALSE === strpos($person['groups'], 'g'.$gid)) continue;
+				if(FALSE === strpos($person['groups'], 'g'.$gid)) break;
 
 				//Save changes for ko_leute
 				ko_save_leute_changes($id, $person);
@@ -462,7 +456,7 @@ if(isset($_GET) && isset($_GET["action"])) {
 				if($table == 'ko_leute' && substr($col, 0, 9) == 'MODULEgrp' && strlen($col) == 15) {
 					$gid = format_userinput(substr($col, 9), 'uint');
 					//Access check
-					if($access['groups']['ALL'] < 2 && $access['groups'][$gid] < 2) continue;
+					if($access['groups']['ALL'] < 2 && $access['groups'][$gid] < 2) break;
 					if($gid) {
 						$group = db_select_data('ko_groups', "WHERE `id` = '$gid'", '*', '', '', TRUE);
 						$roles = explode(',', $group['roles']);
@@ -515,7 +509,7 @@ if(isset($_GET) && isset($_GET["action"])) {
 							}
 							print $_GET['id'].'@@@'.$value . $redrawString;
 
-							continue;
+							break;
 						}
 					}
 				}
@@ -563,7 +557,7 @@ if(isset($_GET) && isset($_GET["action"])) {
 			$col = format_userinput(str_replace(';', ',', $col), 'alphanumlist');
 			$col = array_shift(explode(',', $col));
 
-			if(!$table || !$col || !$id) continue;
+			if(!$table || !$col || !$id) break;
 
 			ko_get_access($module);
 			ko_include_kota(array($table));
@@ -609,7 +603,7 @@ if(isset($_GET) && isset($_GET["action"])) {
 
 			if(koNotifier::Instance()->hasErrors()) {
 				print 'ERROR@@@'.getLL('error_'.$table.'_'.$error);
-				continue;
+				break;
 			}
 
 			//Check redraw conditions
@@ -921,7 +915,7 @@ if(isset($_GET) && isset($_GET["action"])) {
 			require_once($ko_path.$module.'/inc/'.$module.'.inc');
 
 			//save new value
-			if($_GET['name'] == '') continue;
+			if($_GET['name'] == '') break;
 			$new_value = implode(',', $_SESSION['kota_show_cols_'.$table]);
 			$user_id = $access[$module]['MAX'] > 3 && $_GET['global'] == 'true' ? '-1' : $_SESSION['ses_userid'];
 			ko_save_userpref($user_id, format_userinput($_GET['name'], 'js', FALSE, 0, array('allquotes')), $new_value, $table.'_colitemset');
@@ -939,7 +933,7 @@ if(isset($_GET) && isset($_GET["action"])) {
 
 			//save new value
 			$name = format_userinput($_GET['name'], 'js', FALSE, 0, array(), '@');
-			if($name == '') continue;
+			if($name == '') break;
 
 			if($name == '_all_') {
 				$possible_cols = array();
@@ -969,7 +963,7 @@ if(isset($_GET) && isset($_GET["action"])) {
 
 			//save new value
 			$name = format_userinput($_GET['name'], 'js', FALSE, 0, array(), '@');
-			if($name == '') continue;
+			if($name == '') break;
 
 			if(substr($name, 0, 3) == '@G@') {
 				if($access[$module]['MAX'] > 3) ko_delete_userpref('-1', substr($name, 3), $table.'_colitemset');
@@ -1010,13 +1004,13 @@ if(isset($_GET) && isset($_GET["action"])) {
 			ko_include_kota(array($ptable));
 
 			// Check if presets are allowed
-			if (!isset($KOTA[$ptable][$col]['form']['foreign_table_preset'])) continue;
+			if (!isset($KOTA[$ptable][$col]['form']['foreign_table_preset'])) break;
 
 			if(substr($KOTA[$ptable][$col]['form']['foreign_table_preset']['check_access'], 0, 4) == 'FCN:') {
 				$fcn = substr($KOTA[$ptable][$col]['form']['foreign_table_preset']['check_access'], 4);
 				if(function_exists($fcn)) {
 					eval("$fcn(\$pid, \$joinValueLocal, \$result);");
-					if (!$result) continue;
+					if (!$result) break;
 				}
 			}
 
@@ -1140,7 +1134,7 @@ if(isset($_GET) && isset($_GET["action"])) {
 
 			//Get current entry
 			$old = db_select_data($table, "WHERE `id` = '$id'", '*', '', '', TRUE);
-			if(!$old['id'] || $old['id'] != $id) continue;
+			if(!$old['id'] || $old['id'] != $id) break;
 
 			//Update db entry
 			$data = array();
@@ -1174,7 +1168,7 @@ if(isset($_GET) && isset($_GET["action"])) {
 
 			//Get current entry
 			$old = db_select_data($table, "WHERE `id` = '$id'", '*', '', '', TRUE);
-			if(!$old['id'] || $old['id'] != $id) continue;
+			if(!$old['id'] || $old['id'] != $id) break;
 
 			db_delete_data($table, "WHERE `id` = '$id'");
 			ko_log_diff('ft_delete_'.$table, $old);
@@ -1224,7 +1218,7 @@ if(isset($_GET) && isset($_GET["action"])) {
 
 		case 'peoplefilterform':
 			$fid = format_userinput($_GET['fid'], 'uint');
-			if(!$fid) continue;
+			if(!$fid) break;
 			$field = $_GET['field'];
 			$code = ko_get_leute_filter_form($fid, FALSE);
 			print 'peoplefilter_vars_'.$field.'@@@'.$code;
@@ -1241,11 +1235,11 @@ if(isset($_GET) && isset($_GET["action"])) {
 			$id = format_userinput($_GET['id'], 'uint');
 			$module = format_userinput($_GET['module'], 'alphanum');
 			$table = format_userinput($_GET['table'], 'alphanum+');
-			if(!$id || !$module || !$table || !$diff) continue;
+			if(!$id || !$module || !$table || !$diff) break;
 
 			ko_get_access($module);
 			ko_include_kota(array($table));
-			if(!isset($KOTA[$table])) continue;
+			if(!isset($KOTA[$table])) break;
 
 			$sorted = array();
 			$items = db_select_data($table, "WHERE 1", 'id,sort', 'ORDER BY sort ASC');

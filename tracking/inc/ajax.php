@@ -107,10 +107,10 @@ if(isset($_GET) && isset($_GET['action'])) {
 
  		case 'settrackingall':
  		case 'deltrackingall':
- 			if($access['tracking']['MAX'] < 2) continue;
+ 			if($access['tracking']['MAX'] < 2) break;
 
 			$tid = format_userinput($_GET['tid'], 'uint');
-			if($access['tracking']['ALL'] < 2 && $access['tracking'][$tid] < 2) continue;
+			if($access['tracking']['ALL'] < 2 && $access['tracking'][$tid] < 2) break;
 			$tracking = db_select_data('ko_tracking', "WHERE `id` = '$tid'", '*', '', '', TRUE);
 			$date = format_userinput($_GET['date'], 'date');
 			if($action == 'deltrackingall') {
@@ -169,11 +169,11 @@ if(isset($_GET) && isset($_GET['action'])) {
 
 
 		case 'setdefault':
- 			if($access['tracking']['MAX'] < 2) continue;
+ 			if($access['tracking']['MAX'] < 2) break;
 
 			$lid = format_userinput($_GET['lid'], 'uint');
 			$tid = format_userinput($_GET['tid'], 'uint');
-			if($access['tracking']['ALL'] < 2 && $access['tracking'][$tid] < 2) continue;
+			if($access['tracking']['ALL'] < 2 && $access['tracking'][$tid] < 2) break;
 
 			ko_tracking_set_default($tid, $lid);
 
@@ -185,11 +185,11 @@ if(isset($_GET) && isset($_GET['action'])) {
 
  		case 'settrackingsimple':
  		case 'settrackingvalue':
- 			if($access['tracking']['MAX'] < 2) continue;
+ 			if($access['tracking']['MAX'] < 2) break;
 
 			$data = array();
 			$data['tid'] = format_userinput($_GET['tid'], 'uint');
-			if($access['tracking']['ALL'] < 2 && $access['tracking'][$data['tid']] < 2) continue;
+			if($access['tracking']['ALL'] < 2 && $access['tracking'][$data['tid']] < 2) break;
 			$data['lid'] = format_userinput($_GET['lid'], 'int');
 			$data['date'] = format_userinput($_GET['date'], 'date');
 			if($action == 'settrackingsimple') {
@@ -217,11 +217,11 @@ if(isset($_GET) && isset($_GET['action'])) {
 
  		case 'settrackingtype':
  		case 'settrackingtypecheck':
- 			if($access['tracking']['MAX'] < 2) continue;
+ 			if($access['tracking']['MAX'] < 2) break;
 
 			$data = array();
 			$data['tid'] = format_userinput($_GET['tid'], 'uint');
-			if($access['tracking']['ALL'] < 2 && $access['tracking'][$data['tid']] < 2) continue;
+			if($access['tracking']['ALL'] < 2 && $access['tracking'][$data['tid']] < 2) break;
 			$data['lid'] = format_userinput($_GET['lid'], 'int');
 			$data['date'] = format_userinput($_GET['date'], 'date');
 			$data['value'] = format_userinput($_GET['value'], 'float');
@@ -269,11 +269,11 @@ if(isset($_GET) && isset($_GET['action'])) {
 
 
  		case 'settrackingbitmask':
- 			if($access['tracking']['MAX'] < 2) continue;
+ 			if($access['tracking']['MAX'] < 2) break;
 
 			$data = array();
 			$data['tid'] = format_userinput($_GET['tid'], 'uint');
-			if($access['tracking']['ALL'] < 2 && $access['tracking'][$data['tid']] < 2) continue;
+			if($access['tracking']['ALL'] < 2 && $access['tracking'][$data['tid']] < 2) break;
 			$data['lid'] = format_userinput($_GET['lid'], 'uint');
 			$data['date'] = format_userinput($_GET['date'], 'date');
 			$data['value'] = format_userinput($_GET['value'], 'uint');
@@ -300,13 +300,13 @@ if(isset($_GET) && isset($_GET['action'])) {
 
 
 		case 'deltrackingtype':
- 			if($access['tracking']['MAX'] < 2) continue;
+ 			if($access['tracking']['MAX'] < 2) break;
 
 			$id = format_userinput($_GET['id'], 'uint');
-			if(!$id) continue;
+			if(!$id) break;
 
 			$data = db_select_data('ko_tracking_entries', "WHERE `id` = '$id'", '*', '', '', TRUE);
-			if($data['id'] != $id || ($access['tracking']['ALL'] < 2 && $access['tracking'][$data['tid']] < 2)) continue;
+			if($data['id'] != $id || ($access['tracking']['ALL'] < 2 && $access['tracking'][$data['tid']] < 2)) break;
 
 			db_delete_data('ko_tracking_entries', "WHERE `id` = '$id'");
 			ko_log_diff('del_entered_tracking', $data);
@@ -319,11 +319,11 @@ if(isset($_GET) && isset($_GET['action'])) {
 
 
 		case 'confirmtrackingtype':
- 			if($access['tracking']['MAX'] < 2) continue;
+ 			if($access['tracking']['MAX'] < 2) break;
 
 			$data = array();
 			$data['tid'] = format_userinput($_GET['tid'], 'uint');
-			if($access['tracking']['ALL'] < 2 && $access['tracking'][$data['tid']] < 2) continue;
+			if($access['tracking']['ALL'] < 2 && $access['tracking'][$data['tid']] < 2) break;
 			$data['lid'] = format_userinput($_GET['lid'], 'uint');
 			$data['date'] = format_userinput($_GET['date'], 'date');
 			$data['type'] = utf8_decode($_GET['type']);
@@ -338,11 +338,11 @@ if(isset($_GET) && isset($_GET['action'])) {
 
 
 		case 'deltrackingbitmask':
- 			if($access['tracking']['MAX'] < 2) continue;
+ 			if($access['tracking']['MAX'] < 2) break;
 
 			$data = array();
 			$data['tid'] = format_userinput($_GET['tid'], 'uint');
-			if($access['tracking']['ALL'] < 2 && $access['tracking'][$data['tid']] < 2) continue;
+			if($access['tracking']['ALL'] < 2 && $access['tracking'][$data['tid']] < 2) break;
 			$data['lid'] = format_userinput($_GET['lid'], 'uint');
 			$data['date'] = format_userinput($_GET['date'], 'date');
 			$data['value'] = format_userinput($_GET['value'], 'uint');
@@ -362,14 +362,14 @@ if(isset($_GET) && isset($_GET['action'])) {
 
 
 		case 'comment':
- 			if($access['tracking']['MAX'] < 2) continue;
+ 			if($access['tracking']['MAX'] < 2) break;
 
 			$tid = format_userinput($_GET['tid'], 'uint');
-			if($access['tracking']['ALL'] < 2 && $access['tracking'][$data['tid']] < 2) continue;
+			if($access['tracking']['ALL'] < 2 && $access['tracking'][$data['tid']] < 2) break;
 
 			if(isset($_GET['eid'])) {
 				$eid = format_userinput($_GET['eid'], 'uint');
-				if(!$eid) continue;
+				if(!$eid) break;
 				$entry = db_select_data('ko_tracking_entries', "WHERE `id` = '$eid'", '*', '', '', TRUE);
 			} else {
 				$lid = format_userinput($_GET['lid'], 'uint');
@@ -378,7 +378,7 @@ if(isset($_GET) && isset($_GET['action'])) {
 				$entry = db_select_data('ko_tracking_entries', "WHERE `tid` = '$tid' AND `lid` = '$lid' AND `date` = '$date'", '*', '', '', TRUE);
 				$eid = $entry['id'];
 			}
-			if(!$entry['id']) continue;
+			if(!$entry['id']) break;
 
 			$content = '<textarea name="comment" id="comment_'.$tid.'_'.$eid.'" cols="40" rows="5">'.$entry['comment'].'</textarea><br />';
 			$content .= '<input type="button" name="submit_tracking_comment" value="'.getLL('save').'" onclick="$.get(\'../tracking/inc/ajax.php\', {action: \'savecomment\', eid: \''.$eid.'\', tid: \''.$tid.'\', comment: $(\'#comment_'.$tid.'_'.$eid.'\').val(), sesid: \''.session_id().'\'}, tracking_entered_value_type); TINY.box.hide();" />';
@@ -389,10 +389,10 @@ if(isset($_GET) && isset($_GET['action'])) {
 
 
 		case 'delcomment':
- 			if($access['tracking']['MAX'] < 2) continue;
+ 			if($access['tracking']['MAX'] < 2) break;
 
 			$tid = format_userinput($_GET['tid'], 'uint');
-			if($access['tracking']['ALL'] < 2 && $access['tracking'][$data['tid']] < 2) continue;
+			if($access['tracking']['ALL'] < 2 && $access['tracking'][$data['tid']] < 2) break;
 			$lid = format_userinput($_GET['lid'], 'uint');
 			$date = format_userinput($_GET['date'], 'date');
 
@@ -406,10 +406,10 @@ if(isset($_GET) && isset($_GET['action'])) {
 
 
 		case 'savecomment':
- 			if($access['tracking']['MAX'] < 2) continue;
+ 			if($access['tracking']['MAX'] < 2) break;
 
 			$tid = format_userinput($_GET['tid'], 'uint');
-			if($access['tracking']['ALL'] < 2 && $access['tracking'][$data['tid']] < 2) continue;
+			if($access['tracking']['ALL'] < 2 && $access['tracking'][$data['tid']] < 2) break;
 			$eid = format_userinput($_GET['eid'], 'uint');
 			$comment = format_userinput(utf8_decode($_GET['comment']), 'text');
 
@@ -458,7 +458,7 @@ if(isset($_GET) && isset($_GET['action'])) {
 			else $pos = 'right';
 
 			//save new value
-			if($_GET['name'] == '') continue;
+			if($_GET['name'] == '') break;
 			$new_value = implode(',', $_SESSION['show_tracking_groups']);
 			$user_id = $access['tracking']['MAX'] > 3 && $_GET['global'] == 'true' ? '-1' : $_SESSION['ses_userid'];
 			ko_save_userpref($user_id, format_userinput($_GET['name'], 'js', FALSE, 0, array('allquotes')), $new_value, 'tracking_itemset');
@@ -474,7 +474,7 @@ if(isset($_GET) && isset($_GET['action'])) {
 
 			//save new value
 			$name = format_userinput($_GET['name'], 'js', FALSE, 0, array(), '@');
-			if($name == '') continue;
+			if($name == '') break;
 
 			if($name == '_all_') {
 				$groups = db_select_data('ko_tracking_groups', '', '*');
@@ -501,7 +501,7 @@ if(isset($_GET) && isset($_GET['action'])) {
 
 			//Get name
 			$name = format_userinput($_GET['name'], 'js', FALSE, 0, array(), '@');
-			if($name == '') continue;
+			if($name == '') break;
 
 			if(substr($name, 0, 3) == '@G@') {
 				if($access['tracking']['MAX'] > 3) ko_delete_userpref('-1', substr($name, 3), 'tracking_itemset');
@@ -519,8 +519,8 @@ if(isset($_GET) && isset($_GET['action'])) {
 			else $pos = 'right';
 
 			//save new value
-			if($_GET['name'] == '') continue;
-			if ($_SESSION['tracking_filter']['date1'] == '' OR $_SESSION['tracking_filter']['date2'] == '') continue;
+			if($_GET['name'] == '') break;
+			if ($_SESSION['tracking_filter']['date1'] == '' OR $_SESSION['tracking_filter']['date2'] == '') break;
 			$new_value = $_SESSION['tracking_filter']['date1'] . ',' . $_SESSION['tracking_filter']['date2'];
 			$user_id = $access['tracking']['MAX'] > 3 && $_GET['global'] == 'true' ? '-1' : $_SESSION['ses_userid'];
 			ko_save_userpref($user_id, format_userinput($_GET['name'], 'js', FALSE, 0, array('allquotes')), $new_value, 'tracking_filterpreset');
@@ -535,7 +535,7 @@ if(isset($_GET) && isset($_GET['action'])) {
 
 			//save new value
 			$name = format_userinput($_GET['name'], 'js', FALSE, 0, array(), '@');
-			if($name == '') continue;
+			if($name == '') break;
 
 			/*if($name == '_all_') {
 				$groups = db_select_data('ko_tracking_groups', '', '*');
@@ -574,7 +574,7 @@ if(isset($_GET) && isset($_GET['action'])) {
 
 			//Get name
 			$name = format_userinput($_GET['name'], 'js', FALSE, 0, array(), '@');
-			if($name == '') continue;
+			if($name == '') break;
 
 			if(substr($name, 0, 3) == '@G@') {
 				if($access['tracking']['MAX'] > 3) ko_delete_userpref('-1', substr($name, 3), 'tracking_filterpreset');

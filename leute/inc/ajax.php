@@ -1,28 +1,22 @@
 <?php
-/***************************************************************
-*  Copyright notice
+/*******************************************************************************
 *
-*  (c) 2003-2015 Renzo Lauper (renzo@churchtool.org)
-*  All rights reserved
+*    OpenKool - Online church organization tool
 *
-*  This script is part of the kOOL project. The kOOL project is
-*  free software; you can redistribute it and/or modify
-*  it under the terms of the GNU General Public License as published by
-*  the Free Software Foundation; either version 2 of the License, or
-*  (at your option) any later version.
+*    Copyright © 2003-2015 Renzo Lauper (renzo@churchtool.org)
+*    Copyright © 2019      Daniel Lerch
 *
-*  The GNU General Public License can be found at
-*  http://www.gnu.org/copyleft/gpl.html.
-*  A copy is found in the textfile GPL.txt and important notices to the license
-*  from the author is found in LICENSE.txt distributed with these scripts.
+*    This program is free software; you can redistribute it and/or modify
+*    it under the terms of the GNU General Public License as published by
+*    the Free Software Foundation; either version 2 of the License, or
+*    (at your option) any later version.
 *
-*  kOOL is distributed in the hope that it will be useful,
-*  but WITHOUT ANY WARRANTY; without even the implied warranty of
-*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-*  GNU General Public License for more details.
+*    This program is distributed in the hope that it will be useful,
+*    but WITHOUT ANY WARRANTY; without even the implied warranty of
+*    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+*    GNU General Public License for more details.
 *
-*  This copyright notice MUST APPEAR in all copies of the script!
-***************************************************************/
+*******************************************************************************/
 
 //Set session id from GET (session will be started in ko.inc.php)
 if(!isset($_GET["sesid"])) exit;
@@ -70,7 +64,7 @@ if(isset($_GET) && isset($_GET["action"])) {
 		case "leutefilterform":
 		case "leutesavefilterset":
 		case "leutedelfilterset":
-			if($access['leute']['MAX'] < 1) continue;
+			if($access['leute']['MAX'] < 1) break;
 			//Position des Filter-SM finden
 			if(in_array("filter", explode(",", $_SESSION["submenu_left"]))) $pos = "left";
 			else $pos = "right";
@@ -81,7 +75,7 @@ if(isset($_GET) && isset($_GET["action"])) {
 				$_SESSION["filter_akt"] = $fid;
 			}
 			else if($action == "leutesavefilterset") {
-				if(trim($_GET["name"]) == "") continue;
+				if(trim($_GET["name"]) == "") break;
 
 				//save cols if needed
 				if($_GET["withcols"] == "true") {
@@ -107,7 +101,7 @@ if(isset($_GET) && isset($_GET["action"])) {
 				ko_save_userpref($user_id, format_userinput($_GET["name"], "js"), $new_value, "filterset");
 			}
 			else if($action == "leutedelfilterset") {
-				if($_GET["name"] == "") continue;
+				if($_GET["name"] == "") break;
 				//Check for global filter
 				if(substr($_GET['name'], 0, 3) == '@G@') {
 					if($access['leute']['MAX'] > 3) {
@@ -128,7 +122,7 @@ if(isset($_GET) && isset($_GET["action"])) {
 
 
 		case "setstart":
-			if($access['leute']['MAX'] < 1) continue;
+			if($access['leute']['MAX'] < 1) break;
 
 			//Set list start
 			if(isset($_GET['set_start'])) {
@@ -156,7 +150,7 @@ if(isset($_GET) && isset($_GET["action"])) {
 
 		case "setstartkg":
 			$kg_all_rights = ko_get_access_all('kg', '', $kg_max_rights);
-			if($kg_max_rights < 1) continue;
+			if($kg_max_rights < 1) break;
 
 			//Set list start
 			if(isset($_GET['set_start'])) {
@@ -182,7 +176,7 @@ if(isset($_GET) && isset($_GET["action"])) {
 		case 'leutefilterlinkadv':
 		case "leuteschnellfilter":
 		case "leuteopenfilterset":
-			if($access['leute']['MAX'] < 1) continue;
+			if($access['leute']['MAX'] < 1) break;
 
 			//Position des Filter-SM finden
 			if(in_array("filter", explode(",", $_SESSION["submenu_left"]))) $pos = "left";
@@ -302,7 +296,7 @@ if(isset($_GET) && isset($_GET["action"])) {
 
 
 		case "setsortleute":
-			if($access['leute']['MAX'] < 1) continue;
+			if($access['leute']['MAX'] < 1) break;
 
 			$_SESSION['sort_leute'] = array(format_userinput($_GET['sort'], 'alphanumlist', TRUE));
 			$_SESSION["sort_leute_order"] = array(format_userinput($_GET["sort_order"], "alpha", TRUE, 4));
@@ -317,7 +311,7 @@ if(isset($_GET) && isset($_GET["action"])) {
 
 
 		case "setmultisort":
-			if($access['leute']['MAX'] < 1) continue;
+			if($access['leute']['MAX'] < 1) break;
 
 			$col = format_userinput($_GET["col"], "uint");
 			$sort = format_userinput($_GET['sort'], 'alphanum+', TRUE, 0, array(), ':');
@@ -327,7 +321,7 @@ if(isset($_GET) && isset($_GET["action"])) {
 				$_SESSION["sort_leute"][$col] = $sort;
 				$_SESSION["sort_leute_order"][$col] = "ASC";
 			} else if(isset($_GET["order"])) {  //Only order is given, so the order-icon has been clicked
-				if(!in_array($sort_order, array("ASC", "DESC"))) continue;
+				if(!in_array($sort_order, array("ASC", "DESC"))) break;
 				$_SESSION["sort_leute_order"][$col] = $sort_order;
 			} else {  //Otherwise the select was set to empty, which means: deactivate this column
 				unset($_SESSION["sort_leute"][$col]);
@@ -349,7 +343,7 @@ if(isset($_GET) && isset($_GET["action"])) {
 
 		case "setsortkg":
 			$kg_all_rights = ko_get_access_all('kg', '', $kg_max_rights);
-			if($kg_max_rights < 1) continue;
+			if($kg_max_rights < 1) break;
 
 			$_SESSION['sort_kg'] = format_userinput($_GET['sort'], 'alphanum+', TRUE);
 			$_SESSION["sort_kg_order"] = format_userinput($_GET["sort_order"], "alpha", TRUE, 4);
@@ -402,7 +396,7 @@ if(isset($_GET) && isset($_GET["action"])) {
 				print ko_list_kg(FALSE);
 			}
 			else if($_SESSION["show"] == "chart") {
-				if($access['leute']['MAX'] < 1) continue;
+				if($access['leute']['MAX'] < 1) break;
 				if($state == "checked") {  //Select it
 					if(!in_array($id, $_SESSION["show_leute_chart"])) $_SESSION["show_leute_chart"][] = $id;
 					//Move it to the place according to the list-order
@@ -421,7 +415,7 @@ if(isset($_GET) && isset($_GET["action"])) {
 				print ko_leute_chart();
 			}
 			else {
-				if($access['leute']['MAX'] < 1) continue;
+				if($access['leute']['MAX'] < 1) break;
 
 				$cols = array_keys(ko_get_leute_col_name(FALSE, TRUE));
 				if($state == "checked") {  //Select it
@@ -489,7 +483,7 @@ if(isset($_GET) && isset($_GET["action"])) {
 
 
 		case "itemlistsort":
-			if($access['leute']['MAX'] < 1) continue;
+			if($access['leute']['MAX'] < 1) break;
 
 			//Modus finden
 			if($_SESSION["show"] == "show_my_list") $mode = "my_list";
@@ -516,7 +510,7 @@ if(isset($_GET) && isset($_GET["action"])) {
 
 		case "movecolleft":
 		case "movecolright":
-			if($access['leute']['MAX'] < 1) continue;
+			if($access['leute']['MAX'] < 1) break;
 
 			//Modus finden
 			if($_SESSION["show"] == "show_my_list") $mode = "my_list";
@@ -571,7 +565,7 @@ if(isset($_GET) && isset($_GET["action"])) {
 			else $pos = "right";
 
 			//save new value
-			if($_GET["name"] == "") continue;
+			if($_GET["name"] == "") break;
 			$global = $_GET['global'] == 'true';
 			if($_SESSION["show"] == "list_kg") {
 				if($global) $kg_all_rights = ko_get_access_all('kg', '', $kg_max_rights);
@@ -582,14 +576,14 @@ if(isset($_GET) && isset($_GET["action"])) {
 
 				print submenu_leute("itemlist_spalten_kg", $pos, "open", 2);
 			} else if($_SESSION["show"] == "chart") {
-				if($access['leute']['MAX'] < 1) continue;
+				if($access['leute']['MAX'] < 1) break;
 				$new_value = implode(",", $_SESSION["show_leute_chart"]);
 				$user_id = ($access['leute']['MAX'] > 3 && $global) ? '-1' : $_SESSION['ses_userid'];
 				ko_save_userpref($user_id, format_userinput($_GET["name"], "js", FALSE, 0, array("allquotes")), $new_value, "leute_chart_itemset");
 
 				print submenu_leute("itemlist_chart", $pos, "open", 2);
 			} else {
-				if($access['leute']['MAX'] < 1) continue;
+				if($access['leute']['MAX'] < 1) break;
 				$new_value = implode(",", $_SESSION["show_leute_cols"]);
 				//Set user_id to -1 if to be stored globally
 				$user_id = ($access['leute']['MAX'] > 3 && $global) ? '-1' : $_SESSION['ses_userid'];
@@ -613,7 +607,7 @@ if(isset($_GET) && isset($_GET["action"])) {
 
 			//save new value
 			$name = format_userinput($_GET["name"], "js", FALSE, 0, array(), '@');
-			if($name == "") continue;
+			if($name == "") break;
 
 			if($_SESSION["show"] == "list_kg") {
 				if($name == '_all_') {
@@ -637,7 +631,7 @@ if(isset($_GET) && isset($_GET["action"])) {
 				print "@@@";
 				print submenu_leute("itemlist_spalten_kg", $pos, "open", 2);
 			} else if($_SESSION["show"] == "chart") {
-				if($access['leute']['MAX'] < 1) continue;
+				if($access['leute']['MAX'] < 1) break;
 				if($name == '_all_') {
 					$_SESSION['show_leute_chart'] = $LEUTE_CHART_TYPES;
 				} else if($name == '_none_') {
@@ -654,7 +648,7 @@ if(isset($_GET) && isset($_GET["action"])) {
 				print "@@@";
 				print submenu_leute("itemlist_chart", $pos, "open", 2);
 			} else {
-				if($access['leute']['MAX'] < 1) continue;
+				if($access['leute']['MAX'] < 1) break;
 				if($name == '_all_') {
 					$cols = ko_get_leute_col_name();
 					//Remove small group and group columns
@@ -693,7 +687,7 @@ if(isset($_GET) && isset($_GET["action"])) {
 
 			//save new value
 			$name = format_userinput($_GET["name"], "js", FALSE, 0, array(), '@');
-			if($name == "") continue;
+			if($name == "") break;
 
 			if($_SESSION["show"] == "list_kg") {
 				if(substr($name, 0, 3) == '@G@') {
@@ -702,13 +696,13 @@ if(isset($_GET) && isset($_GET["action"])) {
 				} else ko_delete_userpref($_SESSION['ses_userid'], $name, "leute_kg_itemset");
 				print submenu_leute("itemlist_spalten_kg", $pos, "open", 2);
 			} else if($_SESSION["show"] == "chart") {
-				if($access['leute']['MAX'] < 1) continue;
+				if($access['leute']['MAX'] < 1) break;
 				if(substr($name, 0, 3) == '@G@') {
 					if($access['leute']['MAX'] > 3) ko_delete_userpref('-1', substr($name, 3), "leute_chart_itemset");
 				} else ko_delete_userpref($_SESSION['ses_userid'], $name, "leute_chart_itemset");
 				print submenu_leute("itemlist_chart", $pos, "open", 2);
 			} else {
-				if($access['leute']['MAX'] < 1) continue;
+				if($access['leute']['MAX'] < 1) break;
 				if(substr($name, 0, 3) == '@G@') {
 					if($access['leute']['MAX'] > 3) ko_delete_userpref('-1', substr($name, 3), "leute_itemset");
 				} else ko_delete_userpref($_SESSION['ses_userid'], $name, "leute_itemset");
@@ -719,10 +713,10 @@ if(isset($_GET) && isset($_GET["action"])) {
 
 
 		case "updatedfform":
-			if($access['groups']['MAX'] < 2) continue;
+			if($access['groups']['MAX'] < 2) break;
 
 			$_GET["groups"] = str_replace("A", ",", $_GET["groups"]);
-			if(FALSE === $groups = format_userinput($_GET["groups"], "intlist", TRUE, 0, array(), "g:r")) continue;
+			if(FALSE === $groups = format_userinput($_GET["groups"], "intlist", TRUE, 0, array(), "g:r")) break;
 			$id = format_userinput($_GET["id"], "uint");
 
 			print "datafields_form@@@";
@@ -732,7 +726,7 @@ if(isset($_GET) && isset($_GET["action"])) {
 
 
 		case "showdeleted":
-			if($access['leute']['MAX'] < 3) continue;
+			if($access['leute']['MAX'] < 3) break;
 
 			//Modus immer auf liste
 			$mode = "liste";
@@ -752,7 +746,7 @@ if(isset($_GET) && isset($_GET["action"])) {
 
 
 		case "showhidden":
-			if($access['leute']['MAX'] < 1) continue;
+			if($access['leute']['MAX'] < 1) break;
 
 			//Modus immer auf liste
 			$mode = "liste";
@@ -770,14 +764,14 @@ if(isset($_GET) && isset($_GET["action"])) {
 
 
 		case 'peoplesearch':
-			if($access['leute']['MAX'] < 1) continue;
+			if($access['leute']['MAX'] < 1) break;
 
 			$limit = 30;
 
 			$string = format_userinput(utf8_decode($_GET['string']), 'text');
 			if(!$string || strlen($string) < 3) {
 				print '';
-				continue;
+				break;
 			}
 
 			list($mode, $token) = explode('-', $_GET['token']);
@@ -1205,7 +1199,7 @@ if(isset($_GET) && isset($_GET["action"])) {
 
 		case 'addkgtracking':
 			$kg_all_rights = ko_get_access_all('kg', '', $kg_max_rights);
-			if($kg_max_rights < 1) continue;
+			if($kg_max_rights < 1) break;
 
 			$id = format_userinput($_GET['id'], 'uint');
 
@@ -1238,8 +1232,8 @@ if(isset($_GET) && isset($_GET["action"])) {
 
 
 		case 'savefpalias':
-			if($access['leute']['MAX'] < 1) continue;
-			if(!ko_module_installed('mailing')) continue;
+			if($access['leute']['MAX'] < 1) break;
+			if(!ko_module_installed('mailing')) break;
 
 			//Position des Filter-SM finden
 			if(in_array('filter', explode(',', $_SESSION['submenu_left']))) $pos = 'left';
@@ -1247,19 +1241,19 @@ if(isset($_GET) && isset($_GET["action"])) {
 
 			//Get preset id
 			$fpid = format_userinput($_GET['fpid'], 'uint');
-			if(!$fpid) continue;
+			if(!$fpid) break;
 
 			//Get alias and check for uniqueness
 			$alias = str_replace('@', '', format_userinput($_GET['alias'], 'email'));
 			$ok = kota_mailing_check_unique_alias($alias, array('table' => 'ko_userprefs', 'id' => $fpid));
 			if(!$ok) {
 				print 'ERROR@@@'.getLL('mailing_error_7');
-				continue;
+				break;
 			}
 
 			//Get filterset and check for valid
 			$filterset = db_select_data('ko_userprefs', "WHERE `id` = '$fpid'", '*', '', '', TRUE);
-			if(!$filterset['id'] || $filterset['id'] != $fpid || $filterset['type'] != 'filterset') continue;
+			if(!$filterset['id'] || $filterset['id'] != $fpid || $filterset['type'] != 'filterset') break;
 
 			db_update_data('ko_userprefs', "WHERE `id` = '$fpid'", array('mailing_alias' => $alias));
 
