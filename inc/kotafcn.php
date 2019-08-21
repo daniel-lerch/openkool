@@ -473,7 +473,7 @@ function kota_get_form($table, $column) {
   * Speichert die Änderungen von einem Multiedit-Formular
 	*/
 function kota_submit_multiedit($rights_level='', $log_type="", $lastchange_col="", &$changes) {
-	global $KOTA, $mysql_pass;
+	global $KOTA, $db_connection, $mysql_pass;
 	global $access;
 
 	$notifier = koNotifier::Instance();
@@ -725,7 +725,7 @@ function kota_submit_multiedit($rights_level='', $log_type="", $lastchange_col="
 		}//foreach(log_message as log)
 
 		//Perform querys
-		foreach($query as $q) mysql_query($q);
+		foreach($query as $q) mysqli_query($db_connection, $q);
 	}//if(!error)
 
 	//Table's post function
@@ -2268,7 +2268,7 @@ function kota_convert_dynselect_select($values, $descs) {
 
 
 function kota_apply_filter($table) {
-	global $KOTA;
+	global $KOTA, $db_connection;
 
 	$kota_where = '';
 	if(is_array($_SESSION['kota_filter'][$table])) {
@@ -2299,11 +2299,11 @@ function kota_apply_filter($table) {
 				}
 				//Use special SQL for peoplsearch
 				else if($KOTA[$table][$col]['form']['type'] == 'peoplesearch') {
-					$kota_where .= " $table.$col $not REGEXP '(^|,)".mysql_real_escape_string($v)."(,|$)' AND ";
+					$kota_where .= " $table.$col $not REGEXP '(^|,)".mysqli_real_escape_string($db_connection, $v)."(,|$)' AND ";
 				}
 				//Default SQL: LIKE %v%
 				else {
-					$kota_where .= " $table.$col $not LIKE '%".mysql_real_escape_string($v)."%' AND ";
+					$kota_where .= " $table.$col $not LIKE '%".mysqli_real_escape_string($db_connection, $v)."%' AND ";
 				}
 			}
 		}

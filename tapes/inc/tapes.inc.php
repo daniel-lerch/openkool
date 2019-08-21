@@ -1,28 +1,22 @@
 <?php
-/***************************************************************
-*  Copyright notice
+/*******************************************************************************
 *
-*  (c) 2003-2015 Renzo Lauper (renzo@churchtool.org)
-*  All rights reserved
+*    OpenKool - Online church organization tool
 *
-*  This script is part of the kOOL project. The kOOL project is
-*  free software; you can redistribute it and/or modify
-*  it under the terms of the GNU General Public License as published by
-*  the Free Software Foundation; either version 2 of the License, or
-*  (at your option) any later version.
+*    Copyright © 2003-2015 Renzo Lauper (renzo@churchtool.org)
+*    Copyright © 2019      Daniel Lerch
 *
-*  The GNU General Public License can be found at
-*  http://www.gnu.org/copyleft/gpl.html.
-*  A copy is found in the textfile GPL.txt and important notices to the license
-*  from the author is found in LICENSE.txt distributed with these scripts.
+*    This program is free software; you can redistribute it and/or modify
+*    it under the terms of the GNU General Public License as published by
+*    the Free Software Foundation; either version 2 of the License, or
+*    (at your option) any later version.
 *
-*  kOOL is distributed in the hope that it will be useful,
-*  but WITHOUT ANY WARRANTY; without even the implied warranty of
-*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-*  GNU General Public License for more details.
+*    This program is distributed in the hope that it will be useful,
+*    but WITHOUT ANY WARRANTY; without even the implied warranty of
+*    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+*    GNU General Public License for more details.
 *
-*  This copyright notice MUST APPEAR in all copies of the script!
-***************************************************************/
+*******************************************************************************/
 
 function ko_tapes_list($output=TRUE) {
 	global $smarty, $ko_path, $DATETIME;
@@ -395,18 +389,18 @@ function ko_tapes_list_printlayouts($output=TRUE) {
 
 
 function ko_tapes_formular_tape($mode, $id=0) {
-	global $ko_path, $smarty;
-  global $access, $KOTA;
+	global $db_connection, $ko_path, $smarty;
+	global $access, $KOTA;
 
-  if($mode == "edit" && $id) {
-    if($access['tapes']['MAX'] < 3) return;
-  } else if($mode == "neu") {
-    if($access['tapes']['MAX'] < 3) return;
+	if($mode == "edit" && $id) {
+		if($access['tapes']['MAX'] < 3) return;
+	} else if($mode == "neu") {
+		if($access['tapes']['MAX'] < 3) return;
 
 		$minus = ko_get_setting("tapes_new_minus");
 		$plus = ko_get_setting("tapes_new_plus");
 		$query = "SELECT ko_event.*, ko_eventgruppen.name as eventgruppe FROM `ko_event`, `ko_eventgruppen` WHERE ko_event.eventgruppen_id = ko_eventgruppen.id AND ko_eventgruppen.tapes = '1' AND TO_DAYS(CURDATE())-TO_DAYS(ko_event.startdatum) < '$minus' AND TO_DAYS(ko_event.startdatum)-TO_DAYS(CURDATE()) < '$plus' ORDER BY ko_event.startdatum DESC";
-		$result = mysql_query($query);
+		$result = mysqli_query($db_connection, $query);
 
 
 		$counter = 0;
@@ -414,7 +408,7 @@ function ko_tapes_formular_tape($mode, $id=0) {
 		ko_get_tapeseries($series);
 		ko_get_preachers($preachers);
 
-		while($row = mysql_fetch_assoc($result)) {
+		while($row = mysqli_fetch_assoc($result)) {
 			$list_data[$counter]["id"] = $row["id"];
 
 			//Gruppe erraten
@@ -463,18 +457,17 @@ function ko_tapes_formular_tape($mode, $id=0) {
 			$counter++;
 		}//while(row = fetchRow)
 	
-	  $table_header[0]["name"] = getLL("kota_listview_ko_tapes_date");
-	  $table_header[1]["name"] = getLL("kota_listview_ko_tapes_title");
+		$table_header[0]["name"] = getLL("kota_listview_ko_tapes_date");
+		$table_header[1]["name"] = getLL("kota_listview_ko_tapes_title");
 		$table_header[2]["name"] = getLL("kota_listview_ko_tapes_group_id");
 		$table_header[3]["name"] = getLL("kota_listview_ko_tapes_serie_id");
-	  $smarty->assign("tpl_table_header", $table_header);
-	  $smarty->assign("show_sort", FALSE);
+		$smarty->assign("tpl_table_header", $table_header);
+		$smarty->assign("show_sort", FALSE);
 		$smarty->assign('tpl_list_cols', array(1, 2, 3, 4));
-	  $smarty->assign('tpl_list_data', $list_data);
-	  $smarty->assign('tpl_hide_header', TRUE);
+		$smarty->assign('tpl_list_data', $list_data);
+		$smarty->assign('tpl_hide_header', TRUE);
 		$smarty->display('ko_list.tpl');
-
-  } else return;
+	} else return;
 
 
 	$form_data["title"] =  $mode == "neu" ? getLL("form_tapes_title_new") : getLL("form_tapes_title_edit");

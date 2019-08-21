@@ -1,34 +1,28 @@
 <?php
-/***************************************************************
-*  Copyright notice
+/*******************************************************************************
 *
-*  (c) 2003-2015 Renzo Lauper (renzo@churchtool.org)
-*  All rights reserved
+*    OpenKool - Online church organization tool
 *
-*  This script is part of the kOOL project. The kOOL project is
-*  free software; you can redistribute it and/or modify
-*  it under the terms of the GNU General Public License as published by
-*  the Free Software Foundation; either version 2 of the License, or
-*  (at your option) any later version.
+*    Copyright © 2003-2015 Renzo Lauper (renzo@churchtool.org)
+*    Copyright © 2019      Daniel Lerch
 *
-*  The GNU General Public License can be found at
-*  http://www.gnu.org/copyleft/gpl.html.
-*  A copy is found in the textfile GPL.txt and important notices to the license
-*  from the author is found in LICENSE.txt distributed with these scripts.
+*    This program is free software; you can redistribute it and/or modify
+*    it under the terms of the GNU General Public License as published by
+*    the Free Software Foundation; either version 2 of the License, or
+*    (at your option) any later version.
 *
-*  kOOL is distributed in the hope that it will be useful,
-*  but WITHOUT ANY WARRANTY; without even the implied warranty of
-*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-*  GNU General Public License for more details.
+*    This program is distributed in the hope that it will be useful,
+*    but WITHOUT ANY WARRANTY; without even the implied warranty of
+*    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+*    GNU General Public License for more details.
 *
-*  This copyright notice MUST APPEAR in all copies of the script!
-***************************************************************/
+*******************************************************************************/
 
 require_once($BASE_PATH."inc/class.kOOL_listview.php");
 
 
 function ko_list_donations($output=TRUE, $mode="html", $dontApplyLimit=FALSE) {
-	global $smarty, $KOTA;
+	global $db_connection, $smarty, $KOTA;
 	global $access;
 
 	if($access['donations']['MAX'] < 1) return;
@@ -91,23 +85,25 @@ function ko_list_donations($output=TRUE, $mode="html", $dontApplyLimit=FALSE) {
 	$_total = db_select_data('ko_donations', "WHERE 1 $z_where", 'SUM(amount) as total', '', '', TRUE, TRUE);
 	$total_amount = $_total['total'];
 
-	$result = mysql_query("SELECT DISTINCT `person` FROM `ko_donations` WHERE 1 $z_where");
-	$num_person = mysql_num_rows($result);
-	mysql_free_result($result);
+	$result = mysqli_query($db_connection, "SELECT DISTINCT `person` FROM `ko_donations` WHERE 1 $z_where");
+	$num_person = mysqli_num_rows($result);
+	mysqli_free_result($result);
 
 	//Averages
 	$avg = $rows ? $total_amount/$rows : 0;
 	$avg_person = $num_person ? $total_amount/$num_person : 0;
 	
 	$list_footer = $smarty->get_template_vars('list_footer');
-	$list_footer[] = array("label" => "", "button" => sprintf(getLL("donations_list_footer_stats_totals"),
-																														number_format($total_amount, 2, '.', "'"),
-																														number_format($rows, 0, '.', "'"),
-																														number_format($num_person, 0, '.', "'"))
+	$list_footer[] = array("label" => "", "button" => sprintf(
+		getLL("donations_list_footer_stats_totals"),
+		number_format($total_amount, 2, '.', "'"),
+		number_format($rows, 0, '.', "'"),
+		number_format($num_person, 0, '.', "'"))
 	);
-	$list_footer[] = array("label" => "", "button" => sprintf(getLL("donations_list_footer_stats_averages"),
-																														number_format($avg, 2, '.', "'"),
-																														number_format($avg_person, 2, '.', "'"))
+	$list_footer[] = array("label" => "", "button" => sprintf(getLL(
+		"donations_list_footer_stats_averages"),
+		number_format($avg, 2, '.', "'"),
+		number_format($avg_person, 2, '.', "'"))
 	);
 
 	$list->setFooter($list_footer);

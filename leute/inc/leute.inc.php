@@ -1,28 +1,22 @@
 <?php
-/***************************************************************
-*  Copyright notice
+/*******************************************************************************
 *
-*  (c) 2003-2015 Renzo Lauper (renzo@churchtool.org)
-*  All rights reserved
+*    OpenKool - Online church organization tool
 *
-*  This script is part of the kOOL project. The kOOL project is
-*  free software; you can redistribute it and/or modify
-*  it under the terms of the GNU General Public License as published by
-*  the Free Software Foundation; either version 2 of the License, or
-*  (at your option) any later version.
+*    Copyright © 2003-2015 Renzo Lauper (renzo@churchtool.org)
+*    Copyright © 2019      Daniel Lerch
 *
-*  The GNU General Public License can be found at
-*  http://www.gnu.org/copyleft/gpl.html.
-*  A copy is found in the textfile GPL.txt and important notices to the license
-*  from the author is found in LICENSE.txt distributed with these scripts.
+*    This program is free software; you can redistribute it and/or modify
+*    it under the terms of the GNU General Public License as published by
+*    the Free Software Foundation; either version 2 of the License, or
+*    (at your option) any later version.
 *
-*  kOOL is distributed in the hope that it will be useful,
-*  but WITHOUT ANY WARRANTY; without even the implied warranty of
-*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-*  GNU General Public License for more details.
+*    This program is distributed in the hope that it will be useful,
+*    but WITHOUT ANY WARRANTY; without even the implied warranty of
+*    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+*    GNU General Public License for more details.
 *
-*  This copyright notice MUST APPEAR in all copies of the script!
-***************************************************************/
+*******************************************************************************/
 
 
 //KG-Modul einfügen, damit es nicht manuell eingefügt werden muss
@@ -2400,7 +2394,7 @@ function ko_leute_chart_age_pie($where_base) {
  * Pie chart showing age distribution
  */
 function ko_leute_chart_age_bar($where_base) {
-	global $ko_path;
+	global $db_connection, $ko_path;
 
 	$value = $label = array();
 	/*
@@ -2411,9 +2405,9 @@ function ko_leute_chart_age_bar($where_base) {
 	*/
 
 	$query = "SELECT (DATE_FORMAT(NOW(), '%Y') - DATE_FORMAT(geburtsdatum, '%Y') - (DATE_FORMAT(NOW(), '00-%m-%d') < DATE_FORMAT(geburtsdatum, '00-%m-%d'))) AS age, COUNT(`id`) AS `num` FROM `ko_leute` WHERE `geburtsdatum` != '0000-00-00' $where_base GROUP BY `age` ORDER BY `age` ASC";
-	$result = mysql_query($query);
+	$result = mysqli_query($db_connection, $query);
 	$data = array(); $min = 100; $max = 0;
-	while($row = mysql_fetch_assoc($result)) {
+	while($row = mysqli_fetch_assoc($result)) {
 		$data[$row["age"]] = $row["num"];
 		$min = min($min, $row["age"]);
 		$max = max($max, $row["age"]);
@@ -2507,13 +2501,13 @@ function ko_leute_chart_famfunction($where_base) {
  * Generic stats function for pie chart showing the first $max entries for the given $col
  */
 function ko_leute_chart_generic_pie($table, $where_base, $col, $max=12) {
-	global $ko_path;
+	global $db_connection, $ko_path;
 
 	$value = $label = array();
 	$query = "SELECT `$col`, COUNT(`id`) AS num FROM `$table` WHERE `$col` != '' $where_base GROUP BY `$col` ORDER BY `num` DESC";
-	$result = mysql_query($query);
+	$result = mysqli_query($db_connection, $query);
 	$num = 0; $div = 0;
-	while($row = mysql_fetch_assoc($result)) {
+	while($row = mysqli_fetch_assoc($result)) {
 		$num++;
 		if($num > $max) {
 			$div += $row["num"];

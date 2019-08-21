@@ -1,28 +1,22 @@
 <?php
-/***************************************************************
-*  Copyright notice
+/*******************************************************************************
 *
-*  (c) 2003-2015 Renzo Lauper (renzo@churchtool.org)
-*  All rights reserved
+*    OpenKool - Online church organization tool
 *
-*  This script is part of the kOOL project. The kOOL project is
-*  free software; you can redistribute it and/or modify
-*  it under the terms of the GNU General Public License as published by
-*  the Free Software Foundation; either version 2 of the License, or
-*  (at your option) any later version.
+*    Copyright © 2003-2015 Renzo Lauper (renzo@churchtool.org)
+*    Copyright © 2019      Daniel Lerch
 *
-*  The GNU General Public License can be found at
-*  http://www.gnu.org/copyleft/gpl.html.
-*  A copy is found in the textfile GPL.txt and important notices to the license
-*  from the author is found in LICENSE.txt distributed with these scripts.
+*    This program is free software; you can redistribute it and/or modify
+*    it under the terms of the GNU General Public License as published by
+*    the Free Software Foundation; either version 2 of the License, or
+*    (at your option) any later version.
 *
-*  kOOL is distributed in the hope that it will be useful,
-*  but WITHOUT ANY WARRANTY; without even the implied warranty of
-*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-*  GNU General Public License for more details.
+*    This program is distributed in the hope that it will be useful,
+*    but WITHOUT ANY WARRANTY; without even the implied warranty of
+*    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+*    GNU General Public License for more details.
 *
-*  This copyright notice MUST APPEAR in all copies of the script!
-***************************************************************/
+*******************************************************************************/
 
 $ko_path = "../";
 $ko_menu_akt = "ical";
@@ -60,9 +54,9 @@ else {
 	} else {
 		$user = format_userinput($_SERVER["PHP_AUTH_USER"], "text", TRUE, 32);
 		$pw = md5($_SERVER["PHP_AUTH_PW"]);
-		$result = mysql_query("SELECT id,login FROM ko_admin WHERE `login` = '$user' AND `password` = '$pw'");
-		if(mysql_num_rows($result) == 1) {
-			$row = mysql_fetch_assoc($result);
+		$result = mysqli_query($db_connection, "SELECT id,login FROM ko_admin WHERE `login` = '$user' AND `password` = '$pw'");
+		if(mysqli_num_rows($result) == 1) {
+			$row = mysqli_fetch_assoc($result);
 			if($row["login"] == $user) {
 				$auth = TRUE;
 				$_SESSION["ses_username"] = $row["login"];

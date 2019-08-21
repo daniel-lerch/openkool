@@ -1,5 +1,5 @@
 <?php
-/**
+/*
 TODO: make it work even without ';' delimiters or at least warn about that
 TODO: better parse error reporting
 TODO: accept empty datetime value and 0000-00-00 00:00:00 are equal, similar with date and time, also enum('0','1') [default 0], what's with floats?(float(10,2) NOT NULL default '0.00'); text,mediumtext,etc;
@@ -42,13 +42,13 @@ DONE: move all options to $this->config
 * the column with the old name and one to create column with the new name, so if there is a data in the dropped
 * column, it will be lost.
 * Usage example:
-  $updater = new dbStructUpdater();
-  $res = $updater->getUpdates($struct1, $struct2);
-  -----
-  $res == array (
-  	[0]=>"ALTER TABLE `b` MODIFY `name` varchar(255) NOT NULL",
-  	...
-  )
+*  $updater = new dbStructUpdater();
+*  $res = $updater->getUpdates($struct1, $struct2);
+*  -----
+*  $res == array (
+*  	[0]=>"ALTER TABLE `b` MODIFY `name` varchar(255) NOT NULL",
+*  	...
+*  )
 */
 class dbStructUpdater
 {
@@ -139,6 +139,7 @@ class dbStructUpdater
 
 
 	function getInserts($dest) {
+		global $db_connection;
 
 		$this->insertTables = array(
 			'ko_admin' => array(
@@ -180,8 +181,8 @@ class dbStructUpdater
 						$q .= " AND `$v` = '".trim(str_replace("'", '', $vals[$k]))."' ";
 					}
 					$checkQuery = "SELECT * FROM `$table` WHERE ".substr($q, 4);
-					$resultCheck = mysql_query($checkQuery);
-					if(mysql_num_rows($resultCheck) == 0) {
+					$resultCheck = mysqli_query($db_connection, $checkQuery);
+					if(mysqli_num_rows($db_connection, $resultCheck) == 0) {
 						$inserts[] = $line;
 					}
 				}

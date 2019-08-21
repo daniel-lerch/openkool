@@ -1,28 +1,22 @@
 <?php
-/***************************************************************
-*  Copyright notice
+/*******************************************************************************
 *
-*  (c) 2003-2015 Renzo Lauper (renzo@churchtool.org)
-*  All rights reserved
+*    OpenKool - Online church organization tool
 *
-*  This script is part of the kOOL project. The kOOL project is
-*  free software; you can redistribute it and/or modify
-*  it under the terms of the GNU General Public License as published by
-*  the Free Software Foundation; either version 2 of the License, or
-*  (at your option) any later version.
+*    Copyright © 2003-2015 Renzo Lauper (renzo@churchtool.org)
+*    Copyright © 2019      Daniel Lerch
 *
-*  The GNU General Public License can be found at
-*  http://www.gnu.org/copyleft/gpl.html.
-*  A copy is found in the textfile GPL.txt and important notices to the license
-*  from the author is found in LICENSE.txt distributed with these scripts.
+*    This program is free software; you can redistribute it and/or modify
+*    it under the terms of the GNU General Public License as published by
+*    the Free Software Foundation; either version 2 of the License, or
+*    (at your option) any later version.
 *
-*  kOOL is distributed in the hope that it will be useful,
-*  but WITHOUT ANY WARRANTY; without even the implied warranty of
-*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-*  GNU General Public License for more details.
+*    This program is distributed in the hope that it will be useful,
+*    but WITHOUT ANY WARRANTY; without even the implied warranty of
+*    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+*    GNU General Public License for more details.
 *
-*  This copyright notice MUST APPEAR in all copies of the script!
-***************************************************************/
+*******************************************************************************/
 
 ob_start();  //Ausgabe-Pufferung einschalten
 
@@ -49,10 +43,10 @@ if($confirm_link) {
 	$u = $_GET['u'];
 	$h = substr($_GET['h'], 1);
 	$mode = substr($_GET['h'], 0, 1);
-	$login = db_select_data('ko_admin', "WHERE MD5(CONCAT(`id`, '".KOOL_ENCRYPTION_KEY."')) = '".mysql_real_escape_string($u)."'", '*', 'LIMIT 0,1', '', TRUE);
+	$login = db_select_data('ko_admin', "WHERE MD5(CONCAT(`id`, '".KOOL_ENCRYPTION_KEY."')) = '".mysqli_real_escape_string($db_connection, $u)."'", '*', 'LIMIT 0,1', '', TRUE);
 	if($login['id'] > 0 && md5($login['id'].KOOL_ENCRYPTION_KEY) == $u) {
 		//Check for valid hash
-		$res = db_select_data('ko_reservation_mod', "WHERE MD5(CONCAT(`id`, '".KOOL_ENCRYPTION_KEY."')) = '".mysql_real_escape_string($h)."'", '*', 'LIMIT 0,1', '', TRUE);
+		$res = db_select_data('ko_reservation_mod', "WHERE MD5(CONCAT(`id`, '".KOOL_ENCRYPTION_KEY."')) = '".mysqli_real_escape_string($db_connection, $h)."'", '*', 'LIMIT 0,1', '', TRUE);
 		if($res['id'] > 0 && md5($res['id'].KOOL_ENCRYPTION_KEY) == $h) {
 			//Simulate action to approve or delete moderation request
 			$_POST['id'] = intval($res['id']);

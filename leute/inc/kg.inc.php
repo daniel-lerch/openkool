@@ -1,28 +1,22 @@
 <?php
-/***************************************************************
-*  Copyright notice
+/*******************************************************************************
 *
-*  (c) 2003-2015 Renzo Lauper (renzo@churchtool.org)
-*  All rights reserved
+*    OpenKool - Online church organization tool
 *
-*  This script is part of the kOOL project. The kOOL project is
-*  free software; you can redistribute it and/or modify
-*  it under the terms of the GNU General Public License as published by
-*  the Free Software Foundation; either version 2 of the License, or
-*  (at your option) any later version.
+*    Copyright © 2003-2015 Renzo Lauper (renzo@churchtool.org)
+*    Copyright © 2019      Daniel Lerch
 *
-*  The GNU General Public License can be found at
-*  http://www.gnu.org/copyleft/gpl.html.
-*  A copy is found in the textfile GPL.txt and important notices to the license
-*  from the author is found in LICENSE.txt distributed with these scripts.
+*    This program is free software; you can redistribute it and/or modify
+*    it under the terms of the GNU General Public License as published by
+*    the Free Software Foundation; either version 2 of the License, or
+*    (at your option) any later version.
 *
-*  kOOL is distributed in the hope that it will be useful,
-*  but WITHOUT ANY WARRANTY; without even the implied warranty of
-*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-*  GNU General Public License for more details.
+*    This program is distributed in the hope that it will be useful,
+*    but WITHOUT ANY WARRANTY; without even the implied warranty of
+*    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+*    GNU General Public License for more details.
 *
-*  This copyright notice MUST APPEAR in all copies of the script!
-***************************************************************/
+*******************************************************************************/
 
 
 include_once($BASE_PATH."inc/class.kOOL_listview.php");
@@ -205,12 +199,12 @@ function ko_kg_chart($_type="") {
 
 
 function ko_kg_chart_types() {
-	global $ko_path;
+	global $db_connection, $ko_path;
 
 	$value = $lavel = array();
 	$query = "SELECT `type`, COUNT(`id`) AS num FROM `ko_kleingruppen` GROUP BY `type` ORDER BY `num` DESC";
-	$result = mysql_query($query);
-	while($row = mysql_fetch_assoc($result)) {
+	$result = mysqli_query($db_connection, $query);
+	while($row = mysqli_fetch_assoc($result)) {
 		$label[] = $row["type"] != "" ? $row["type"] : getLL("leute_chart_none");
 		$value[] = $row["num"];
 	}
@@ -230,12 +224,12 @@ function ko_kg_chart_types() {
 
 
 function ko_kg_chart_regions() {
-	global $ko_path;
+	global $db_connection, $ko_path;
 
 	$value = $lavel = array();
 	$query = "SELECT `region`, COUNT(`id`) AS num FROM `ko_kleingruppen` GROUP BY `region` ORDER BY `num` DESC";
-	$result = mysql_query($query);
-	while($row = mysql_fetch_assoc($result)) {
+	$result = mysqli_query($db_connection, $query);
+	while($row = mysqli_fetch_assoc($result)) {
 		$label[] = $row["region"] != "" ? $row["region"] : getLL("leute_chart_none");
 		$value[] = $row["num"];
 	}

@@ -378,9 +378,6 @@ if(defined('DEBUG') && DEBUG) {
 	class pqp_db {
 		var $queryCount = 0;
 		var $queries = array();
-		function query($sql) {
-			return mysql_query($sql);
-		}
 	};
 	$DEBUG_db = new pqp_db;
 
@@ -1554,7 +1551,7 @@ function ko_get_setting($key, $force=FALSE) {
 	else {
 		$query = "SELECT `value` from `ko_settings` WHERE `key` = '$key' LIMIT 1";
 		$result = mysqli_query($db_connection, $query);
-		$row = mysqli_fetch_row($db_connection, $result);
+		$row = mysqli_fetch_row($result);
 		$result = $row[0];
 	}
 
@@ -7687,8 +7684,8 @@ function db_get_enums($table, $col) {
 		$DEBUG_db->queryCount++;
 		$DEBUG_db->queries[] = array('time' => (microtime(TRUE)-$time_start)*1000, 'sql' => $query);
 	}
-	if(mysqli_num_rows($db_connection, $result)>0){
-		$row=mysqli_fetch_row($db_connection, $result);
+	if(mysqli_num_rows($result)>0){
+		$row=mysqli_fetch_row($result);
 		$options=explode("','",preg_replace("/(enum|set)\('(.+?)'\)/","\\2",$row[1]));
 	}
 
@@ -7984,9 +7981,9 @@ function db_select_data($table, $where, $columns="*", $order="", $limit="", $sin
 		$DEBUG_db->queryCount++;
 		$DEBUG_db->queries[] = array('time' => (microtime(TRUE)-$time_start)*1000, 'sql' => $query);
 	}
-	if(mysqli_num_rows($db_connection, $result) == 0) {
+	if(mysqli_num_rows($result) == 0) {
 		return;
-	} else if($single && mysqli_num_rows($db_connection, $result) == 1) {
+	} else if($single && mysqli_num_rows($result) == 1) {
 		$return = mysqli_fetch_assoc($result);
 		return $return;
 	} else {
@@ -8021,7 +8018,7 @@ function db_query($query, $index = '') {
 	// TODO: support testing
 	$result = mysqli_query($db_connection, $query);
 	if($result === FALSE) trigger_error('DB ERROR (db_select_data): '.mysqli_errno($db_connection).': '.mysqli_error($db_connection). ' QUERY: '.$query, E_USER_ERROR);
-	if(mysqli_num_rows($db_connection, $result) == 0) {
+	if(mysqli_num_rows($result) == 0) {
 		return;
 	} else {
 		$return = array();
@@ -8132,7 +8129,7 @@ function db_import_sql($tobe) {
 	//find tables in actual db
 	$is_tables = NULL;
 	$result = mysqli_query($db_connection, "SHOW TABLES");
-	while($row = mysqli_fetch_row($db_connection, $result)) {
+	while($row = mysqli_fetch_row($result)) {
 		$is_tables[] = $row[0];
 	}
 
@@ -8179,7 +8176,7 @@ function db_import_sql($tobe) {
 			if(in_array($table, $is_tables)) {
 				//table already exists - get table create definition
 				$result = mysqli_query($db_connection, "SHOW CREATE TABLE $table");
-				$row = mysqli_fetch_row($db_connection, $result);
+				$row = mysqli_fetch_row($result);
 				$is = $row[1];
 				$new_table = FALSE;
 			} else {
@@ -11832,6 +11829,7 @@ function ko_pic_cleanup_cache() {
 /**
  * Plugin function to connect to a TYPO3 database
  * Connetion details for TYPO3 db are taken from settings which can be changed in the tools module
+ * @deprecated This function is not maintained anymore
  */
 function plugin_connect_TYPO3() {
   global $mysql_server, $BASE_PATH;
@@ -11858,6 +11856,7 @@ function plugin_connect_TYPO3() {
 
 /**
  * Plugin function to connect to the current kOOL database again (called after plugin_connect_TYPO3())
+ * @deprecated This function is not maintained anymore
  */
 function plugin_connect_kOOL() {
   global $mysql_db, $mysql_server, $mysql_user, $mysql_pass;
@@ -14600,7 +14599,7 @@ function ko_check_ssl() {
 
 
 function ko_check_login() {
-	global $ko_path, $LANGS;
+	global $db_connection, $ko_path, $LANGS;
 
 	$do_guest = TRUE;
 	$reinit = FALSE;
@@ -14672,7 +14671,8 @@ function ko_check_login() {
 
 	//Login
 	if($_POST['Login'] && (!$_SESSION['ses_username'] || $_SESSION['ses_username'] == 'ko_guest')) {
-		$login = db_select_data('ko_admin', "WHERE MD5(`login`) = '".md5($_POST['username'])."' AND `password` = '".md5($_POST['password'])."'", '*', '', '', TRUE);
+		$username = mysqli_real_escape_string($db_connection, $_POST['username']);
+		$login = db_select_data('ko_admin', "WHERE `login` = '".$username."' AND `password` = '".md5($_POST['password'])."'", '*', '', '', TRUE);
 		if($login['id'] > 0 && $login['login'] == $_POST['username']) {  //Valid login
 			//Create new session id after login (to prevent session fixation)
 			session_regenerate_id(TRUE);

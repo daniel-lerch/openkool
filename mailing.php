@@ -1,28 +1,22 @@
 <?php
-/***************************************************************
- *  Copyright notice
- *
- *  (c) 2003-2015 Renzo Lauper (renzo@churchtool.org)
- *  All rights reserved
- *
- *  This script is part of the kOOL project. The kOOL project is
- *  free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
- *
- *  The GNU General Public License can be found at
- *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
- *  from the author is found in LICENSE.txt distributed with these scripts.
- *
- *  kOOL is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
+/*******************************************************************************
+*
+*    OpenKool - Online church organization tool
+*
+*    Copyright © 2003-2015 Renzo Lauper (renzo@churchtool.org)
+*    Copyright © 2019      Daniel Lerch
+*
+*    This program is free software; you can redistribute it and/or modify
+*    it under the terms of the GNU General Public License as published by
+*    the Free Software Foundation; either version 2 of the License, or
+*    (at your option) any later version.
+*
+*    This program is distributed in the hope that it will be useful,
+*    but WITHOUT ANY WARRANTY; without even the implied warranty of
+*    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+*    GNU General Public License for more details.
+*
+*******************************************************************************/
 
 // return warning if called from console
 if(isset($argc) && $argc >= 1) {
@@ -30,10 +24,10 @@ if(isset($argc) && $argc >= 1) {
 }
 
 function ko_mailing_main ($test = false, $mail_id_in = null, $recipient_in = null) {
-	global 		$MODULES,$MAILING_PARAMETER, $BASE_PATH,
-				  $db_user,$login_id,$access,
-				  $domain,$edit_base_link,
-				  $done_error_mails,$return_path,$imap,$max_recipients,$sender_email;
+	global 	$MODULES,$MAILING_PARAMETER, $BASE_PATH,
+			$db_connection, $db_user,$login_id,$access,
+			$domain,$edit_base_link,
+			$done_error_mails,$return_path,$imap,$max_recipients,$sender_email;
 
 	error_reporting(E_ALL);
 	define ('CRLF', "\r\n");
@@ -353,9 +347,9 @@ function ko_mailing_main ($test = false, $mail_id_in = null, $recipient_in = nul
 				//Find mailing alias
 				else {
 					//Find group or small group with this alias
-					$groups = db_select_data('ko_groups', "WHERE LOWER(`mailing_alias`) = '".mysql_real_escape_string(strtolower($to))."'");
-					$smallgroups = db_select_data('ko_kleingruppen', "WHERE LOWER(`mailing_alias`) = '".mysql_real_escape_string(strtolower($to))."'");
-					$filters = db_select_data('ko_userprefs', "WHERE LOWER(`mailing_alias`) = '".mysql_real_escape_string(strtolower($to))."'");
+					$groups = db_select_data('ko_groups', "WHERE LOWER(`mailing_alias`) = '".mysqli_real_escape_string($db_connection, strtolower($to))."'");
+					$smallgroups = db_select_data('ko_kleingruppen', "WHERE LOWER(`mailing_alias`) = '".mysqli_real_escape_string($db_connection, trtolower($to))."'");
+					$filters = db_select_data('ko_userprefs', "WHERE LOWER(`mailing_alias`) = '".mysqli_real_escape_string($db_connection, strtolower($to))."'");
 
 					$num_found = sizeof($groups)+sizeof($smallgroups)+sizeof($filters);
 					if($num_found == 0) {
@@ -541,7 +535,7 @@ function ko_mailing_get_sender_login(&$from) {
 	}
 
 	$logins = db_select_data("ko_admin AS a LEFT JOIN ko_leute as l ON a.leute_id = l.id",
-		"WHERE ($where_email LOWER(a.email) = '".mysql_real_escape_string($from)."') AND (a.disabled = '0' OR a.disabled = '')",
+		"WHERE ($where_email LOWER(a.email) = '".mysqli_real_escape_string($db_connection, $from)."') AND (a.disabled = '0' OR a.disabled = '')",
 		"a.id AS id");
 	$login = array_shift($logins);
 	return $login['id'];
@@ -1028,7 +1022,7 @@ function ko_mailing_get_sender_roles(&$group, $sender_email) {
 
 	$where = '';
 	foreach($LEUTE_EMAIL_FIELDS as $field) {
-		$where[] = " `$field` = '".mysql_real_escape_string($sender_email)."' ";
+		$where[] = " `$field` = '".mysqli_real_escape_string($db_connection, $sender_email)."' ";
 	}
 
 	$people = db_select_data('ko_leute', "WHERE 1 AND (".implode(' OR ', $where).") AND `deleted` = '0' AND `hidden` = '0'");

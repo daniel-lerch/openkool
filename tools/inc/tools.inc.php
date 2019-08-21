@@ -1,28 +1,22 @@
 <?php
-/***************************************************************
-*  Copyright notice
+/*******************************************************************************
 *
-*  (c) 2003-2015 Renzo Lauper (renzo@churchtool.org)
-*  All rights reserved
+*    OpenKool - Online church organization tool
 *
-*  This script is part of the kOOL project. The kOOL project is
-*  free software; you can redistribute it and/or modify
-*  it under the terms of the GNU General Public License as published by
-*  the Free Software Foundation; either version 2 of the License, or
-*  (at your option) any later version.
+*    Copyright © 2003-2015 Renzo Lauper (renzo@churchtool.org)
+*    Copyright © 2019      Daniel Lerch
 *
-*  The GNU General Public License can be found at
-*  http://www.gnu.org/copyleft/gpl.html.
-*  A copy is found in the textfile GPL.txt and important notices to the license
-*  from the author is found in LICENSE.txt distributed with these scripts.
+*    This program is free software; you can redistribute it and/or modify
+*    it under the terms of the GNU General Public License as published by
+*    the Free Software Foundation; either version 2 of the License, or
+*    (at your option) any later version.
 *
-*  kOOL is distributed in the hope that it will be useful,
-*  but WITHOUT ANY WARRANTY; without even the implied warranty of
-*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-*  GNU General Public License for more details.
+*    This program is distributed in the hope that it will be useful,
+*    but WITHOUT ANY WARRANTY; without even the implied warranty of
+*    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+*    GNU General Public License for more details.
 *
-*  This copyright notice MUST APPEAR in all copies of the script!
-***************************************************************/
+*******************************************************************************/
 
 
 require_once($BASE_PATH.'inc/class.kOOL_listview.php');
@@ -60,15 +54,17 @@ function ko_show_testmail () {
 
 
 /**
-  * Formatiert Telefonnummern
-	* Removes all "'", " ", "/", ".", "-" from numbers
-	* @param Array fields to be beautyfied
-	* @param Bool Do 01 --> 044 Transform (default: FALSE)
-	* @param Bool Add Spaces for Numbers of length 10: XXXXXXXXXX --> XXX XXX XX XX (default: FALSE)
-	* @param Int Number of Entry to fetch at a time (default: 100)
-	* @param Int Max number of Entries allowed, just as a precaution against endless loops (default: 100'000)
-	*/
+ * Formatiert Telefonnummern
+ * Removes all "'", " ", "/", ".", "-" from numbers
+ * @param Array fields to be beautyfied
+ * @param Bool Do 01 --> 044 Transform (default: FALSE)
+ * @param Bool Add Spaces for Numbers of length 10: XXXXXXXXXX --> XXX XXX XX XX (default: FALSE)
+ * @param Int Number of Entry to fetch at a time (default: 100)
+ * @param Int Max number of Entries allowed, just as a precaution against endless loops (default: 100'000)
+ */
 function beautyfy_telephone($fields = array(), $do_01_044 = FALSE, $do_10_to_spaces = FALSE, $limit = 100, $max_entries = 100000) {
+	global $db_connection;
+
 	if(sizeof($fields) <= 0) return FALSE;
 
 	$rows = db_get_count("ko_leute");
@@ -87,8 +83,8 @@ function beautyfy_telephone($fields = array(), $do_01_044 = FALSE, $do_10_to_spa
 		$sql = $base_sql.$sql_limit;
 
 		//Daten einlesen, anpassen und wieder schreiben
-		$result = mysql_query($sql);
-		while($row = mysql_fetch_assoc($result)) {
+		$result = mysqli_query($db_connection, $sql);
+		while($row = mysqli_fetch_assoc($result)) {
 			$sql_update = "";
 			foreach($fields as $f) {
 				$changed = FALSE;
@@ -122,7 +118,7 @@ function beautyfy_telephone($fields = array(), $do_01_044 = FALSE, $do_10_to_spa
 			}//foreach(fields as f)
 			if($sql_update) {
 				$sql = "UPDATE `ko_leute` SET ".substr($sql_update, 0, -2)." WHERE `id` = '".$row["id"]."' LIMIT 1";
-				$result2 = mysql_query($sql);
+				$result2 = mysqli_query($db_connection, $sql);
 				if(!$result2) {
 					print "ERROR! <br />";
 					exit;
@@ -304,10 +300,12 @@ function ko_tools_list_submenus($output=TRUE) {
 
 
 function ko_tools_get_submenus($id, $type) {
+	global $db_connection;
+
 	$r = array();
 	$query = "SELECT * FROM `ko_userprefs` WHERE `user_id` = '$id' AND `key` REGEXP 'submenu_$type'";
-	$result = mysql_query($query);
-	while($row = mysql_fetch_assoc($result)) {
+	$result = mysqli_query($db_connection, $query);
+	while($row = mysqli_fetch_assoc($result)) {
 		$r[$row["key"]] = $row["value"];
 	}
 	return $r;

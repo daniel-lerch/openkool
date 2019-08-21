@@ -1,28 +1,22 @@
 <?php
-/***************************************************************
-*  Copyright notice
+/*******************************************************************************
 *
-*  (c) 2003-2015 Renzo Lauper (renzo@churchtool.org)
-*  All rights reserved
+*    OpenKool - Online church organization tool
 *
-*  This script is part of the kOOL project. The kOOL project is
-*  free software; you can redistribute it and/or modify
-*  it under the terms of the GNU General Public License as published by
-*  the Free Software Foundation; either version 2 of the License, or
-*  (at your option) any later version.
+*    Copyright © 2003-2015 Renzo Lauper (renzo@churchtool.org)
+*    Copyright © 2019      Daniel Lerch
 *
-*  The GNU General Public License can be found at
-*  http://www.gnu.org/copyleft/gpl.html.
-*  A copy is found in the textfile GPL.txt and important notices to the license
-*  from the author is found in LICENSE.txt distributed with these scripts.
+*    This program is free software; you can redistribute it and/or modify
+*    it under the terms of the GNU General Public License as published by
+*    the Free Software Foundation; either version 2 of the License, or
+*    (at your option) any later version.
 *
-*  kOOL is distributed in the hope that it will be useful,
-*  but WITHOUT ANY WARRANTY; without even the implied warranty of
-*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-*  GNU General Public License for more details.
+*    This program is distributed in the hope that it will be useful,
+*    but WITHOUT ANY WARRANTY; without even the implied warranty of
+*    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+*    GNU General Public License for more details.
 *
-*  This copyright notice MUST APPEAR in all copies of the script!
-***************************************************************/
+*******************************************************************************/
 
 ob_start();  //Ausgabe-Pufferung starten
 
@@ -384,7 +378,7 @@ switch($do_action) {
 
 		//Spalte aus DB löschen
 		$query = "ALTER TABLE `ko_leute` DROP `$value`";
-		mysql_query($query);
+		mysqli_query($db_connection, $query);
 
 		//Eintrag in leute_col_namen löschen
 		foreach($LIB_LANGS as $lang) {
@@ -432,7 +426,7 @@ switch($do_action) {
 
 		//Spalte aus DB löschen
 		$query = "ALTER TABLE `ko_familie` DROP `$value`";
-		mysql_query($query);
+		mysqli_query($db_connection, $query);
 
 		//Eintrag in familie_col_namen löschen
 		foreach($LIB_LANGS as $lang) {
@@ -495,7 +489,7 @@ switch($do_action) {
 		switch($type) {
 			//Enum-Filter mit Select
 			case "enum":
-				if($fid != "") mysql_query($del_query);
+				if($fid != "") mysqli_query($db_connection, $del_query);
 				$code1  = '<select name="var1" size="0"><option value=""></option>';
 				$enums = explode("','",preg_replace("/(enum|set)\('(.+?)'\)/","\\2",$col["Type"]));
 				foreach($enums as $e) {
@@ -504,7 +498,7 @@ switch($do_action) {
 				$code1 .= '</select>';
 				$query  = "INSERT INTO `ko_filter` (`id`,`typ`,`dbcol`,`name`,`allow_neg`,`sql1`,`numvars`,`var1`,`code1`)";
 				$query .= " VALUES ('$fid', 'leute', '".$col['Field']."', '$col_name', '1', '".$col["Field"]." REGEXP ''[VAR1]''', '1', '$col_name', '$code1')";
-				mysql_query($query);
+				mysqli_query($db_connection, $query);
 				$notifier->addInfo(4, $do_action);
 			break;
 			//Text-Filter mit Textfeld
@@ -519,18 +513,18 @@ switch($do_action) {
 			case "int":
 			case "mediumint":
 			case "bigint":
-				if($fid != "") mysql_query($del_query);
+				if($fid != "") mysqli_query($db_connection, $del_query);
 				$query  = "INSERT INTO `ko_filter` (`id`,`typ`,`dbcol`,`name`,`allow_neg`,`sql1`,`numvars`,`var1`,`code1`)";
 				$query .= " VALUES ('$fid', 'leute', '".$col['Field']."', '$col_name', '1', '".$col["Field"]." REGEXP ''[VAR1]''', '1', '$col_name', '<input type=\"text\" name=\"var1\" size=\"12\" maxlength=\"$max_length\" onkeydown=\"if ((event.which == 13) || (event.keyCode == 13)) { this.form.submit_filter.click(); return false;} else return true;\" />');";
-				mysql_query($query);
+				mysqli_query($db_connection, $query);
 				$notifier->addInfo(4, $do_action);
 			break;
 			//Datums-Filter mit Ober- und Untergrenze
 			case "date":
-				if($fid != "") mysql_query($del_query);
+				if($fid != "") mysqli_query($db_connection, $del_query);
 				$query  = "INSERT INTO `ko_filter` (`id`, `typ`,`dbcol`,`name`,`allow_neg`,`sql1`,`sql2`,`numvars`,`var1`,`code1`,`var2`,`code2`)";
 				$query .= " VALUES ('$fid', 'leute', '".$col['Field']."', '$col_name', '1', '".$col['Field']." >= \'[VAR1]\'', '".$col["Field"]." <= \'[VAR2]\'', '2', 'lower (YYYY-MM-DD)', '<input type=\"text\" name=\"var1\" size=\"12\" maxlength=\"10\" />', 'upper (YYYY-MM-DD)', '<input type=\"text\" name=\"var2\" size=\"12\" maxlength=\"10\" />');";
-				mysql_query($query);
+				mysqli_query($db_connection, $query);
 				$notifier->addInfo(4, $do_action);
 			break;
 			default:
