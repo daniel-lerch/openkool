@@ -131,7 +131,7 @@ switch($do_action) {
 
 
 	case "show_geburtstagsliste":
-		if($access['leute']['MAX'] < 1) continue;
+		if($access['leute']['MAX'] < 1) break;
 		$allowed_cols = ko_get_leute_admin_spalten($_SESSION['ses_userid'], 'all');
 		if(!is_array($allowed_cols['view']) || in_array('geburtsdatum', $allowed_cols['view'])) {
 			$_SESSION['show_start'] = 1;
@@ -150,7 +150,7 @@ switch($do_action) {
 
 
 	case 'show_aa':
-		if($access['leute']['MAX'] < 2) continue;
+		if($access['leute']['MAX'] < 2) break;
 		$_SESSION['show'] = $_SESSION['show_back'] = 'mutationsliste';
 	break;
 
@@ -211,7 +211,7 @@ switch($do_action) {
 	case "submit_als_neue_person":
 		//Beim Editieren auf korrekte Leute-ID prüfen
 		if($do_action == "submit_edit_person") {
-			if(!$_POST["leute_id"] || !format_userinput($_POST["leute_id"], "uint", TRUE, 10)) continue;
+			if(!$_POST["leute_id"] || !format_userinput($_POST["leute_id"], "uint", TRUE, 10)) break;
 			$leute_id = format_userinput($_POST["leute_id"], "uint");
 			ko_get_person_by_id($leute_id, $person);
 			$action = "submit_edit_person";
@@ -603,7 +603,9 @@ switch($do_action) {
 	case "edit_person":
 		if($action_mode == 'POST') $leute_id = format_userinput($_POST['id'], 'uint');
 		else if($action_mode == 'GET') $leute_id = format_userinput($_GET['id'], 'uint');
-		if($access['leute']['ALL'] > 1 || $access['leute'][$leute_id] > 1 || (ko_get_setting('login_edit_person') == 1 && $leute_id == ko_get_logged_in_id())) {} else continue;
+		if($access['leute']['ALL'] <= 1 && $access['leute'][$leute_id] <= 1 && 
+			(ko_get_setting('login_edit_person') != 1 || $leute_id != ko_get_logged_in_id()))
+			break;
 
 		$_SESSION["show_back"] = $_SESSION["show"];
 		$_POST['id'] = $leute_id;
@@ -681,7 +683,7 @@ switch($do_action) {
 
 	case 'merge_duplicates':
 		//TODO: Merge history of both address records?
-		if($access['leute']['MAX'] < 3) continue;
+		if($access['leute']['MAX'] < 3) break;
 
 		//Find marked persons and test for access level 3 (edit and delete)
 		$do_ids = array();
@@ -692,7 +694,7 @@ switch($do_action) {
 		}
 		if(sizeof($do_ids) <= 0) {
 			$notifier->addError(5, $do_action);
-			continue;
+			break;
 		}
 
 
@@ -723,7 +725,7 @@ switch($do_action) {
 
 		//Find dups (only one is left in $dups)
 		$dups = array_unique(array_diff_assoc($test, array_unique($test)));
-		if(sizeof($dups) <= 0) continue;
+		if(sizeof($dups) <= 0) break;
 
 		//Get ids of all duplicates (not just one for each hit)
 		$ids = $dups;
@@ -911,7 +913,7 @@ switch($do_action) {
 	case "multiedit":
 		/* Leute-Multiedit */
 		if($_SESSION["show"] == "show_all" || $_SESSION["show"] == "show_my_list") {
-			if($access['leute']['MAX'] < 2) continue;
+			if($access['leute']['MAX'] < 2) break;
 
 			//Zu bearbeitende Spalten
 			$columns = explode(",", format_userinput($_POST["id"], "alphanumlist"));
@@ -946,7 +948,7 @@ switch($do_action) {
 
 		/* KG-Multiedit */
 		} else if($_SESSION["show"] == "list_kg") {
-			if($access['kg']['MAX'] < 3) continue;
+			if($access['kg']['MAX'] < 3) break;
 
 			//Zu bearbeitende Spalten
 			$columns = explode(",", format_userinput($_POST["id"], "alphanumlist"));
@@ -985,7 +987,7 @@ switch($do_action) {
 		if($_SESSION["show"] == "multiedit") {
 			kota_submit_multiedit(2, '', 'lastchange');
 		} else if($_SESSION["show"] == "multiedit_kg") {
-			if($access['kg']['MAX'] < 3) continue;
+			if($access['kg']['MAX'] < 3) break;
 			kota_submit_multiedit(2);
 		}
 		if(!$notifier->hasErrors()) $notifier->addInfo(11, $do_action);
@@ -998,8 +1000,8 @@ switch($do_action) {
 	//Löschen
 	case "delete_person":
 		$del_id = format_userinput($_POST["id"], "uint", TRUE);
-		if(!$del_id) continue;
-		if($access['leute']['MAX'] < 3) continue;
+		if(!$del_id) break;
+		if($access['leute']['MAX'] < 3) break;
 
 		$ok = ko_leute_delete_person($del_id);
 
@@ -1013,11 +1015,11 @@ switch($do_action) {
 
 	case 'undelete_person':
 		$del_id = format_userinput($_POST['id'], 'uint', TRUE);
-		if(!$del_id) continue;
-		if(!($access['leute']['ALL'] > 2 || $access['leute'][$del_id] > 2)) continue;
+		if(!$del_id) break;
+		if(!($access['leute']['ALL'] > 2 || $access['leute'][$del_id] > 2)) break;
 
 		ko_get_person_by_id($del_id, $del_person);
-		if($del_person['deleted'] != 1) continue;
+		if($del_person['deleted'] != 1) break;
 
 		ko_save_leute_changes($del_id, $del_person);
 		db_update_data('ko_leute', "WHERE `id` = '$del_id'", array('deleted' => '0'));
@@ -1053,8 +1055,8 @@ switch($do_action) {
 
 	//Mutationen
 	case "submit_mutation":
-		if($access['leute']['MAX'] < 2) continue;
-		if(!$_POST["aa_id"]) continue;
+		if($access['leute']['MAX'] < 2) break;
+		if(!$_POST["aa_id"]) break;
 
 		//Initialisierung
 		$do_ldap = ko_do_ldap();
@@ -1065,7 +1067,7 @@ switch($do_action) {
 		ko_get_mod_leute($_mod_p, $mod_aa_id);
 		$mod_p = $_mod_p[$mod_aa_id];
 
-		if($access['leute']['ALL'] < 2 && ($access['leute'][$mod_p['_leute_id']] < 2 || $mod_p['_leute_id'] < 1)) continue;
+		if($access['leute']['ALL'] < 2 && ($access['leute'][$mod_p['_leute_id']] < 2 || $mod_p['_leute_id'] < 1)) break;
 
 
 		if($mod_p["_leute_id"] == -1) { //Neu:
@@ -1099,7 +1101,7 @@ switch($do_action) {
 				}
 			}
 		}//foreach(chk_id as field)
-		if(!$found) continue;  //Keine markierte CheckBox gefunden
+		if(!$found) break;  //Keine markierte CheckBox gefunden
 
 		// delete family link if decoupled (and delete empty family)
 		$doUpdateFamily = false;
@@ -1168,15 +1170,15 @@ switch($do_action) {
 
 
 	case 'submit_del_mutation':
-		if($access['leute']['MAX'] < 2) continue;
-		if(!$_POST['aa_id']) continue;
+		if($access['leute']['MAX'] < 2) break;
+		if(!$_POST['aa_id']) break;
 
 		$aa_id = format_userinput($_POST['aa_id'], 'uint');
 
 		//Check for access
 		ko_get_mod_leute($_mod_p, $aa_id);
 		$mod_p = $_mod_p[$aa_id];
-		if($access['leute']['ALL'] < 2 && ($access['leute'][$mod_p['_leute_id']] < 2 || $mod_p['_leute_id'] < 1)) continue;
+		if($access['leute']['ALL'] < 2 && ($access['leute'][$mod_p['_leute_id']] < 2 || $mod_p['_leute_id'] < 1)) break;
 
 		db_delete_data('ko_leute_mod', "WHERE `_id`='$aa_id'");
 
@@ -1195,8 +1197,8 @@ switch($do_action) {
 	case "submit_gs_new_person":  //New person to be added to db
 	case "submit_gs_ps":  //Person from peoplesearch
 	case "submit_gs_ps_aa":  //Person from peoplesearch and add change
-		if($access['leute']['ALL'] < 4 && !($access['leute']['GS'] && $access['groups']['MAX'] > 1)) continue;
-		if(!$_POST["_id"]) continue;
+		if($access['leute']['ALL'] < 4 && !($access['leute']['GS'] && $access['groups']['MAX'] > 1)) break;
+		if(!$_POST["_id"]) break;
 
 		//Initialisierung
 		$do_ldap = ko_do_ldap();
@@ -1247,7 +1249,7 @@ switch($do_action) {
 			if(!$lid) $notifier->addError(19, $do_action);
 			else $lids = array($lid);
 		}
-		if($notifier->hasErrors()) continue;
+		if($notifier->hasErrors()) break;
 
 		foreach($lids as $lid) {
 			ko_get_person_by_id($lid, $p);
@@ -1337,8 +1339,8 @@ switch($do_action) {
 
 
 	case "submit_gs_delete":
-		if($access['leute']['ALL'] < 4) continue;
-		if(!$_POST["_id"]) continue;
+		if($access['leute']['ALL'] < 4) break;
+		if(!$_POST["_id"]) break;
 
 		$_id = format_userinput($_POST["_id"], "uint");
 		ko_get_groupsubscriptions($_p, $_id); $_p = $_p[$_id];
@@ -1532,7 +1534,7 @@ switch($do_action) {
 
 
 		if(sizeof($es) == 0) $notifier->addError(5, $do_action);
-		if($notifier->hasErrors()) continue;
+		if($notifier->hasErrors()) break;
 
 		//Keep list of addresses before removing not needed addresses because of family mergings
 		$orig_es = $es;
@@ -2187,7 +2189,7 @@ switch($do_action) {
 
 	case "export_pdf":
 		$layout_id = format_userinput($_POST["pdf_layout_id"], "uint");
-		if(!$layout_id) continue;
+		if(!$layout_id) break;
 
 		$_SESSION["show_back"] = $_SESSION["show"];
 		$_SESSION["show"] = "export_pdf";
@@ -2197,7 +2199,7 @@ switch($do_action) {
 
 	case "do_export_pdf":
 		$layout_id = format_userinput($_POST["layout_id"], "uint");
-		if(!$layout_id) continue;
+		if(!$layout_id) break;
 
 		$filename = ko_export_leute_as_pdf($layout_id);
 
@@ -2305,7 +2307,7 @@ switch($do_action) {
 
 
 	case "submit_etiketten":
-		if(!$_POST["sel_vorlage"]) continue;
+		if(!$_POST["sel_vorlage"]) break;
 
 		$labels_data = array(); $row = 0;
 
@@ -2677,19 +2679,19 @@ switch($do_action) {
 		if(FALSE === ($id = format_userinput($_GET["id"], "uint", TRUE, 4))) {
 			trigger_error("Not allowed set_kg_filter-id: ".$_POST["id"], E_USER_ERROR);
 		}
-		if($access['kg']['MAX'] < 1 || $access['leute']['MAX'] < 1 || !$id) continue;
+		if($access['kg']['MAX'] < 1 || $access['leute']['MAX'] < 1 || !$id) break;
 
 		$_SESSION["filter"] = array();
 
 		$filter_akt = 0;
 		ko_get_filters($filters, "leute");
-    foreach($filters as $ff) {
-      if(!$filter_akt && $ff["_name"] == "smallgroup") {
-        $filter_akt = $ff["id"];
-        $f = $ff;
-      }
-    }
-		if(!$filter_akt) continue;
+		foreach($filters as $ff) {
+			if(!$filter_akt && $ff["_name"] == "smallgroup") {
+				$filter_akt = $ff["id"];
+				$f = $ff;
+			}
+		}
+		if(!$filter_akt) break;
 
 		$vars = array(1 => $id);
 		$_SESSION["filter"][] = array($filter_akt, $vars, 0);
@@ -2703,7 +2705,7 @@ switch($do_action) {
 		if(FALSE === ($id = format_userinput($_POST["id"], "uint", TRUE, 4))) {
 			trigger_error("Not allowed kg-id: ".$_POST["id"], E_USER_ERROR);
 		}
-		if($access['kg']['MAX'] < 4) continue;
+		if($access['kg']['MAX'] < 4) break;
 
 		$old_kg = db_select_data("ko_kleingruppen", "WHERE `id` = '$id'");
 		db_delete_data("ko_kleingruppen", "WHERE `id` = '$id.'");
@@ -2719,7 +2721,7 @@ switch($do_action) {
 
 
 	case "submit_neue_kg":
-		if($access['kg']['MAX'] < 4) continue;
+		if($access['kg']['MAX'] < 4) break;
 
 		kota_submit_multiedit("", "new_kg");
 		if(!$notifier->hasErrors()) {
@@ -2732,7 +2734,7 @@ switch($do_action) {
 
 
 	case "submit_edit_kg":
-		if($access['kg']['MAX'] < 3) continue;
+		if($access['kg']['MAX'] < 3) break;
 
 		kota_submit_multiedit("", "edit_kg");
 		if(!$notifier->hasErrors()) {
@@ -2746,7 +2748,7 @@ switch($do_action) {
 
 
 	case 'kg_xls_export':
-		if($access['kg']['MAX'] < 2) continue;
+		if($access['kg']['MAX'] < 2) break;
 
 		//Get selected columns from GET
 		$cols = $_GET['sel_xls_cols'];
@@ -2761,7 +2763,7 @@ switch($do_action) {
 		} else {
 			//Get preset from userprefs
 			$name = format_userinput($cols, 'js', FALSE, 0, array(), '@');
-			if($name == '') continue;
+			if($name == '') break;
 			if(substr($name, 0, 3) == '@G@') $preset = ko_get_userpref('-1', substr($name, 3), 'leute_kg_itemset');
 			else $preset = ko_get_userpref($_SESSION['ses_userid'], $name, 'leute_kg_itemset');
 			$use_cols = explode(',', $preset[0]['value']);
@@ -2793,7 +2795,7 @@ switch($do_action) {
 		if(isset($_GET['rid'])) {
 			$rid = format_userinput($_GET['rid'], 'uint', TRUE, 6);
 		}
-		if($access['groups']['MAX'] < 1 || $access['leute']['MAX'] < 1 || !$id) continue;
+		if($access['groups']['MAX'] < 1 || $access['leute']['MAX'] < 1 || !$id) break;
 
 		$_SESSION["filter"] = array();
 
@@ -2806,7 +2808,7 @@ switch($do_action) {
 				$f = $ff;
 			}
 		}
-		if(!$filter_akt) continue;
+		if(!$filter_akt) break;
 
 		//Set group filter according to given gid/rid
 		$vars = array(1 => 'g'.$id);
@@ -2852,7 +2854,7 @@ switch($do_action) {
 		if(FALSE === ($id = format_userinput($_GET['id'], 'uint', TRUE, 6))) {
 			trigger_error('Not allowed set_role_filter-id: '.$_POST['id'], E_USER_ERROR);
 		}
-		if($access['groups']['MAX'] < 1 || $access['leute']['MAX'] < 1 || !$id) continue;
+		if($access['groups']['MAX'] < 1 || $access['leute']['MAX'] < 1 || !$id) break;
 
 		$_SESSION['filter'] = array();
 
@@ -2865,7 +2867,7 @@ switch($do_action) {
 				$f = $ff;
 			}
 		}
-		if(!$filter_akt) continue;
+		if(!$filter_akt) break;
 
 		//Set filter according to given rid
 		$vars = array(1 => 'r'.$id);
@@ -2880,15 +2882,15 @@ switch($do_action) {
 
 
 	case 'set_idfilter':
-		if($access['leute']['MAX'] < 1) continue;
+		if($access['leute']['MAX'] < 1) break;
 
 		//ID from GET
 		$id = format_userinput($_GET['id'], 'uint');
-		if(!$id) continue;
+		if(!$id) break;
 
 		//Get ID filter
 		$f = db_select_data('ko_filter', "WHERE `name` = 'id'", '*', '', '', TRUE);
-		if(!$f['id']) continue;
+		if(!$f['id']) break;
 
 		//Apply filter
 		$_SESSION['filter'] = array();
@@ -2902,12 +2904,12 @@ switch($do_action) {
 
 
 	case 'set_famfilter':
-		if($access['leute']['MAX'] < 1) continue;
+		if($access['leute']['MAX'] < 1) break;
 		$famid = format_userinput($_GET['famid'], 'uint');
-		if($famid <= 0) continue;
+		if($famid <= 0) break;
 
 		$f1 = db_select_data('ko_filter', "WHERE `name` = 'family'", '*', '', '', TRUE);
-		if(!$f1['id']) continue;
+		if(!$f1['id']) break;
 
 		$_SESSION['filter'] = array();
 		$_SESSION['filter'][] = array($f1['id'], array(1 => $famid), 0);
@@ -2919,12 +2921,12 @@ switch($do_action) {
 
 
 	case 'set_dobfilter':
-		if($access['leute']['MAX'] < 1) continue;
+		if($access['leute']['MAX'] < 1) break;
 		list($d, $m) = explode('-', format_userinput($_GET['dob'], 'int'));
-		if(!$m || !$d || $m < 1 || $m > 12 || $d < 1 || $d > 31) continue;
+		if(!$m || !$d || $m < 1 || $m > 12 || $d < 1 || $d > 31) break;
 
 		$f1 = db_select_data('ko_filter', "WHERE `name` = 'birthdate'", '*', '', '', TRUE);
-		if(!$f1['id']) continue;
+		if(!$f1['id']) break;
 
 		$_SESSION['filter'] = array();
 		$_SESSION['filter'][] = array($f1['id'], array(1 => $d, 2 => $m), 0);
@@ -2939,8 +2941,8 @@ switch($do_action) {
 
 	//Import
 	case "import":
-		if($access['leute']['ALL'] > 1 || ($access['leute']['MAX'] > 1 && ko_get_leute_admin_groups($_SESSION['ses_userid'], 'all') !== FALSE)) {
-		} else continue;
+		if($access['leute']['ALL'] <= 1 && ($access['leute']['MAX'] <= 1 || ko_get_leute_admin_groups($_SESSION['ses_userid'], 'all') === FALSE))
+			break;
 
 		if($_GET["state"]) $_SESSION["import_state"] = format_userinput($_GET["state"], "uint");
 		if($_GET["mode"]) $_SESSION["import_mode"] = format_userinput($_GET["mode"], "alpha");
@@ -3011,8 +3013,8 @@ switch($do_action) {
 
 
 	case "do_import":
-		if($access['leute']['ALL'] > 1 || ($access['leute']['MAX'] > 1 && ko_get_leute_admin_groups($_SESSION['ses_userid'], 'all') !== FALSE)) {
-		} else continue;
+		if($access['leute']['ALL'] <= 1 && ($access['leute']['MAX'] <= 1 || ko_get_leute_admin_groups($_SESSION['ses_userid'], 'all') === FALSE))
+			break;
 
 		//Add all imported addresses to the selected group
 		if($_POST["sel_group"]) {
@@ -3113,16 +3115,16 @@ switch($do_action) {
 
 
 	case "submit_leute_version":
-		if($access['leute']['ALL'] < 4) continue;
+		if($access['leute']['ALL'] < 4) break;
 
 		if($_POST["date_version"] == "") {
 			unset($_SESSION["leute_version"]);
 		} else {
 			$version = format_userinput($_POST["date_version"], "date");
 			//empty date
-			if(strtotime($version) == 0) continue;
+			if(strtotime($version) == 0) break;
 			//don't allow future dates
-			if(strtotime($version) > time()) continue;
+			if(strtotime($version) > time()) break;
 
 			$_SESSION["leute_version"] = sql_datum($version);
 		}
@@ -3133,7 +3135,7 @@ switch($do_action) {
 
 
 	case "clear_leute_version":
-		if($access['leute']['ALL'] < 4) continue;
+		if($access['leute']['ALL'] < 4) break;
 
 		unset($_SESSION["leute_version"]);
 		$_SESSION["show"] = "show_all";
@@ -3155,7 +3157,7 @@ switch($do_action) {
 
 
 		//Access check
-		if(!($access['leute']['ALL'] > 1 || $access['leute'][$leute_id] > 1)) continue;
+		if(!($access['leute']['ALL'] > 1 || $access['leute'][$leute_id] > 1)) break;
 
 
 		//Backwards compatibility for smallgroups
@@ -3334,9 +3336,9 @@ switch($do_action) {
 
 
 	case 'global_assign':
-		if(!ko_get_leute_admin_assign($_SESSION['ses_userid'], 'all')) continue;
+		if(!ko_get_leute_admin_assign($_SESSION['ses_userid'], 'all')) break;
 		$gid = ko_get_leute_admin_groups($_SESSION['ses_userid'], 'all');
-		if(!is_array($gid) || sizeof($gid) < 1) continue;
+		if(!is_array($gid) || sizeof($gid) < 1) break;
 
 		$lid = format_userinput($_POST['global_assign'], 'uint');
 		$gid = array_shift($gid);

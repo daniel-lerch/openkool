@@ -1,28 +1,22 @@
 <?php
-/***************************************************************
-*  Copyright notice
+/*******************************************************************************
 *
-*  (c) 2003-2015 Renzo Lauper (renzo@churchtool.org)
-*  All rights reserved
+*    OpenKool - Online church organization tool
 *
-*  This script is part of the kOOL project. The kOOL project is
-*  free software; you can redistribute it and/or modify
-*  it under the terms of the GNU General Public License as published by
-*  the Free Software Foundation; either version 2 of the License, or
-*  (at your option) any later version.
+*    Copyright © 2003-2015 Renzo Lauper (renzo@churchtool.org)
+*    Copyright © 2019      Daniel Lerch
 *
-*  The GNU General Public License can be found at
-*  http://www.gnu.org/copyleft/gpl.html.
-*  A copy is found in the textfile GPL.txt and important notices to the license
-*  from the author is found in LICENSE.txt distributed with these scripts.
+*    This program is free software; you can redistribute it and/or modify
+*    it under the terms of the GNU General Public License as published by
+*    the Free Software Foundation; either version 2 of the License, or
+*    (at your option) any later version.
 *
-*  kOOL is distributed in the hope that it will be useful,
-*  but WITHOUT ANY WARRANTY; without even the implied warranty of
-*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-*  GNU General Public License for more details.
+*    This program is distributed in the hope that it will be useful,
+*    but WITHOUT ANY WARRANTY; without even the implied warranty of
+*    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+*    GNU General Public License for more details.
 *
-*  This copyright notice MUST APPEAR in all copies of the script!
-***************************************************************/
+*******************************************************************************/
 
 ob_start();  //Ausgabe-Pufferung starten
 
@@ -89,13 +83,13 @@ switch($do_action) {
 	break;
 
 	case "list_roles":
-		if($access['groups']['MAX'] < 1) continue;
+		if($access['groups']['MAX'] < 1) break;
 		$_SESSION["show"] = "list_roles";
 		$_SESSION["show_back"] = $_SESSION["show"];
 	break;
 
 	case "list_datafields":
-		if($access['groups']['MAX'] < 3) continue;
+		if($access['groups']['MAX'] < 3) break;
 		$_SESSION["show"] = "list_datafields";
 		$_SESSION["show_back"] = $_SESSION["show"];
 	break;
@@ -105,7 +99,7 @@ switch($do_action) {
 	break;
 
 	case "exportxls":
-		if($access['groups']['MAX'] < 1) continue;
+		if($access['groups']['MAX'] < 1) break;
 
 		//Gruppen
 		ko_get_grouproles($roles);
@@ -234,29 +228,29 @@ switch($do_action) {
 	  * Neu
 		*/
 	case "new_group":
-		if($access['groups']['MAX'] < 3) continue;
+		if($access['groups']['MAX'] < 3) break;
 		$_SESSION["show"] = "new_group";
 		$onload_code = "form_set_first_input();".$onload_code;
 	break;
 
 
 	case "submit_new_group":
-		if($access['groups']['MAX'] < 3) continue;
+		if($access['groups']['MAX'] < 3) break;
 
 		$data = array();
 		$data['pid']             = format_userinput($_POST['sel_parentgroup'], 'uint');
 		$data['pid']             = $data['pid'] ? $data['pid'] : 'NULL';
 
 		//Access check for pid
-		if($data['pid'] == 'NULL' && $access['groups']['ALL'] < 3) continue;
-		if($data['pid'] != 'NULL' && $access['groups']['ALL'] < 3 && $access['groups'][$data['pid']] < 3) continue;
+		if($data['pid'] == 'NULL' && $access['groups']['ALL'] < 3) break;
+		if($data['pid'] != 'NULL' && $access['groups']['ALL'] < 3 && $access['groups'][$data['pid']] < 3) break;
 
 		$data['linked_group']             = format_userinput($_POST['sel_linked_group'], 'uint');
 		$data['linked_group']             = $data['linked_group'] ? $data['linked_group'] : 'NULL';
 
 		//Access check for pid
-		if($data['linked_group'] == 'NULL' && $access['groups']['ALL'] < 3) continue;
-		if($data['linked_group'] != 'NULL' && $access['groups']['ALL'] < 3 && $access['groups'][$data['linked_group']] < 3) continue;
+		if($data['linked_group'] == 'NULL' && $access['groups']['ALL'] < 3) break;
+		if($data['linked_group'] != 'NULL' && $access['groups']['ALL'] < 3 && $access['groups'][$data['linked_group']] < 3) break;
 
 		$data["name"]            = format_userinput($_POST["txt_name"], "js");
 		$data["description"]     = format_userinput($_POST["txt_description"], "text");
@@ -320,14 +314,14 @@ switch($do_action) {
 
 
 	case "new_role":
-		if($access['groups']['MAX'] < 3) continue;
+		if($access['groups']['MAX'] < 3) break;
 
 		$_SESSION["show"] = "new_role";
 		$onload_code = "form_set_first_input();".$onload_code;
 	break;
 
 	case 'submit_new_role':
-		if($access['groups']['MAX'] < 3) continue;
+		if($access['groups']['MAX'] < 3) break;
 
 		kota_submit_multiedit('', 'new_role', '', $changes);
 		if(!$notifier->hasErrors()) {
@@ -339,7 +333,7 @@ switch($do_action) {
 
 
 	case 'submit_as_new_role':
-		if($access['groups']['MAX'] < 3) continue;
+		if($access['groups']['MAX'] < 3) break;
 
 		list($table, $columns, $ids, $hash) = explode('@', $_POST['id']);
 		//Fake POST[id] for kota_submit_multiedit() to remove the id from the data. Otherwise this entry will be edited.
@@ -372,7 +366,7 @@ switch($do_action) {
 
 	case "submit_edit_group":
 		$id = format_userinput($_POST["id"], "uint");
-		if($access['groups']['ALL'] < 3 && $access['groups'][$id] < 3) continue;
+		if($access['groups']['ALL'] < 3 && $access['groups'][$id] < 3) break;
 
 		$old_group = $all_groups[$id];
 
@@ -476,7 +470,7 @@ switch($do_action) {
 
 	case "edit_role":
 		$edit_id = format_userinput($_POST["id"], "uint");
-		if($access['groups']['MAX'] < 3) continue;
+		if($access['groups']['MAX'] < 3) break;
 
 		//Check for access level 3 for all group this role is being used in
 		$groups = db_select_data("ko_groups", "WHERE `roles` LIKE '$edit_id'");
@@ -492,7 +486,7 @@ switch($do_action) {
 
 
 	case 'submit_edit_role':
-		if($access['groups']['MAX'] < 3) continue;
+		if($access['groups']['MAX'] < 3) break;
 
 		list($table, $col, $edit_id) = explode('@', $_POST['id']);
 
@@ -516,7 +510,7 @@ switch($do_action) {
 
 	case "edit_datafield":
 		$edit_id = format_userinput($_POST["id"], "uint");
-		if($access['groups']['MAX'] < 3) continue;
+		if($access['groups']['MAX'] < 3) break;
 
 		$_SESSION["show"] = "edit_datafield";
 		$onload_code = "form_set_first_input();".$onload_code;
@@ -524,7 +518,7 @@ switch($do_action) {
 
 
 	case "submit_edit_datafield":
-		if($access['groups']['MAX'] < 3) continue;
+		if($access['groups']['MAX'] < 3) break;
 
 		kota_submit_multiedit('', 'edit_datafield');
 		if(!$notifier->hasErrors()) {
@@ -616,7 +610,7 @@ switch($do_action) {
 
 	case "delete_datafield":
 		$del_id = format_userinput($_POST["id"], "uint");
-		if($access['groups']['MAX'] < 3) continue;
+		if($access['groups']['MAX'] < 3) break;
 
 		//Prüfen, ob Datenfeld noch irgendwo verwendet wird, dann kann man es nicht löschen
 		$num = db_get_count("ko_groups", "id", "AND `datafields` REGEXP '$del_id'");
@@ -635,7 +629,7 @@ switch($do_action) {
 	  * Berechtigungen
 		*/
 	case "list_rights":
-		if($access['groups']['MAX'] < 3) continue;
+		if($access['groups']['MAX'] < 3) break;
 		$_SESSION["show_start"] = 1;
 		$_SESSION["show"] = "list_rights";
 		$_SESSION["show_back"] = $_SESSION["show"];
@@ -644,15 +638,15 @@ switch($do_action) {
 
 	case "edit_login_rights":
 		$edit_id = format_userinput($_POST["id"], "uint");
-		if(!$edit_id) continue;
+		if(!$edit_id) break;
 		$_SESSION["show"] = "edit_login_rights";
 	break;
 
 
 	case "submit_edit_login_rights":
-		if($access['groups']['ALL'] < 3) continue;
+		if($access['groups']['ALL'] < 3) break;
 		$login_id = format_userinput($_POST["id"], "uint");
-		if(!$login_id || ($login_id == ko_get_root_id() && $_SESSION["ses_userid"] != ko_get_root_id()) ) continue;
+		if(!$login_id || ($login_id == ko_get_root_id() && $_SESSION["ses_userid"] != ko_get_root_id()) ) break;
 
 		//Loop über die drei Rechte-Stufen
 		$mode = array('', 'view', 'new', 'edit', 'del');
@@ -715,7 +709,7 @@ switch($do_action) {
 
 
 	case "multiedit":
-		if($access['groups']['MAX'] < 3) continue;
+		if($access['groups']['MAX'] < 3) break;
 
 		//Zu bearbeitende Spalten
 		$columns = explode(",", format_userinput($_POST["id"], "alphanumlist"));
@@ -774,10 +768,10 @@ switch($do_action) {
 
 	case "submit_multiedit":
 		if($_SESSION["show"] == "multiedit") {
-			if($access['groups']['MAX'] < 3) continue;
+			if($access['groups']['MAX'] < 3) break;
 			kota_submit_multiedit(3);
 		} else if($_SESSION["show"] == "multiedit_roles") {
-			if($access['groups']['MAX'] < 3) continue;
+			if($access['groups']['MAX'] < 3) break;
 			kota_submit_multiedit(3);
 		}
 
@@ -788,14 +782,14 @@ switch($do_action) {
 
 
 	case 'set_dffilter':
-		if($access['groups']['ALL'] < 3) continue;
+		if($access['groups']['ALL'] < 3) break;
 		$_SESSION['groups_show_hidden_datafields'] = TRUE;
 		ko_save_userpref($_SESSION['ses_userid'], 'groups_show_hidden_datafields', 1);
 	break;
 
 
 	case 'unset_dffilter':
-		if($access['groups']['ALL'] < 3) continue;
+		if($access['groups']['ALL'] < 3) break;
 		$_SESSION['groups_show_hidden_datafields'] = FALSE;
 		ko_save_userpref($_SESSION['ses_userid'], 'groups_show_hidden_datafields', 0);
 	break;
@@ -805,7 +799,7 @@ switch($do_action) {
 
 	case 'export_pdf':
 		$layout_id = format_userinput($_GET['layout_id'], 'uint');
-		if(!$layout_id) continue;
+		if(!$layout_id) break;
 
 		$layout = db_select_data('ko_pdf_layout', "WHERE `id` = '$layout_id'", '*', '', '', TRUE);
 		if($layout['data'] != '' && substr($layout['data'], 0, 4) == 'FCN:' && function_exists(substr($layout['data'], 4))) {

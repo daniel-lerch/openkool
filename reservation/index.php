@@ -152,7 +152,7 @@ switch($do_action) {
 
 
 	case "submit_neue_reservation":
-		if($access['reservation']['MAX'] < 2) continue;
+		if($access['reservation']['MAX'] < 2) break;
 
 		$koi = $_POST["koi"]["ko_reservation"];
 		kota_process_data("ko_reservation", $koi, "post");
@@ -161,7 +161,7 @@ switch($do_action) {
 		$err = check_entries($koi);
 		if($err > 0) {
 			$notifier->addError($err, $do_action);
-			continue;
+			break;
 		}
 
 		//Wiederholungen berechnen
@@ -176,7 +176,7 @@ switch($do_action) {
 												$repeat, ($_POST["txt_num_repeats"] ? $_POST["txt_num_repeats"] : ""));
 											
 		if(sizeof($repeat) <= 0) $notifier->addError(7, $do_action);
-		if($notifier->hasErrors()) continue;
+		if($notifier->hasErrors()) break;
 
 		$res_confirm_mailtext = "";
 		$res_data = $koi;  //Data for the single item
@@ -258,11 +258,11 @@ switch($do_action) {
 
 	case "submit_new_item":
 	case "submit_edit_item":
-		if($access['reservation']['MAX'] < 4) continue;
+		if($access['reservation']['MAX'] < 4) break;
 
 		if($do_action == "submit_edit_item") {
 			list($table, $columns, $id, $hash) = explode("@", $_POST["id"]);
-			if(FALSE === ($id = format_userinput($id, "uint", TRUE))) continue;
+			if(FALSE === ($id = format_userinput($id, "uint", TRUE))) break;
 		} else {
 			$id = 0;
 		}
@@ -344,13 +344,13 @@ switch($do_action) {
 	// Bearbeiten
 	case 'edit_res':  //Backwards compatibility
 	case 'edit_reservation':
-		if($access['reservation']['MAX'] < 2) continue;
+		if($access['reservation']['MAX'] < 2) break;
 
 		if($action_mode == "POST") $do_id = format_userinput($_POST["id"], "uint");
 		else if($action_mode == "GET") $do_id = format_userinput($_GET["id"], "uint");
-		else continue;
+		else break;
 
-		if(!$do_id) continue;
+		if(!$do_id) break;
 
 		ko_get_res_by_id($do_id, $r_);
     $r = $r_[$do_id];
@@ -363,7 +363,7 @@ switch($do_action) {
 
 
 	case "submit_edit_reservation":
-		if($access['reservation']['MAX'] < 2) continue;
+		if($access['reservation']['MAX'] < 2) break;
 
 		$id = format_userinput($_POST["id"], "uint");
 		$data = $_POST["koi"]["ko_reservation"];
@@ -371,7 +371,7 @@ switch($do_action) {
 		$err = check_entries($data);
 		if($err > 0) {
 			$notifier->addError($err, $do_action);
-			continue;
+			break;
 		}
 
 		if($data["enddatum"] == "0000-00-00" || trim($data["enddatum"]) == "") $data["enddatum"] = $data["startdatum"];
@@ -395,12 +395,12 @@ switch($do_action) {
 				}
 			}
 			//Stop here if all records are double
-			if(sizeof($serie_res) == $error_count) continue;
+			if(sizeof($serie_res) == $error_count) break;
 		} else {
 			if(FALSE === ko_res_check_double($data['item_id'], $data['startdatum'], $data['enddatum'], $data['startzeit'], $data['endzeit'], $double_error_txt, $id)) {
 				$notifier->addError(4, $do_action);
 				$notifier->addTextError('<b>'.$data['startdatum']. '</b>: '.getLL('res_collision').' <i>' . $double_error_txt . '</i><br />', $do_action);
-				continue;
+				break;
 			}
 		}
 
@@ -478,7 +478,7 @@ switch($do_action) {
 	case "check_edit_code":
 		$id = format_userinput($_POST["id"], "uint");
 		$res_code = format_userinput($_POST["res_code"], "alphanum");
-		if(trim($res_code) == "" || trim($id) == "") continue;
+		if(trim($res_code) == "" || trim($id) == "") break;
 		ko_get_res_by_id($id, $res);
 		if($res[$id]["code"] == $res_code) {
 			$_SESSION["show"]= "edit_reservation";
@@ -502,7 +502,7 @@ switch($do_action) {
 
 	case "multiedit":
 		if($_SESSION["show"] == "liste") {
-			if($access['reservation']['MAX'] < 2) continue;
+			if($access['reservation']['MAX'] < 2) break;
 
 			//Get columns to be edited
 			$columns = explode(",", format_userinput($_POST["id"], "alphanumlist"));
@@ -537,7 +537,7 @@ switch($do_action) {
 
 		// Res objects
 		} else if($_SESSION["show"] == "list_items") {
-			if($access['reservation']['MAX'] < 4) continue;
+			if($access['reservation']['MAX'] < 4) break;
 
 			//Zu bearbeitende Spalten
 			$columns = explode(",", format_userinput($_POST["id"], "alphanumlist"));
@@ -569,7 +569,7 @@ switch($do_action) {
 
 		/* Moderated entries */
 		else if($_SESSION["show"] == "show_mod_res") {
-			if($access['reservation']['MAX'] < 5) continue;
+			if($access['reservation']['MAX'] < 5) break;
 
 			//Zu bearbeitende Spalten
 			$columns = explode(",", format_userinput($_POST["id"], "alphanumlist"));
@@ -607,17 +607,17 @@ switch($do_action) {
 
 	case "submit_multiedit":
 		if($_SESSION["show"] == "multiedit") {
-			if($access['reservation']['MAX'] < 3) continue;
+			if($access['reservation']['MAX'] < 3) break;
 			kota_submit_multiedit(3);
 			if(!$notifier->hasErrors()) $notifier->addInfo(12, $do_action);
 
 		} else if($_SESSION["show"] == "multiedit_group") {
-			if($access['reservation']['MAX'] < 4) continue;
+			if($access['reservation']['MAX'] < 4) break;
 			kota_submit_multiedit(4);
 			if(!$notifier->hasErrors()) $notifier->addInfo(12, $do_action);
 
 		} else if($_SESSION["show"] == "multiedit_mod") {
-			if($access['reservation']['MAX'] < 5) continue;
+			if($access['reservation']['MAX'] < 5) break;
 			kota_submit_multiedit(5);
 			if(!$notifier->hasErrors()) $notifier->addInfo(12, $do_action);
 		}
@@ -672,7 +672,7 @@ switch($do_action) {
 
 
 	case "delete_item":
-		if($access['reservation']['MAX'] < 4) continue;
+		if($access['reservation']['MAX'] < 4) break;
 
 		$id = format_userinput($_POST["id"], "uint");
 
@@ -720,13 +720,13 @@ switch($do_action) {
 
 	//Settings
 	case "res_settings":
-		if($access['reservation']['MAX'] < 1) continue;
+		if($access['reservation']['MAX'] < 1) break;
 		$_SESSION["show_back"] = $_SESSION["show"];
 		$_SESSION["show"] = "res_settings";
 	break;
 
 	case "submit_res_settings":
-		if($access['reservation']['MAX'] < 1) continue;
+		if($access['reservation']['MAX'] < 1) break;
 
 		ko_save_userpref($_SESSION['ses_userid'], 'default_view_reservation', format_userinput($_POST['sel_reservation'], 'js'));
 		ko_save_userpref($_SESSION['ses_userid'], 'show_limit_reservation', format_userinput($_POST['txt_limit_reservation'], 'uint'));
@@ -796,7 +796,7 @@ switch($do_action) {
 
 	case 'show_calendar':  //Backwards compatibility
 	case 'calendar':
-		if($access['reservation']['MAX'] < 1) continue;
+		if($access['reservation']['MAX'] < 1) break;
 
 		$_SESSION["show"] = "calendar";
 		$wt = kota_filter_get_warntext('ko_reservation');
@@ -804,7 +804,7 @@ switch($do_action) {
 	break;
 
 	case 'show_cal_monat':
-		if($access['reservation']['MAX'] < 1) continue;
+		if($access['reservation']['MAX'] < 1) break;
 
 		if($_GET['set_month']) {
 			if(FALSE === ($new_month = format_userinput($_GET['set_month'], 'int', TRUE, 7))) {
@@ -822,7 +822,7 @@ switch($do_action) {
 	break;
 
 	case 'show_cal_woche':
-		if($access['reservation']['MAX'] < 1) continue;
+		if($access['reservation']['MAX'] < 1) break;
 
     $_SESSION['cal_view'] = 'agendaWeek';
     $_SESSION['show'] = 'calendar';
@@ -831,28 +831,28 @@ switch($do_action) {
   break;
 
 	case "show_cal_jahr":
-		if($access['reservation']['MAX'] < 1) continue;
+		if($access['reservation']['MAX'] < 1) break;
 
     $_SESSION["show"] = "cal_jahr";
     $_SESSION['cal_view'] = '';
   break;
 
 	case 'show_resource_day':
-		if($access['reservation']['MAX'] < 1) continue;
+		if($access['reservation']['MAX'] < 1) break;
 
     $_SESSION['show'] = 'calendar';
     $_SESSION['cal_view'] = 'resourceDay';
 	break;
 
 	case 'show_resource_week':
-		if($access['reservation']['MAX'] < 1) continue;
+		if($access['reservation']['MAX'] < 1) break;
 
     $_SESSION['show'] = 'calendar';
     $_SESSION['cal_view'] = 'resourceWeek';
 	break;
 
 	case 'show_resource_month':
-		if($access['reservation']['MAX'] < 1) continue;
+		if($access['reservation']['MAX'] < 1) break;
 
     $_SESSION['show'] = 'calendar';
     $_SESSION['cal_view'] = 'resourceMonth';
@@ -865,7 +865,7 @@ switch($do_action) {
 	break;
 
 	case 'res_ical_links':
-		if($access['reservation']['MAX'] < 1) continue;
+		if($access['reservation']['MAX'] < 1) break;
 		$_SESSION['show'] = 'ical_links';
 	break;
 
@@ -928,7 +928,7 @@ switch($do_action) {
 
 	// Moderation
 	case "show_mod_res":
-		if($_SESSION["ses_userid"] == ko_get_guest_id()) continue;
+		if($_SESSION["ses_userid"] == ko_get_guest_id()) break;
 		$_SESSION["show"]= "show_mod_res";
 		$_SESSION["show_start"] = 1;
 	break;
@@ -936,7 +936,7 @@ switch($do_action) {
 
 	case "res_mod_approve":
 	case "res_mod_approve_multi":
-		if($access['reservation']['MAX'] < 5) continue;
+		if($access['reservation']['MAX'] < 5) break;
 
 		$ids = $email_rec = $noemail_rec = array();
 		$res_text = "";
@@ -949,7 +949,7 @@ switch($do_action) {
 				if($c) $ids[] = format_userinput($c_i, "uint");
 			}
 		}
-		if(!$ids[0]) continue;
+		if(!$ids[0]) break;
 
 		$notification = format_userinput($_POST["mod_confirm"], "alpha", FALSE, 5) == "true";
 		$items = db_select_data("ko_resitem", "WHERE 1=1", "*");
@@ -1017,7 +1017,7 @@ switch($do_action) {
 
 	case "res_mod_delete":
   case "res_mod_delete_multi":
-		if($access['reservation']['MAX'] < 2) continue;
+		if($access['reservation']['MAX'] < 2) break;
 
 		$ids = $email_rec = $noemail_rec = array();
 		$res_text = "";
@@ -1031,7 +1031,7 @@ switch($do_action) {
 				if($c) $ids[] = format_userinput($c_i, "uint");
 			}
 		}
-		if(!$ids[0]) continue;
+		if(!$ids[0]) break;
 
 		//Only allow notification for moderators
 		if($access['reservation']['MAX'] > 4) $notification = format_userinput($_POST['mod_confirm'], 'alpha', FALSE, 5) == 'true';
@@ -1140,7 +1140,7 @@ switch($do_action) {
 
 	//Export
 	case "export_xls_reservation":
-		if($access['reservation']['MAX'] < 1 || $_SESSION["ses_userid"] == ko_get_guest_id()) continue;
+		if($access['reservation']['MAX'] < 1 || $_SESSION["ses_userid"] == ko_get_guest_id()) break;
 
     switch($_GET['sel_xls_rows']) {
       case "alle":
@@ -1164,7 +1164,7 @@ switch($do_action) {
       break; 
 
 			default:
-				continue;
+				break;
     }//switch(sel_xls_rows)
 
     if(sizeof($es) == 0) $notifier->addError(8, $do_action);
@@ -1198,7 +1198,7 @@ switch($do_action) {
 
 
 	case 'export_pdf':
-		if($access['reservation']['MAX'] < 1 || $_SESSION['ses_userid'] == ko_get_guest_id()) continue;
+		if($access['reservation']['MAX'] < 1 || $_SESSION['ses_userid'] == ko_get_guest_id()) break;
 		list($mode, $inc, $re) = explode('-', $_GET['mode']);
 		$resourceExport = ($re == 'r' ? true : false);
 		switch($mode) {
@@ -1451,7 +1451,7 @@ switch($_SESSION["show"]) {
 	case "edit_reservation":
 		if($action_mode == "POST") $do_id = $_POST["id"];
 		else if($action_mode == "GET") $do_id = $_GET["id"];
-		else continue;
+		else break;
 		ko_formular_reservation("edit", format_userinput($do_id, "uint"));
 	break;
 

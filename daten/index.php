@@ -1,28 +1,22 @@
 <?php
-/***************************************************************
-*  Copyright notice
+/*******************************************************************************
 *
-*  (c) 2003-2015 Renzo Lauper (renzo@churchtool.org)
-*  All rights reserved
+*    OpenKool - Online church organization tool
 *
-*  This script is part of the kOOL project. The kOOL project is
-*  free software; you can redistribute it and/or modify
-*  it under the terms of the GNU General Public License as published by
-*  the Free Software Foundation; either version 2 of the License, or
-*  (at your option) any later version.
+*    Copyright © 2003-2015 Renzo Lauper (renzo@churchtool.org)
+*    Copyright © 2019      Daniel Lerch
 *
-*  The GNU General Public License can be found at
-*  http://www.gnu.org/copyleft/gpl.html.
-*  A copy is found in the textfile GPL.txt and important notices to the license
-*  from the author is found in LICENSE.txt distributed with these scripts.
+*    This program is free software; you can redistribute it and/or modify
+*    it under the terms of the GNU General Public License as published by
+*    the Free Software Foundation; either version 2 of the License, or
+*    (at your option) any later version.
 *
-*  kOOL is distributed in the hope that it will be useful,
-*  but WITHOUT ANY WARRANTY; without even the implied warranty of
-*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-*  GNU General Public License for more details.
+*    This program is distributed in the hope that it will be useful,
+*    but WITHOUT ANY WARRANTY; without even the implied warranty of
+*    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+*    GNU General Public License for more details.
 *
-*  This copyright notice MUST APPEAR in all copies of the script!
-***************************************************************/
+*******************************************************************************/
 
 ob_start();  //Ausgabe-Pufferung einschalten
 
@@ -143,7 +137,7 @@ switch($do_action) {
 			trigger_error('Not allowed del_id: '.$_POST['id'], E_USER_ERROR);
 		}
 		$event = db_select_data('ko_event', "WHERE `id` = '$del_id'", '*', '', '', TRUE);
-		if($access['daten'][$event['eventgruppen_id']] < 2) continue;
+		if($access['daten'][$event['eventgruppen_id']] < 2) break;
 
 		$mode = do_del_termin($del_id);
 		if($mode == 'del') $notifier->addInfo(3, $do_action);
@@ -175,7 +169,7 @@ switch($do_action) {
 		}
 
 		//Check for ALL rights to be able to delete
-		if($access['daten']['ALL'] < 3) continue;
+		if($access['daten']['ALL'] < 3) break;
 
 		//Log-Meldung erstellen
 		ko_get_eventgruppe_by_id($del_id, $del_eventgruppe);
@@ -219,13 +213,13 @@ switch($do_action) {
 
 	//Settings
 	case 'daten_settings':
-		if($access['daten']['MAX'] < 1) continue;
+		if($access['daten']['MAX'] < 1) break;
 		$_SESSION['show_back'] = $_SESSION['show'];
 		$_SESSION['show'] = 'daten_settings';
 	break;
 
 	case "submit_daten_settings":
-		if($access['daten']['MAX'] < 1) continue;
+		if($access['daten']['MAX'] < 1) break;
 
 		ko_save_userpref($_SESSION['ses_userid'], 'default_view_daten', format_userinput($_POST['sel_daten'], 'js'));
 		ko_save_userpref($_SESSION['ses_userid'], 'show_limit_daten', format_userinput($_POST['txt_limit_daten'], 'uint'));
@@ -276,14 +270,14 @@ switch($do_action) {
 	//Anzeigen
 	case 'show_all_events':  //Backwards compatibility for stored userpref
 	case 'all_events':
-		if($access['daten']['MAX'] < 1) continue;
+		if($access['daten']['MAX'] < 1) break;
 
 		if($_SESSION['show'] == 'all_events') $_SESSION['show_start'] = 1;
 		$_SESSION["show"] = "all_events";
 	break;
 
 	case "all_groups":
-		if($access['daten']['MAX'] < 3) continue;
+		if($access['daten']['MAX'] < 3) break;
 
 		$_SESSION["show"] = "all_groups";
 		$_SESSION["show_start"] = 1;
@@ -291,7 +285,7 @@ switch($do_action) {
 
 	case 'show_calendar':  //Backwards compatibility
 	case 'calendar':
-		if($access['daten']['MAX'] < 1) continue;
+		if($access['daten']['MAX'] < 1) break;
 
 		$_SESSION['show'] = 'calendar';
 		$wt = kota_filter_get_warntext('ko_event');
@@ -299,7 +293,7 @@ switch($do_action) {
 	break;
 
 	case "show_cal_monat":
-		if($access['daten']['MAX'] < 1) continue;
+		if($access['daten']['MAX'] < 1) break;
 
 		if($_GET["set_month"]) {
 			if(FALSE === ($new_month = format_userinput($_GET["set_month"], "int", TRUE, 7))) {
@@ -317,7 +311,7 @@ switch($do_action) {
 	break;
 
 	case "show_cal_woche":
-		if($access['daten']['MAX'] < 1) continue;
+		if($access['daten']['MAX'] < 1) break;
 
 		$_SESSION['cal_view'] = 'agendaWeek';
 		$_SESSION["show"] = "calendar";
@@ -326,14 +320,14 @@ switch($do_action) {
 	break;
 
 	case "show_cal_jahr":
-		if($access['daten']['MAX'] < 1) continue;
+		if($access['daten']['MAX'] < 1) break;
 
 		$_SESSION["show"] = "cal_jahr";
 		$_SESSION['cal_view'] = '';
 	break;
 
 	case 'daten_ical_links':
-		if($access['daten']['MAX'] < 1) continue;
+		if($access['daten']['MAX'] < 1) break;
 
 		$_SESSION['show'] = 'ical_links';
 	break;
@@ -342,7 +336,7 @@ switch($do_action) {
 
 	//Neu
 	case "neuer_termin":
-		if($access['daten']['MAX'] < 2) continue;
+		if($access['daten']['MAX'] < 2) break;
 
 		//Get new date and time from GET param dayDate
 		if(isset($_GET['dayDate'])) $start_stamp = $end_stamp = strtotime($_GET['dayDate']);
@@ -371,7 +365,7 @@ switch($do_action) {
 
 
 	case "neue_gruppe":
-		if($access['daten']['ALL'] < 3) continue;
+		if($access['daten']['ALL'] < 3) break;
 
 		$_SESSION["show_back"] = $_SESSION["show"];
 		$_SESSION["show"]= "neue_gruppe";
@@ -381,7 +375,7 @@ switch($do_action) {
 
 
 	case 'new_googlecal':
-		if($access['daten']['ALL'] < 3) continue;
+		if($access['daten']['ALL'] < 3) break;
 
 		$_SESSION['show_back'] = $_SESSION['show'];
 		$_SESSION['show']= 'new_googlecal';
@@ -391,7 +385,7 @@ switch($do_action) {
 
 
 	case 'new_ical':
-		if($access['daten']['ALL'] < 3) continue;
+		if($access['daten']['ALL'] < 3) break;
 
 		$_SESSION['show_back'] = $_SESSION['show'];
 		$_SESSION['show']= 'new_ical';
@@ -402,7 +396,7 @@ switch($do_action) {
 
 	case 'submit_neuer_termin':
 	case 'submit_as_new_event':
-		if($access['daten']['MAX'] < 2) continue;
+		if($access['daten']['MAX'] < 2) break;
 
 		//Formulardaten
 		$data = $_POST["koi"]["ko_event"];
@@ -447,7 +441,7 @@ switch($do_action) {
 
 		//Eingaben überprüfen
 		$errorOut = check_daten_entries($data);
-		if($errorOut) continue;
+		if($errorOut) break;
 
 		//Get repetition
 		switch($_POST["rd_wiederholung"]) {
@@ -462,7 +456,7 @@ switch($do_action) {
 												format_userinput($_POST['sel_repeat_eg'], 'uint'));
 
 		if(sizeof($repeat) <= 0) $notifier->addError(5, $do_action);
-		if($notifier->hasErrors()) continue;
+		if($notifier->hasErrors()) break;
 
 
 		//Find moderation from event group
@@ -539,12 +533,12 @@ switch($do_action) {
 	case 'submit_new_ical':
 		list($table, $columns, $id, $hash) = explode("@", $_POST["id"]);
 		if($do_action == 'submit_edit_gruppe' || $do_action == 'submit_edit_googlecal') {
-			if(FALSE === ($id = format_userinput($id, "uint", TRUE))) continue;
+			if(FALSE === ($id = format_userinput($id, "uint", TRUE))) break;
 			//Check for edit right (3) for this event group
-			if($access['daten'][$id] < 3) continue;
+			if($access['daten'][$id] < 3) break;
 		} else {
 			//Only allow new event groups with ALL rights >= 3
-			if($access['daten']['ALL'] < 3) continue;
+			if($access['daten']['ALL'] < 3) break;
 		}
 
 
@@ -632,14 +626,14 @@ switch($do_action) {
 	case "edit_termin":
 		if($_POST["id"]) $id = $_POST["id"];
     	else if($_GET["id"]) $id = $_GET["id"];
-    	else continue;
+    	else break;
 
 		if(FALSE === ($id = format_userinput($id, "uint", TRUE))) {
 			trigger_error("Not allowed id: ".$id, E_USER_ERROR);
 		}
 
 		$event = db_select_data('ko_event', "WHERE `id` = '$id'", '*', '', '', TRUE);
-		if($access['daten'][$event['eventgruppen_id']] < 2) continue;
+		if($access['daten'][$event['eventgruppen_id']] < 2) break;
 
 		$_SESSION["show_back"] = $_SESSION["show"];
 		$_SESSION["show"]= "edit_termin";
@@ -651,7 +645,7 @@ switch($do_action) {
 
 	case "edit_gruppe":
 		$edit_id = format_userinput($_POST['id'], 'uint');
-		if($access['daten'][$edit_id] < 3) continue;
+		if($access['daten'][$edit_id] < 3) break;
 
 		$eg = db_select_data('ko_eventgruppen', "WHERE `id` = '$edit_id'", '*', '', '', TRUE);
 
@@ -665,7 +659,7 @@ switch($do_action) {
 	case "submit_edit_termin":
 		$id = format_userinput($_POST["id"], "uint");
 		$event = db_select_data('ko_event', "WHERE `id` = '$id'", '*', '', '', TRUE);
-		if($access['daten'][$event['eventgruppen_id']] < 2) continue;
+		if($access['daten'][$event['eventgruppen_id']] < 2) break;
 
 		//Process data
 		$data = $_POST["koi"]["ko_event"];
@@ -673,7 +667,7 @@ switch($do_action) {
 		$errorOut = check_daten_entries($data);
 		if($errorOut) {
 			$edit_id = $id;
-			continue;
+			break;
 		}
 		$data["resitems"] = format_userinput($_POST["sel_do_res"], "intlist");
 		foreach($EVENTS_SHOW_RES_FIELDS as $f) {
@@ -736,7 +730,7 @@ switch($do_action) {
 
 	case "multiedit":
 		if($_SESSION["show"] == "all_events") {
-			if($access['daten']['MAX'] < 2) continue;
+			if($access['daten']['MAX'] < 2) break;
 
 			//Zu bearbeitende Spalten
 			$columns = explode(",", format_userinput($_POST["id"], "alphanumlist"));
@@ -772,7 +766,7 @@ switch($do_action) {
 
 		/* Termingruppen */
 		} else if($_SESSION["show"] == "all_groups") {
-			if($access['daten']['MAX'] < 3) continue;
+			if($access['daten']['MAX'] < 3) break;
 
 			//Zu bearbeitende Spalten
 			$columns = explode(",", format_userinput($_POST["id"], "alphanumlist"));
@@ -807,7 +801,7 @@ switch($do_action) {
 
 	case "submit_multiedit":
 		if($_SESSION["show"] == "multiedit") {
-			if($access['daten']['MAX'] < 2) continue;
+			if($access['daten']['MAX'] < 2) break;
 			kota_submit_multiedit(2, '', 'last_change', $changes);
 			//Send notifications for multiediting events
 			foreach($changes['ko_event'] as $id => $v) {
@@ -815,7 +809,7 @@ switch($do_action) {
 				ko_daten_send_notification($id, 'update', $v);
 			}
 		} else if($_SESSION["show"] == "multiedit_tg") {
-			if($access['daten']['MAX'] < 3) continue;
+			if($access['daten']['MAX'] < 3) break;
 			kota_submit_multiedit(3);
 			//Check for empty calendars
 			ko_delete_empty_calendars();
@@ -834,7 +828,7 @@ switch($do_action) {
 
 	//Moderation
 	case "list_events_mod":
-		if($_SESSION["ses_userid"] == ko_get_guest_id()) continue;
+		if($_SESSION["ses_userid"] == ko_get_guest_id()) break;
 		$_SESSION["show"] = "list_events_mod";
 	break;
 
@@ -852,7 +846,7 @@ switch($do_action) {
 				if($c) $ids[] = format_userinput($c_i, "uint");
 			}
 		}
-		if(!$ids[0]) continue;
+		if(!$ids[0]) break;
 
 		$notification = format_userinput($_POST["mod_confirm"], "alpha", FALSE, 5) == "true";
 
@@ -914,7 +908,7 @@ switch($do_action) {
 				if($c) $ids[] = format_userinput($c_i, "uint");
 			}
 		}
-		if(!$ids[0]) continue;
+		if(!$ids[0]) break;
 
 		$notification = format_userinput($_POST["mod_confirm"], "alpha", FALSE, 5) == "true";
 
@@ -969,7 +963,7 @@ switch($do_action) {
 				if($c) $ids[] = format_userinput($c_i, "uint");
 			}
 		}
-		if(!$ids[0]) continue;
+		if(!$ids[0]) break;
 
 		$notification = format_userinput($_POST["mod_confirm"], "alpha", FALSE, 5) == "true";
 
@@ -1020,7 +1014,7 @@ switch($do_action) {
 				if($c) $ids[] = format_userinput($c_i, "uint");
 			}
 		}
-		if(!$ids[0]) continue;
+		if(!$ids[0]) break;
 
 		$notification = format_userinput($_POST["mod_confirm"], "alpha", FALSE, 5) == "true";
 
@@ -1103,19 +1097,19 @@ switch($do_action) {
 
 	// TODO: Access?!
 	case 'list_reminders':
-		if($access['daten']['REMINDER'] < 1) continue;
+		if($access['daten']['REMINDER'] < 1) break;
 
 		$_SESSION['show_start'] = 1;
 		$_SESSION['show'] = 'list_reminders';
 		break;
 	case 'new_reminder':
-		if($access['daten']['REMINDER'] < 1) continue;
+		if($access['daten']['REMINDER'] < 1) break;
 
 		$_SESSION['show'] = 'new_reminder';
 		$onload_code = 'form_set_first_input();'.$onload_code;
 		break;
 	case 'submit_new_event_reminder':
-		if($access['daten']['REMINDER'] < 1) continue;
+		if($access['daten']['REMINDER'] < 1) break;
 
 		if($do_action == 'submit_new_event_reminder') $_POST['kota_type'] = 1;
 		$newId = kota_submit_multiedit('', 'new_reminder');
@@ -1130,9 +1124,9 @@ switch($do_action) {
 		break;
 	//Edit
 	case 'edit_reminder':
-		if($access['daten']['REMINDER'] < 1) continue;
+		if($access['daten']['REMINDER'] < 1) break;
 		$editId = format_userinput($_POST['id'], 'uint');
-		if (!ko_get_reminder_access($editId)) continue;
+		if (!ko_get_reminder_access($editId)) break;
 
 		$_SESSION['show'] = 'edit_reminder';
 		$onload_code = 'form_set_first_input();'.$onload_code;
@@ -1140,10 +1134,10 @@ switch($do_action) {
 
 
 	case 'submit_edit_event_reminder':
-		if($access['daten']['REMINDER'] < 1) continue;
+		if($access['daten']['REMINDER'] < 1) break;
 
 		list($t1, $t2, $editId) = explode('@', $_POST['id']);
-		if (!ko_get_reminder_access($editId)) continue;
+		if (!ko_get_reminder_access($editId)) break;
 
 		if($do_action == 'submit_edit_event_reminder') $_POST['kota_type'] = 1;
 		kota_submit_multiedit('', 'edit_reminder');
@@ -1157,10 +1151,10 @@ switch($do_action) {
 
 
 	case 'delete_reminder':
-		if($access['daten']['REMINDER'] < 1) continue;
+		if($access['daten']['REMINDER'] < 1) break;
 		$id = format_userinput($_POST['id'], 'uint');
 		ko_get_reminders($entry, 1, ' and `id` = ' . $id, '', '', TRUE, TRUE);
-		if(!$entry['id'] || $entry['id'] != $id) continue;
+		if(!$entry['id'] || $entry['id'] != $id) break;
 
 		db_delete_data('ko_reminder', "WHERE `id` = '$id'");
 		ko_log_diff('del_reminder', $entry);
@@ -1170,11 +1164,11 @@ switch($do_action) {
 
 
 	case 'send_test_reminder':
-		if($access['daten']['REMINDER'] < 1) continue;
+		if($access['daten']['REMINDER'] < 1) break;
 
 		$id = format_userinput($_POST['id'], 'uint');
 		ko_get_reminders($entry, 1, ' and `id` = ' . $id, '', '', TRUE, TRUE);
-		if(!$entry['id'] || $entry['id'] != $id) continue;
+		if(!$entry['id'] || $entry['id'] != $id) break;
 
 		$done = ko_task_reminder($id);
 
@@ -1188,7 +1182,7 @@ switch($do_action) {
 
 
 	case 'export_xls_daten':
-		if($access['daten']['MAX'] < 1 || $_SESSION['ses_userid'] == ko_get_guest_id()) continue;
+		if($access['daten']['MAX'] < 1 || $_SESSION['ses_userid'] == ko_get_guest_id()) break;
 
 		//Get selected columns from GET
 		$cols = $_POST['sel_xls_cols'] ? $_POST['sel_xls_cols'] : $_GET['sel_xls_cols'];
@@ -1198,7 +1192,7 @@ switch($do_action) {
 		} else {
 			//Get preset from userprefs
 			$name = format_userinput($cols, 'js', FALSE, 0, array(), '@');
-			if($name == '') continue;
+			if($name == '') break;
 			if(substr($name, 0, 3) == '@G@') $preset = ko_get_userpref('-1', substr($name, 3), 'ko_event_colitemset');
 			else $preset = ko_get_userpref($_SESSION['ses_userid'], $name, 'ko_event_colitemset');
 			$value = $preset[0]['value'];
@@ -1223,7 +1217,7 @@ switch($do_action) {
 
 
 	case 'export_pdf':
-		if($access['daten']['MAX'] < 1 || $_SESSION['ses_userid'] == ko_get_guest_id()) continue;
+		if($access['daten']['MAX'] < 1 || $_SESSION['ses_userid'] == ko_get_guest_id()) break;
 
 		list($mode, $inc) = explode('-', $_GET['mode']);
 		switch($mode) {
