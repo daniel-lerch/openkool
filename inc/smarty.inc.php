@@ -25,7 +25,7 @@ if(FALSE === include($webroot."vendor/smarty/smarty/libs/Smarty.class.php")) {
 }
 
 //Load smarty template engine
-$smarty = new Smarty();
+$smarty = new SmartyBC();
 $smarty->template_dir = $webroot.'templates/';
 $smarty->compile_dir = $webroot.'templates_c/';
 $smarty->cache_dir = $webroot.'cache/'; // Currently not used

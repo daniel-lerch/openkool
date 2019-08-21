@@ -1,5 +1,8 @@
 {
+    "name": "daniel-lerch/openkool",
+    "description": "Open source fork of kOOL - Online church organization tool",
+    "license": "GPL-2.0",
     "require": {
-        "smarty/smarty": "2.6.*"
+        "smarty/smarty": "3.1.*"
     }
 }

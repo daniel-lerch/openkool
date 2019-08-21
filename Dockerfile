@@ -1,4 +1,4 @@
-FROM php:5.6-apache
+FROM php:7.3-apache
 
 RUN set -x \
 # Install necessary packages
@@ -6,8 +6,6 @@ RUN set -x \
     && apt-get install -y zip unzip less vim libc-client-dev libkrb5-dev libpng-dev libjpeg-dev \
     && rm -rf /var/lib/apt/list/* \
 # Install PHP extensions
-    && docker-php-ext-configure mysql \
-    && docker-php-ext-install mysql \
     && docker-php-ext-configure mysqli \
     && docker-php-ext-install mysqli \
     && docker-php-ext-configure imap --with-kerberos --with-imap-ssl \
