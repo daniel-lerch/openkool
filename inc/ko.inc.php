@@ -407,7 +407,7 @@ $db_connection = mysqli_connect($mysql_server, $mysql_user, $mysql_pass, $mysql_
 if($ko_menu_akt != 'install') mysqli_query($db_connection, 'SET NAMES LATIN1');
 
 //Set user to ko_guest if none logged in yet
-if($db_connection && !in_array($ko_menu_akt, array('scheduler', 'install', 'get.php', 'post.php')) && !$_SESSION['ses_userid']) {
+if($db_connection && !in_array($ko_menu_akt, array('scheduler', 'install', 'get.php', 'post.php')) && empty($_SESSION['ses_userid'])) {
 	$_SESSION['ses_username'] = 'ko_guest';
 	$_SESSION['ses_userid'] = ko_get_guest_id();
 
@@ -1305,6 +1305,10 @@ function ko_get_leute_admin_spalten($userid, $mode="login", $pid=0) {
 
 	//Unset empty entries
 	if(is_array($return)) {
+		
+		//Return FALSE if no cols were found, so all will get displayed
+		if(sizeof($return) == 0) $return = FALSE;
+
 		foreach($return as $k => $v) {
 			if(!$v) unset($return[$k]);
 		}
@@ -1312,9 +1316,6 @@ function ko_get_leute_admin_spalten($userid, $mode="login", $pid=0) {
 		//If not an array, then probably just '0', which means all columns may be displayed
 		$return = FALSE;
 	}
-
-	//Return FALSE if no cols were found, so all will get displayed
-	if(sizeof($return) == 0) $return = FALSE;
 
 	//Check for forced access rights
 	if(isset($FORCE_KO_ADMIN["leute_admin_spalten"])) {
@@ -1502,7 +1503,7 @@ function ko_get_last_login($uid="") {
 	* @return int user id of ko_guest
 	*/
 function ko_get_guest_id() {
-	if($GLOBALS["kOOL"]["guest_id"]) return $GLOBALS["kOOL"]["guest_id"];
+	if(isset($GLOBALS["kOOL"]["guest_id"])) return $GLOBALS["kOOL"]["guest_id"];
 
 	$row = db_select_data('ko_admin', "WHERE `login` = 'ko_guest'", 'id', '', '', TRUE);
 	if(is_array($row)) {
@@ -1618,6 +1619,7 @@ function ko_get_userpref($id, $key="", $type="", $order="", $force=FALSE) {
 			$query = "SELECT * FROM `ko_userprefs` WHERE `user_id` = '$id' AND `type` = '$type' $order";
 		}
 		$result = mysqli_query($db_connection, $query);
+		$r = array();
 		while($row = mysqli_fetch_assoc($result)) {
 			$r[] = $row;
 		}
@@ -2046,20 +2048,22 @@ function ko_specialfilter_filterpreset(&$code) {
 
 
 function ko_specialfilter_crdate(&$code, $params) {
-	foreach($_SESSION["filter"] as $i => $f) {
-		if(!is_numeric($i)) continue;
-		$filter = db_select_data("ko_filter", "WHERE `id` = '".$f[0]."'", "*", "", "", TRUE);
-		if($filter["name"] == "crdate") {
-			$value1 = $f[1][1];
-			$value2 = $f[1][2];
+	if (isset($_SESSION['filter'])) {
+		foreach($_SESSION['filter'] as $i => $f) {
+			if(!is_numeric($i)) continue;
+			$filter = db_select_data("ko_filter", "WHERE `id` = '".$f[0]."'", "*", "", "", TRUE);
+			if($filter["name"] == "crdate") {
+				$value1 = $f[1][1];
+				$value2 = $f[1][2];
+			}
 		}
 	}
 
 	if($params[1] == 1) {
-		$value1 = $value1 ? $value1 : "0000-00-00";
+		$value1 = $value1 ?? "0000-00-00";
 		$code = '<input type="text" name="var1" size="12" maxlength="10" onkeydown="if ((event.which == 13) || (event.keyCode == 13)) { this.form.submit_filter.click(); return false;} else return true;" value="'.$value1.'" />';
 	} else if($params[1] == 2) {
-		$value2 = $value2 ? $value2 : strftime("%Y-%m-%d", time());
+		$value2 = $value2 ?? strftime("%Y-%m-%d", time());
 		$code = '<input type="text" name="var2" size="12" maxlength="10" onkeydown="if ((event.which == 13) || (event.keyCode == 13)) { this.form.submit_filter.click(); return false;} else return true;" value="'.$value2.'" />';
 	}
 
@@ -6308,6 +6312,7 @@ function ko_groups_decode($all, $type, $limit=0) {
 		$parts = explode(":", $all);
 		$base_found = FALSE;
 		$mother_line = array();
+		$mother_line_names = array();
 		for($i=(sizeof($parts)-1); $i>=0; $i--) {
 			if(substr($parts[$i], 0, 1) == "r") {
 				$rolle = substr($parts[$i], 1);
@@ -6361,16 +6366,16 @@ function ko_groups_decode($all, $type, $limit=0) {
 					return $group[$base_group]["name"].": ".$role[$rolle]["name"];
 			} else {
 				if($type == "group_desc_full") {
-          $value = implode(":", array_reverse($mother_line_names)).(sizeof($mother_line_names)>0?":":"").$group[$base_group]["name"];
-          if($limit && strlen($value) > $limit) {
-            $limit = floor($limit/2)-2;
-            return substr($value, 0, $limit)."[..]".substr($value, -1*$limit);
-          } else {
-            return $value;
-          }
-        } else {
-          return $group[$base_group]["name"];
-        }
+        			$value = implode(":", array_reverse($mother_line_names)).(sizeof($mother_line_names)>0?":":"").$group[$base_group]["name"];
+        			if($limit && strlen($value) > $limit) {
+            			$limit = floor($limit/2)-2;
+            			return substr($value, 0, $limit)."[..]".substr($value, -1*$limit);
+          			} else {
+            			return $value;
+          			}
+        		} else {
+        			return $group[$base_group]["name"];
+        		}
 			}
 		break;
 
@@ -7676,10 +7681,10 @@ function db_get_enums($table, $col) {
 	}
 
 	$query = "SHOW COLUMNS FROM $table LIKE '$col'";
-	if(DEBUG_SELECT) $time_start = microtime(TRUE);
+	if(defined('DEBUG_SELECT') && DEBUG_SELECT) $time_start = microtime(TRUE);
 	$result = mysqli_query($db_connection, $query);
 	if($result === FALSE) trigger_error('DB ERROR (db_get_enums): '.mysqli_errno($db_connection).': '.mysqli_error($db_connection).', QUERY: '.$query, E_USER_ERROR);
-	if(DEBUG_SELECT) {
+	if(defined('DEBUG_SELECT') && DEBUG_SELECT) {
 		$DEBUG_db->queryCount++;
 		$DEBUG_db->queries[] = array('time' => (microtime(TRUE)-$time_start)*1000, 'sql' => $query);
 	}
@@ -7739,10 +7744,10 @@ function db_get_columns($table, $field="") {
 	else $like = "";
 
 	$query = "SHOW COLUMNS FROM $table $like";
-	if(DEBUG_SELECT) $time_start = microtime(TRUE);
+	if(defined('DEBUG_SELECT') && DEBUG_SELECT) $time_start = microtime(TRUE);
 	$result = mysqli_query($db_connection, $query);
 	if($result === FALSE) trigger_error('DB ERROR (db_get_columns): '.mysqli_errno($db_connection).': '.mysqli_error($db_connection).', QUERY: '.$query, E_USER_ERROR);
-	if(DEBUG_SELECT) {
+	if(defined('DEBUG_SELECT') && DEBUG_SELECT) {
 		$DEBUG_db->queryCount++;
 		$DEBUG_db->queries[] = array('time' => (microtime(TRUE)-$time_start)*1000, 'sql' => $query);
 	}
@@ -7771,10 +7776,10 @@ function db_get_count($table, $field = "id", $z_where = "") {
 
 	if($field == '') $field = 'id';
 	$query = "SELECT COUNT(`$field`) AS count FROM `$table` ".(($z_where)?" WHERE 1=1 $z_where":"");
-	if(DEBUG_SELECT) $time_start = microtime(TRUE);
+	if(defined('DEBUG_SELECT') && DEBUG_SELECT) $time_start = microtime(TRUE);
 	$result = mysqli_query($db_connection, $query);
 	if($result === FALSE) trigger_error('DB ERROR (db_get_count): '.mysqli_errno($db_connection).': '.mysqli_error($db_connection).', QUERY: '.$query, E_USER_ERROR);
-	if(DEBUG_SELECT) {
+	if(defined('DEBUG_SELECT') && DEBUG_SELECT) {
 		$DEBUG_db->queryCount++;
 		$DEBUG_db->queries[] = array('time' => (microtime(TRUE)-$time_start)*1000, 'sql' => $query);
 	}
@@ -7851,10 +7856,10 @@ function db_insert_data($table, $data) {
 	}
 	$query .= "(" . substr($query1, 0, -2) . ") VALUES (" . substr($query2, 0, -2) . ")";
 
-	if(DEBUG_INSERT) $time_start = microtime(TRUE);
+	if(defined('DEBUG_INSERT') && DEBUG_INSERT) $time_start = microtime(TRUE);
 	$result = mysqli_query($db_connection, $query);
 	if($result === FALSE) trigger_error('DB ERROR (db_insert_data): '.mysqli_errno($db_connection).': '.mysqli_error($db_connection).', QUERY: '.$query, E_USER_ERROR);
-	if(DEBUG_INSERT) {
+	if(defined('DEBUG_INSERT') && DEBUG_INSERT) {
 		$DEBUG_db->queryCount++;
 		$DEBUG_db->queries[] = array('time' => (microtime(TRUE)-$time_start)*1000, 'sql' => $query);
 	}
@@ -7916,10 +7921,10 @@ function db_update_data($table, $where, $data) {
 	//WHERE-Bedingung
 	$query .= " $where ";
 
-	if(DEBUG_UPDATE) $time_start = microtime(TRUE);
+	if(defined('DEBUG_UPDATE') && DEBUG_UPDATE) $time_start = microtime(TRUE);
 	$result = mysqli_query($db_connection, $query);
 	if($result === FALSE) trigger_error('DB ERROR (db_update_data): '.mysqli_errno($db_connection).': '.mysqli_error($db_connection).", QUERY: $query", E_USER_ERROR);
-	if(DEBUG_UPDATE) {
+	if(defined('DEBUG_UPDATE') && DEBUG_UPDATE) {
 		$DEBUG_db->queryCount++;
 		$DEBUG_db->queries[] = array('time' => (microtime(TRUE)-$time_start)*1000, 'sql' => $query);
 	}
@@ -7938,10 +7943,10 @@ function db_delete_data($table, $where) {
 	global $db_connection, $DEBUG_db;
 
 	$query = "DELETE FROM $table $where";
-	if(DEBUG_DELETE) $time_start = microtime(TRUE);
+	if(defined('DEBUG_DELETE') && DEBUG_DELETE) $time_start = microtime(TRUE);
 	$result = mysqli_query($db_connection, $query);
 	if($result === FALSE) trigger_error('DB ERROR (db_delete_data): '.mysqli_errno($db_connection).': '.mysqli_error($db_connection).", QUERY: $query", E_USER_ERROR);
-	if(DEBUG_DELETE) {
+	if(defined('DEBUG_DELETE') && DEBUG_DELETE) {
 		$DEBUG_db->queryCount++;
 		$DEBUG_db->queries[] = array('time' => (microtime(TRUE)-$time_start)*1000, 'sql' => $query);
 	}
@@ -7973,15 +7978,15 @@ function db_select_data($table, $where="", $columns="*", $order="", $limit="", $
 	}
 
 	$query = "SELECT $columns FROM $table $where $order $limit";
-	if(DEBUG_SELECT) $time_start = microtime(TRUE);
+	if(defined('DEBUG_SELECT') && DEBUG_SELECT) $time_start = microtime(TRUE);
 	$result = mysqli_query($db_connection, $query);
 	if($result === FALSE) trigger_error('DB ERROR (db_select_data): '.mysqli_errno($db_connection).': '.mysqli_error($db_connection). ' QUERY: '.$query, E_USER_ERROR);
-	if(DEBUG_SELECT) {
+	if(defined('DEBUG_SELECT') && DEBUG_SELECT) {
 		$DEBUG_db->queryCount++;
 		$DEBUG_db->queries[] = array('time' => (microtime(TRUE)-$time_start)*1000, 'sql' => $query);
 	}
 	if(mysqli_num_rows($result) == 0) {
-		return;
+		return $single ? NULL : array();
 	} else if($single && mysqli_num_rows($result) == 1) {
 		$return = mysqli_fetch_assoc($result);
 		return $return;
@@ -8082,10 +8087,10 @@ function db_select_distinct($table, $col, $order_="", $where="", $case_sensitive
 
 	if($case_sensitive) $query = "SELECT DISTINCT BINARY $col AS $col FROM $table $where $order";
 	else $query = "SELECT DISTINCT $col FROM $table $where $order";
-	if(DEBUG_SELECT) $time_start = microtime(TRUE);
+	if(defined('DEBUG_SELECT') && DEBUG_SELECT) $time_start = microtime(TRUE);
 	$result = mysqli_query($db_connection, $query);
 	if($result === FALSE) trigger_error('DB ERROR (db_select_distinct): '.mysqli_errno($db_connection).': '.mysqli_error($db_connection).', QUERY: '.$query, E_USER_ERROR);
-	if(DEBUG_SELECT) {
+	if(defined('DEBUG_SELECT') && DEBUG_SELECT) {
 		$DEBUG_db->queryCount++;
 		$DEBUG_db->queries[] = array('time' => (microtime(TRUE)-$time_start)*1000, 'sql' => $query);
 	}
@@ -13229,11 +13234,11 @@ function format_email($m) {
  * @param string $add_own Additional allowed chars.
  */
 function format_userinput($s, $type, $enforce=FALSE, $length=0, $replace=array(), $add_own="") {
-	if($replace['umlaute']) $s = strtr($s, array('ä'=>'a','ö'=>'o','ü'=>'u','é'=>'e','è'=>'e','à'=>'a','Ä'=>'A','Ö'=>'O','Ü'=>'U'));
+	if(!empty($replace['umlaute'])) $s = strtr($s, array('ä'=>'a','ö'=>'o','ü'=>'u','é'=>'e','è'=>'e','à'=>'a','Ä'=>'A','Ö'=>'O','Ü'=>'U'));
 
-	if($replace['singlequote'] || $replace["allquotes"]) $s = strtr($s, array("'" => '', '`' => ''));
-	if($replace["doublequote"] || $replace["allquotes"]) $s = str_replace('"', "", $s);
-	if($replace["backquote"] || $replace["allquotes"]) $s = str_replace("`", "", $s);
+	if(!empty($replace['singlequote']) || !empty($replace["allquotes"])) $s = strtr($s, array("'" => '', '`' => ''));
+	if(!empty($replace["doublequote"]) || !empty($replace["allquotes"])) $s = str_replace('"', "", $s);
+	if(!empty($replace["backquote"]) || !empty($replace["allquotes"])) $s = str_replace("`", "", $s);
 
 	//Bei falscher Länge abbrechen
 	if($length != 0) {
@@ -14787,7 +14792,7 @@ function print_d($array) {
 function ko_test($fcn, $args, &$return) {
 	global $TESTCASE;
 
-	if(KOOLTEST === TRUE && $TESTCASE != '' && function_exists('kotest_'.$TESTCASE.'_'.$fcn)) {
+	if(defined('KOOLTEST') && KOOLTEST === TRUE && $TESTCASE != '' && function_exists('kotest_'.$TESTCASE.'_'.$fcn)) {
 		$return = call_user_func_array('kotest_'.$TESTCASE.'_'.$fcn, $args);
 		return TRUE;
 	}

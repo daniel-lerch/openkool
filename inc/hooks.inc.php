@@ -1,33 +1,27 @@
 <?php
-/***************************************************************
-*  Copyright notice
+/*******************************************************************************
 *
-*  (c) 2003-2015 Renzo Lauper (renzo@churchtool.org)
-*  All rights reserved
+*    OpenKool - Online church organization tool
 *
-*  This script is part of the kOOL project. The kOOL project is
-*  free software; you can redistribute it and/or modify
-*  it under the terms of the GNU General Public License as published by
-*  the Free Software Foundation; either version 2 of the License, or
-*  (at your option) any later version.
+*    Copyright © 2003-2015 Renzo Lauper (renzo@churchtool.org)
+*    Copyright © 2019      Daniel Lerch
 *
-*  The GNU General Public License can be found at
-*  http://www.gnu.org/copyleft/gpl.html.
-*  A copy is found in the textfile GPL.txt and important notices to the license
-*  from the author is found in LICENSE.txt distributed with these scripts.
+*    This program is free software; you can redistribute it and/or modify
+*    it under the terms of the GNU General Public License as published by
+*    the Free Software Foundation; either version 2 of the License, or
+*    (at your option) any later version.
 *
-*  kOOL is distributed in the hope that it will be useful,
-*  but WITHOUT ANY WARRANTY; without even the implied warranty of
-*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-*  GNU General Public License for more details.
+*    This program is distributed in the hope that it will be useful,
+*    but WITHOUT ANY WARRANTY; without even the implied warranty of
+*    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+*    GNU General Public License for more details.
 *
-*  This copyright notice MUST APPEAR in all copies of the script!
-***************************************************************/
+*******************************************************************************/
 
 function hook_include_main($type) {
 	global $BASE_PATH;
 
-	$r = NULL;
+	$r = array();
 	$hooks = hook_get_by_type($type);
 
 	if(sizeof($hooks) > 0) {
@@ -44,7 +38,7 @@ function hook_include_main($type) {
 function hook_include_sm() {
 	global $BASE_PATH, $PLUGINS;
 
-	$r = NULL;
+	$r = array();
 	
 	foreach($PLUGINS as $plugin) {
 		$file = $BASE_PATH."plugins/".$plugin["name"]."/submenu.php";
@@ -57,7 +51,7 @@ function hook_include_sm() {
 function hook_include_ll() {
 	global $BASE_PATH, $PLUGINS;
 
-	$r = NULL;
+	$r = array();
 	
 	foreach($PLUGINS as $plugin) {
 		$file = $BASE_PATH."plugins/".$plugin["name"]."/locallang.php";
@@ -70,7 +64,7 @@ function hook_include_ll() {
 function hook_include_scheduler_task() {
 	global $BASE_PATH, $PLUGINS;
 
-	$r = NULL;
+	$r = array();
 	
 	foreach($PLUGINS as $plugin) {
 		$file = $BASE_PATH.'plugins/'.$plugin['name'].'/scheduler_task.php';
@@ -84,7 +78,7 @@ function hook_include_scheduler_task() {
 function hook_include_js($type='') {
 	global $ko_path, $PLUGINS;
 
-	$r = NULL;
+	$r = array();
 
 	if($type) {
 		$use_plugins = hook_get_by_type($type);
@@ -155,10 +149,10 @@ function hook_action_handler($action) {
 	}
 
 	if($found && function_exists("my_action_handler_".$action)) {
-    call_user_func("my_action_handler_".$action);
+    	call_user_func("my_action_handler_".$action);
 		return TRUE;
-  } else { 
-	  return FALSE;
+	} else { 
+		return FALSE;
 	}
 }//hook_action_handler()
 
