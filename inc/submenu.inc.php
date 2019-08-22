@@ -1,28 +1,22 @@
 <?php
-/***************************************************************
-*  Copyright notice
+/*******************************************************************************
 *
-*  (c) 2003-2015 Renzo Lauper (renzo@churchtool.org)
-*  All rights reserved
+*    OpenKool - Online church organization tool
 *
-*  This script is part of the kOOL project. The kOOL project is
-*  free software; you can redistribute it and/or modify
-*  it under the terms of the GNU General Public License as published by
-*  the Free Software Foundation; either version 2 of the License, or
-*  (at your option) any later version.
+*    Copyright © 2003-2015 Renzo Lauper (renzo@churchtool.org)
+*    Copyright © 2019      Daniel Lerch
 *
-*  The GNU General Public License can be found at
-*  http://www.gnu.org/copyleft/gpl.html.
-*  A copy is found in the textfile GPL.txt and important notices to the license
-*  from the author is found in LICENSE.txt distributed with these scripts.
+*    This program is free software; you can redistribute it and/or modify
+*    it under the terms of the GNU General Public License as published by
+*    the Free Software Foundation; either version 2 of the License, or
+*    (at your option) any later version.
 *
-*  kOOL is distributed in the hope that it will be useful,
-*  but WITHOUT ANY WARRANTY; without even the implied warranty of
-*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-*  GNU General Public License for more details.
+*    This program is distributed in the hope that it will be useful,
+*    but WITHOUT ANY WARRANTY; without even the implied warranty of
+*    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+*    GNU General Public License for more details.
 *
-*  This copyright notice MUST APPEAR in all copies of the script!
-***************************************************************/
+*******************************************************************************/
 
 function ko_get_submenus($type) {
 	//$access has to stand here so it is available in the plugins which are included below with hook_include_sm()
@@ -224,7 +218,7 @@ function submenu($menu, $position, $state, $display=3, $module="") {
 	switch($menu) {
 		case "gsm_notizen":
 			//Guest darf keine Notizen machen
-			if($_SESSION["ses_userid"] == ko_get_guest_id()) continue;
+			if($_SESSION["ses_userid"] == ko_get_guest_id()) break;
 
 			$submenu["titel"] = getLL("submenu_title_notizen");
 			$submenu["output"][0] = "[notizen]";
@@ -314,7 +308,7 @@ function submenu_daten($namen, $position, $state, $display=1) {
 			case "termine":
 				$found = TRUE;
 				$submenu[$menucounter]["titel"] = getLL("submenu_daten_title_termine");
-				if($state == "closed") continue;
+				if($state == "closed") break;
 
 				if($max_rights > 1 && db_get_count('ko_eventgruppen', 'id', "AND `type` = '0'") > 0) {
 					$submenu[$menucounter]["output"][$itemcounter] = ko_menuitem("daten", "neuer_termin");
@@ -363,7 +357,7 @@ function submenu_daten($namen, $position, $state, $display=1) {
 				if($max_rights > 2) {
 					$found = TRUE;
 					$submenu[$menucounter]["titel"] = getLL("submenu_daten_title_termingruppen");
-					if($state == "closed") continue;
+					if($state == "closed") break;
 
 					if($all_rights > 2) {
 						$submenu[$menucounter]['output'][$itemcounter] = ko_menuitem('daten', 'neue_gruppe');
@@ -386,7 +380,7 @@ function submenu_daten($namen, $position, $state, $display=1) {
 				if($max_rights > 0 && $_SESSION["ses_userid"] != ko_get_guest_id()) {
 					$found = TRUE;
 					$submenu[$menucounter]["titel"] = getLL("submenu_daten_title_export");
-					if($state == "closed") continue;
+					if($state == "closed") break;
 
 					//PDF exports for daily, weekly, monthly and yearly calendar
 					if($max_rights > 0) {
@@ -469,11 +463,11 @@ function submenu_daten($namen, $position, $state, $display=1) {
 			break;
 
 			case 'reminder':
-				if ($access['daten']['REMINDER'] < 1) continue;
+				if ($access['daten']['REMINDER'] < 1) break;
 
 				$found = TRUE;
 				$submenu[$menucounter]["titel"] = getLL("submenu_daten_title_reminder");
-				if($state == "closed") continue;
+				if($state == "closed") break;
 
 				$submenu[$menucounter]["output"][$itemcounter] = ko_menuitem("daten", "new_reminder");
 				$submenu[$menucounter]["link"][$itemcounter++] = $ko_path."daten/index.php?action=new_reminder";
@@ -573,7 +567,7 @@ function submenu_daten($namen, $position, $state, $display=1) {
 				$submenu[$menucounter]['form_hidden_inputs'] = array(array('name' => 'action', 'value' => ''),
 																														 array('name' => 'ids', 'value' => ''));
 				$submenu[$menucounter]["titel"] = getLL("submenu_daten_title_filter");
-				if($state == "closed") continue;
+				if($state == "closed") break;
 
 				$submenu[$menucounter]['output'][$itemcounter] = getLL('filter_from_today');
 				$submenu[$menucounter]["link"][$itemcounter++] = $ko_path."daten/index.php?action=set_filter_today";
@@ -688,7 +682,7 @@ function submenu_daten($namen, $position, $state, $display=1) {
 				if($max_rights > 3) $smarty->assign('allow_global', TRUE);
 																
 				$submenu[$menucounter]["titel"] = getLL("submenu_daten_title_itemlist_termingruppen");
-				if($state == "closed") continue;
+				if($state == "closed") break;
 
 				$submenu[$menucounter]["output"][$itemcounter++] = "[itemlist]";
 			break;
@@ -1608,7 +1602,7 @@ function submenu_leute($namen, $position, $state, $display=1) {
 				if($max_rights > 3) $smarty->assign('allow_global', TRUE);
 
 				$submenu[$menucounter]["titel"] = getLL("submenu_leute_title_itemlist_spalten");
-        if($state == "closed") continue;
+        if($state == "closed") break;
 
         $submenu[$menucounter]["output"][$itemcounter++] = "[itemlist]";
 			break;
@@ -1687,7 +1681,7 @@ function submenu_leute($namen, $position, $state, $display=1) {
 					if($kg_all_rights > 2) $smarty->assign('allow_global', TRUE);
 
 					$submenu[$menucounter]['titel'] = getLL('submenu_leute_title_itemlist_spalten_kg');
-					if($state == 'closed') continue;
+					if($state == 'closed') break;
 
 					$submenu[$menucounter]['output'][$itemcounter++] = '[itemlist]';
 				}
@@ -1696,7 +1690,7 @@ function submenu_leute($namen, $position, $state, $display=1) {
 
 
 			case "itemlist_chart":
-				if($_SESSION["show"] != "chart") continue;
+				if($_SESSION["show"] != "chart") break;
 
 				$found = TRUE;
 				$counter = 0;
@@ -1723,7 +1717,7 @@ function submenu_leute($namen, $position, $state, $display=1) {
 					if($kg_all_rights > 2) $smarty->assign('allow_global', TRUE);
 
 				$submenu[$menucounter]["titel"] = getLL("submenu_leute_title_itemlist_chart");
-				if($state == "closed") continue;
+				if($state == "closed") break;
 
 				$submenu[$menucounter]["output"][$itemcounter++] = "[itemlist]";
 			break;
@@ -1857,7 +1851,7 @@ function submenu_reservation($namen, $position, $state, $display=1) {
 				if($max_rights > 0 && $_SESSION['ses_userid'] != ko_get_guest_id()) {
 					$found = TRUE;
 					$submenu[$menucounter]["titel"] = getLL("submenu_reservation_title_export");
-					if($state == "closed") continue;
+					if($state == "closed") break;
 
 					//PDF exports for daily, weekly, monthly and yearly calendar
 					if($max_rights > 0) {
@@ -2011,7 +2005,7 @@ function submenu_reservation($namen, $position, $state, $display=1) {
         $bis_code .= '<input style="display: none;" type="submit" value="'.getLL("filter_refresh").'" name="submit_filter" id="submit_filter" onclick="set_action(\'submit_filter\', this);" />';
 
         $submenu[$menucounter]["titel"] = getLL("submenu_reservation_title_filter");
-        if($state == "closed") continue;
+        if($state == "closed") break;
 				$submenu[$menucounter]['form'] = TRUE;
 				$submenu[$menucounter]['form_hidden_inputs'] = array(array('name' => 'action', 'value' => ''),
 																														 array('name' => 'ids', 'value' => ''));
@@ -2085,7 +2079,7 @@ function submenu_reservation($namen, $position, $state, $display=1) {
 				if($max_rights > 3) $smarty->assign('allow_global', TRUE);
 
 				$submenu[$menucounter]["titel"] = getLL("submenu_reservation_title_itemlist_objekte");
-        if($state == "closed") continue;
+        if($state == "closed") break;
 
         $submenu[$menucounter]["output"][$itemcounter++] = "[itemlist]";
 			break;
@@ -2140,7 +2134,7 @@ function submenu_reservation($namen, $position, $state, $display=1) {
 				</script>';
 
         $submenu[$menucounter]["titel"] = getLL("submenu_reservation_title_objektbeschreibungen");
-        if($state == "closed") continue;
+        if($state == "closed") break;
 
         $submenu[$menucounter]["output"][$itemcounter] = " ";
         $submenu[$menucounter]["no_ul"][$itemcounter] = TRUE;
@@ -2272,7 +2266,7 @@ function submenu_rota($namen, $position, $state, $display=1) {
 				$smarty->assign('action_suffix', 'teams');
 
 				$submenu[$menucounter]['titel'] = getLL('submenu_rota_title_itemlist_teams');
-				if($state == 'closed') continue;
+				if($state == 'closed') break;
 
 				$submenu[$menucounter]['output'][$itemcounter] = '[itemlist]';
 			break;
@@ -2367,7 +2361,7 @@ function submenu_rota($namen, $position, $state, $display=1) {
 				$smarty->assign('action_suffix', 'egs');
 																
 				$submenu[$menucounter]['titel'] = getLL('submenu_daten_title_itemlist_termingruppen');
-				if($state == 'closed') continue;
+				if($state == 'closed') break;
 
 				$submenu[$menucounter]['output'][$itemcounter++] = '[itemlist]';
 			break;
@@ -2510,7 +2504,7 @@ function submenu_admin($namen, $position, $state, $display=1) {
 
 
 			case "filter":
-				if(($_SESSION['show'] == 'show_logs' && $all_rights < 4) || ($_SESSION['show'] == 'show_sms_log' && $all_rights < 1)) continue;
+				if(($_SESSION['show'] == 'show_logs' && $all_rights < 4) || ($_SESSION['show'] == 'show_sms_log' && $all_rights < 1)) break;
 
 				$found = TRUE;
 				//Typ
@@ -3374,7 +3368,7 @@ function submenu_donations($namen, $position, $state, $display=1) {
 				if($max_rights > 3) $smarty->assign('allow_global', TRUE);
 																
 				$submenu[$menucounter]["titel"] = getLL("submenu_donations_title_itemlist_accounts");
-				if($state == "closed") continue;
+				if($state == "closed") break;
 
 				$submenu[$menucounter]["output"][$itemcounter++] = "[itemlist]";
 			break;
@@ -3881,7 +3875,7 @@ function submenu_tracking($namen, $position, $state, $display=1) {
 				if($max_rights > 3) $smarty->assign('allow_global', TRUE);
 																
 				$submenu[$menucounter]['titel'] = getLL('submenu_tracking_title_itemlist_trackinggroups');
-				if($state == 'closed') continue;
+				if($state == 'closed') break;
 
 				$submenu[$menucounter]['output'][$itemcounter++] = '[itemlist]';
 			break;
