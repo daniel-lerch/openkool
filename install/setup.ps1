@@ -31,8 +31,8 @@ function Main {
 
     Write-Host "Preparing ~/config..."
     EnsureExists -Path "..\config"
-    Copy-Item -Path ".\default\config\address.rtf",".\default\config\ko-config.php",".\default\config\leute_formular.inc.php" `
-        -Destination "..\config" -Force
+    Copy-Item -Path ".\default\config\address.rtf",".\default\config\footer.php",".\default\config\header.php",`
+        ".\default\config\ko-config.php",".\default\config\leute_formular.inc.php" -Destination "..\config" -Force
     # TODO: Handle permissions
 
     Write-Host "Preparing ~/download..."

@@ -3771,7 +3771,7 @@ print ko_get_submenu_code("leute", "right");
 </td>
 </tr>
 
-<?php include($ko_path . "footer.php"); ?>
+<?php include($ko_path . 'config/footer.php'); ?>
 
 </table>
 

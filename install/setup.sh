@@ -25,7 +25,8 @@ WEB_GID=www-data
 function dir_config() {
     echo "Preparing ~/config..."
     if [[ ! -d ../config ]]; then mkdir ../config; fi
-    cp -f default/config/address.rtf default/config/ko-config.php default/config/leute_formular.inc.php ../config
+    cp -f default/config/address.rtf default/config/footer.php default/config/header.php \
+        default/config/ko-config.php default/config/leute_formular.inc.php ../config
     chown --recursive $WEB_UID:$WEB_GID ../config
 }
 
