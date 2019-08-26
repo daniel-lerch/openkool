@@ -301,8 +301,14 @@ $LEUTE_NO_FAMILY = false;
 //Kunden-spezifische Konfiguration einlesen (kann oben stehende Werte überschreiben)
 include($ko_path."config/ko-config.php");
 
-
-
+// Configure autoloading
+include __DIR__ . '/../vendor/autoload.php';
+spl_autoload_register(function($class) {
+	$prefix = 'OpenKool\\DAV\\';
+	if (substr($class, 0, strlen($prefix)) === $prefix) {
+		include __DIR__ . '/dav/' . substr($class, strlen($prefix)) . '.php';
+	}
+});
 
 //set notification levels
 koNotifier::Instance()->setDisplayLevel($NOTIFIER_LEVEL_DISPLAY);

@@ -3,6 +3,7 @@
     "description": "Open source fork of kOOL - Online church organization tool",
     "license": "GPL-2.0",
     "require": {
-        "smarty/smarty": "3.1.*"
+        "smarty/smarty": "3.1.*",
+        "sabre/dav": "1.8.*"
     }
 }

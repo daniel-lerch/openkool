@@ -53,8 +53,7 @@ if(file_exists($cache_path.$filename)) {
 		if(!$pid) exit;
 		ko_get_access('leute');
 		if($access['leute']['ALL'] > 0 || $access['leute'][$pid]) {
-			require_once($ko_path.'leute/inc/vcard.php');
-			$vcard = new vCard(TRUE);
+			$vcard = new OpenKool\DAV\vCard(TRUE);
 			$vcard->addPerson($pid);
 			$string = $vcard->getVCard();
 			if(!$string) exit;

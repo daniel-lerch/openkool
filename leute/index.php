@@ -2166,8 +2166,7 @@ switch($do_action) {
 
 
 				case 'vcard':
-					include_once($ko_path.'leute/inc/vcard.php');
-					$v = new vCard();
+					$v = new OpenKool\DAV\vCard();
 					foreach($es as $person) {
 						$v->addPerson($person);
 					}

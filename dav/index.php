@@ -1,20 +1,10 @@
 <?php
 error_reporting(E_ALL ^ E_NOTICE ^ E_WARNING);
 
-//get kOOL config and vcard
+//get kOOL config
 $ko_path = '../';
 $ko_menu_akt = 'carddav';
 require_once($ko_path.'inc/ko.inc.php');
-require_once($ko_path.'leute/inc/vcard.php');
-
-//Database
-try {
-	$pdo = new PDO('mysql:dbname='.$mysql_db.';host='.$mysql_server, $mysql_user, $mysql_pass);
-} catch (PDOException $e) {
-	echo 'Connection failed: ' . $e->getMessage();
-}
-
-$pdo->setAttribute(PDO::ATTR_ERRMODE,PDO::ERRMODE_EXCEPTION);
 
 
 //Mapping PHP errors to exceptions
@@ -24,13 +14,10 @@ function exception_error_handler($errno, $errstr, $errfile, $errline ) {
 set_error_handler('exception_error_handler', E_ERROR);
 
 
-//Autoloader
-require_once($ko_path.'inc/SabreDAV/vendor/autoload.php');
-
 //Backends
-$authBackend      = new Sabre\DAV\Auth\Backend\kOOL($pdo);
-$principalBackend = new Sabre\DAVACL\PrincipalBackend\kOOL($pdo);
-$carddavBackend   = new Sabre\CardDAV\Backend\kOOL($pdo);
+$authBackend      = new OpenKool\DAV\DAVAuthBackend($db_connection);
+$principalBackend = new OpenKool\DAV\DAVACLPrincipalBackend($db_connection);
+$carddavBackend   = new OpenKool\DAV\CardDAVBackend($db_connection);
 //$caldavBackend    = new Sabre\CalDAV\Backend\PDO($pdo);
 
 //Setting up the directory tree
