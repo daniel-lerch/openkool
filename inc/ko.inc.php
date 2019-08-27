@@ -11887,7 +11887,7 @@ function ko_get_ical_link($url, $text) {
 
 	$r = '';
 
-	$r .= '<a href="javascript:ko_image_popup(\''.$ko_path.'inc/qrcode.php?s='.base64_encode($url).'&h='.md5(KOOL_ENCRYPTION_KEY.$url).'&size=5\');"><img src="'.$ko_path.'images/icon_qrcode.png" title="'.getLL('ical_qrcode').'" /></a>';
+	$r .= '<a href="javascript:ko_image_popup(\''.$ko_path.'inc/qrcode.php?s='.base64_encode($url).'&h='.md5(KOOL_ENCRYPTION_KEY.$url).'&size=250\');"><img src="'.$ko_path.'images/icon_qrcode.png" title="'.getLL('ical_qrcode').'" /></a>';
 	$r .= '&nbsp;&nbsp;';
 	$r .= '<a href="'.$url.'" onclick="return false;">'.$text.'</a>';
 

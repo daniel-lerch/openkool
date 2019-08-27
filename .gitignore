@@ -9,8 +9,7 @@
 
 # Development files
 /vendor/
-/composer.lock
-/composer.phar
+*.phar
 
 # Runtime configuration
 /log.txt

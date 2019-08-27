@@ -215,7 +215,7 @@
 						</a>
 					{/if}
 
-					<a href="javascript:ko_image_popup('{$ko_path}inc/qrcode.php?s={$l.qrcode_string}&h={$l.qrcode_hash}&size=7');"><img src="{$ko_path}images/icon_qrcode.png" title="{$label_qrcode}" /></a>
+					<a href="javascript:ko_image_popup('{$ko_path}inc/qrcode.php?s={$l.qrcode_string}&h={$l.qrcode_hash}&size=400');"><img src="{$ko_path}images/icon_qrcode.png" title="{$label_qrcode}" /></a>
 					
 					{if $tpl_show_word}
 						<a href="#" onclick="sendReq('../{$module}/inc/ajax.php', 'action,pid,sesid', 'addressdoc,{$l.id},{$sesid}', do_element);"><img src="{$ko_path}images/icon_word.png" title="{$label_word}" /></a>
