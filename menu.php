@@ -139,7 +139,7 @@ foreach($user_menu as $m) {
 	$menu_counter++;
 }//foreach(MODULES as m)
 
-$menu[] = "";
+$menu[] = array();
 
 $smarty->assign("ko_path", $ko_path);
 $smarty->assign("tpl_menu", $menu);

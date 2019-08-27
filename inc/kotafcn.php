@@ -161,10 +161,12 @@ function kota_get_form($table, $column) {
 				case 'rectype':
 					$data['values'][] = '';
 					$data['descs'][] = getLL('kota_ko_leute_rectype_default');
-					foreach($RECTYPES as $k => $v) {
-						$data['values'][] = $k;
-						$ll_value = getLL('kota_ko_leute_'.$column.'_'.$k);
-						$data['descs'][] = $ll_value ? $ll_value : $k;
+					if (!empty($RECTYPES)) {
+						foreach($RECTYPES as $k => $v) {
+							$data['values'][] = $k;
+							$ll_value = getLL('kota_ko_leute_'.$column.'_'.$k);
+							$data['descs'][] = $ll_value ? $ll_value : $k;
+						}
 					}
 				break;
 			}  //switch(column)

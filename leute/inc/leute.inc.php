@@ -165,7 +165,7 @@ function ko_formular_leute($mode, $id=0, $show_save_as_new=true) {
 
 					/* KG-Seit-Modul */
 					case "kg_seit":
-						if(!ko_module_installed("kg") || $access['kg']['MAX'] < 2) continue;
+						if(!ko_module_installed("kg") || $access['kg']['MAX'] < 2) break;
 						//Dabei in Kleingruppen seit
 						$inputs[$col_counter]["desc"] = getLL("form_leute_kg_since");
 						$inputs[$col_counter]["type"] = "varchar";
@@ -194,7 +194,7 @@ function ko_formular_leute($mode, $id=0, $show_save_as_new=true) {
 
 					/* Groups-Modul */
 					case "groups":
-						if(!ko_module_installed("groups")) continue;
+						if(!ko_module_installed("groups")) break;
 						//Gruppen-Select der aktiven Gruppen
 						$inputs[$col_counter]["desc"] = getLL("groups");
 						$inputs[$col_counter]["type"] = "groupselect";
