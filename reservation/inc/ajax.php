@@ -24,7 +24,7 @@ if(!in_array($_GET['action'], array('jsongetreservations', 'jsongetresitems', 'f
 	if(FALSE === session_id($_GET["sesid"])) exit;
 }
 
-//Send headers to ensure latin1 charset
+//Send headers to ensure UTF-8 charset
 header('Content-Type: text/html; charset=UTF-8');
 
 error_reporting(0);

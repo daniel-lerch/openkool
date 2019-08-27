@@ -26,7 +26,7 @@ if(isset($_POST['sesid']) && isset($_POST['action'])) $_GET = $_POST;
 if(!isset($_GET["sesid"])) exit;
 if(FALSE === session_id($_GET["sesid"])) exit;
 
-//Send headers to ensure latin1 charset
+//Send headers to ensure UTF-8 charset
 header('Content-Type: text/html; charset=UTF-8');
 
 error_reporting(0);

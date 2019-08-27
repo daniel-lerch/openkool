@@ -25,7 +25,7 @@ require($ko_path.'inc/ko.inc.php');
 require($ko_path.'rota/inc/rota.inc.php');
 require_once('consensus.inc.php');
 
-//Send headers to ensure latin1 charset
+//Send headers to ensure UTF-8 charset
 header('Content-Type: text/html; charset=UTF-8');
 
 
