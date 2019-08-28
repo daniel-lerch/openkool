@@ -8356,13 +8356,11 @@ function ko_fuzzy_search($data, $table, $error=1, $case=FALSE, $lev_limit="") {
  */
 function ko_export_to_xlsx($header, $data, $filename, $title = '', $format="landscape", $wrap=array(), $formatting=array(), $linebreak_columns=array()) {
     global $ko_path;
-    require_once $ko_path . 'inc/phpexcel/PHPExcel.php';
-    require_once $ko_path . 'inc/phpexcel/PHPExcel/Writer/Excel2007.php';
-		if($title == '') {
-			$title = 'kOOL';
-		} else {
-			$title = format_userinput($title, 'alphanum');
-		}
+	if($title == '') {
+		$title = 'kOOL';
+	} else {
+		$title = format_userinput($title, 'alphanum');
+	}
     $person = ko_get_logged_in_person();
     $xls_default_font = ko_get_setting('xls_default_font');
     $name = $person['vorname'] . ' ' . $person['nachname'];
