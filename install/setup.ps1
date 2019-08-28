@@ -68,6 +68,11 @@ function Main {
     EnsureExists -Path "..\webfolders"
     EnsureExists -Path "..\.webfolders"
     # TODO: Handle permissions
+
+    Write-Host "Preparing PHP runtime components..."
+    Copy-Item -Path ".\default\php-windows.ini" -Destination "..\php.ini" -Force
+    Invoke-WebRequest -Uri "https://getcomposer.org/installer" -UseBasicParsing -OutFile "..\composer-setup.php"
+    Write-Host "You have to adjust the php.ini and call composer-setup.php with PHP"
 }
 
 $oldLocation = Get-Location
