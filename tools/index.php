@@ -475,7 +475,7 @@ switch($do_action) {
 
 		//find type
 		$type  = "";
-		$type_ = strtolower($col["Type"]);
+		$type_ = mb_strtolower($col["Type"]);
 		if(substr($type_, 0, 4) == "enum") {
 			$type = "enum";
 		} else {

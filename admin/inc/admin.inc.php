@@ -682,7 +682,7 @@ function ko_login_formular($mode, $id=0, $type="login") {
 																													 "colspan" => 'colspan="6"'
 																													);
 		$values = $descs = array(0, 1, 2, 3, 4);
-		$group[$gc]["row"][$rowcounter]["inputs"][0] = array("desc" => strtoupper(getLL("all")),
+		$group[$gc]["row"][$rowcounter]["inputs"][0] = array("desc" => mb_strtoupper(getLL("all")),
 																 "type" => "select",
 																 "name" => "sel_rechte_leute",
 																 "values" => $values,
@@ -912,7 +912,7 @@ function ko_login_formular($mode, $id=0, $type="login") {
 			$descs = $_descs;
 		}
 
-		$group[$gc]["row"][$rowcounter]["inputs"][0] = array("desc" => strtoupper(getLL("all")),
+		$group[$gc]["row"][$rowcounter]["inputs"][0] = array("desc" => mb_strtoupper(getLL("all")),
 																 "type" => "select",
 																 "name" => "sel_rechte_".$module."_0",
 																 "values" => $values,
@@ -980,7 +980,7 @@ function ko_login_formular($mode, $id=0, $type="login") {
 																													 'colspan' => 'colspan="6"'
 																													);
 		$values = $descs = array(0, 1, 2, 3, 4);
-		$group[$gc]['row'][$rowcounter++]['inputs'][0] = array('desc' => strtoupper(getLL('all')),
+		$group[$gc]['row'][$rowcounter++]['inputs'][0] = array('desc' => mb_strtoupper(getLL('all')),
 																 'type' => 'select',
 																 'name' => 'sel_rechte_groups',
 																 'values' => $values,

@@ -409,8 +409,8 @@ include($BASE_PATH."inc/hooks.inc.php");
 
 //Connect to the database
 $db_connection = mysqli_connect($mysql_server, $mysql_user, $mysql_pass, $mysql_db);
-//Set client-server connection to latin1
-if($ko_menu_akt != 'install') mysqli_query($db_connection, 'SET NAMES LATIN1');
+//Set client-server connection to UTF-8 with multibyte support
+if($db_connection) mysqli_query($db_connection, 'SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci');
 
 //Set user to ko_guest if none logged in yet
 if($db_connection && !in_array($ko_menu_akt, array('scheduler', 'install', 'get.php', 'post.php')) && empty($_SESSION['ses_userid'])) {
@@ -2027,7 +2027,7 @@ function ko_specialfilter_rota_teams(&$code) {
 	//Add all teams
 	$orderCol = ko_get_setting('rota_manual_ordering') ? 'sort' : 'name';
 	$teams = db_select_data('ko_rota_teams', 'WHERE 1', '*', 'ORDER BY `'.$orderCol.'` ASC');
-	if(sizeof($itemset) > 0 && sizeof($teams) > 0) $code .= '<option value="" disabled="disabled">-- '.strtoupper(getLL('rota_teams_list_title')).' --</option>';
+	if(sizeof($itemset) > 0 && sizeof($teams) > 0) $code .= '<option value="" disabled="disabled">-- '.mb_strtoupper(getLL('rota_teams_list_title')).' --</option>';
 	if(sizeof($teams) > 0) {
 		foreach($teams as $team) {
 			$code .= '<option value="'.$team['id'].'" title="'.$team['name'].'">'.$team['name'].'</option>';
@@ -2584,7 +2584,7 @@ function ko_add_fam_id(&$fam, $_members="") {
 	$fammembers = "";
 	if($num_members > 0) {
 		foreach($members as $p) {
-			$fammembers .= strtoupper(substr($p["vorname"], 0, 1)).",";
+			$fammembers .= mb_strtoupper(substr($p["vorname"], 0, 1)).",";
 		}
 		$fammembers = "(".substr($fammembers, 0, -1).")";
 	}//if(num_members>0)
@@ -3206,7 +3206,7 @@ function apply_leute_filter($filter, &$where_code, $add_admin_filter=TRUE, $admi
 				$test = array();
 				foreach($all as $person) {
 					$value = array();
-					foreach($fields as $field) $value[] = strtolower($person[$field]);
+					foreach($fields as $field) $value[] = mb_strtolower($person[$field]);
 					$test[$person['id']] = implode('#', $value);
 				}
 				unset($all);
@@ -3415,7 +3415,7 @@ function apply_leute_filter($filter, &$where_code, $add_admin_filter=TRUE, $admi
 		}
 
 		//Replace OR/AND from current language
-		$link_adv = str_replace(array(getLL('filter_OR'), getLL('filter_AND')), array('OR', 'AND'), strtoupper($link_adv));
+		$link_adv = str_replace(array(getLL('filter_OR'), getLL('filter_AND')), array('OR', 'AND'), mb_strtoupper($link_adv));
 
 		//Remove not allowed characters
 		$allowed = array('0','1','2','3','4','5','6','7','8','9', '{', '}', 'O', 'R', 'A', 'N', 'D', '(', ')', ' ', '!');
@@ -8150,34 +8150,34 @@ function db_import_sql($tobe) {
 
 
 		//don't allow any destructive commands
-		if(strstr(strtoupper($line), "DROP ") || strstr(strtoupper($line), "TRUNCATE ") || strstr(strtoupper($line), "DELETE ")) {
+		if(strstr(mb_strtoupper($line), "DROP ") || strstr(mb_strtoupper($line), "TRUNCATE ") || strstr(mb_strtoupper($line), "DELETE ")) {
 			continue;
 		}
 
 
 		//INSERT Statement
-		if(strtoupper(substr($line, 0, 11)) == "INSERT INTO") {
+		if(mb_strtoupper(substr($line, 0, 11)) == "INSERT INTO") {
 			$do_sql[] = $line;
 			continue;
 		}
 
 
 		//UPDATE Statement
-		if(strtoupper(substr($line, 0, 7)) == "UPDATE ") {
+		if(mb_strtoupper(substr($line, 0, 7)) == "UPDATE ") {
 			$do_sql[] = $line;
 			continue;
 		}
 
 
 		//ALTER Statement
-		if(strtoupper(substr($line, 0, 6)) == "ALTER ") {
+		if(mb_strtoupper(substr($line, 0, 6)) == "ALTER ") {
     		$do_sql[] = $line;
     		continue;
     	}
 
 
 		//start of a create table statement
-		if(strtoupper(substr($line, 0, 12)) == "CREATE TABLE") {
+		if(mb_strtoupper(substr($line, 0, 12)) == "CREATE TABLE") {
 			//find table-name to be edited
 			$temp = explode(" ", $line);
 			$table = str_replace("`", "", trim($temp[2]));
@@ -8318,7 +8318,7 @@ function ko_fuzzy_search($data, $table, $error=1, $case=FALSE, $lev_limit="") {
 		if($case) {
 			$lev = levenshtein($orig, $row["teststring"]);
 		} else {
-			$lev = levenshtein(strtolower($orig), strtolower($row["teststring"]));
+			$lev = levenshtein(mb_strtolower($orig), mb_strtolower($row["teststring"]));
 		}
 		if($lev <= $best) {
 			$found[$lev][] = $row["id"];
@@ -8368,9 +8368,9 @@ function ko_export_to_xlsx($header, $data, $filename, $title = '', $format="land
     $name = $person['vorname'] . ' ' . $person['nachname'];
 
     $objPHPExcel = new PHPExcel();
-    $objPHPExcel->getProperties()->setCreator(utf8_encode($name));
-    $objPHPExcel->getProperties()->setLastModifiedBy(utf8_encode($name));
-    $objPHPExcel->getProperties()->setTitle(utf8_encode($title));
+    $objPHPExcel->getProperties()->setCreator($name);
+    $objPHPExcel->getProperties()->setLastModifiedBy($name);
+    $objPHPExcel->getProperties()->setTitle($title);
     $objPHPExcel->getProperties()->setSubject('kOOL-Export');
     $objPHPExcel->getProperties()->setDescription('');
 
@@ -8435,7 +8435,7 @@ function ko_export_to_xlsx($header, $data, $filename, $title = '', $format="land
         'font' => array(
             'bold' => ko_get_setting('xls_title_bold') ? true : false,
             'color' => array('argb' => $colorName),
-            'name' => utf8_encode(ko_get_setting('xls_title_font'))
+            'name' => ko_get_setting('xls_title_font')
         ),
     );
 
@@ -8443,14 +8443,14 @@ function ko_export_to_xlsx($header, $data, $filename, $title = '', $format="land
         'font' => array(
             'bold' => ko_get_setting('xls_title_bold') ? true : false,
             'size' => 12,
-            'name' => utf8_encode(ko_get_setting('xls_title_font'))
+            'name' => ko_get_setting('xls_title_font')
         )
     );
 
     $xlsSubtitleFormat = array(
         'font' => array(
             'bold' => ko_get_setting('xls_title_bold') ? true : false,
-            'name' => utf8_encode(ko_get_setting('xls_title_font'))
+            'name' => ko_get_setting('xls_title_font')
         )
     );
 
@@ -8463,7 +8463,7 @@ function ko_export_to_xlsx($header, $data, $filename, $title = '', $format="land
             //Add title
             if($header['title']) {
                 $sheet->getStyleByColumnAndRow(0, $row)->applyFromArray($xlsTitleFormat);
-                $sheet->setCellValueByColumnAndRow(0, $row++, utf8_encode($header['title']));
+                $sheet->setCellValueByColumnAndRow(0, $row++, $header['title']);
             }
             //Add subtitle
             if(is_array($header['subtitle']) && sizeof($header['subtitle']) > 0) {
@@ -8472,19 +8472,19 @@ function ko_export_to_xlsx($header, $data, $filename, $title = '', $format="land
                         $k .= ':';
                     }
                     $sheet->getStyleByColumnAndRow(0, $row)->applyFromArray($xlsSubtitleFormat);
-                    $sheet->setCellValueByColumnAndRow(0, $row, utf8_encode($k));
-                    $sheet->setCellValueByColumnAndRow(1, $row++, utf8_encode($v));
+                    $sheet->setCellValueByColumnAndRow(0, $row, $k);
+                    $sheet->setCellValueByColumnAndRow(1, $row++, $v);
                 }
             } else if($header['subtitle']) {
                 $sheet->getStyleByColumnAndRow(0, $row)->applyFromArray($xlsHeaderFormat);
-                $sheet->setCellValueByColumnAndRow(0, $row++, utf8_encode($header['subtitle']));
+                $sheet->setCellValueByColumnAndRow(0, $row++, $header['subtitle']);
             }
             $row++;
             //Add column headers
             $col = 0;
             foreach($header['header'] as $h) {
                 $sheet->getStyleByColumnAndRow($col, $row)->applyFromArray($xlsHeaderFormat);
-                $sheet->setCellValueByColumnAndRow($col++, $row, utf8_encode(ko_unhtml($h)));
+                $sheet->setCellValueByColumnAndRow($col++, $row, ko_unhtml($h));
             }
             $row++;
         } else {
@@ -8493,7 +8493,7 @@ function ko_export_to_xlsx($header, $data, $filename, $title = '', $format="land
                     $col = 0;
                     foreach($r as $h) {
                         $sheet->getStyleByColumnAndRow($col, $row)->applyFromArray($xlsHeaderFormat);
-                        $sheet->setCellValueByColumnAndRow($col++, $row, utf8_encode(ko_unhtml($h)));
+                        $sheet->setCellValueByColumnAndRow($col++, $row, ko_unhtml($h));
                     }
                     $row++;
                 }
@@ -8501,7 +8501,7 @@ function ko_export_to_xlsx($header, $data, $filename, $title = '', $format="land
 				$manual_linebreaks = true;
                 foreach($header as $h) {
                     $sheet->getStyleByColumnAndRow($col, $row)->applyFromArray($xlsHeaderFormat);
-                    $sheet->setCellValueByColumnAndRow($col++, $row, utf8_encode(ko_unhtml($h)));
+                    $sheet->setCellValueByColumnAndRow($col++, $row, ko_unhtml($h));
 					// add linebreak if the current column is set as a linebreak-column
 					if (in_array($h, $linebreak_columns)) {
 						$row++;
@@ -8519,7 +8519,7 @@ function ko_export_to_xlsx($header, $data, $filename, $title = '', $format="land
         foreach($dd as $k => $d) {
             if($wrap[$col] == TRUE) {
                 $sheet->getStyleByColumnAndRow($col, $row)->getAlignment()->setWrapText(true);
-                $sheet->setCellValueByColumnAndRow($col++, $row, utf8_encode(strip_tags(ko_unhtml($d))));
+                $sheet->setCellValueByColumnAndRow($col++, $row, strip_tags(ko_unhtml($d)));
             } else {
                 //Set format of cell according to formatting definition
                 if (isset($formatting['cells'][($row - 1) . ':' . $col])) {
@@ -8546,7 +8546,7 @@ function ko_export_to_xlsx($header, $data, $filename, $title = '', $format="land
                         ->setBold(false);
                 }
 
-                $sheet->setCellValueByColumnAndRow($col++, $row, utf8_encode(strip_tags(ko_unhtml($d))));
+                $sheet->setCellValueByColumnAndRow($col++, $row, strip_tags(ko_unhtml($d)));
             }
 			// set manual linebreak if required
 			if ($manual_linebreaks) {
@@ -8559,7 +8559,7 @@ function ko_export_to_xlsx($header, $data, $filename, $title = '', $format="land
         $row++;
     }
     // Rename sheet
-    $objPHPExcel->getActiveSheet()->setTitle(utf8_encode($title));
+    $objPHPExcel->getActiveSheet()->setTitle($title);
 
 
     // Save Excel file
@@ -8746,7 +8746,7 @@ function ko_export_to_pdf($layout, $data, $filename) {
 		$pdf->border(TRUE);
 	}
 	if(array_key_exists('cellBorders', $layout)) {
-		$pdf->SetCellBorders(strtoupper($layout['cellBorders']));
+		$pdf->SetCellBorders(mb_strtoupper($layout['cellBorders']));
 	}
 
 	$pdf->SetMargins($layout["page"]["margin_left"], $layout["page"]["margin_top"], $layout["page"]["margin_right"]);
@@ -11468,7 +11468,7 @@ function ko_parse_vcf($content) {
 	foreach($content as $line) {
 		//Check for encodings
 		$quoted = strstr($line, ";ENCODING=QUOTED-PRINTABLE");
-		$utf8 = strstr($line, ";CHARSET=UTF-8");
+		$latin1 = strstr($line, ";CHARSET=ISO-8859-1");
 
 		$line = preg_replace("/;ENCODING=QUOTED-PRINTABLE/", "", $line);
 		$line = preg_replace("/;CHARSET=ISO-\d{4}-\d{1,2}/", "", $line);
@@ -11476,11 +11476,11 @@ function ko_parse_vcf($content) {
 
 		//Find prop and value
 		$temp = explode(":", $line);
-		$prop = strtoupper($temp[0]);
+		$prop = mb_strtoupper($temp[0]);
 		unset($temp[0]);
 		$value = trim(implode(":", $temp));
 		if($quoted) $value = quoted_printable_decode($value);
-		if($utf8) $value = utf8_decode($value);
+		if($latin1) $value = utf8_encode($value);
 
 		//Begin of a vCard
 		if($prop == "BEGIN" && $value == "VCARD") {
@@ -11567,10 +11567,10 @@ function ko_parse_csv($content, $options, $test=FALSE) {
 
 		//Encoding
 		if($options['file_encoding'] == 'macintosh') {
-			$line = iconv('macintosh', 'ISO-8859-1', $line);
+			$line = iconv('macintosh', 'UTF-8', $line);
 		}
-		else if($options['file_encoding'] == 'utf-8') {
-			$line = utf8_decode($line);
+		else if($options['file_encoding'] == 'iso-8859-1') {
+			$line = utf8_encode($line);
 		}
 
 		//ignore first line if set
@@ -11600,7 +11600,7 @@ function ko_parse_csv($content, $options, $test=FALSE) {
 						if(!in_array($new_data[$col], $enums)) {
 							$enums_ll = db_get_enums_ll("ko_leute", $col);
 							foreach($enums_ll as $key => $value) {
-								if(strtolower($value) == strtolower($new_data[$col])) {
+								if(mb_strtolower($value) == mb_strtolower($new_data[$col])) {
 									$new_data[$col] = $key;
 								}
 							}
@@ -11681,7 +11681,7 @@ function ko_pic_get_thumbnail($img, $max_dim, $imgtag=TRUE) {
 
 	//Get modification time for the image
 	$file = $BASE_PATH.'my_images/'.$img;
-	$ext = strtolower(substr($img, strrpos($img, '.')));
+	$ext = mb_strtolower(substr($img, strrpos($img, '.')));
 	$filemtime = filemtime($file);
 
 	//Create filename for cache image (using filename and file's modification time)
@@ -11812,7 +11812,7 @@ function ko_pic_cleanup_cache() {
 	$hashes = array();
 	if($dh = opendir($BASE_PATH.'my_images/')) {
 		while(($file = readdir($dh)) !== false) {
-			if(!in_array(strtolower(substr($file, -4)), array('.gif', '.jpg', 'jpeg', '.png'))) continue;
+			if(!in_array(mb_strtolower(substr($file, -4)), array('.gif', '.jpg', 'jpeg', '.png'))) continue;
 			$hashes[] = md5($file.filemtime($BASE_PATH.'my_images/'.$file));
 		}
 	}
@@ -11821,7 +11821,7 @@ function ko_pic_cleanup_cache() {
 	//Check all cache files for corresponding hash from above
 	if($dh = opendir($BASE_PATH.'my_images/cache/')) {
 		while(($file = readdir($dh)) !== false) {
-			if(!in_array(strtolower(substr($file, -4)), array('.gif', '.jpg', 'jpeg', '.png'))) continue;
+			if(!in_array(mb_strtolower(substr($file, -4)), array('.gif', '.jpg', 'jpeg', '.png'))) continue;
 			$hash = substr($file, 0, strpos($file, '_'));
 			if(!in_array($hash, $hashes)) unlink($BASE_PATH.'my_images/cache/'.$file);
 		}
@@ -12088,11 +12088,11 @@ function ko_leute_sort(&$data, $sort_col, $sort_order, $dont_apply_limit=FALSE, 
 			}
 
 			//Build sort arrays for array_multisort()
-			${"sort_".str_replace(':', '_', $col)}[$i] = strtolower($col_value);
+			${"sort_".str_replace(':', '_', $col)}[$i] = mb_strtolower($col_value);
 		}
 	}
 	foreach($sort_col as $i => $col) {
-		$sort[] = '$sort_'.str_replace(':', '_', $col).', SORT_'.strtoupper($sort_order[$i]);
+		$sort[] = '$sort_'.str_replace(':', '_', $col).', SORT_'.mb_strtoupper($sort_order[$i]);
 	}
 	eval('array_multisort('.implode(", ", $sort).', $data);');
 
@@ -12235,11 +12235,11 @@ function ko_ldap_add_person(&$ldap, $person, $uid, $edit=FALSE) {
   foreach($ldap_entry as $i => $d) {
     if(!$i) unset($ldap_entry[$i]);  //Unset entries with no key
     else if(is_array($d)) {  //Multiple values for one key are stored as array
-      foreach($d as $dk => $dv) $ldap_entry[$i][$dk] = utf8_encode($dv);
+      foreach($d as $dk => $dv) $ldap_entry[$i][$dk] = $dv;
     }
     else if(!$edit && trim($d) == '') unset($ldap_entry[$i]);  //Unset empty values if a new LDAP entry is to be made
     else if($edit && trim($d) == '') $ldap_entry[$i] = array();  //Set empty values to array(), so they get deleted in LDAP (when editing)
-    else $ldap_entry[$i] = utf8_encode($d);  //Encode normal values with UTF-8
+    else $ldap_entry[$i] = $d;
   }
   //ObjectClass inetOrgPerson requires sn
   if(!isset($ldap_entry['sn'])) $ldap_entry['sn'] = ' ';
@@ -12337,7 +12337,7 @@ function ko_ldap_add_login(&$ldap, $data) {
 		foreach($data as $i => $d) {
 			if($d == "") $data[$i] = array();
 			else if($i == "userPassword") $data[$i] = '{md5}'.base64_encode(pack('H*', $d));
-			else $data[$i] = utf8_encode($d);
+			else $data[$i] = $d;
 		}
 		$data['objectclass'] = $LDAP_SCHEMA;
 
@@ -12910,7 +12910,7 @@ function ko_placeholders_leute_array($person, $prefixPerson = 'r_', $prefixUser 
 
 	//Address fields of a person
 	foreach($person as $k => $v) {
-		$map[$tag . $prefixPerson . strtolower($k).$tag] = $v;
+		$map[$tag . $prefixPerson . mb_strtolower($k).$tag] = $v;
 	}
 
 	// Salutations
@@ -12933,13 +12933,13 @@ function ko_placeholders_leute_array($person, $prefixPerson = 'r_', $prefixUser 
 	//Add contact fields (from general settings)
 	$contact_fields = array('name', 'address', 'zip', 'city', 'phone', 'url', 'email');
 	foreach($contact_fields as $field) {
-		$map[$tag . 'contact_'.strtolower($field).$tag] = ko_get_setting('info_'.$field);
+		$map[$tag . 'contact_'.mb_strtolower($field).$tag] = ko_get_setting('info_'.$field);
 	}
 
 	//Add sender fields of current user
 	$sender = ko_get_logged_in_person();
 	foreach($sender as $k => $v) {
-		$map[$tag . $prefixUser .strtolower($k).$tag] = $v;
+		$map[$tag . $prefixUser .mb_strtolower($k).$tag] = $v;
 	}
 
 	return $map;
@@ -12957,7 +12957,7 @@ function ko_placeholders_event_array($event, $prefix = 'e_', $tag = '###') {
 
 	//Fields of event
 	foreach($event as $k => $v) {
-		$map[$tag . $prefix .strtolower($k).$tag] = $v;
+		$map[$tag . $prefix .mb_strtolower($k).$tag] = $v;
 	}
 
 	$startDatetime = strtotime($map[$tag . $prefix . 'startdatum' . $tag] . ' ' . $map[$tag . $prefix . 'startzeit' . $tag]);
@@ -13343,10 +13343,7 @@ function format_userinput($s, $type, $enforce=FALSE, $length=0, $replace=array()
 		break;
 
 		case "text":
-			//Falls schon ein addslashes angewendet worden ist, diese erst wieder entfernen.
-			$s = str_replace("\\", "", $s);
-			$new = addslashes($s);
-			return $new;
+			return addslashes($s); // TODO: Review if some input is already escaped
 		break;
 
 		case "all":
@@ -13433,7 +13430,7 @@ function ko_js_escape($in) {
 		if($hex=='') {
 			$out = $out.urlencode($in[$i]);
 		} else {
-			$out = $out .'%'.((strlen($hex)==1) ? ('0'.strtoupper($hex)):(strtoupper($hex)));
+			$out = $out .'%'.((strlen($hex)==1) ? ('0'.mb_strtoupper($hex)):(mb_strtoupper($hex)));
 		}
 	}
 	$out = str_replace('+','%20',$out);
@@ -14287,7 +14284,7 @@ function ko_prepare_mail($from = null, $to = null, $subject = null, $body = null
 function ko_mail_transport() {
 	global $MAIL_TRANSPORT;
 
-	switch(strtolower($MAIL_TRANSPORT['method'])) {
+	switch(mb_strtolower($MAIL_TRANSPORT['method'])) {
 		case 'smtp':
 			$transport = Swift_SmtpTransport::newInstance(
 				$MAIL_TRANSPORT['host'] ? $MAIL_TRANSPORT['host'] : 'localhost',
@@ -14594,9 +14591,9 @@ function ko_redirect_after_login() {
 function ko_check_ssl() {
 	global $BASE_URL;
 
-	if(FORCE_SSL === TRUE && (empty($_SERVER['HTTPS']) || strtolower($_SERVER['HTTPS']) == 'off')) {
+	if(FORCE_SSL === TRUE && (empty($_SERVER['HTTPS']) || mb_strtolower($_SERVER['HTTPS']) == 'off')) {
 		//Only redirect if https URL is set in BASE_URL
-		if(strtolower(substr($BASE_URL, 0, 5)) == 'https') {
+		if(mb_strtolower(substr($BASE_URL, 0, 5)) == 'https') {
 			header('Location: '.$BASE_URL, TRUE, 301);
 			exit;
 		}
@@ -14944,10 +14941,6 @@ function ko_explode_trim_implode($s, $separator = ',') {
 		$result[$k] = trim($r);
 	}
 	return implode($separator, $result);
-}
-
-function utf8_decode_array(&$value, $key) {
-	$value = utf8_decode($value);
 }
 
 function urldecode_array(&$value, $key) {

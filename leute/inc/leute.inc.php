@@ -846,7 +846,7 @@ function ko_list_personen($mode="liste", $output=true) {
 		foreach($_SESSION["sort_leute"] as $i => $col) {
 			$multisort["select_selected"][$i] = $col;
 			$multisort["columns"][$i] = $i;
-			$multisort["order"][$i] = strtoupper($_SESSION["sort_leute_order"][$i]);
+			$multisort["order"][$i] = mb_strtoupper($_SESSION["sort_leute_order"][$i]);
 		}
 
 	}//if(mode == liste | my_list)
@@ -1405,22 +1405,16 @@ function ko_list_groupsubscriptions() {
 		//datafields
 		$df_values = array();
 		$df_data = unserialize($p['_group_datafields']);
-		$utf8 = false;
-		if(false === $df_data) {
-			$utf8 = true;
-			$df_data = unserialize(utf8_encode($p['_group_datafields']));
-		}
 		foreach($df_data as $i =>$df) {
-			if($utf8) $df_values[$gid][$i] = utf8_decode($df);
-			else $df_values[$gid][$i] = $df;
+			$df_values[$gid][$i] = $df;
 		}
 		$gs[$counter]["datafields"] = ko_groups_render_group_datafields($gid, $p["_id"], $df_values, array("hide_title" => true, "add_leute_id" => true));
 
 		//People selects
 		$ps = array("gid" => $gid);
 		foreach(array("a","b","c","d","e","f","g","h","i","j","k","l","m","n","o","p","q","r","s","t","u","v","w","x","y","z") as $letter) {
-			$ps["descs"][] = strtoupper($letter);
-			$ps["values"][] = "i".strtoupper($letter);
+			$ps["descs"][] = mb_strtoupper($letter);
+			$ps["values"][] = "i".mb_strtoupper($letter);
 		}
 		$ps["name"] = "ps_".$p["_id"];
 
@@ -3169,7 +3163,6 @@ function ko_word_docx($file, $person) {
 
 	$document = $phpWord->loadTemplate($file);
 	foreach($map as $key => $value) {
-		$value = utf8_encode($value);
 		$document->setValue($key, $value);
 	}
 
@@ -3190,7 +3183,7 @@ function ko_word_person_array($person) {
 
 	//Address fields of recipient (${address_...})
 	foreach($person as $k => $v) {
-		$map['${address_'.strtolower($k).'}'] = $v;
+		$map['${address_'.mb_strtolower($k).'}'] = $v;
 	}
 
 	// Addressblock. expressed in lines because PHPWord can't insert line breaks into templates,
@@ -3246,13 +3239,13 @@ function ko_word_person_array($person) {
 	//Add contact fields (from general settings)
 	$contact_fields = array('name', 'address', 'zip', 'city', 'phone', 'url', 'email');
 	foreach($contact_fields as $field) {
-		$map['${contact_'.strtolower($field).'}'] = ko_get_setting('info_'.$field);
+		$map['${contact_'.mb_strtolower($field).'}'] = ko_get_setting('info_'.$field);
 	}
 
 	//Add sender fields of current user
 	$sender = ko_get_logged_in_person();
 	foreach($sender as $k => $v) {
-		$map['${user_'.strtolower($k).'}'] = $v;
+		$map['${user_'.mb_strtolower($k).'}'] = $v;
 	}
 
 	return $map;

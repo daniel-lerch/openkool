@@ -242,11 +242,11 @@ class koNotifier {
 						else {
 							$moduleLabel = $not['activeModule'];
 						}
-						$LLLabel = vsprintf(getLL(strtolower($this->levelCodesToNames[$notLevel]) . '_' . $moduleLabel . $not['underline'] . $not['notNumber']), $not['parameters']);
-						print '<div class="notification notification_'.strtolower($this->levelCodesToNames[$notLevel]).'">' . $LLLabel . '</div><br />';
+						$LLLabel = vsprintf(getLL(mb_strtolower($this->levelCodesToNames[$notLevel]) . '_' . $moduleLabel . $not['underline'] . $not['notNumber']), $not['parameters']);
+						print '<div class="notification notification_'.mb_strtolower($this->levelCodesToNames[$notLevel]).'">' . $LLLabel . '</div><br />';
 					}
 					else {
-						print '<div class="notification notification_'.strtolower($this->levelCodesToNames[$notLevel]).'">'.$not['notText'].'</div><br />';
+						print '<div class="notification notification_'.mb_strtolower($this->levelCodesToNames[$notLevel]).'">'.$not['notText'].'</div><br />';
 					}
 				}
 			}
@@ -265,7 +265,7 @@ class koNotifier {
 						else {
 							$moduleLabel = $not['activeModule'];
 						}
-						$LLLabel = vsprintf(getLL(strtolower($this->levelCodesToNames[$notLevel]) . '_' . $moduleLabel . $not['underline'] . $not['notNumber']), $not['parameters']);
+						$LLLabel = vsprintf(getLL(mb_strtolower($this->levelCodesToNames[$notLevel]) . '_' . $moduleLabel . $not['underline'] . $not['notNumber']), $not['parameters']);
 						ko_error_log(getLL("module_".$not['activeModule']), $not['notNumber'], $LLLabel, $not['doAction']);
 					}
 					else {
@@ -293,7 +293,7 @@ class koNotifier {
 						else {
 							$moduleLabel = $not['activeModule'];
 						}
-						$LLLabel = vsprintf(getLL(strtolower($this->levelCodesToNames[$notLevel]) . '_' . $moduleLabel . $not['underline'] . $not['notNumber']), $not['parameters']);
+						$LLLabel = vsprintf(getLL(mb_strtolower($this->levelCodesToNames[$notLevel]) . '_' . $moduleLabel . $not['underline'] . $not['notNumber']), $not['parameters']);
 					}
 					else {
 						$LLLabel = $not['notText'];
@@ -352,8 +352,8 @@ class koNotifier {
 				else {
 					$moduleLabel = $not['activeModule'];
 				}
-				$LLLabel = vsprintf(getLL(strtolower($this->levelCodesToNames[$notLevel]) . '_' . $moduleLabel . $not['underline'] . $not['notNumber']), $not['parameters']);
-				$result .= $not['notNumber'] . ' : ' . $not['notText'] . ' : ' . strtolower($this->levelCodesToNames[$notLevel]) . '_' . $moduleLabel . $not['underline'] . $not['notNumber'] . ' : ' . getLL(strtolower($this->levelCodesToNames[$notLevel]) . '_' . $moduleLabel . $not['underline'] . $not['notNumber']) . ' : ' . $LLLabel . ' : ' . $not['activeModule'] . ' : ' . $not['doAction'] . ';\n';
+				$LLLabel = vsprintf(getLL(mb_strtolower($this->levelCodesToNames[$notLevel]) . '_' . $moduleLabel . $not['underline'] . $not['notNumber']), $not['parameters']);
+				$result .= $not['notNumber'] . ' : ' . $not['notText'] . ' : ' . mb_strtolower($this->levelCodesToNames[$notLevel]) . '_' . $moduleLabel . $not['underline'] . $not['notNumber'] . ' : ' . getLL(mb_strtolower($this->levelCodesToNames[$notLevel]) . '_' . $moduleLabel . $not['underline'] . $not['notNumber']) . ' : ' . $LLLabel . ' : ' . $not['activeModule'] . ' : ' . $not['doAction'] . ';\n';
 			}
 		}
 		return $result;

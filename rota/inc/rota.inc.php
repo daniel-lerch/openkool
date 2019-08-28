@@ -1019,7 +1019,7 @@ function ko_rota_get_placeholders($p, $eventid='') {
 
 		//ALL_EVENTS: Include all rota events
 		$r['[[ALL_EVENTS]]'] .= $txt_event."\n";
-		$r['[[ALL_EVENTS_SCHEDULE]]'] .= strtoupper($txt_event)."\n".$txt_schedule."\n";
+		$r['[[ALL_EVENTS_SCHEDULE]]'] .= mb_strtoupper($txt_event)."\n".$txt_schedule."\n";
 
 		//TEAM_EVENTS: Only include event, if person is assigned to one of this event's teams
 		$found = FALSE;
@@ -1028,7 +1028,7 @@ function ko_rota_get_placeholders($p, $eventid='') {
 		}
 		if($found) {
 			$r['[[TEAM_EVENTS]]'] .= $txt_event."\n";
-			$r['[[TEAM_EVENTS_SCHEDULE]]'] .= strtoupper($txt_event)."\n".$txt_schedule."\n";
+			$r['[[TEAM_EVENTS_SCHEDULE]]'] .= mb_strtoupper($txt_event)."\n".$txt_schedule."\n";
 		}
 
 		//TEAM_EVENTS_LEADER: Only include event, if person is assigned to one of this event's teams as leader
@@ -1038,7 +1038,7 @@ function ko_rota_get_placeholders($p, $eventid='') {
 		}
 		if($found) {
 			$r['[[LEADER_TEAM_EVENTS]]'] .= $txt_event."\n";
-			$r['[[LEADER_TEAM_EVENTS_SCHEDULE]]'] .= strtoupper($txt_event)."\n".$txt_schedule_leader."\n";
+			$r['[[LEADER_TEAM_EVENTS_SCHEDULE]]'] .= mb_strtoupper($txt_event)."\n".$txt_schedule_leader."\n";
 		}
 
 		//PERSONAL: Only show event, where this person is scheduled
@@ -1057,7 +1057,7 @@ function ko_rota_get_placeholders($p, $eventid='') {
 			}
 		}
 		if($found) {
-			$r['[[PERSONAL_SCHEDULE]]'] .= strtoupper($txt_event)."\n".$txt."\n";
+			$r['[[PERSONAL_SCHEDULE]]'] .= mb_strtoupper($txt_event)."\n".$txt."\n";
 		}
 	}
 

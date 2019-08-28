@@ -718,7 +718,7 @@ switch($do_action) {
 		$test = array();
 		foreach($all as $person) {
 			$value = array();
-			foreach($fields as $field) $value[] = strtolower($person[$field]);
+			foreach($fields as $field) $value[] = mb_strtolower($person[$field]);
 			$test[$person['id']] = implode('#', $value);
 		}
 		unset($all);
@@ -2399,7 +2399,7 @@ switch($do_action) {
 			$upload_name = $_FILES['file_sig_file']['name'];
 			$tmp = $_FILES['file_sig_file']['tmp_name'];
 			$ext_ = explode('.', $upload_name);
-			$ext = strtolower($ext_[sizeof($ext_)-1]);
+			$ext = mb_strtolower($ext_[sizeof($ext_)-1]);
 
 			if(in_array($ext, $mailmerge_signature_ext)) {
 				$path = $BASE_PATH.'latex/images/';
@@ -2473,16 +2473,16 @@ switch($do_action) {
 			//Default fields which are alwys set for TeX templates for the recipient's address
 			foreach(array('firm', 'anrede', 'vorname', 'nachname', 'adresse', 'adresse_zusatz', 'plz', 'ort', 'land') as $field) {
 				if($p[$field]) {
-					$map['###'.strtoupper($field).'###'] = ko_latex_escape_chars($p[$field]);
+					$map['###'.mb_strtoupper($field).'###'] = ko_latex_escape_chars($p[$field]);
 				} else {
-					$map['###'.strtoupper($field).'###'] = '';
+					$map['###'.mb_strtoupper($field).'###'] = '';
 				}
 			}
 
 			//Prepare sender information (from address)
 			if($_POST['rd_sender'] == 'user' && $sender['id']) {
 				foreach($COLS_LEUTE_LATEX_FROM as $field) {
-					$map['###FROM_'.strtoupper($field).'###'] = ko_latex_escape_chars($sender[$field]);
+					$map['###FROM_'.mb_strtoupper($field).'###'] = ko_latex_escape_chars($sender[$field]);
 				}
 			} else {
 				//Set global address as sender
@@ -3045,7 +3045,7 @@ switch($do_action) {
 				$newGroups = array();
 				foreach ($data as $key => $entry) {
 					if (substr($key, 0, 9) == 'MODULEgrp') {
-						$entryLower = trim(strtolower($entry));
+						$entryLower = trim(mb_strtolower($entry));
 						$fullGroupId = substr($key, 9);
 						$groupId = substr($key, -6);
 						if (!isset($roles[$groupId])) {
@@ -3060,7 +3060,7 @@ switch($do_action) {
 						}
 						$added = false;
 						foreach ($roles[$groupId] as $role) {
-							if (trim(strtolower($role['name'])) == $entryLower) {
+							if (trim(mb_strtolower($role['name'])) == $entryLower) {
 								$newGroups[] = $fullGroupId . ':r' . $role['id'];
 								$added = true;
 							}

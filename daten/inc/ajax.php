@@ -411,9 +411,9 @@ if(isset($_GET) && isset($_GET["action"])) {
 							ko_get_login($event['_user_id'], $login);
 							if($login['leute_id']) {
 								ko_get_person_by_id($login['leute_id'], $person);
-								$tooltip .= utf8_encode(getLL('by')).': '.$person['vorname'].' '.$person['nachname'].' ('.$login['login'].')<br />';
+								$tooltip .= getLL('by').': '.$person['vorname'].' '.$person['nachname'].' ('.$login['login'].')<br />';
 							} else {
-								$tooltip .= utf8_encode(getLL('by')).': '.$login['login'].'<br />';
+								$tooltip .= getLL('by').': '.$login['login'].'<br />';
 							}
 						}
 						$tooltip .= '<br />';
@@ -487,7 +487,7 @@ if(isset($_GET) && isset($_GET["action"])) {
 					//Add editIcons according to access rights
 					if($i == 0) {
 						if($event['import_id'] == '' && $access['daten'][$event['eventgruppen_id']] > 1) {
-							$deleteIcon = '<input type="image" src="../images/icon_trash.png" id="event'.$event['id'].'" onclick="c=confirm(\''.utf8_encode(getLL('daten_delete_event_confirm')).'\');if(!c) return false; sendReq(\'inc/ajax.php\', \'action,id\', \'fcdelevent,'.$event['id'].'\'); $(\'#ko_calendar\').fullCalendar(\'removeEvents\', \''.$event['id'].'\'); tooltip.hide(); return false;" title="'.utf8_encode(getLL('daten_delete_event')).'" />';
+							$deleteIcon = '<input type="image" src="../images/icon_trash.png" id="event'.$event['id'].'" onclick="c=confirm(\''.getLL('daten_delete_event_confirm').'\');if(!c) return false; sendReq(\'inc/ajax.php\', \'action,id\', \'fcdelevent,'.$event['id'].'\'); $(\'#ko_calendar\').fullCalendar(\'removeEvents\', \''.$event['id'].'\'); tooltip.hide(); return false;" title="'.getLL('daten_delete_event').'" />';
 							$editIcons = $deleteIcon;
 						} else {
 							$editIcons = '';
@@ -495,9 +495,9 @@ if(isset($_GET) && isset($_GET["action"])) {
 					}
 					//Add links to approve or delete a moderation
 					else {
-						$checkIcon = $access['daten'][$event['eventgruppen_id']] > 3 ? '<input type="image" src="../images/button_check.png" title="'.utf8_encode(getLL('daten_mod_confirm')).'" onclick="c1=confirm(\''.utf8_encode(getLL('daten_mod_confirm_confirm')).'\');if(!c1) return false; c = confirm(\''.utf8_encode(getLL('daten_mod_confirm_confirm2')).'\');set_hidden_value(\'mod_confirm\', c, this);set_action(\'daten_mod_'.$mod_mode.'_approve\', this);set_hidden_value(\'id\', \''.$event['id'].'\', this)" />' : '';
+						$checkIcon = $access['daten'][$event['eventgruppen_id']] > 3 ? '<input type="image" src="../images/button_check.png" title="'.getLL('daten_mod_confirm').'" onclick="c1=confirm(\''.getLL('daten_mod_confirm_confirm').'\');if(!c1) return false; c = confirm(\''.getLL('daten_mod_confirm_confirm2').'\');set_hidden_value(\'mod_confirm\', c, this);set_action(\'daten_mod_'.$mod_mode.'_approve\', this);set_hidden_value(\'id\', \''.$event['id'].'\', this)" />' : '';
 
-						$deleteIcon = ($access['daten'][$event['eventgruppen_id']] > 3 || $event['_user_id'] == $_SESSION['ses_userid']) ? '<input type="image" src="../images/button_delete.gif" title="'.utf8_encode(getLL('daten_mod_decline')).'" onclick="c1=confirm(\''.utf8_encode(getLL('daten_mod_decline_confirm')).'\');if(!c1) return false;'.($access['daten'][$event['eventgruppen_id']] > 3 ? 'c = confirm(\''.utf8_encode(getLL('daten_mod_decline_confirm2')).'\');set_hidden_value(\'mod_confirm\', c, this);' : '').'set_action(\'daten_mod_delete\', this);set_hidden_value(\'id\', \''.$event['id'].'\', this);" />' : '';
+						$deleteIcon = ($access['daten'][$event['eventgruppen_id']] > 3 || $event['_user_id'] == $_SESSION['ses_userid']) ? '<input type="image" src="../images/button_delete.gif" title="'.getLL('daten_mod_decline').'" onclick="c1=confirm(\''.getLL('daten_mod_decline_confirm').'\');if(!c1) return false;'.($access['daten'][$event['eventgruppen_id']] > 3 ? 'c = confirm(\''.getLL('daten_mod_decline_confirm2').'\');set_hidden_value(\'mod_confirm\', c, this);' : '').'set_action(\'daten_mod_delete\', this);set_hidden_value(\'id\', \''.$event['id'].'\', this);" />' : '';
 
 						$editIcons = $checkIcon.($deleteIcon ? '&nbsp;'.$deleteIcon : '');
 					}
@@ -506,13 +506,13 @@ if(isset($_GET) && isset($_GET["action"])) {
 					$data[] = array('id' => $event['id'],
 						'start' => $event['startdatum'].'T'.$event['startzeit'],
 						'end' => $event['enddatum'].'T'.$event['endzeit'],
-						'title' => utf8_encode($title),
+						'title' => $title,
 						'allDay' => $event['startzeit'] == '00:00:00' && $event['endzeit'] == '00:00:00',
 						'editable' => ($i==0 && $event['import_id'] == '' && $access['daten'][$event['eventgruppen_id']] > 1) ? TRUE : FALSE,
 						'className' => ($i==1 ? 'fc-modEvent' : ''),
 						'color' => '#'.($event['eventgruppen_farbe'] ? $event['eventgruppen_farbe'] : 'aaaaaa'),
 						'textColor' => ko_get_contrast_color($event['eventgruppen_farbe']),
-						'kOOL_tooltip' => utf8_encode($tooltip),
+						'kOOL_tooltip' => $tooltip,
 						'kOOL_editIcons' => $editIcons,
 					);
 				}
@@ -583,7 +583,7 @@ if(isset($_GET) && isset($_GET["action"])) {
 									'className' => 'fc-birthday',
 									'color' => 'transparent',
 									'textColor' => '#ffffff',
-									'kOOL_tooltip' => utf8_encode($tooltip),
+									'kOOL_tooltip' => $tooltip,
 								);
 							}
 						}

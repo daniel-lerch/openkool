@@ -416,7 +416,7 @@ function ko_tapes_formular_tape($mode, $id=0) {
 			$gc = 0;
 			foreach($groups as $group_id => $group) {
 				if($access['tapes']['ALL'] < 3 && $access['tapes'][$group['id']] < 3) continue;
-				if(strtolower($group["name"]) == strtolower($row["eventgruppe"])) {
+				if(mb_strtolower($group["name"]) == mb_strtolower($row["eventgruppe"])) {
 					$gruppe = $group["name"];
 					$gruppe_id = $group_id;
 					$group_js_index = $gc;
@@ -429,7 +429,7 @@ function ko_tapes_formular_tape($mode, $id=0) {
 				$sc = 1;
 				if($row["kommentar"]) {
 					foreach($series as $s) {
-						if(strstr(strtolower(format_userinput($row["kommentar"], "alphanum")), strtolower(format_userinput($s["name"], "alphanum")))) {
+						if(strstr(mb_strtolower(format_userinput($row["kommentar"], "alphanum")), mb_strtolower(format_userinput($s["name"], "alphanum")))) {
 							$serie = $s["name"];
 							$serie_id = $sc;
 						}

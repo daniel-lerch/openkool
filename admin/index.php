@@ -1376,7 +1376,7 @@ switch($do_action) {
 			if(!$tmp) return FALSE;
 			$upload_name = $_FILES['pic_file']["name"];
 			$ext_ = explode('.', $upload_name);
-			$ext = strtolower($ext_[sizeof($ext_)-1]);
+			$ext = mb_strtolower($ext_[sizeof($ext_)-1]);
 			if(in_array($ext, $dissallow_ext)) return FALSE;
 
 			$path = $BASE_PATH.'my_images/';

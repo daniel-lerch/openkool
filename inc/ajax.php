@@ -585,9 +585,7 @@ if(isset($_GET) && isset($_GET["action"])) {
 			ko_get_access($module);
 			ko_include_kota(array($table));
 
-			// decode utf8
 			array_walk_recursive($_GET['koi'], 'urldecode_array');
-			array_walk_recursive($_GET['koi'], 'utf8_decode_array');
 
 			//Replace masked commas
 			foreach($a as $c) {
@@ -1078,7 +1076,7 @@ if(isset($_GET) && isset($_GET["action"])) {
 			$new = array('pid' => $pid, 'crdate' => date('Y-m-d H:i:s'), 'cruser' => $_SESSION['ses_userid']);
 			foreach($_GET as $k => $v) {
 				if(in_array($k, array('action', 'field', 'pid', 'after', 'sesid'))) continue;
-				$new[$k] = utf8_decode($v);
+				$new[$k] = $v;
 			}
 			kota_process_data($table, $new, 'post', $log);
 
@@ -1140,7 +1138,7 @@ if(isset($_GET) && isset($_GET["action"])) {
 			$data = array();
 			foreach($_GET as $k => $v) {
 				if(in_array($k, array('action', 'field', 'pid', 'after', 'sesid'))) continue;
-				$data[$k] = utf8_decode($v);
+				$data[$k] = $v;
 			}
 			kota_process_data($table, $data, 'post', $log, $id);
 			db_update_data($table, "WHERE `id` = '$id'", $data);

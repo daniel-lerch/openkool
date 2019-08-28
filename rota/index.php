@@ -322,7 +322,7 @@ switch($do_action) {
 		if($tmp) {
 			$upload_name = $_FILES['new_file']['name'];
 			$ext_ = explode('.', $upload_name);
-			$ext = strtolower($ext_[sizeof($ext_)-1]);
+			$ext = mb_strtolower($ext_[sizeof($ext_)-1]);
 			if(in_array($ext, $dissallow_ext)) break;
 
 			$path = $BASE_PATH.'download/pdf/';

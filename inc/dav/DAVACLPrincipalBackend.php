@@ -239,11 +239,11 @@ class DAVACLPrincipalBackend extends AbstractBackend {
 			switch($property) {
 				case '{DAV:}displayname':
 					$query.=' AND `login` LIKE \'' . $this->db_connection->escape_string($value) . '\'';
-					$values[] = strtolower($value);
+					$values[] = mb_strtolower($value);
 				break;
 				case '{http://sabredav.org/ns}email-address':
 					$query.=' AND `email` LIKE \'' . $this->db_connection->escape_string($value) .  '\'';
-					$values[] = strtolower($value);
+					$values[] = mb_strtolower($value);
 				break;
 				default:
 					// Unsupported property

@@ -298,7 +298,7 @@ function kota_get_form($table, $column) {
 					//Filter presets
 					if(ko_module_installed('leute')) {
 						$data['values'][] = '';
-						$data['descs'][] = '--- '.strtoupper(getLL('submenu_leute_title_filter')).' ---';
+						$data['descs'][] = '--- '.mb_strtoupper(getLL('submenu_leute_title_filter')).' ---';
 						$filterset = array_merge((array)ko_get_userpref('-1', '', 'filterset', 'ORDER BY `key` ASC'), (array)ko_get_userpref($_SESSION['ses_userid'], '', 'filterset', 'ORDER BY `key` ASC'));
 
 						foreach($filterset as $f) {
@@ -311,7 +311,7 @@ function kota_get_form($table, $column) {
 					//Get small groups
 					if(ko_module_installed('kg')) {
 						$data['values'][] = '';
-						$data['descs'][] = '--- '.strtoupper(getLL('kg_list_title')).' ---';
+						$data['descs'][] = '--- '.mb_strtoupper(getLL('kg_list_title')).' ---';
 						$kgs = db_select_data('ko_kleingruppen', 'WHERE 1=1', '*', 'ORDER BY name ASC');
 						foreach($kgs as $kg) {
 							$data['values'][] = $kg['id'];
@@ -323,7 +323,7 @@ function kota_get_form($table, $column) {
 					//Get groups
 					if(ko_module_installed('groups')) {
 						$data['values'][] = '';
-						$data['descs'][] = '--- '.strtoupper(getLL('groups_groups')).' ---';
+						$data['descs'][] = '--- '.mb_strtoupper(getLL('groups_groups')).' ---';
 						$groups = ko_groups_get_recursive(ko_get_groups_zwhere(TRUE), TRUE);
 						if(!is_array($all_groups)) ko_get_groups($all_groups);
 						ko_get_access('groups');
@@ -412,7 +412,7 @@ function kota_get_form($table, $column) {
 					break;
 				case 'filter_event':
 					/*$data['values'][] = '';
-					$data['descs'][] = '--- ' . strtoupper(getLL('module_daten')) . ' ---';
+					$data['descs'][] = '--- ' . mb_strtoupper(getLL('module_daten')) . ' ---';
 					$events = null;
 					$deadlines = kota_reminder_get_deadlines();
 					$maxDeadline = 0;
@@ -426,17 +426,17 @@ function kota_get_form($table, $column) {
 					}*/
 
 					$data['values'][] = '';
-					$data['descs'][] = '--- ' . strtoupper(getLL('kota_ko_eventgruppen_calendar_id')) . ' ---';
+					$data['descs'][] = '--- ' . mb_strtoupper(getLL('kota_ko_eventgruppen_calendar_id')) . ' ---';
 					$calendars = null;
 					ko_get_event_calendar($calendars);
 					foreach ($calendars as $calendar) {
 						if ($access['daten']['cal' . $calendar['id']] == 0) continue;
 						$data['values'][] = 'CALE' . $calendar['id'];
-						$data['descs'][] = strtoupper($calendar['name']);
+						$data['descs'][] = mb_strtoupper($calendar['name']);
 					}
 
 					$data['values'][] = '';
-					$data['descs'][] = '--- ' . strtoupper(getLL('daten_eventgroup')) . ' ---';
+					$data['descs'][] = '--- ' . mb_strtoupper(getLL('daten_eventgroup')) . ' ---';
 					$eventGroups = null;
 					ko_get_eventgruppen($eventGroups);
 					foreach ($eventGroups as $eventGroup) {
@@ -446,7 +446,7 @@ function kota_get_form($table, $column) {
 					}
 
 					$data['values'][] = '';
-					$data['descs'][] = '--- '.strtoupper(getLL('leute_labels_preset')).' ---';
+					$data['descs'][] = '--- '.mb_strtoupper(getLL('leute_labels_preset')).' ---';
 					$userPresets = ko_get_userpref($_SESSION['ses_userid'], '', 'daten_itemset');
 					$globalPresets = ko_get_userpref(-1, '', 'daten_itemset');
 					foreach ($userPresets as $userPreset) {
@@ -1145,7 +1145,7 @@ function kota_mailing_check_unique_alias(&$value, $data) {
 
 	if($value == '') return FALSE;
 	//Enforce lowercase aliases
-	$value = strtolower($value);
+	$value = mb_strtolower($value);
 
 	//Check for disallowed aliases
 	if(  1 == preg_match('/^sg([0-9]{4})([a-zA-Z.]*)$/', $value, $m)  //small group
@@ -1938,7 +1938,7 @@ function kota_listview_file(&$value, $data) {
 	if(!$value) return;
 	if(!file_exists($BASE_PATH.$value)) return;
 
-	$ext = strtolower(substr($value, (strrpos($value, '.')+1)));
+	$ext = mb_strtolower(substr($value, (strrpos($value, '.')+1)));
 	if(file_exists($BASE_PATH.'images/mime/'.$ext.'.png')) {
 		$icon = '/images/mime/'.$ext.'.png';
 	} else {

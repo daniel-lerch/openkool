@@ -1,28 +1,22 @@
 <?php
-/***************************************************************
-*  Copyright notice
+/*******************************************************************************
 *
-*  (c) 2003-2015 Renzo Lauper (renzo@churchtool.org)
-*  All rights reserved
+*    OpenKool - Online church organization tool
 *
-*  This script is part of the kOOL project. The kOOL project is
-*  free software; you can redistribute it and/or modify
-*  it under the terms of the GNU General Public License as published by
-*  the Free Software Foundation; either version 2 of the License, or
-*  (at your option) any later version.
+*    Copyright © 2003-2015 Renzo Lauper (renzo@churchtool.org)
+*    Copyright © 2019      Daniel Lerch
 *
-*  The GNU General Public License can be found at
-*  http://www.gnu.org/copyleft/gpl.html.
-*  A copy is found in the textfile GPL.txt and important notices to the license
-*  from the author is found in LICENSE.txt distributed with these scripts.
+*    This program is free software; you can redistribute it and/or modify
+*    it under the terms of the GNU General Public License as published by
+*    the Free Software Foundation; either version 2 of the License, or
+*    (at your option) any later version.
 *
-*  kOOL is distributed in the hope that it will be useful,
-*  but WITHOUT ANY WARRANTY; without even the implied warranty of
-*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-*  GNU General Public License for more details.
+*    This program is distributed in the hope that it will be useful,
+*    but WITHOUT ANY WARRANTY; without even the implied warranty of
+*    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+*    GNU General Public License for more details.
 *
-*  This copyright notice MUST APPEAR in all copies of the script!
-***************************************************************/
+*******************************************************************************/
 
 function ko_fileshare_list_shares($uid, $folderid=0, $output=TRUE) {
 	global $ko_path, $smarty;
@@ -564,7 +558,7 @@ function ko_fileshare_list_webfolders($output=TRUE) {
 		$tpl_list_data[$l_i][4] = sizeof($users_write) > 10 ? sizeof($users_write)." ".getLL("users") : implode(", ", $users_write);
 	}//foreach(folders)
 
-	$list_footer[] = array("label" => getLL("fileshare_webfolders_footer").$BASE_URL.str_replace($BASE_PATH, "", $WEBFOLDERS_BASE).strtoupper(getLL("name")));
+	$list_footer[] = array("label" => getLL("fileshare_webfolders_footer").$BASE_URL.str_replace($BASE_PATH, "", $WEBFOLDERS_BASE).mb_strtoupper(getLL("name")));
 	$smarty->assign("show_list_footer", TRUE);
 	$smarty->assign("list_footer", $list_footer);
 
@@ -746,7 +740,7 @@ function ko_fileshare_webfolder_details($id) {
 
 		print '<div>';
 		print '<input type="image" src="'.$ko_path.'images/button_edit.gif" alt="edit" onclick="javascript:set_action(\'edit_webfolder\');set_hidden_value(\'id\', \''.urlencode($id.$name).'\');this.submit" />';
-		print "&nbsp;<b>".ko_html(utf8_decode($name))."</b>";
+		print "&nbsp;<b>".ko_html($name)."</b>";
 
 		//Read and Write rights
 		list($users_read, $users_write) = ko_fileshare_webfolders_rights($id.$name);

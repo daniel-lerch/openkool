@@ -638,7 +638,7 @@ function ko_formular_termin($mode, $id, $data=array()) {
 	foreach($egs as $eg) {
 		$sel = $value == $eg['id'] ? 'selected="selected"' : '';
 		$holiday_code .= '<option value="'.$eg['id'].'" '.$sel.'>';
-		$holiday_code .= ($eg['calendar_id'] > 0 ? strtoupper($cals[$eg['calendar_id']]['name']).': ' : '').$eg['name'];
+		$holiday_code .= ($eg['calendar_id'] > 0 ? mb_strtoupper($cals[$eg['calendar_id']]['name']).': ' : '').$eg['name'];
 		$holiday_code .= '</option>';
 	}
 	$holiday_code .= '</select>';

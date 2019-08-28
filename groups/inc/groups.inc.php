@@ -1364,7 +1364,7 @@ function ko_export_group_to_ezmlm($gid) {
 	$emails = array();
 	$persons = db_select_data("ko_leute", "WHERE `groups` REGEXP 'g$gid'", "id,email");
 	foreach($persons as $person) {
-		if(check_email($person["email"])) $emails[] = strtolower($person["email"]);
+		if(check_email($person["email"])) $emails[] = mb_strtolower($person["email"]);
 	}
 	$emails = array_unique($emails);
 	foreach($emails as $email) {

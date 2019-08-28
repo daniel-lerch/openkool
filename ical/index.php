@@ -126,7 +126,7 @@ if(isset($_GET['egs'])) {  //use event groups given in URL
 else {  //Get ical preset for the logged in user
 	$itemsets = ko_get_userpref($_SESSION['ses_userid'], '', 'daten_itemset');
 	foreach($itemsets as $itemset) {
-		if(strtolower($itemset['key']) == 'ical') {
+		if(mb_strtolower($itemset['key']) == 'ical') {
 			$use_itemset = explode(',', $itemset['value']);
 		}
 	}
@@ -236,15 +236,6 @@ unset($events);
 unset($eventgroups);
 
 
-//Set charset to utf-8, but not for google calendar (there seem to be problems with utf-8 for google as of 2010-08)
-if(FALSE === strpos($_SERVER['HTTP_USER_AGENT'], 'Googlebot')) {
-	$charset = 'utf-8';
-	$ical = utf8_encode($ical);
-} else {
-	$charset = 'latin1';
-}
-
-
 //Output
 if (isset($_SERVER["HTTP_USER_AGENT"]) && strpos($_SERVER["HTTP_USER_AGENT"], "MSIE")) {
 	// IE cannot download from sessions without a cache
@@ -258,7 +249,7 @@ else {
 	header("Cache-Control: no-cache, must-revalidate");
 	header("Pragma: no-cache");
 }
-header('Content-Type: text/calendar; charset='.$charset, TRUE);
+header('Content-Type: text/calendar; charset=UTF-8', TRUE);
 header('Content-Disposition: attachment; filename="kOOL.ics"');
 header("Content-Length: ".strlen($ical));
 print $ical;

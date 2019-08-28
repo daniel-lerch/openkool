@@ -428,10 +428,10 @@ if(isset($_GET) && isset($_GET["action"])) {
 					if($i == 1) {
 						if(!ko_res_check_double($res['item_id'], sql2datum($res['startdatum']), sql2datum($res['enddatum']), substr($res['startzeit'], 0, -3), substr($res['endzeit'], 0, -3), $double_error)) {
 							$title = '! '.$title.' !';
-							$tooltip .= '<b>'.utf8_encode(getLL('res_collision_text')).'</b><br />'.utf8_encode($double_error).'<br /><br />';
+							$tooltip .= '<b>'.getLL('res_collision_text').'</b><br />'.$double_error.'<br /><br />';
 							$checkLink = FALSE;
 						} else {
-							$tooltip .= '<b>'.utf8_encode(getLL('res_mod_open')).'</b><br /><br />';
+							$tooltip .= '<b>'.getLL('res_mod_open').'</b><br /><br />';
 							if($access['reservation']['ALL'] > 4 || $access['reservation'][$res['item_id']] > 4) $checkLink = TRUE;
 							else $checkLink = FALSE;
 						}
@@ -456,9 +456,9 @@ if(isset($_GET) && isset($_GET["action"])) {
 							ko_get_login($res['user_id'], $login);
 							if($login['leute_id']) {
 								ko_get_person_by_id($login['leute_id'], $person);
-								$tooltip .= '<br /><br />'.utf8_encode(getLL('by')).': '.$person['vorname'].' '.$person['nachname'].' ('.$login['login'].')<br />';
+								$tooltip .= '<br /><br />'.getLL('by').': '.$person['vorname'].' '.$person['nachname'].' ('.$login['login'].')<br />';
 							} else {
-								$tooltip .= '<br /><br />'.utf8_encode(getLL('by')).': '.$login['login'].'<br />';
+								$tooltip .= '<br /><br />'.getLL('by').': '.$login['login'].'<br />';
 							}
 						}
 						$tooltip .= '<br />';
@@ -469,7 +469,7 @@ if(isset($_GET) && isset($_GET["action"])) {
 					if($i == 0) {
 						if(!$res['_combined'] && ($access['reservation'][$res['item_id']] > 3 || ($_SESSION['ses_userid'] == $res['user_id'] && $_SESSION['ses_userid'] != ko_get_guest_id() && $access['reservation'][$res['item_id']] > 2))) {
 							$editable = TRUE;
-							$deleteIcon = '<img src="../images/icon_trash.png" class="fcDeleteIcon" id="item'.$res['id'].($res['serie_id'] ? 'm' : 's').'" title="'.utf8_encode(getLL('res_delete_res')).'" />';
+							$deleteIcon = '<img src="../images/icon_trash.png" class="fcDeleteIcon" id="item'.$res['id'].($res['serie_id'] ? 'm' : 's').'" title="'.getLL('res_delete_res').'" />';
 							$editIcons = $deleteIcon;
 						} else {
 							$editIcons = '';
@@ -478,14 +478,14 @@ if(isset($_GET) && isset($_GET["action"])) {
 					//Add links to approve or delete a moderation
 					else {
 						if($checkLink) {
-							$checkIcon = '<input type="image" src="../images/button_check.png" title="'.utf8_encode(getLL('res_mod_confirm')).'" onclick="c1=confirm(\''.utf8_encode(getLL('res_mod_confirm_confirm')).'\');if(!c1) return false; c=confirm(\''.utf8_encode(getLL('res_mod_confirm_confirm2')).'\');set_hidden_value(\'id\', \''.$res['id'].'\', this);set_hidden_value(\'mod_confirm\', c, this);set_action(\'res_mod_approve\', this);" />';
+							$checkIcon = '<input type="image" src="../images/button_check.png" title="'.getLL('res_mod_confirm').'" onclick="c1=confirm(\''.getLL('res_mod_confirm_confirm').'\');if(!c1) return false; c=confirm(\''.getLL('res_mod_confirm_confirm2').'\');set_hidden_value(\'id\', \''.$res['id'].'\', this);set_hidden_value(\'mod_confirm\', c, this);set_action(\'res_mod_approve\', this);" />';
 						} else {
 							$checkIcon = '';
 						}
-						$delLink  = 'c1=confirm(\''.utf8_encode(getLL('res_mod_decline_confirm')).'\');if(!c1) return false;';
-						if($access['reservation'][$res['item_id']] > 4) $delLink .= 'c=confirm(\''.utf8_encode(getLL('res_mod_decline_confirm2')).'\');set_hidden_value(\'mod_confirm\', c, this);';
+						$delLink  = 'c1=confirm(\''.getLL('res_mod_decline_confirm').'\');if(!c1) return false;';
+						if($access['reservation'][$res['item_id']] > 4) $delLink .= 'c=confirm(\''.getLL('res_mod_decline_confirm2').'\');set_hidden_value(\'mod_confirm\', c, this);';
 						$delLink .= 'set_hidden_value(\'id\', \''.$res['id'].'\', this);set_action(\'res_mod_delete\', this);';
-						$delIcon  = ($access['reservation'][$res['item_id']] > 4 || $res['user_id'] == $_SESSION['ses_userid']) ? '<input type="image" src="../images/icon_trash.png" title="'.utf8_encode(getLL('res_mod_decline')).'" onclick="'.$delLink.'" />' : '';
+						$delIcon  = ($access['reservation'][$res['item_id']] > 4 || $res['user_id'] == $_SESSION['ses_userid']) ? '<input type="image" src="../images/icon_trash.png" title="'.getLL('res_mod_decline').'" onclick="'.$delLink.'" />' : '';
 						$editIcons = $checkIcon.($delIcon != '' ? '&nbsp;'.$delIcon : '');
 					}
 
@@ -494,13 +494,13 @@ if(isset($_GET) && isset($_GET["action"])) {
 					$data[] = array('id' => $res['id'],
 						'start' => $res['startdatum'].'T'.$res['startzeit'],
 						'end' => $res['enddatum'].'T'.$res['endzeit'],
-						'title' => utf8_encode($title),
+						'title' => $title,
 						'allDay' => $res['startzeit'] == '00:00:00' && $res['endzeit'] == '00:00:00',
 						'editable' => $editable,
 						'className' => ($i == 1 ? ' fc-modEvent' : ''),
 						'color' => '#'.($res_color ? $res_color : 'aaaaaa'),
 						'textColor' => ko_get_contrast_color($res_color),
-						'kOOL_tooltip' => utf8_encode($tooltip),
+						'kOOL_tooltip' => $tooltip,
 						'kOOL_editIcons' => $editIcons,
 						'resource' => $res['item_id'],
 					);
@@ -521,7 +521,7 @@ if(isset($_GET) && isset($_GET["action"])) {
 			$items = array();
 			foreach($resitems as $item) {
 				if(!in_array($item['id'], $_SESSION['show_items'])) continue;
-				$items[] = array('name' => utf8_encode($item['name']), 'id' => $item['id']);
+				$items[] = array('name' => $item['name'], 'id' => $item['id']);
 			}
 
 			print json_encode($items);

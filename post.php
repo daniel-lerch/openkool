@@ -1,28 +1,22 @@
 <?php
-/***************************************************************
- *  Copyright notice
- *
- *  (c) 2003-2015 Renzo Lauper (renzo@churchtool.org)
- *  All rights reserved
- *
- *  This script is part of the kOOL project. The kOOL project is
- *  free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
- *
- *  The GNU General Public License can be found at
- *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
- *  from the author is found in LICENSE.txt distributed with these scripts.
- *
- *  kOOL is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
+/*******************************************************************************
+*
+*    OpenKool - Online church organization tool
+*
+*    Copyright © 2003-2015 Renzo Lauper (renzo@churchtool.org)
+*    Copyright © 2019      Daniel Lerch
+*
+*    This program is free software; you can redistribute it and/or modify
+*    it under the terms of the GNU General Public License as published by
+*    the Free Software Foundation; either version 2 of the License, or
+*    (at your option) any later version.
+*
+*    This program is distributed in the hope that it will be useful,
+*    but WITHOUT ANY WARRANTY; without even the implied warranty of
+*    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+*    GNU General Public License for more details.
+*
+*******************************************************************************/
 
 function responseError($id, $section = null) {
 	$response = array();
@@ -102,7 +96,7 @@ else if ($test == 6) {
 		'_bemerkung' => 'Test Bemerkung',
 		'vorname' => 'John',
 		'nachname' => 'Doe',
-		'_group_datafields' => array('000008' => utf8_encode('Test Eintrag für Datenfeld "test_mod"')),
+		'_group_datafields' => array('000008' => 'Test Eintrag für Datenfeld "test_mod"'),
 	);
 	$_POST['request'] = json_encode($requestArray);
 	$_POST['key'] = md5($_POST['action'] . KOOL_ENCRYPTION_KEY . $_POST['request']);
@@ -115,7 +109,7 @@ else if ($test == 7) {
 		'_bemerkung' => 'Test Bemerkung',
 		'vorname' => 'John',
 		'nachname' => 'Doe',
-		'_group_datafields' => array('000006' => utf8_encode('Test Eintrag für Datenfeld "test_mod"')),
+		'_group_datafields' => array('000006' => 'Test Eintrag für Datenfeld "test_mod"'),
 	);
 	$_POST['request'] = json_encode($requestArray);
 	$_POST['key'] = md5($_POST['action'] . KOOL_ENCRYPTION_KEY . $_POST['request']);
@@ -179,9 +173,6 @@ switch ($action) {
 		}
 
 		$request = json_decode($requestJSON, true);
-
-		// Decode UTF8 values
-		array_walk_recursive($request, "utf8_decode_array");
 
 		$groupString = format_userinput($request['_group_id'], 'alphanumlist');
 

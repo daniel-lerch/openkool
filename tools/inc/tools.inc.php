@@ -330,7 +330,7 @@ function ko_tools_list_leute_db() {
 	print '<table border="0"><tr>';
 	print '<td style="font-weight:bold;">&nbsp;</td>';
 	print '<td style="font-weight:bold;">'.getLL("tools_listheader_people_field").'</td>';
-	foreach($WEB_LANGS as $lang) print '<td style="font-weight:bold;">'.getLL("tools_listheader_people_name")." ".strtoupper(substr($lang, 0, 2)).'</td>';
+	foreach($WEB_LANGS as $lang) print '<td style="font-weight:bold;">'.getLL("tools_listheader_people_name")." ".mb_strtoupper(substr($lang, 0, 2)).'</td>';
 	print '<td style="font-weight:bold;">'.getLL("tools_listheader_people_filter").'</td>';
 	print '</tr>';
 
@@ -427,7 +427,7 @@ function ko_tools_list_familie_db() {
 	print '<table border="0"><tr>';
 	print '<td style="font-weight:bold;">&nbsp;</td>';
 	print '<td style="font-weight:bold;">'.getLL("tools_listheader_people_field").'</td>';
-	foreach($WEB_LANGS as $lang) print '<td style="font-weight:bold;">'.getLL("tools_listheader_people_name")." ".strtoupper(substr($lang, 0, 2)).'</td>';
+	foreach($WEB_LANGS as $lang) print '<td style="font-weight:bold;">'.getLL("tools_listheader_people_name")." ".mb_strtoupper(substr($lang, 0, 2)).'</td>';
 	print '</tr>';
 
 	$tabindex = 1;

@@ -106,7 +106,7 @@ class vCard {
 		$keep_zero = false;
 		foreach ($this->country_codes as $country_code => $countries) {
 			foreach ($countries['names'] as $country) {
-				if (strtolower($resident_of) == strtolower($country)) {
+				if (mb_strtolower($resident_of) == mb_strtolower($country)) {
 					$resident_of_country_code = $country_code;
 					$keep_zero = $countries['keep_zero'] === true;
 					break;

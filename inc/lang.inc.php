@@ -23,18 +23,18 @@ $LANGS  = array();
 $LANGS2 = array();
 foreach($WEB_LANGS as $ll) {
 	list($l, $l2) = explode('_', $ll);
-	if(in_array($l, $LIB_LANGS)) $LANGS[] = strtolower($l);
-	if(in_array($l2, $LIB_LANGS2[$l])) $LANGS2[$l][] = strtoupper($l2);
+	if(in_array($l, $LIB_LANGS)) $LANGS[] = mb_strtolower($l);
+	if(in_array($l2, $LIB_LANGS2[$l])) $LANGS2[$l][] = mb_strtoupper($l2);
 }
 if(sizeof($LANGS) == 0) $LANGS = $LIB_LANGS;
 if(sizeof($LANGS2) == 0) $LANGS2 = $LIB_LANGS2;
 
 //Set a new language
 if(!empty($_GET["set_lang"])) {
-	$new_lang = strtolower(format_userinput($_GET["set_lang"], "alpha", FALSE, 5));
+	$new_lang = mb_strtolower(format_userinput($_GET["set_lang"], "alpha", FALSE, 5));
 	list($new_lang, $new_lang2) = explode("_", $new_lang);
 	if(in_array($new_lang, $LANGS)) {
-		$_SESSION["lang"] = strtolower($new_lang);
+		$_SESSION["lang"] = mb_strtolower($new_lang);
 		//Unset lang2 so it is newly set for the new language
 		unset($_SESSION["lang2"]);
 		//Save selection as userpref
@@ -50,26 +50,26 @@ if(!$_SESSION["lang"] && $GET_LANG_FROM_BROWSER) {
 	foreach($browser_langs as $bl) {
 		list($new_lang, $new_lang2) = explode("_", $bl);
 		if($new_lang != "" && in_array($new_lang, $LANGS)) {
-			$_SESSION["lang"] = strtolower($new_lang);
+			$_SESSION["lang"] = mb_strtolower($new_lang);
 			break;
 		}
 	}
 }
 
 //Use default language if none was found above
-if(!$_SESSION['lang']) $_SESSION['lang'] = strtolower($LANGS[0]);
+if(!$_SESSION['lang']) $_SESSION['lang'] = mb_strtolower($LANGS[0]);
 
 //Use default regional settings for the selected language if none was found above
 if(sizeof($LANGS2[$_SESSION['lang']]) == 0) $LANGS2[$_SESSION['lang']] = $LIB_LANGS2[$_SESSION['lang']];
 
 //Set lang2, the region part as US in en_US
 if(!$_SESSION['lang2']) {
-	if($new_lang2 != '' && in_array(strtoupper($new_lang2), $LANGS2[$_SESSION['lang']])) {
+	if($new_lang2 != '' && in_array(mb_strtoupper($new_lang2), $LANGS2[$_SESSION['lang']])) {
 		//Set region as given by Browser
-		$_SESSION['lang2'] = strtoupper($new_lang2);
+		$_SESSION['lang2'] = mb_strtoupper($new_lang2);
 	} else {
 		//Otherwise use first entry in LANGS2 as default
-		$_SESSION['lang2'] = strtoupper($LANGS2[$_SESSION['lang']][0]);
+		$_SESSION['lang2'] = mb_strtoupper($LANGS2[$_SESSION['lang']][0]);
 	}
 }
 
@@ -80,7 +80,7 @@ setlocale(LC_ALL, ($_SESSION["lang"]."_".$_SESSION["lang2"].'.ISO-8859-1'));
 $LOCAL_LANG = NULL;
 include($ko_path."locallang/locallang.".$_SESSION["lang"].".php");
 //Include locallang file for regional changes according to lang2 if region is not default as set in LIB_LANGS2
-if(strtoupper($_SESSION['lang2']) != strtoupper($LIB_LANGS2[$_SESSION['lang']][0])) {
+if(mb_strtoupper($_SESSION['lang2']) != mb_strtoupper($LIB_LANGS2[$_SESSION['lang']][0])) {
 	if(file_exists($ko_path.'locallang/locallang.'.$_SESSION['lang'].'_'.$_SESSION['lang2'].'.php')) {
 		include($ko_path.'locallang/locallang.'.$_SESSION['lang'].'_'.$_SESSION['lang2'].'.php');
 	}

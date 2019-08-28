@@ -30,7 +30,7 @@ CREATE TABLE `ko_admin` (
 	`event_force_global` tinyint(3) unsigned NOT NULL DEFAULT '0',
 	`event_reminder_rights` tinyint(3) unsigned NOT NULL DEFAULT '0',
   PRIMARY KEY (`id`)
-) ENGINE=MyISAM  DEFAULT CHARSET=latin1;
+) ENGINE=MyISAM  DEFAULT CHARSET=utf8mb4;
 
 INSERT INTO `ko_admin` VALUES(2, -1, 'ko_guest', '098f6bcd4621d373cade4e832627b4f6', '0', '0', '', '', '', 0, 0, '2', '1', '1', '0', '0', '0', '0', '', '', 'daten,reservation', '0000-00-00 00:00:00', '', '', '', '', '', 0, 0, 0);
 
@@ -59,7 +59,7 @@ CREATE TABLE `ko_admingroups` (
   `event_force_global` tinyint(3) unsigned NOT NULL DEFAULT '0',
 	`event_reminder_rights` tinyint(3) unsigned NOT NULL DEFAULT '0',
   PRIMARY KEY (`id`)
-) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+) ENGINE=MyISAM DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE `ko_donations` (
   `id` mediumint(8) unsigned NOT NULL AUTO_INCREMENT,
@@ -80,7 +80,7 @@ CREATE TABLE `ko_donations` (
   KEY `reoccuring` (`reoccuring`),
   KEY `valutadate` (`valutadate`),
   KEY `promise` (`promise`)
-) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+) ENGINE=MyISAM DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE `ko_donations_accounts` (
   `id` mediumint(8) unsigned NOT NULL AUTO_INCREMENT,
@@ -88,14 +88,14 @@ CREATE TABLE `ko_donations_accounts` (
   `number` varchar(50) NOT NULL,
   `comment` varchar(255) NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+) ENGINE=MyISAM DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE `ko_etiketten` (
   `vorlage` varchar(32) NOT NULL DEFAULT '',
   `key` varchar(100) NOT NULL DEFAULT '',
   `value` varchar(255) NOT NULL DEFAULT '',
   KEY `vorlage` (`vorlage`)
-) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+) ENGINE=MyISAM DEFAULT CHARSET=utf8mb4;
 
 INSERT INTO `ko_etiketten` VALUES('46033b974ad2d50859ea599df0dffba4', 'name', '3x8');
 INSERT INTO `ko_etiketten` VALUES('46033b974ad2d50859ea599df0dffba4', 'per_row', '3');
@@ -136,7 +136,7 @@ CREATE TABLE `ko_reminder` (
 	`crdate` DATETIME NOT NULL,
 	`cruser` mediumint(9) NOT NULL,
 	PRIMARY KEY (`id`)
-) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+) ENGINE=MyISAM DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE `ko_reminder_mapping` (
 	`id` mediumint(9) NOT NULL AUTO_INCREMENT,
@@ -145,7 +145,7 @@ CREATE TABLE `ko_reminder_mapping` (
 	`leute_id` mediumint(9) NOT NULL DEFAULT '0',
 	`crdate` DATETIME NOT NULL,
 	PRIMARY KEY (`id`)
-) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+) ENGINE=MyISAM DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE `ko_event` (
   `id` mediumint(9) NOT NULL AUTO_INCREMENT,
@@ -171,7 +171,7 @@ CREATE TABLE `ko_event` (
   KEY `dp` (`rota`),
   KEY `startdatum` (`startdatum`),
   KEY `import_id` (`import_id`(200))
-) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+) ENGINE=MyISAM DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE `ko_event_program` (
 	`id` mediumint(9) unsigned NOT NULL AUTO_INCREMENT,
@@ -183,7 +183,7 @@ CREATE TABLE `ko_event_program` (
 	`cruser` mediumint(9) NOT NULL,
 	`sorting` mediumint(9) NOT NULL,
 	PRIMARY KEY (`id`)
-) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+) ENGINE=MyISAM DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE `ko_eventgruppen` (
   `id` mediumint(9) unsigned NOT NULL AUTO_INCREMENT,
@@ -213,7 +213,7 @@ CREATE TABLE `ko_eventgruppen` (
   UNIQUE KEY `id` (`id`),
   KEY `calendar_id` (`calendar_id`),
   KEY `type` (`type`)
-) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+) ENGINE=MyISAM DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE `ko_eventgruppen_program` (
 	`id` mediumint(9) unsigned NOT NULL AUTO_INCREMENT,
@@ -225,7 +225,7 @@ CREATE TABLE `ko_eventgruppen_program` (
 	`cruser` mediumint(9) NOT NULL,
 	`sorting` mediumint(9) NOT NULL,
 	PRIMARY KEY (`id`)
-) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+) ENGINE=MyISAM DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE `ko_event_calendar` (
   `id` mediumint(9) NOT NULL AUTO_INCREMENT,
@@ -233,7 +233,7 @@ CREATE TABLE `ko_event_calendar` (
   `type` smallint(6) NOT NULL DEFAULT '1',
   PRIMARY KEY (`id`),
   KEY `type` (`type`)
-) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+) ENGINE=MyISAM DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE `ko_event_mod` (
   `id` mediumint(9) NOT NULL AUTO_INCREMENT,
@@ -260,7 +260,7 @@ CREATE TABLE `ko_event_mod` (
   `cdate` datetime NOT NULL,
   `last_change` datetime NOT NULL,
   UNIQUE KEY `id` (`id`)
-) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+) ENGINE=MyISAM DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE `ko_familie` (
   `famid` mediumint(9) NOT NULL AUTO_INCREMENT,
@@ -277,7 +277,7 @@ CREATE TABLE `ko_familie` (
   `famemail` enum('','husband','wife') NOT NULL DEFAULT '',
   PRIMARY KEY (`famid`),
   KEY `nachname` (`nachname`)
-) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+) ENGINE=MyISAM DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE `ko_fileshare` (
   `id` varchar(32) NOT NULL DEFAULT '0',
@@ -290,7 +290,7 @@ CREATE TABLE `ko_fileshare` (
   PRIMARY KEY (`id`),
   KEY `user_id` (`user_id`),
   KEY `parent` (`parent`)
-) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+) ENGINE=MyISAM DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE `ko_fileshare_folders` (
   `id` mediumint(8) unsigned NOT NULL AUTO_INCREMENT,
@@ -305,7 +305,7 @@ CREATE TABLE `ko_fileshare_folders` (
   PRIMARY KEY (`id`),
   KEY `parent` (`parent`,`user`),
   KEY `flag` (`flag`)
-) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+) ENGINE=MyISAM DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE `ko_fileshare_sent` (
   `id` mediumint(9) NOT NULL AUTO_INCREMENT,
@@ -317,7 +317,7 @@ CREATE TABLE `ko_fileshare_sent` (
   KEY `file_id` (`file_id`,`recipient`),
   KEY `recipient_id` (`recipient_id`),
   KEY `d_date` (`d_date`)
-) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+) ENGINE=MyISAM DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE `ko_filter` (
   `id` mediumint(9) NOT NULL AUTO_INCREMENT,
@@ -339,7 +339,7 @@ CREATE TABLE `ko_filter` (
   `allow_fastfilter` tinyint(4) NOT NULL DEFAULT '0',
   UNIQUE KEY `id` (`id`),
   KEY `group` (`group`)
-) ENGINE=MyISAM  DEFAULT CHARSET=latin1;
+) ENGINE=MyISAM  DEFAULT CHARSET=utf8mb4;
 
 INSERT INTO `ko_filter` VALUES(1, 'leute', 'anrede', 'salutation', 'person', 1, 'anrede REGEXP ''[VAR1]''', '', '', 1, 'salutation', '<select name="var1" size="0"><option value=""></option><option value="Herr">Herr</option><option value="Frau">Frau</option></select>', '', '', '', '', 1);
 INSERT INTO `ko_filter` VALUES(70, 'leute', 'ko_filter.name', 'filterpreset', 'misc', 0, '[VAR1]', '', '', 1, 'filterpreset', 'FCN:ko_specialfilter_filterpreset', '', '', '', '', 0);
@@ -392,7 +392,7 @@ CREATE TABLE `ko_grouproles` (
   `id` mediumint(6) unsigned zerofill NOT NULL AUTO_INCREMENT,
   `name` varchar(200) NOT NULL DEFAULT '',
   PRIMARY KEY (`id`)
-) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+) ENGINE=MyISAM DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE `ko_groups` (
   `id` mediumint(6) unsigned zerofill NOT NULL AUTO_INCREMENT,
@@ -429,7 +429,7 @@ CREATE TABLE `ko_groups` (
   KEY `ezmlm_list` (`ezmlm_list`),
   KEY `mailing_alias` (`mailing_alias`),
   FULLTEXT KEY `roles` (`roles`)
-) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+) ENGINE=MyISAM DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE `ko_groups_datafields` (
   `id` mediumint(6) unsigned zerofill NOT NULL AUTO_INCREMENT,
@@ -441,7 +441,7 @@ CREATE TABLE `ko_groups_datafields` (
   `preset` tinyint(2) NOT NULL,
   PRIMARY KEY (`id`),
   KEY `reusable` (`reusable`)
-) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+) ENGINE=MyISAM DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE `ko_groups_datafields_data` (
   `id` bigint(20) NOT NULL AUTO_INCREMENT,
@@ -453,7 +453,7 @@ CREATE TABLE `ko_groups_datafields_data` (
   PRIMARY KEY (`id`),
   KEY `person_id` (`person_id`),
   KEY `datafield_id` (`datafield_id`,`person_id`,`group_id`)
-) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+) ENGINE=MyISAM DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE `ko_help` (
   `id` mediumint(8) unsigned NOT NULL AUTO_INCREMENT,
@@ -465,7 +465,7 @@ CREATE TABLE `ko_help` (
   `text` text NOT NULL,
   PRIMARY KEY (`id`),
   KEY `module` (`module`,`language`)
-) ENGINE=MyISAM  DEFAULT CHARSET=latin1;
+) ENGINE=MyISAM  DEFAULT CHARSET=utf8mb4;
 
 INSERT INTO `ko_help` VALUES(NULL, 'admin', '', 'de', 40, 0, '');
 INSERT INTO `ko_help` VALUES(NULL, 'admin', '', 'en', 40, 0, '');
@@ -714,7 +714,7 @@ CREATE TABLE `ko_kleingruppen` (
   PRIMARY KEY (`id`),
   KEY `type` (`type`,`region`,`eventGroupID`),
   KEY `mailing_alias` (`mailing_alias`)
-) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+) ENGINE=MyISAM DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE `ko_leute` (
   `id` mediumint(9) unsigned NOT NULL AUTO_INCREMENT,
@@ -760,7 +760,7 @@ CREATE TABLE `ko_leute` (
   KEY `lastchange` (`lastchange`),
   KEY `famfunction` (`famfunction`),
   FULLTEXT KEY `groups` (`groups`)
-) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+) ENGINE=MyISAM DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE `ko_leute_changes` (
   `id` mediumint(8) unsigned NOT NULL AUTO_INCREMENT,
@@ -772,7 +772,7 @@ CREATE TABLE `ko_leute_changes` (
   PRIMARY KEY (`id`),
   KEY `liduiddate` (`leute_id`,`user_id`,`date`),
   KEY `date` (`date`)
-) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+) ENGINE=MyISAM DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE `ko_leute_mod` (
   `_id` mediumint(9) unsigned NOT NULL AUTO_INCREMENT,
@@ -808,7 +808,7 @@ CREATE TABLE `ko_leute_mod` (
   PRIMARY KEY (`_id`),
   KEY `nachname` (`nachname`),
   KEY `geburtsdatum` (`geburtsdatum`)
-) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+) ENGINE=MyISAM DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE `ko_leute_preferred_fields` (
   `id` mediumint(9) unsigned NOT NULL AUTO_INCREMENT,
@@ -819,7 +819,7 @@ CREATE TABLE `ko_leute_preferred_fields` (
   KEY `type` (`type`),
   KEY `lid` (`lid`),
   KEY `field` (`field`)
-) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+) ENGINE=MyISAM DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE `ko_log` (
   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
@@ -833,7 +833,7 @@ CREATE TABLE `ko_log` (
   KEY `user_id` (`user_id`),
   KEY `date` (`date`),
   KEY `type` (`type`,`comment`(8))
-) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+) ENGINE=MyISAM DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE `ko_mailing_mails` (
   `id` mediumint(8) unsigned NOT NULL AUTO_INCREMENT,
@@ -850,7 +850,7 @@ CREATE TABLE `ko_mailing_mails` (
   `modify_rcpts` tinyint(1) NOT NULL DEFAULT '1',
   PRIMARY KEY (`id`),
   KEY `status` (`status`,`code`)
-) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+) ENGINE=MyISAM DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE `ko_mailing_recipients` (
   `id` mediumint(8) unsigned NOT NULL AUTO_INCREMENT,
@@ -860,7 +860,7 @@ CREATE TABLE `ko_mailing_recipients` (
   `leute_id` mediumint(9) NOT NULL,
   PRIMARY KEY (`id`),
   KEY `mail_id` (`mail_id`)
-) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+) ENGINE=MyISAM DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE `ko_mailmerge` (
   `id` mediumint(8) unsigned NOT NULL AUTO_INCREMENT,
@@ -876,7 +876,7 @@ CREATE TABLE `ko_mailmerge` (
   `sig_file` tinyint(4) NOT NULL,
   PRIMARY KEY (`id`),
   KEY `user_id` (`user_id`,`crdate`)
-) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+) ENGINE=MyISAM DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE `ko_news` (
   `id` mediumint(9) NOT NULL AUTO_INCREMENT,
@@ -889,7 +889,7 @@ CREATE TABLE `ko_news` (
   `link` varchar(255) NOT NULL DEFAULT '',
   PRIMARY KEY `id` (`id`),
   KEY `type` (`type`)
-) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+) ENGINE=MyISAM DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE `ko_pdf_layout` (
   `id` mediumint(8) unsigned NOT NULL AUTO_INCREMENT,
@@ -897,7 +897,7 @@ CREATE TABLE `ko_pdf_layout` (
   `name` varchar(100) NOT NULL,
   `data` text NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=MyISAM  DEFAULT CHARSET=latin1;
+) ENGINE=MyISAM  DEFAULT CHARSET=utf8mb4;
 
 INSERT INTO `ko_pdf_layout` VALUES(1, 'leute', 'Layout 1', 'a:8:{s:4:"page";a:5:{s:11:"orientation";s:1:"L";s:11:"margin_left";s:2:"10";s:10:"margin_top";s:2:"15";s:12:"margin_right";s:2:"10";s:13:"margin_bottom";s:2:"10";}s:6:"header";a:3:{s:4:"left";a:3:{s:4:"font";s:6:"arialb";s:8:"fontsize";s:2:"12";s:4:"text";s:22:"kOOL - the church tool";}s:6:"center";a:3:{s:4:"font";s:6:"arialb";s:8:"fontsize";s:2:"12";s:4:"text";s:0:"";}s:5:"right";a:3:{s:4:"font";s:6:"arialb";s:8:"fontsize";s:2:"12";s:4:"text";s:0:"";}}s:6:"footer";a:3:{s:4:"left";a:3:{s:4:"font";s:5:"arial";s:8:"fontsize";s:2:"11";s:4:"text";s:0:"";}s:6:"center";a:3:{s:4:"font";s:5:"arial";s:8:"fontsize";s:2:"11";s:4:"text";s:18:"- [[PageNumber]] -";}s:5:"right";a:3:{s:4:"font";s:5:"arial";s:8:"fontsize";s:2:"11";s:4:"text";s:46:"[[Day]].[[Month]].[[Year]] [[Hour]]:[[Minute]]";}}s:9:"headerrow";a:3:{s:4:"font";s:6:"arialb";s:8:"fontsize";s:2:"11";s:9:"fillcolor";s:3:"204";}s:18:"columns_datafields";b:0;s:4:"sort";s:8:"nachname";s:10:"sort_order";s:3:"ASC";s:12:"col_template";a:1:{s:8:"_default";a:2:{s:4:"font";s:5:"arial";s:8:"fontsize";s:2:"11";}}}');
 
@@ -925,7 +925,7 @@ CREATE TABLE `ko_reservation` (
   KEY `user_id` (`user_id`),
   KEY `startdatum` (`startdatum`),
   KEY `last_change` (`last_change`)
-) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+) ENGINE=MyISAM DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE `ko_reservation_mod` (
   `id` mediumint(9) NOT NULL AUTO_INCREMENT,
@@ -948,13 +948,13 @@ CREATE TABLE `ko_reservation_mod` (
   `_event_id` mediumint(9) NOT NULL DEFAULT '0',
   PRIMARY KEY (`id`),
   KEY `serie_id` (`serie_id`)
-) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+) ENGINE=MyISAM DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE `ko_resgruppen` (
   `id` smallint(6) NOT NULL AUTO_INCREMENT,
   `name` varchar(100) NOT NULL DEFAULT '',
   PRIMARY KEY (`id`)
-) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+) ENGINE=MyISAM DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE `ko_resitem` (
   `id` mediumint(9) NOT NULL AUTO_INCREMENT,
@@ -968,7 +968,7 @@ CREATE TABLE `ko_resitem` (
 	`email_recipient` varchar(255) NOT NULL DEFAULT '',
 	`email_text` text NOT NULL DEFAULT '',
   PRIMARY KEY (`id`)
-) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+) ENGINE=MyISAM DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE `ko_rota_schedulling` (
   `team_id` mediumint(8) unsigned NOT NULL,
@@ -977,7 +977,7 @@ CREATE TABLE `ko_rota_schedulling` (
   `status` tinyint(4) NOT NULL DEFAULT '1',
   KEY `dienst` (`team_id`,`event_id`),
   KEY `event` (`event_id`)
-) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+) ENGINE=MyISAM DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE `ko_rota_teams` (
   `id` mediumint(8) unsigned NOT NULL AUTO_INCREMENT,
@@ -991,7 +991,7 @@ CREATE TABLE `ko_rota_teams` (
 	`consensus_description` text NOT NULL,
   PRIMARY KEY (`id`),
   KEY `rotatype` (`rotatype`)
-) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+) ENGINE=MyISAM DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE `ko_rota_consensus` (
   `team_id` mediumint(8) unsigned NOT NULL,
@@ -1000,7 +1000,7 @@ CREATE TABLE `ko_rota_consensus` (
   `answer` tinyint(4) NOT NULL,
   `status` tinyint(4) NOT NULL DEFAULT '1',
   KEY `main` (`team_id`,`event_id`,`person_id`)
-) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+) ENGINE=MyISAM DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE `ko_scheduler_tasks` (
   `id` mediumint(8) unsigned NOT NULL AUTO_INCREMENT,
@@ -1011,7 +1011,7 @@ CREATE TABLE `ko_scheduler_tasks` (
   `last_call` datetime NOT NULL,
   `next_call` datetime NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB  DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB  DEFAULT CHARSET=utf8mb4;
 
 INSERT INTO `ko_scheduler_tasks` VALUES(NULL, 'Delete old downloads', '47 2 * * *', 0, 'ko_task_delete_old_downloads', '0000-00-00 00:00:00', '0000-00-00 00:00:00');
 INSERT INTO `ko_scheduler_tasks` VALUES(NULL, 'Mailing', '*/5 * * * *', 0, 'ko_task_mailing', '0000-00-00 00:00:00', '0000-00-00 00:00:00');
@@ -1022,7 +1022,7 @@ CREATE TABLE `ko_settings` (
   `key` varchar(100) NOT NULL DEFAULT '',
   `value` text NOT NULL,
   PRIMARY KEY (`key`)
-) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+) ENGINE=MyISAM DEFAULT CHARSET=utf8mb4;
 
 INSERT INTO `ko_settings` VALUES('show_leute_cols', 'vorname,nachname,adresse,plz,ort');
 INSERT INTO `ko_settings` VALUES('leute_col_name', 'a:3:{s:2:"nl";a:28:{s:5:"famid";s:5:"Gezin";s:6:"anrede";s:6:"Aanhef";s:4:"firm";s:7:"Bedrijf";s:10:"department";s:8:"Afdeling";s:7:"vorname";s:8:"Voornaam";s:8:"nachname";s:10:"Achternaam";s:7:"adresse";s:5:"Adres";s:14:"adresse_zusatz";s:12:"Adresregel 2";s:3:"plz";s:8:"Postcode";s:3:"ort";s:10:"Woonplaats";s:4:"land";s:4:"Land";s:4:"telp";s:14:"Telefoon thuis";s:4:"telg";s:13:"Telefoon werk";s:5:"natel";s:6:"Mobiel";s:3:"fax";s:3:"Fax";s:5:"email";s:6:"E-mail";s:3:"web";s:3:"URL";s:12:"geburtsdatum";s:13:"Geboortedatum";s:10:"zivilstand";s:17:"Burgerlijke staat";s:10:"geschlecht";s:8:"Geslacht";s:5:"memo1";s:5:"Memo1";s:5:"memo2";s:5:"Memo2";s:6:"kinder";s:8:"Kinderen";s:11:"smallgroups";s:8:"Celgroep";s:10:"lastchange";s:16:"Laatst gewijzigd";s:11:"famfunction";s:9:"Gezinsrol";s:6:"groups";s:7:"Groepen";s:6:"hidden";s:9:"Verborgen";}s:2:"en";a:28:{s:5:"famid";s:6:"Family";s:6:"anrede";s:10:"Salutation";s:4:"firm";s:7:"Company";s:10:"department";s:10:"Department";s:7:"vorname";s:8:"Forename";s:8:"nachname";s:7:"Surname";s:7:"adresse";s:7:"Address";s:14:"adresse_zusatz";s:6:"Line 2";s:3:"plz";s:9:"Post code";s:3:"ort";s:9:"Town/City";s:4:"land";s:7:"Country";s:4:"telp";s:7:"Home no";s:4:"telg";s:7:"Work no";s:5:"natel";s:6:"Mobile";s:3:"fax";s:3:"Fax";s:5:"email";s:5:"Email";s:3:"web";s:3:"URL";s:12:"geburtsdatum";s:3:"DOB";s:10:"zivilstand";s:14:"Marital Status";s:10:"geschlecht";s:3:"Sex";s:5:"memo1";s:7:"Notes 1";s:5:"memo2";s:7:"Notes 2";s:6:"kinder";s:8:"Children";s:11:"smallgroups";s:11:"Smallgroups";s:10:"lastchange";s:11:"Last change";s:11:"famfunction";s:11:"Family role";s:6:"groups";s:6:"Groups";s:6:"hidden";s:6:"Hidden";}s:2:"de";a:28:{s:5:"famid";s:7:"Familie";s:6:"anrede";s:6:"Anrede";s:4:"firm";s:5:"Firma";s:10:"department";s:9:"Abteilung";s:7:"vorname";s:7:"Vorname";s:8:"nachname";s:8:"Nachname";s:7:"adresse";s:7:"Adresse";s:14:"adresse_zusatz";s:13:"AdresseZusatz";s:3:"plz";s:3:"PLZ";s:3:"ort";s:3:"Ort";s:4:"land";s:4:"Land";s:4:"telp";s:4:"TelP";s:4:"telg";s:4:"TelG";s:5:"natel";s:12:"Mobiltelefon";s:3:"fax";s:3:"Fax";s:5:"email";s:6:"E-Mail";s:3:"web";s:3:"Web";s:12:"geburtsdatum";s:12:"Geburtsdatum";s:10:"zivilstand";s:10:"Zivilstand";s:10:"geschlecht";s:10:"Geschlecht";s:5:"memo1";s:5:"Memo1";s:5:"memo2";s:5:"Memo2";s:6:"kinder";s:6:"Kinder";s:11:"smallgroups";s:12:"Kleingruppen";s:10:"lastchange";s:15:"LetzteAenderung";s:11:"famfunction";s:11:"FamFunktion";s:6:"groups";s:7:"Gruppen";s:6:"hidden";s:9:"Versteckt";}}');
@@ -1117,14 +1117,14 @@ CREATE TABLE `ko_tapes` (
   `item_number` varchar(200) NOT NULL,
   `price` float NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+) ENGINE=MyISAM DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE `ko_tapes_groups` (
   `id` mediumint(9) NOT NULL AUTO_INCREMENT,
   `name` varchar(255) NOT NULL DEFAULT '',
   `printname` varchar(255) NOT NULL DEFAULT '',
   PRIMARY KEY (`id`)
-) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+) ENGINE=MyISAM DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE `ko_tapes_printlayout` (
   `id` mediumint(9) NOT NULL AUTO_INCREMENT,
@@ -1132,7 +1132,7 @@ CREATE TABLE `ko_tapes_printlayout` (
   `default` tinyint(4) NOT NULL DEFAULT '0',
   `data` text NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=MyISAM  DEFAULT CHARSET=latin1;
+) ENGINE=MyISAM  DEFAULT CHARSET=utf8mb4;
 
 INSERT INTO `ko_tapes_printlayout` VALUES(2, 'Tapes 6x2', 0, 'a:6:{s:10:"page_width";s:3:"210";s:11:"page_height";s:3:"297";s:5:"items";s:2:"12";s:5:"rootx";a:12:{i:0;s:2:"12";i:1;s:3:"110";i:2;s:2:"12";i:3;s:3:"110";i:4;s:2:"12";i:5;s:3:"110";i:6;s:2:"12";i:7;s:3:"110";i:8;s:2:"12";i:9;s:3:"110";i:10;s:2:"12";i:11;s:3:"110";}s:5:"rooty";a:12:{i:0;s:2:"15";i:1;s:2:"15";i:2;s:2:"62";i:3;s:2:"62";i:4;s:3:"109";i:5;s:3:"109";i:6;s:3:"156";i:7;s:3:"156";i:8;s:3:"203";i:9;s:3:"203";i:10;s:3:"250";i:11;s:3:"250";}s:6:"layout";a:8:{s:5:"title";a:6:{s:2:"do";i:1;s:1:"x";s:1:"3";s:1:"y";s:1:"2";s:4:"font";s:6:"arialb";s:8:"fontsize";s:2:"10";s:5:"align";s:1:"L";}s:8:"subtitle";a:1:{s:2:"do";i:0;}s:4:"date";a:6:{s:2:"do";i:1;s:1:"x";s:2:"85";s:1:"y";s:1:"7";s:4:"font";s:5:"arial";s:8:"fontsize";s:1:"9";s:5:"align";s:1:"R";}s:5:"group";a:1:{s:2:"do";i:0;}s:5:"serie";a:1:{s:2:"do";i:0;}s:8:"preacher";a:6:{s:2:"do";i:1;s:1:"x";s:1:"3";s:1:"y";s:1:"7";s:4:"font";s:5:"arial";s:8:"fontsize";s:1:"9";s:5:"align";s:1:"L";}s:11:"item_number";a:1:{s:2:"do";i:0;}s:5:"price";a:1:{s:2:"do";i:0;}}}');
 INSERT INTO `ko_tapes_printlayout` VALUES(1, 'List', 0, 'a:6:{s:10:"page_width";s:3:"210";s:11:"page_height";s:3:"297";s:5:"items";s:2:"50";s:5:"rootx";a:50:{i:0;s:2:"20";i:1;s:2:"20";i:2;s:2:"20";i:3;s:2:"20";i:4;s:2:"20";i:5;s:2:"20";i:6;s:2:"20";i:7;s:2:"20";i:8;s:2:"20";i:9;s:2:"20";i:10;s:2:"20";i:11;s:2:"20";i:12;s:2:"20";i:13;s:2:"20";i:14;s:2:"20";i:15;s:2:"20";i:16;s:2:"20";i:17;s:2:"20";i:18;s:2:"20";i:19;s:2:"20";i:20;s:2:"20";i:21;s:2:"20";i:22;s:2:"20";i:23;s:2:"20";i:24;s:2:"20";i:25;s:2:"20";i:26;s:2:"20";i:27;s:2:"20";i:28;s:2:"20";i:29;s:2:"20";i:30;s:2:"20";i:31;s:2:"20";i:32;s:2:"20";i:33;s:2:"20";i:34;s:2:"20";i:35;s:2:"20";i:36;s:2:"20";i:37;s:2:"20";i:38;s:2:"20";i:39;s:2:"20";i:40;s:2:"20";i:41;s:2:"20";i:42;s:2:"20";i:43;s:2:"20";i:44;s:2:"20";i:45;s:2:"20";i:46;s:2:"20";i:47;s:2:"20";i:48;s:2:"20";i:49;s:2:"20";}s:5:"rooty";a:50:{i:0;s:2:"30";i:1;s:2:"35";i:2;s:2:"40";i:3;s:2:"45";i:4;s:2:"50";i:5;s:2:"55";i:6;s:2:"60";i:7;s:2:"65";i:8;s:2:"70";i:9;s:2:"75";i:10;s:2:"80";i:11;s:2:"85";i:12;s:2:"90";i:13;s:2:"95";i:14;s:3:"100";i:15;s:3:"105";i:16;s:3:"110";i:17;s:3:"115";i:18;s:3:"120";i:19;s:3:"125";i:20;s:3:"130";i:21;s:3:"135";i:22;s:3:"140";i:23;s:3:"145";i:24;s:3:"150";i:25;s:3:"155";i:26;s:3:"160";i:27;s:3:"165";i:28;s:3:"170";i:29;s:3:"175";i:30;s:3:"180";i:31;s:3:"185";i:32;s:3:"190";i:33;s:3:"195";i:34;s:3:"200";i:35;s:3:"205";i:36;s:3:"210";i:37;s:3:"215";i:38;s:3:"220";i:39;s:3:"225";i:40;s:3:"230";i:41;s:3:"235";i:42;s:3:"240";i:43;s:3:"245";i:44;s:3:"250";i:45;s:3:"255";i:46;s:3:"260";i:47;s:3:"265";i:48;s:3:"270";i:49;s:3:"275";}s:6:"layout";a:8:{s:5:"title";a:6:{s:2:"do";i:1;s:1:"x";s:1:"0";s:1:"y";s:1:"0";s:4:"font";s:6:"arialb";s:8:"fontsize";s:1:"9";s:5:"align";s:1:"L";}s:8:"subtitle";a:1:{s:2:"do";i:0;}s:4:"date";a:6:{s:2:"do";i:1;s:1:"x";s:3:"170";s:1:"y";s:1:"0";s:4:"font";s:5:"arial";s:8:"fontsize";s:1:"9";s:5:"align";s:1:"R";}s:5:"group";a:1:{s:2:"do";i:0;}s:5:"serie";a:1:{s:2:"do";i:0;}s:8:"preacher";a:6:{s:2:"do";i:1;s:1:"x";s:3:"100";s:1:"y";s:1:"0";s:4:"font";s:5:"arial";s:8:"fontsize";s:1:"9";s:5:"align";s:1:"L";}s:11:"item_number";a:1:{s:2:"do";i:0;}s:5:"price";a:1:{s:2:"do";i:0;}}}');
@@ -1143,7 +1143,7 @@ CREATE TABLE `ko_tapes_series` (
   `name` varchar(255) NOT NULL DEFAULT '',
   `printname` varchar(255) NOT NULL DEFAULT '',
   PRIMARY KEY (`id`)
-) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+) ENGINE=MyISAM DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE `ko_tracking` (
   `id` mediumint(9) unsigned NOT NULL AUTO_INCREMENT,
@@ -1161,7 +1161,7 @@ CREATE TABLE `ko_tracking` (
 	`hidden` tinyint(4) NOT NULL DEFAULT '0',
   PRIMARY KEY (`id`),
   KEY `group_id` (`group_id`)
-) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+) ENGINE=MyISAM DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE `ko_tracking_entries` (
   `id` mediumint(8) unsigned NOT NULL AUTO_INCREMENT,
@@ -1179,14 +1179,14 @@ CREATE TABLE `ko_tracking_entries` (
   KEY `tidliddate` (`tid`,`lid`,`date`),
   KEY `tid` (`tid`),
   KEY `tiddate` (`tid`,`date`)
-) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+) ENGINE=MyISAM DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE `ko_tracking_groups` (
   `id` mediumint(9) unsigned NOT NULL AUTO_INCREMENT,
   `name` varchar(200) NOT NULL,
   PRIMARY KEY (`id`),
   KEY `name` (`name`)
-) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+) ENGINE=MyISAM DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE `ko_userprefs` (
   `id` mediumint(8) unsigned NOT NULL AUTO_INCREMENT,
@@ -1198,7 +1198,7 @@ CREATE TABLE `ko_userprefs` (
   PRIMARY KEY (`id`),
   KEY `user_id` (`user_id`),
   KEY `type` (`type`)
-) ENGINE=MyISAM  DEFAULT CHARSET=latin1;
+) ENGINE=MyISAM  DEFAULT CHARSET=utf8mb4;
 
 INSERT INTO `ko_userprefs` VALUES(1, 2, '', 'submenu_daten_left', 'termine,termingruppen,export', '');
 INSERT INTO `ko_userprefs` VALUES(2, 2, '', 'submenu_reservation_left', 'reservationen,objekte,moderation,export', '');

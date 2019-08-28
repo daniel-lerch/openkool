@@ -205,7 +205,7 @@ switch($do_action) {
 
 			//Type
 			$filename = $file["name"][$i];
-			$idx = strtolower(end(explode('.', $filename)));
+			$idx = mb_strtolower(end(explode('.', $filename)));
       $mimet = array(
           'doc' =>'application/msword',
           'dot' =>'application/msword',

@@ -225,11 +225,7 @@ if(isset($_GET) && isset($_GET['action'])) {
 			$data['lid'] = format_userinput($_GET['lid'], 'int');
 			$data['date'] = format_userinput($_GET['date'], 'date');
 			$data['value'] = format_userinput($_GET['value'], 'float');
-			if($action == 'settrackingtype') {
-				$data['type'] = utf8_decode($_GET['type']);
-			} else {
-				$data['type'] = $_GET['type'];
-			}
+			$data['type'] = $_GET['type'];
 
 			$entry = db_select_data('ko_tracking_entries', "WHERE `tid` = '".$data['tid']."' AND `lid` = '".$data['lid']."' AND `date` = '".$data['date']."' AND `type` = '".$data['type']."'", '*', '', '', TRUE);
 			if(isset($entry['id']) && $entry['id'] > 0) {
@@ -326,7 +322,7 @@ if(isset($_GET) && isset($_GET['action'])) {
 			if($access['tracking']['ALL'] < 2 && $access['tracking'][$data['tid']] < 2) break;
 			$data['lid'] = format_userinput($_GET['lid'], 'uint');
 			$data['date'] = format_userinput($_GET['date'], 'date');
-			$data['type'] = utf8_decode($_GET['type']);
+			$data['type'] = $_GET['type'];
 
 			db_update_data('ko_tracking_entries', "WHERE `tid` = '".$data['tid']."' AND `lid` = '".$data['lid']."' AND `date` = '".$data['date']."' AND `type` = '".$data['type']."'", array('status' => '0', 'last_change' => date('Y-m-d H:i:s')));
 			ko_log_diff('confirm_entered_tracking', $data);
@@ -411,7 +407,7 @@ if(isset($_GET) && isset($_GET['action'])) {
 			$tid = format_userinput($_GET['tid'], 'uint');
 			if($access['tracking']['ALL'] < 2 && $access['tracking'][$data['tid']] < 2) break;
 			$eid = format_userinput($_GET['eid'], 'uint');
-			$comment = format_userinput(utf8_decode($_GET['comment']), 'text');
+			$comment = format_userinput($_GET['comment'], 'text');
 
 			db_update_data('ko_tracking_entries', "WHERE `id` = '$eid'", array('comment' => $comment, 'last_change' => date('Y-m-d H:i:s')));
 

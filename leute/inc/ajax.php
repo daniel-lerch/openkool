@@ -768,7 +768,7 @@ if(isset($_GET) && isset($_GET["action"])) {
 
 			$limit = 30;
 
-			$string = format_userinput(utf8_decode($_GET['string']), 'text');
+			$string = format_userinput($_GET['string'], 'text');
 			if(!$string || strlen($string) < 3) {
 				print '';
 				break;

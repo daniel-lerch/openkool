@@ -1,31 +1,25 @@
 <?php
-/***************************************************************
-*  Copyright notice
+/*******************************************************************************
 *
-*  Loosly based on class ICalExporter from ical2scheduler from dhtmlx.com (GNU GPL v2)
-*  Modified for kOOL - the church tool by Renzo Lauper
-* 
-*  (c) 2003-2015 Renzo Lauper (renzo@churchtool.org)
-*  All rights reserved
+*    OpenKool - Online church organization tool
 *
-*  This script is part of the kOOL project. The kOOL project is
-*  free software; you can redistribute it and/or modify
-*  it under the terms of the GNU General Public License as published by
-*  the Free Software Foundation; either version 2 of the License, or
-*  (at your option) any later version.
+*    Copyright © 2003-2015 Renzo Lauper (renzo@churchtool.org)
+*    Copyright © 2019      Daniel Lerch
 *
-*  The GNU General Public License can be found at
-*  http://www.gnu.org/copyleft/gpl.html.
-*  A copy is found in the textfile GPL.txt and important notices to the license
-*  from the author is found in LICENSE.txt distributed with these scripts.
+*    Loosly based on class ICalExporter from ical2scheduler from dhtmlx.com (GNU GPL v2)
+*    Modified for kOOL - the church tool by Renzo Lauper
 *
-*  kOOL is distributed in the hope that it will be useful,
-*  but WITHOUT ANY WARRANTY; without even the implied warranty of
-*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-*  GNU General Public License for more details.
+*    This program is free software; you can redistribute it and/or modify
+*    it under the terms of the GNU General Public License as published by
+*    the Free Software Foundation; either version 2 of the License, or
+*    (at your option) any later version.
 *
-*  This copyright notice MUST APPEAR in all copies of the script!
-***************************************************************/
+*    This program is distributed in the hope that it will be useful,
+*    but WITHOUT ANY WARRANTY; without even the implied warranty of
+*    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+*    GNU General Public License for more details.
+*
+*******************************************************************************/
 
 
 
@@ -240,9 +234,9 @@ class iCalReader {
 			$e['eventgruppen_id'] = $egid;
 			$e['last_change'] = date('Y-m-d H:i:s');
 			$e['import_id'] = 'eventgroup'.$egid.':'.$d['event_id'];
-			if(isset($d['text'])) $e['title'] = stripslashes(utf8_decode($d['text']));
-			if(isset($d['description'])) $e['kommentar'] = stripslashes(utf8_decode($d['description']));
-			if(isset($d['location'])) $e['room'] = stripslashes(utf8_decode($d['location']));
+			if(isset($d['text'])) $e['title'] = stripslashes($d['text']);
+			if(isset($d['description'])) $e['kommentar'] = stripslashes($d['description']);
+			if(isset($d['location'])) $e['room'] = stripslashes($d['location']);
 			if(isset($d['url'])) $e['url'] = $d['url'];
 
 			//Start and end date/time

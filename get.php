@@ -1,28 +1,22 @@
 <?php
-/***************************************************************
-*  Copyright notice
+/*******************************************************************************
 *
-*  (c) 2003-2015 Renzo Lauper (renzo@churchtool.org)
-*  All rights reserved
+*    OpenKool - Online church organization tool
 *
-*  This script is part of the kOOL project. The kOOL project is
-*  free software; you can redistribute it and/or modify
-*  it under the terms of the GNU General Public License as published by
-*  the Free Software Foundation; either version 2 of the License, or
-*  (at your option) any later version.
+*    Copyright © 2003-2015 Renzo Lauper (renzo@churchtool.org)
+*    Copyright © 2019      Daniel Lerch
 *
-*  The GNU General Public License can be found at
-*  http://www.gnu.org/copyleft/gpl.html.
-*  A copy is found in the textfile GPL.txt and important notices to the license
-*  from the author is found in LICENSE.txt distributed with these scripts.
+*    This program is free software; you can redistribute it and/or modify
+*    it under the terms of the GNU General Public License as published by
+*    the Free Software Foundation; either version 2 of the License, or
+*    (at your option) any later version.
 *
-*  kOOL is distributed in the hope that it will be useful,
-*  but WITHOUT ANY WARRANTY; without even the implied warranty of
-*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-*  GNU General Public License for more details.
+*    This program is distributed in the hope that it will be useful,
+*    but WITHOUT ANY WARRANTY; without even the implied warranty of
+*    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+*    GNU General Public License for more details.
 *
-*  This copyright notice MUST APPEAR in all copies of the script!
-***************************************************************/
+*******************************************************************************/
 
 error_reporting(0);
 $ko_path = "./";
@@ -121,7 +115,7 @@ switch($action) {
 		if(!in_array('sms', $MODULES)) continue;
 
 		$recipients = explode(',', $req['recipients'][0]);
-		$text = utf8_decode($req['smstext'][0]);
+		$text = $req['smstext'][0];
 		$from = $req['from'][0];
 		send_aspsms($recipients, $text, $from);
 	break;
@@ -165,13 +159,6 @@ switch($action) {
 		if(!in_array('reservation', $MODULES)) continue;
 		$moderated = $req['moderated'][0];
 		$res = json_decode($req['data'][0], TRUE);
-
-		//UTF-8 decode, because XML request data is always in UTF-8
-		foreach($res as $rid => $r) {
-			foreach($r as $k => $v) {
-				$res[$rid][$k] = utf8_decode($v);
-			}
-		}
 
 		include($ko_path.'reservation/inc/reservation.inc.php');
 
@@ -273,7 +260,6 @@ switch($action) {
 			}
 			$where = "AND `id` IN ('".implode("', '", $use_ids)."')";
 		}
-		$where = utf8_decode($where);
 
 		//Get all groups and datafields
 		ko_get_groups($all_groups);
@@ -484,20 +470,20 @@ function generateXMLResponse($data) {
 				$args = "";
 				foreach($entry as $arg => $value) {
 					if($arg == "content") continue;
-					$args .= " ".$arg.'="'.utf8_encode(xmlspecialchars($value)).'"';
+					$args .= " ".$arg.'="'.xmlspecialchars($value).'"';
 				}
 				if(is_array($entry["content"])) {
 					$xml .= "\t<$key".$args.">\n";
 					foreach($entry["content"] as $ekey => $evalue) {
-						$xml .= "\t\t<$ekey>".utf8_encode(xmlspecialchars($evalue))."</$ekey>\n";
+						$xml .= "\t\t<$ekey>".xmlspecialchars($evalue)."</$ekey>\n";
 					}
 					$xml .= "\t</$key>\n";
 				} else {
-					$xml .= "\t<$key".$args.">".utf8_encode(xmlspecialchars($entry["content"]))."</$key>\n";
+					$xml .= "\t<$key".$args.">".xmlspecialchars($entry["content"])."</$key>\n";
 				}
 			}
 		} else {
-			$xml .= "\t<$key>".utf8_encode($entries)."</$key>\n";
+			$xml .= "\t<$key>".$entries."</$key>\n";
 		}
 	}
 	$xml .= "</kOOLData>\n";
@@ -519,29 +505,28 @@ function xmlspecialchars($text) {
  * @return array Array
  */
 function XMLtoArray($XML) {
-	$XML = utf8_encode($XML);
-  $xml_parser = xml_parser_create();
+	$xml_parser = xml_parser_create();
 	xml_parser_set_option($xml_parser, XML_OPTION_CASE_FOLDING, false);
-  xml_parse_into_struct($xml_parser, $XML, $vals);
-  xml_parser_free($xml_parser);
-  // wyznaczamy tablice z powtarzajacymi sie tagami na tym samym poziomie
-  $_tmp='';
-  foreach ($vals as $xml_elem) {
-    $x_tag=$xml_elem['tag'];
-    $x_level=$xml_elem['level'];
-    $x_type=$xml_elem['type'];
-    if ($x_level!=1 && $x_type == 'close') {
-      if (isset($multi_key[$x_tag][$x_level]))
-        $multi_key[$x_tag][$x_level]=1;
-      else
-        $multi_key[$x_tag][$x_level]=0;
-    }
-    if ($x_level!=1 && $x_type == 'complete') {
-      if ($_tmp==$x_tag)
-        $multi_key[$x_tag][$x_level]=1;
-      $_tmp=$x_tag;
-    }
-  }
+	xml_parse_into_struct($xml_parser, $XML, $vals);
+	xml_parser_free($xml_parser);
+	// wyznaczamy tablice z powtarzajacymi sie tagami na tym samym poziomie
+	$_tmp='';
+	foreach ($vals as $xml_elem) {
+		$x_tag=$xml_elem['tag'];
+		$x_level=$xml_elem['level'];
+		$x_type=$xml_elem['type'];
+		if ($x_level!=1 && $x_type == 'close') {
+			if (isset($multi_key[$x_tag][$x_level]))
+				$multi_key[$x_tag][$x_level]=1;
+			else
+				$multi_key[$x_tag][$x_level]=0;
+		}
+		if ($x_level!=1 && $x_type == 'complete') {
+			if ($_tmp==$x_tag)
+				$multi_key[$x_tag][$x_level]=1;
+			$_tmp=$x_tag;
+		}
+	}
   // jedziemy po tablicy
   foreach ($vals as $xml_elem) {
     $x_tag=$xml_elem['tag'];

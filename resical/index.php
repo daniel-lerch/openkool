@@ -191,21 +191,12 @@ ko_get_reservationen($res, $z_where);
 $ical = ko_get_ics_for_res($res);
 
 
-//Set charset to utf-8, but not for google calendar (there seem to be problems with utf-8 for google as of 2010-08)
-if(FALSE === strpos($_SERVER['HTTP_USER_AGENT'], 'Googlebot')) {
-	$charset = 'utf-8';
-	$ical = utf8_encode($ical);
-} else {
-	$charset = 'latin1';
-}
-
-
 //Output
 if (isset($_SERVER["HTTP_USER_AGENT"]) && strpos($_SERVER["HTTP_USER_AGENT"], "MSIE")) {
 	// IE cannot download from sessions without a cache
 	header("Cache-Control: public");
 	// q316431 - Don't set no-cache when over HTTPS
-	if (	!isset($_SERVER["HTTPS"]) || $_SERVER["HTTPS"] != "on") {
+	if (!isset($_SERVER["HTTPS"]) || $_SERVER["HTTPS"] != "on") {
 		header("Pragma: no-cache");
 	}
 }
@@ -213,7 +204,7 @@ else {
 	header("Cache-Control: no-cache, must-revalidate");
 	header("Pragma: no-cache");
 }
-header('Content-Type: text/calendar; charset='.$charset, TRUE);
+header('Content-Type: text/calendar; charset=UTF-8', TRUE);
 header('Content-Disposition: attachment; filename="kOOLres.ics"');
 header("Content-Length: ".strlen($ical));
 print $ical;
