@@ -3153,8 +3153,6 @@ function ko_word_docx($file, $person) {
 
 	$map = ko_word_person_array($person);
 
-	require_once ($BASE_PATH . 'inc/phpword/Autoloader.php');
-	\PhpOffice\PhpWord\Autoloader::register();
 	\PhpOffice\PhpWord\Settings::loadConfig();
 
 	//Create PHPWord Object
