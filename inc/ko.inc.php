@@ -487,9 +487,6 @@ if($ko_menu_akt != 'scheduler') {
 	ko_init();
 }
 
-//Include swiftmailer
-require_once($BASE_PATH.'inc/swiftmailer/swift_required.php');
-
 //Include calendar for jsdate input fields
 require($ko_path.'inc/calendar/calendar.php');
 $js_calendar = new DHTML_Calendar($ko_path.'inc/calendar/', $ko_path.'images/', $_SESSION['lang'], 'calendar-system', false);
