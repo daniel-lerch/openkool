@@ -87,7 +87,7 @@ $menu_counter = 0;
 foreach($user_menu as $m) {
 	if(!in_array($m, $MODULES)) continue;
 	if(in_array($m, array('sms', 'kg', 'mailing')) || trim($m) == '') continue;
-	if(substr($m, 0, 3) == 'my_') continue;  //Don't show menus from plugins in main navigation (yet)
+	if(mb_substr($m, 0, 3) == 'my_') continue;  //Don't show menus from plugins in main navigation (yet)
 	if($m == 'tools' && $_SESSION['ses_userid'] != ko_get_root_id()) continue;
 	if(ko_module_installed($m)) {
 		$menu[$menu_counter]["id"] = $m;
@@ -95,8 +95,8 @@ foreach($user_menu as $m) {
 		$action = ko_get_userpref($_SESSION["ses_userid"], "default_view_".$m);
 		if(!$action) $action = ko_get_setting("default_view_".$m);
 		//Handle special links (e.g. webfolders)
-		if(substr($action, 0, 8) == "SPECIAL_") {
-			switch(substr($action, 8)) {
+		if(mb_substr($action, 0, 8) == "SPECIAL_") {
+			switch(mb_substr($action, 8)) {
 				case "webfolder":
 					$menu[$menu_counter]["link"] = "";
 					$menu[$menu_counter]["link_param"] = 'FOLDER="'.$BASE_URL.str_replace($BASE_PATH, "", $WEBFOLDERS_BASE).'" style="behavior: url(#default#AnchorClick);"';

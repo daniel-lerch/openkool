@@ -1533,14 +1533,14 @@ function ko_daten_cal_jahr($num=6, $start=1, $output=TRUE) {
 							$desc .= getLL("time_all_day");
 						}
 						else if($date["startdatum"] != $date["enddatum"]) {  //Mehrtägige Termine
-							if($t == substr($date["startdatum"], 8, 2) && $m == substr($date["startdatum"], 5, 2))
-								$desc .= getLL("time_from")." ".substr($date["startzeit"], 0, -3);
-							else if($t == substr($date["enddatum"], 8, 2) && $m == substr($date["enddatum"], 5, 2))
-								$desc .= getLL("time_to")." ".substr($date["endzeit"], 0, -3);
+							if($t == mb_substr($date["startdatum"], 8, 2) && $m == mb_substr($date["startdatum"], 5, 2))
+								$desc .= getLL("time_from")." ".mb_substr($date["startzeit"], 0, -3);
+							else if($t == mb_substr($date["enddatum"], 8, 2) && $m == mb_substr($date["enddatum"], 5, 2))
+								$desc .= getLL("time_to")." ".mb_substr($date["endzeit"], 0, -3);
 							else
 								$desc .= getLL("time_all_day");
 						} else {  //eintägig
-							$desc .= ($date["startzeit"] != "00:00:00" ? substr($date["startzeit"], 0, -3) : "") . (($date["endzeit"] != "00:00:00") ? ("-" . substr($date["endzeit"], 0, -3)) : "");
+							$desc .= ($date["startzeit"] != "00:00:00" ? mb_substr($date["startzeit"], 0, -3) : "") . (($date["endzeit"] != "00:00:00") ? ("-" . mb_substr($date["endzeit"], 0, -3)) : "");
 						}
 						$day_text .= ($desc != "") ? "<br /><b>- ".$desc."</b>" : "<br />";
 
@@ -1628,7 +1628,7 @@ function do_del_termin($del_id) {
 				ko_get_resitem_by_id($r["item_id"], $ri);
 				$log_message2  = $d." (Event-Res ".$del_id."): ".$ri[$r["item_id"]]["name"].", ";
 				$log_message2 .= sql2datum($r["startdatum"]).($r["startdatum"]!=$r["enddatum"]?"-".sql2datum($r["enddatum"]):"").", ";
-				$log_message2 .= substr(format_userinput($r["startzeit"], "text"),0,-3)."-".substr(format_userinput($r["endzeit"], "text"),0,-3);
+				$log_message2 .= mb_substr(format_userinput($r["startzeit"], "text"),0,-3)."-".mb_substr(format_userinput($r["endzeit"], "text"),0,-3);
 				$log_message2 .= ', "'.format_userinput($r["zweck"], "text").'", ';
 				$log_message2 .= format_userinput($r["name"], "text")." (".format_userinput($r["email"], "text").", ".format_userinput($r["telefon"], "text").")";
 
@@ -1846,7 +1846,7 @@ function ko_daten_update_event($id, &$data) {
 	if($ok) {
 		unset($data['resitems']); unset($data['id']);
 		foreach($data as $key => $value) {
-			if(substr($key, 0, 1) == '_') unset($data[$key]);
+			if(mb_substr($key, 0, 1) == '_') unset($data[$key]);
 		}
 		foreach($EVENTS_SHOW_RES_FIELDS as $f) {
 			unset($data['res_'.$f]);
@@ -1987,13 +1987,13 @@ function ko_daten_store_event(&$data) {
 		//Unset values not needed for ko_event (might be from ko_event_mod or just from the submitted form)
 		$unset_keys = array("resitems", "id");
 		foreach($event as $key => $value) {
-			if(substr($key, 0, 1) == "_" || in_array($key, $unset_keys)) unset($event[$key]);
+			if(mb_substr($key, 0, 1) == "_" || in_array($key, $unset_keys)) unset($event[$key]);
 		}
 		foreach($EVENTS_SHOW_RES_FIELDS as $f) unset($event['res_'.$f]);
 		$event["reservationen"] = implode(",", $event_res);
 
 		//Group subscription
-		if(ko_get_setting('daten_gs_pid') && ($event['gs_gid'] == 1 || substr($event['gs_gid'], 0, 4) == 'COPY')) {
+		if(ko_get_setting('daten_gs_pid') && ($event['gs_gid'] == 1 || mb_substr($event['gs_gid'], 0, 4) == 'COPY')) {
 			$event['gs_gid'] = ko_daten_gs_get_gid_for_event($event);
 		}
 
@@ -2101,7 +2101,7 @@ function ko_daten_send_notification($data, $mode, $old='') {
 		if(!$gid) continue;
 		$sql .= ' `groups` REGEXP \''.$gid.'\' OR ';
 	}
-	$sql = substr($sql, 0, -3);
+	$sql = mb_substr($sql, 0, -3);
 	if(!$sql) return;
 
 	//Get people from DB to send notification to
@@ -2216,7 +2216,7 @@ function ko_daten_gs_get_gid_for_event($event) {
 	//Get top group under which subscription groups should be created
 	$pid = ko_get_setting('daten_gs_pid');
 
-	$year = substr($event['enddatum'], 0, 4);  //Year
+	$year = mb_substr($event['enddatum'], 0, 4);  //Year
 
 	//Get all subgroups of pid
 	$subgroups = db_select_data('ko_groups', "WHERE `pid` = '$pid'");
@@ -2252,8 +2252,8 @@ function ko_daten_gs_get_gid_for_event($event) {
 	//Prepare new gs group
 	$new_group = array('pid' => $new_pid, 'name' => $event['title'].' '.$year, 'crdate' => date('Y-m-d H:i:s'));
 	//If event was copied then copy the group from the orig event
-	if(substr($event['gs_gid'], 0, 4) == 'COPY') {
-		$orig_gid = ko_groups_decode(substr($event['gs_gid'], 4), 'group_id');
+	if(mb_substr($event['gs_gid'], 0, 4) == 'COPY') {
+		$orig_gid = ko_groups_decode(mb_substr($event['gs_gid'], 4), 'group_id');
 		$orig_group = db_select_data('ko_groups', "WHERE `id` = '$orig_gid'", '*', '', '', TRUE);
 		$new_group['description'] = $orig_group['description'];
 		$origGroupRoles = explode(',', $orig_group['roles']);
@@ -2396,16 +2396,16 @@ function ko_daten_export_months($num, $month, $year) {
 					} else if($date == $event['enddatum']) {
 						$mode = 'last';
 					}
-					if(substr($date, 5, 2) == $month) {
+					if(mb_substr($date, 5, 2) == $month) {
 						$content['zeit'] = ko_get_time_as_string($event, $show_time, $mode);
-						$data[(int)substr($date, -2)]['inhalt'][] = $content;
+						$data[(int)mb_substr($date, -2)]['inhalt'][] = $content;
 					}
 					$date = add2date($date, 'tag', 1, TRUE);
 				}
 			} else {
 				//Time
 				$content['zeit'] = ko_get_time_as_string($event, $show_time, 'default');
-				$data[(int)substr($event['startdatum'], -2)]['inhalt'][] = $content;
+				$data[(int)mb_substr($event['startdatum'], -2)]['inhalt'][] = $content;
 			}
 
 			//Legend
@@ -2806,8 +2806,8 @@ function ko_daten_export_preset($data) {
 			$start = add2date(date('Y-m-d'), 'day', 1, TRUE);
 		}
 		//Next weekday (1-7)
-		else if(substr($_start, 0, 1) == 'n') {
-			$target = substr($_start, 1);
+		else if(mb_substr($_start, 0, 1) == 'n') {
+			$target = mb_substr($_start, 1);
 			$start = date('Y-m-d');
 			$wd = date('w', strtotime($start));
 
@@ -2817,8 +2817,8 @@ function ko_daten_export_preset($data) {
 			$start = add2date($start, 'day', $inc, TRUE);
 		}
 		//Past weekday (1-7)
-		else if(substr($_start, 0, 1) == 'p') {
-			$target = substr($_start, 1);
+		else if(mb_substr($_start, 0, 1) == 'p') {
+			$target = mb_substr($_start, 1);
 			$start = date('Y-m-d');
 			$wd = date('w', strtotime($start));
 
@@ -2829,7 +2829,7 @@ function ko_daten_export_preset($data) {
 		}
 
 		//Shown Day
-		else if(substr($_start, 0, 1) == 's') {
+		else if(mb_substr($_start, 0, 1) == 's') {
 			$date = date_create_from_format('d.m.Y', $_SESSION['cal_tag'] . '.' . $_SESSION['cal_monat'] . '.' . $_SESSION['cal_jahr']);
 			$start = date_format($date, 'Y-m-d');
 		}
@@ -2858,7 +2858,7 @@ function ko_daten_export_preset($data) {
 			if(!$year) $year = date('Y');
 		}
 		//Shown Month
-		else if(substr($_start, 0, 1) == 's') {
+		else if(mb_substr($_start, 0, 1) == 's') {
 			$date = date_create_from_format('d.m.Y', $_SESSION['cal_tag'] . '.' . $_SESSION['cal_monat'] . '.' . $_SESSION['cal_jahr']);
 			$month = intval(date_format($date, 'm'));
 			$year = date_format($date, 'Y');
@@ -2871,14 +2871,14 @@ function ko_daten_export_preset($data) {
 				$inc = intval($_start);
 			}
 			//Next month (1-12)
-			else if(substr($_start, 0, 1) == 'n') {
-				$target = intval(substr($_start, 1));
+			else if(mb_substr($_start, 0, 1) == 'n') {
+				$target = intval(mb_substr($_start, 1));
 				if($target > intval(date('m'))) $inc = $target - intval(date('m'));
 				else $inc = 12 - (intval(date('m')) - $target);
 			}
 			//Past month (1-12)
-			else if(substr($_start, 0, 1) == 'p') {
-				$target = intval(substr($_start, 1));
+			else if(mb_substr($_start, 0, 1) == 'p') {
+				$target = intval(mb_substr($_start, 1));
 				if($target < intval(date('m'))) $inc = $target - intval(date('m'));
 				else $inc = -12 + ($target - intval(date('m')));
 			}
@@ -2908,7 +2908,7 @@ function ko_daten_export_preset($data) {
 			if(!$year) $year = date('Y');
 		}
 		//Shown Year
-		else if(substr($_start, 0, 1) == 's') {
+		else if(mb_substr($_start, 0, 1) == 's') {
 			$date = date_create_from_format('d.m.Y', $_SESSION['cal_tag'] . '.' . $_SESSION['cal_monat'] . '.' . $_SESSION['cal_jahr']);
 			$month = intval(date_format($date, 'm'));
 			$year = date_format($date, 'Y');
@@ -2919,14 +2919,14 @@ function ko_daten_export_preset($data) {
 				$inc = intval($_start);
 			}
 			//Next month (1-12)
-			else if(substr($_start, 0, 1) == 'n') {
-				$target = intval(substr($_start, 1));
+			else if(mb_substr($_start, 0, 1) == 'n') {
+				$target = intval(mb_substr($_start, 1));
 				if($target > intval(date('m'))) $inc = $target - intval(date('m'));
 				else $inc = 12 - (intval(date('m')) - $target);
 			}
 			//Past month (1-12)
-			else if(substr($_start, 0, 1) == 'p') {
-				$target = intval(substr($_start, 1));
+			else if(mb_substr($_start, 0, 1) == 'p') {
+				$target = intval(mb_substr($_start, 1));
 				if($target < intval(date('m'))) $inc = $target - intval(date('m'));
 				else $inc = -12 + ($target - intval(date('m')));
 			}

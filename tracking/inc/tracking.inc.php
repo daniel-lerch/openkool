@@ -176,7 +176,7 @@ function ko_tracking_enter_form($output=TRUE) {
 	$preset = ko_get_userpref($_SESSION['ses_userid'], 'tracking_show_cols');
 	if($preset) {
 		$colnames = ko_get_leute_col_name(FALSE, TRUE);
-		$userid = substr($preset, 0, 3) == '@G@' ? '-1' : $_SESSION['ses_userid'];
+		$userid = mb_substr($preset, 0, 3) == '@G@' ? '-1' : $_SESSION['ses_userid'];
 		$row = ko_get_userpref($userid, str_replace('@G@', '', $preset), 'leute_itemset');
 		$columns = explode(',', $row[0]['value']);
 		if(sizeof($columns) > 0) {
@@ -208,7 +208,7 @@ function ko_tracking_enter_form($output=TRUE) {
 		$smarty->assign('types', $types);
 	}
 	//Add types for bitmask
-	if(substr($tracking['mode'], 0, 8) == 'bitmask_') {
+	if(mb_substr($tracking['mode'], 0, 8) == 'bitmask_') {
 		$types = array();
 		for($i = 6; $i < 32; $i++) {
 			$desc = getLL('tracking_'.$tracking['mode'].'_'.pow(2, $i));
@@ -234,7 +234,7 @@ function ko_tracking_enter_form($output=TRUE) {
 
 		if($tracking['mode'] == 'type' || $tracking['mode'] == 'typecheck') {
 			$entries[$row['lid']][$row['date']][] = $row;
-		} else if(substr($tracking['mode'], 0, 8) == 'bitmask_') {
+		} else if(mb_substr($tracking['mode'], 0, 8) == 'bitmask_') {
 			$vs = array();
 			for($i=0; $i<32; $i++) {
 				//Numeric value
@@ -274,7 +274,7 @@ function ko_tracking_enter_form($output=TRUE) {
 			$preset_values[$row['date']][] = $row;
 		} else if($tracking['mode'] == 'typecheck') {
 			$preset_values[$row['date']][$row['type']] = $row['value'];
-		} else if(substr($tracking['mode'], 0, 8) == 'bitmask_') {
+		} else if(mb_substr($tracking['mode'], 0, 8) == 'bitmask_') {
 
 		} else {
 			$preset_values[$row['date']] = $row['value'];
@@ -282,7 +282,7 @@ function ko_tracking_enter_form($output=TRUE) {
 	}
 
 	//Build sums for each person over the whole active month
-	$sum_where = "WHERE `tid` = '".$tracking['id']."' AND YEAR(`date`) = '".substr($_SESSION['date_start'], 0, 4)."' AND MONTH(`date`) = '".substr($_SESSION['date_start'], 5, 2)."' AND `lid` IN ('".implode("','", array_keys($people))."')";
+	$sum_where = "WHERE `tid` = '".$tracking['id']."' AND YEAR(`date`) = '".mb_substr($_SESSION['date_start'], 0, 4)."' AND MONTH(`date`) = '".mb_substr($_SESSION['date_start'], 5, 2)."' AND `lid` IN ('".implode("','", array_keys($people))."')";
 	if(!in_array($tracking['mode'], array('type', 'typecheck'))) $sum_where .= " AND `type` = '' ";
 	$sum_rows = db_select_data('ko_tracking_entries', $sum_where);
 	$psums = array();
@@ -309,7 +309,7 @@ function ko_tracking_enter_form($output=TRUE) {
 				$psums[$row['lid']][$row['type']] += $row['value'];
 			break;
 			default:
-				if(substr($tracking['mode'], 0, 8) == 'bitmask_') {
+				if(mb_substr($tracking['mode'], 0, 8) == 'bitmask_') {
 					if(function_exists('my_'.$tracking['mode'].'_psum')) {
 						$psums[$row['lid']] += call_user_func('my_'.$tracking['mode'].'_psum', $row);
 					}
@@ -326,7 +326,7 @@ function ko_tracking_enter_form($output=TRUE) {
 					$psum .= ', '.$v.'x'.$k;
 				}
 			}
-			if(substr($psum, 0, 2) == ', ') $psum = substr($psum, 2);
+			if(mb_substr($psum, 0, 2) == ', ') $psum = mb_substr($psum, 2);
 			$people[$id]['_sum'] = $psum;
 		} else if($tracking['mode'] == 'typecheck') {
 			$_sum = array();
@@ -360,7 +360,7 @@ function ko_tracking_enter_form($output=TRUE) {
 			$sum[$date] = $s2 > 0 ? $s3 : $s1;
 		}
 	}
-	else if(substr($tracking['mode'], 0, 8) == 'bitmask_') {
+	else if(mb_substr($tracking['mode'], 0, 8) == 'bitmask_') {
 		//Call summation function for bitmasks
 		if(function_exists('my_'.$tracking['mode'].'_sum')) {
 			$sum = call_user_func('my_'.$tracking['mode'].'_sum', $sums);
@@ -393,10 +393,10 @@ function ko_tracking_enter_form($output=TRUE) {
 	$dateselect['months'] = array();
 	for($i=-24; $i<=12; $i++) {
 		$date = add2date($today, 'month', $i, TRUE);
-		$dateselect['months'][] = array('value' => substr($date, 0, 7).'-01', 'desc' => strftime($DATETIME['nY'], strtotime($date)));
+		$dateselect['months'][] = array('value' => mb_substr($date, 0, 7).'-01', 'desc' => strftime($DATETIME['nY'], strtotime($date)));
 	}
-	$dateselect['selected'] = substr($_SESSION['date_start'], 0, 7).'-01';
-	$dateselect['today'] = substr($today, 0, 7).'-01';
+	$dateselect['selected'] = mb_substr($_SESSION['date_start'], 0, 7).'-01';
+	$dateselect['today'] = mb_substr($today, 0, 7).'-01';
 
 	$smarty->assign('sums', $sum);
 	$smarty->assign('label_total', getLL('tracking_list_total'));
@@ -673,24 +673,24 @@ function ko_tracking_get_people($filters, &$dates, $tid, $apply_filters=FALSE) {
 		if($apply_filters && (isset($_SESSION['tracking_filter']['filter']) && $_SESSION['tracking_filter']['filter'] != 'all' && $_SESSION['tracking_filter']['filter'] != $filter)) continue;
 
 		//Group ID
-		if(strlen($filter) >= 7 && substr($filter, 0, 1) == 'g' && preg_match('[g0-9:r,]*', $filter)) {
+		if(mb_strlen($filter) >= 7 && mb_substr($filter, 0, 1) == 'g' && preg_match('[g0-9:r,]*', $filter)) {
 			$mode = 'group';
 			list($gid, $rid) = explode(':', $filter);
-			if(ko_get_setting('tracking_add_roles') == 1 && strlen($filter) > 7) {  //Role
+			if(ko_get_setting('tracking_add_roles') == 1 && mb_strlen($filter) > 7) {  //Role
 				$filter_where .= " `groups` REGEXP '".$gid."[g:0-9]*:".$rid."' OR ";
 			} else {  //No role, just group
 				$filter_where .= " `groups` REGEXP '$gid' OR ";
 			}
 		}
 		//Small group
-		else if(strlen($filter) == 4) {
+		else if(mb_strlen($filter) == 4) {
 			$mode = 'kg';
 			$filter_where .= " `smallgroups` REGEXP '$filter' OR ";
 		}
 		//base64 serialized filter preset array
-		else if(substr($filter, 0, 1) == 'F') {
+		else if(mb_substr($filter, 0, 1) == 'F') {
 			$mode = 'filter';
-			$fa = unserialize(base64_decode(substr($filter, 1)));
+			$fa = unserialize(base64_decode(mb_substr($filter, 1)));
 			if(is_array($fa)) {
 				apply_leute_filter($fa, $temp_where, FALSE);
 
@@ -705,7 +705,7 @@ function ko_tracking_get_people($filters, &$dates, $tid, $apply_filters=FALSE) {
 		}
 	}//foreach(filters as filter)
 
-	if($filter_where != '') $where = $where.' AND ('.substr($filter_where, 0, -3).')';
+	if($filter_where != '') $where = $where.' AND ('.mb_substr($filter_where, 0, -3).')';
 	else return array();
 
 	//Find addresses with assigned values for the given dates which are not currently assigned to the given filter and still show them
@@ -739,11 +739,11 @@ function ko_tracking_get_people($filters, &$dates, $tid, $apply_filters=FALSE) {
 	//Order group members by their role as set for the group
 	if($mode == 'group' && ko_get_userpref($_SESSION['ses_userid'], 'tracking_order_people') == 'role') {
 		$new = array();
-		$group = db_select_data('ko_groups', 'WHERE `id` = \''.substr($gid, 1).'\'', '*', '', '', TRUE);
+		$group = db_select_data('ko_groups', 'WHERE `id` = \''.mb_substr($gid, 1).'\'', '*', '', '', TRUE);
 		//Use the order of the roles as they're set for the group
 		foreach(explode(',', $group['roles']) as $rid) {
 			foreach($people as $pid => $person) {
-				$role = substr($person['groups'], strpos($person['groups'], $gid)+9, 6);
+				$role = mb_substr($person['groups'], mb_strpos($person['groups'], $gid)+9, 6);
 				if($rid == $role) {
 					$new[$pid] = $person;
 					unset($people[$pid]);
@@ -920,9 +920,9 @@ function ko_tracking_export($mode, $filename, $id, $address_columns='name', $dat
 	//Get address columns from selected preset
 	if($address_columns == 'name') {
 		$columns = array('vorname', 'nachname');
-	} else if(substr($address_columns, 0, 4) == 'set_') {
-		$preset = substr($address_columns, 4);
-		$userid = substr($preset, 0, 3) == '@G@' ? '-1' : $_SESSION['ses_userid'];
+	} else if(mb_substr($address_columns, 0, 4) == 'set_') {
+		$preset = mb_substr($address_columns, 4);
+		$userid = mb_substr($preset, 0, 3) == '@G@' ? '-1' : $_SESSION['ses_userid'];
 		$row = ko_get_userpref($userid, str_replace('@G@', '', $preset), 'leute_itemset');
 		$columns = explode(',', $row[0]['value']);
 		if(sizeof($columns) == 0) $columns = array('vorname', 'nachname');
@@ -1206,7 +1206,7 @@ function ko_tracking_export($mode, $filename, $id, $address_columns='name', $dat
 					break;
 
 					default:
-						if(substr($tracking['mode'], 0, 8) == 'bitmask_') {
+						if(mb_substr($tracking['mode'], 0, 8) == 'bitmask_') {
 							if(function_exists('ko_tracking_'.$tracking['mode'].'_export')) {
 								$value = call_user_func_array('ko_tracking_'.$tracking['mode'].'_export', array(&$sums, $p, $date, $tracking, $entries));
 							}
@@ -1233,7 +1233,7 @@ function ko_tracking_export($mode, $filename, $id, $address_columns='name', $dat
 							$sum .= ', '.$v.'x'.$k;
 						}
 					}
-					if(substr($sum, 0, 2) == ', ') $sum = substr($sum, 2);
+					if(mb_substr($sum, 0, 2) == ', ') $sum = mb_substr($sum, 2);
 					$data[$row][] = $sum;
 				} else {
 					if($sums['numeric'] != 0) $data[$row][] = $sums['numeric'];
@@ -1264,10 +1264,10 @@ function ko_tracking_export($mode, $filename, $id, $address_columns='name', $dat
 		//Create subtitles (only use first entry for title)
 		$subtitles = array();
 		list($first_filter) = explode(',', $tracking['filter']);
-		if(substr($first_filter, 0, 1) == 'g' && strlen($first_filter) >= 7) {
-			$group = db_select_data('ko_groups', "WHERE `id` = '".substr($first_filter, 1)."'", '*', '', '', TRUE);
+		if(mb_substr($first_filter, 0, 1) == 'g' && mb_strlen($first_filter) >= 7) {
+			$group = db_select_data('ko_groups', "WHERE `id` = '".mb_substr($first_filter, 1)."'", '*', '', '', TRUE);
 			$subtitles[getLL('groups_listheader_name')] = $group['name'];
-		} else if(strlen($first_filter) == 4) {
+		} else if(mb_strlen($first_filter) == 4) {
 			ko_get_kleingruppen($_kg, '', $first_filter);
 			$kg = $_kg[$first_filter];
 			if($kg['role_L']) {
@@ -1377,7 +1377,7 @@ function ko_tracking_export($mode, $filename, $id, $address_columns='name', $dat
 		$pdf->AddPage();
 
 		//Set a minimum and maximum width of the data fields, depending on the type of field
-		if(substr($tracking['mode'], 0, 7) == 'bitmask' || $tracking['mode'] == 'type') {
+		if(mb_substr($tracking['mode'], 0, 7) == 'bitmask' || $tracking['mode'] == 'type') {
 			$data_width_min = 35;
 			$data_width_max = 50;
 		}
@@ -1618,22 +1618,22 @@ function apply_tracking_entries_filter(&$z_where) {
  */
 function ko_tracking_get_filter_name($filter) {
 	//Group id
-	if(substr($filter, 0, 1) == 'g' && strlen($filter) >= 7) {
-		$group = db_select_data('ko_groups', "WHERE `id` = '".substr($filter, 1)."'", '*', '', '', TRUE);
+	if(mb_substr($filter, 0, 1) == 'g' && mb_strlen($filter) >= 7) {
+		$group = db_select_data('ko_groups', "WHERE `id` = '".mb_substr($filter, 1)."'", '*', '', '', TRUE);
 		return $group['name'];
 	}
 	//Small group id
-	else if(strlen($filter) == 4) {
+	else if(mb_strlen($filter) == 4) {
 		ko_get_kleingruppen($_kg, '', $filter);
-		$sg = db_select_data('ko_kleingruppen', "WHERE `id` = '".substr($filter, 1)."'", '*', '', '', TRUE);
+		$sg = db_select_data('ko_kleingruppen', "WHERE `id` = '".mb_substr($filter, 1)."'", '*', '', '', TRUE);
 		return $sg['name'];
 	}
 	//Filter preset
-	else if(substr($filter, 0, 1) == 'F') {
+	else if(mb_substr($filter, 0, 1) == 'F') {
 		$filterset = array_merge((array)ko_get_userpref('-1', '', 'filterset', 'ORDER BY `key` ASC'), (array)ko_get_userpref($_SESSION['ses_userid'], '', 'filterset', 'ORDER BY `key` ASC'));
 
 		foreach($filterset as $f) {
-			if($f['value'] == base64_decode(substr($filter, 1))) return $f['key'];
+			if($f['value'] == base64_decode(mb_substr($filter, 1))) return $f['key'];
 		}
 	}
 }//ko_tracking_get_filter_name()

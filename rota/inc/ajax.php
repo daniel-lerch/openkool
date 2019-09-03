@@ -92,13 +92,13 @@ if(isset($_GET) && isset($_GET['action'])) {
 				break;
 
 				case '1w': case '2w':
-					$inc = substr($_SESSION['rota_timespan'], 0, -1);
+					$inc = mb_substr($_SESSION['rota_timespan'], 0, -1);
 					$new = add2date(date_find_last_monday($_SESSION['rota_timestart']), 'week', $mul*$inc, TRUE);
 				break;
 
 				case '1m': case '2m': case '3m': case '6m': case '12m':
-					$inc = substr($_SESSION['rota_timespan'], 0, -1);
-					$new = add2date(substr($_SESSION['rota_timestart'], 0, -2).'01', 'month', $mul*$inc, TRUE);
+					$inc = mb_substr($_SESSION['rota_timespan'], 0, -1);
+					$new = add2date(mb_substr($_SESSION['rota_timestart'], 0, -2).'01', 'month', $mul*$inc, TRUE);
 				break;
 			}
 
@@ -134,7 +134,7 @@ if(isset($_GET) && isset($_GET['action'])) {
 				break;
 
 				case '1m': case '2m': case '3m': case '6m': case '12m':
-					$_SESSION['rota_timestart'] = substr($_SESSION['rota_timestart'], 0, -2).'01';
+					$_SESSION['rota_timestart'] = mb_substr($_SESSION['rota_timestart'], 0, -2).'01';
 				break;
 			}
 
@@ -214,7 +214,7 @@ if(isset($_GET) && isset($_GET['action'])) {
 			$id = format_userinput($_GET['id'], 'int');
 			$status = format_userinput($_GET['status'], 'uint');
 			if(!in_array($status, array(1,2))) break;
-			if(strlen($id) != 7) break;
+			if(mb_strlen($id) != 7) break;
 
 			if(db_get_count('ko_rota_schedulling', 'event_id', "AND `event_id` = '$id'") > 0) {
 				db_update_data('ko_rota_schedulling', "WHERE `event_id` = '$id'", array('status' => $status));
@@ -240,7 +240,7 @@ if(isset($_GET) && isset($_GET['action'])) {
 			$schedule = str_replace(',', '', format_userinput($_GET['schedule'], 'js'));
 
 			//Get event and check for valid one
-			if(FALSE === strpos($event_id, '-')) {  //Event ID
+			if(FALSE === mb_strpos($event_id, '-')) {  //Event ID
 				$mode = 'event';
 				$event = db_select_data('ko_event', "WHERE `id` = '$event_id'", '*', '', '', TRUE);
 				if(!isset($event['id']) || $event['id'] != $event_id || $event['rota'] != 1) break;
@@ -259,8 +259,8 @@ if(isset($_GET) && isset($_GET['action'])) {
 				$new_schedule = $schedule;
 			} else {
 				$new = implode(',', array_unique(array_merge(explode(',', $current_schedule['schedule']), array($schedule))));
-				while(substr($new, 0, 1) == ',') $new = substr($new, 1);
-				while(substr($new, -1) == ',') $new = substr($new, 0, -1);
+				while(mb_substr($new, 0, 1) == ',') $new = mb_substr($new, 1);
+				while(mb_substr($new, -1) == ',') $new = mb_substr($new, 0, -1);
 				db_update_data('ko_rota_schedulling', "WHERE `team_id` = '$team_id' AND `event_id` = '$event_id'", array('schedule' => $new));
 				$new_schedule = $new;
 			}
@@ -308,7 +308,7 @@ if(isset($_GET) && isset($_GET['action'])) {
 			$schedule = str_replace(',', '', format_userinput($_GET['schedule'], 'js'));
 
 			//Get event and check for valid one
-			if(FALSE === strpos($event_id, '-')) {  //Event ID
+			if(FALSE === mb_strpos($event_id, '-')) {  //Event ID
 				$mode = 'event';
 				$event = db_select_data('ko_event', "WHERE `id` = '$event_id'", '*', '', '', TRUE);
 				if(!isset($event['id']) || $event['id'] != $event_id || $event['rota'] != 1) break;
@@ -375,7 +375,7 @@ if(isset($_GET) && isset($_GET['action'])) {
 			kota_ko_event_eventgruppen_id_dynselect($v, $d, 1);
 			if($id == '-') {  //Back to index
 				foreach($v as $vid => $_v) {
-					$suffix = substr($vid, 0, 1) == 'i' ? '-->' : '';
+					$suffix = mb_substr($vid, 0, 1) == 'i' ? '-->' : '';
 					$values[] = $vid.','.$d[$vid].$suffix;
 				}
 			} else {  //Show event groups for the chosen calendar
@@ -456,7 +456,7 @@ if(isset($_GET) && isset($_GET['action'])) {
 			} else if($name == '_none_') {
 				$_SESSION['rota_teams'] = array();
 			} else {
-				if(substr($name, 0, 3) == '@G@') $value = ko_get_userpref('-1', substr($name, 3), 'rota_itemset');
+				if(mb_substr($name, 0, 3) == '@G@') $value = ko_get_userpref('-1', mb_substr($name, 3), 'rota_itemset');
 				else $value = ko_get_userpref($_SESSION['ses_userid'], $name, 'rota_itemset');
 				$_SESSION['rota_teams'] = explode(',', $value[0]['value']);
 			}
@@ -483,8 +483,8 @@ if(isset($_GET) && isset($_GET['action'])) {
 			$name = format_userinput($_GET['name'], 'js', FALSE, 0, array(), '@');
 			if($name == '') break;
 
-			if(substr($name, 0, 3) == '@G@') {
-				if($access['rota']['MAX'] > 4) ko_delete_userpref('-1', substr($name, 3), 'rota_itemset');
+			if(mb_substr($name, 0, 3) == '@G@') {
+				if($access['rota']['MAX'] > 4) ko_delete_userpref('-1', mb_substr($name, 3), 'rota_itemset');
 			} else ko_delete_userpref($_SESSION['ses_userid'], $name, 'rota_itemset');
 
 			print submenu_rota('itemlist_teams', $pos, 'open', 2);
@@ -587,7 +587,7 @@ if(isset($_GET) && isset($_GET['action'])) {
 			} else if($name == '_none_') {
 				$_SESSION['rota_egs'] = array();
 			} else {
-				if(substr($name, 0, 3) == '@G@') $value = ko_get_userpref('-1', substr($name, 3), 'daten_itemset');
+				if(mb_substr($name, 0, 3) == '@G@') $value = ko_get_userpref('-1', mb_substr($name, 3), 'daten_itemset');
 				else $value = ko_get_userpref($_SESSION['ses_userid'], $name, 'daten_itemset');
 				$_SESSION['rota_egs'] = explode(',', $value[0]['value']);
 			}
@@ -613,8 +613,8 @@ if(isset($_GET) && isset($_GET['action'])) {
 			$name = format_userinput($_GET['name'], 'js', FALSE, 0, array(), '@');
 			if($name == '') break;
 
-			if(substr($name, 0, 3) == '@G@') {
-				if($access['daten']['MAX'] > 3) ko_delete_userpref('-1', substr($name, 3), 'daten_itemset');
+			if(mb_substr($name, 0, 3) == '@G@') {
+				if($access['daten']['MAX'] > 3) ko_delete_userpref('-1', mb_substr($name, 3), 'daten_itemset');
 			} else ko_delete_userpref($_SESSION['ses_userid'], $name, 'daten_itemset');
 
 			print submenu_rota('itemlist_eventgroups', $pos, 'open', 2);
@@ -712,8 +712,8 @@ if(isset($_GET) && isset($_GET['action'])) {
 			$c = '';
 
 			$id = format_userinput($_GET['id'], 'js');
-			if(substr($id, 0, 7) != 'preset_') break;
-			$id = substr($id, 7);
+			if(mb_substr($id, 0, 7) != 'preset_') break;
+			$id = mb_substr($id, 7);
 			$presets = array_merge((array)ko_get_userpref('-1', '', 'rota_emailtext_presets', 'ORDER by `key` ASC'), (array)ko_get_userpref($_SESSION['ses_userid'], '', 'rota_emailtext_presets', 'ORDER by `key` ASC'));
 
 			$c .= '<select name="preset" size="0" id="preset" style="width: 680px; float: left;" onchange="textarea_insert_text(\'emailtext\', this.value);">';

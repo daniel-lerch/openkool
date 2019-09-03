@@ -153,7 +153,7 @@ if(isset($_GET) && isset($_GET["action"])) {
 			} else if($name == '_none_') {
 				$_SESSION['show_accounts'] = array();
 			} else {
-				if(substr($name, 0, 3) == '@G@') $value = ko_get_userpref('-1', substr($name, 3), "accounts_itemset");
+				if(mb_substr($name, 0, 3) == '@G@') $value = ko_get_userpref('-1', mb_substr($name, 3), "accounts_itemset");
 				else $value = ko_get_userpref($_SESSION['ses_userid'], $name, "accounts_itemset");
 				$_SESSION["show_accounts"] = explode(",", $value[0]["value"]);
 			}
@@ -182,8 +182,8 @@ if(isset($_GET) && isset($_GET["action"])) {
 			$name = format_userinput($_GET['name'], 'js', FALSE, 0, array(), '@');
 			if($name == "") break;
 
-			if(substr($name, 0, 3) == '@G@') {
-				if($kg_edit) ko_delete_userpref('-1', substr($name, 3), "accounts_itemset");
+			if(mb_substr($name, 0, 3) == '@G@') {
+				if($kg_edit) ko_delete_userpref('-1', mb_substr($name, 3), "accounts_itemset");
 			} else ko_delete_userpref($_SESSION['ses_userid'], $name, "accounts_itemset");
 
 			print submenu_donations("itemlist_accounts", $pos, "open", 2);

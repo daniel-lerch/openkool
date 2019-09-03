@@ -71,7 +71,7 @@ if($_POST["action"]) {
 if(FALSE === format_userinput($do_action, "alpha+", TRUE, 30)) trigger_error("invalid action: ".$do_action, E_USER_ERROR);
 
 //Reset show_start if from another module
-if($_SERVER['HTTP_REFERER'] != '' && FALSE === strpos($_SERVER['HTTP_REFERER'], '/'.$ko_menu_akt.'/')) $_SESSION['show_start'] = 1;
+if($_SERVER['HTTP_REFERER'] != '' && FALSE === mb_strpos($_SERVER['HTTP_REFERER'], '/'.$ko_menu_akt.'/')) $_SESSION['show_start'] = 1;
 
 switch($do_action) {
 
@@ -173,7 +173,7 @@ switch($do_action) {
 
 		//Log-Meldung erstellen
 		ko_get_eventgruppe_by_id($del_id, $del_eventgruppe);
-		$log_message  = $del_eventgruppe["name"].": ".substr($del_eventgruppe["startzeit"],0,-3)."-".substr($del_eventgruppe["endzeit"],0,-3);
+		$log_message  = $del_eventgruppe["name"].": ".mb_substr($del_eventgruppe["startzeit"],0,-3)."-".mb_substr($del_eventgruppe["endzeit"],0,-3);
 		$log_message .= " in ".$del_eventgruppe["room"].' "'.$del_eventgruppe["beschreibung"].'", '.$del_eventgruppe["farbe"];
 
 		//Gruppe löschen
@@ -300,8 +300,8 @@ switch($do_action) {
 				trigger_error("Not allowed set_month: ".$_GET["set_month"], E_USER_ERROR);
 			}
 			$_SESSION['cal_tag'] = 1;
-			$_SESSION["cal_monat"] = (int)substr($new_month, 0, 2);
-			$_SESSION["cal_jahr"] = (int)substr($new_month, -4);
+			$_SESSION["cal_monat"] = (int)mb_substr($new_month, 0, 2);
+			$_SESSION["cal_jahr"] = (int)mb_substr($new_month, -4);
 		}
 
 		$_SESSION['cal_view'] = 'month';
@@ -487,7 +487,7 @@ switch($do_action) {
 				if ($do_action == 'submit_as_new_event') {
 					$fileFields = array();
 					foreach ($KOTA['ko_event'] as $k => $v) {
-						if (substr($k, 0, 1) == '_') continue;
+						if (mb_substr($k, 0, 1) == '_') continue;
 						if ($v['form']['type'] != 'file')  continue;
 						if ($orig_event[$k] == '') continue;
 						$fileFields[] = $k;
@@ -1193,7 +1193,7 @@ switch($do_action) {
 			//Get preset from userprefs
 			$name = format_userinput($cols, 'js', FALSE, 0, array(), '@');
 			if($name == '') break;
-			if(substr($name, 0, 3) == '@G@') $preset = ko_get_userpref('-1', substr($name, 3), 'ko_event_colitemset');
+			if(mb_substr($name, 0, 3) == '@G@') $preset = ko_get_userpref('-1', mb_substr($name, 3), 'ko_event_colitemset');
 			else $preset = ko_get_userpref($_SESSION['ses_userid'], $name, 'ko_event_colitemset');
 			$value = $preset[0]['value'];
 		}
@@ -1207,7 +1207,7 @@ switch($do_action) {
 
 		//Export with the selected columns
 		$filename = ko_list_events('all', TRUE, 'xls', TRUE);
-		$onload_code = "ko_popup('".$ko_path."download.php?action=file&amp;file=".substr($filename, 3)."');";
+		$onload_code = "ko_popup('".$ko_path."download.php?action=file&amp;file=".mb_substr($filename, 3)."');";
 
 		//Restore column
 		$_SESSION['kota_show_cols_ko_event'] = $orig_cols;
@@ -1278,8 +1278,8 @@ switch($do_action) {
 
 			//Handle selection of presets
 			default:
-				if(substr($mode, 0, 6) == 'preset') {
-					$id = intval(substr($mode, 6));
+				if(mb_substr($mode, 0, 6) == 'preset') {
+					$id = intval(mb_substr($mode, 6));
 					if(!$id) break;
 					$preset = db_select_data('ko_pdf_layout', "WHERE `id` = '$id' AND `type` = 'daten'", '*', '', '', TRUE);
 					if($preset['id'] > 0 && $preset['id'] == $id) {

@@ -13,7 +13,7 @@ function my_map_maps_google($data) {
 	if($data["land"]) $link .= "+".$data["land"];
 
 	if($link != "") {
-		$link = "http://maps.google.com/maps?f=q&hl=".$_SESSION["lang"]."&q=".substr($link, 1);
+		$link = "http://maps.google.com/maps?f=q&hl=".$_SESSION["lang"]."&q=".mb_substr($link, 1);
 	} else {
 		return "";
 	}

@@ -33,7 +33,7 @@ $notifier = koNotifier::Instance();
 ko_check_ssl();
 
 //Check for arguments of moderation links. If so don't redirect yet, as the user will only be determined after processing the params
-$confirm_link = isset($_GET['u']) && isset($_GET['h']) && strlen($_GET['u']) == 32 && strlen($_GET['h']) == 33;
+$confirm_link = isset($_GET['u']) && isset($_GET['h']) && mb_strlen($_GET['u']) == 32 && mb_strlen($_GET['h']) == 33;
 if(!ko_module_installed("reservation") && !$confirm_link) {
 	header("Location: ".$BASE_URL."index.php");  //Absolute URL
 }
@@ -41,8 +41,8 @@ if(!ko_module_installed("reservation") && !$confirm_link) {
 //Check for login from confirm/delete link
 if($confirm_link) {
 	$u = $_GET['u'];
-	$h = substr($_GET['h'], 1);
-	$mode = substr($_GET['h'], 0, 1);
+	$h = mb_substr($_GET['h'], 1);
+	$mode = mb_substr($_GET['h'], 0, 1);
 	$login = db_select_data('ko_admin', "WHERE MD5(CONCAT(`id`, '".KOOL_ENCRYPTION_KEY."')) = '".mysqli_real_escape_string($db_connection, $u)."'", '*', 'LIMIT 0,1', '', TRUE);
 	if($login['id'] > 0 && md5($login['id'].KOOL_ENCRYPTION_KEY) == $u) {
 		//Check for valid hash
@@ -111,7 +111,7 @@ else {
 }
 
 //Reset show_start if from another module
-if($_SERVER['HTTP_REFERER'] != '' && FALSE === strpos($_SERVER['HTTP_REFERER'], '/'.$ko_menu_akt.'/')) $_SESSION['show_start'] = 1;
+if($_SERVER['HTTP_REFERER'] != '' && FALSE === mb_strpos($_SERVER['HTTP_REFERER'], '/'.$ko_menu_akt.'/')) $_SESSION['show_start'] = 1;
 
 switch($do_action) {
 
@@ -816,8 +816,8 @@ switch($do_action) {
 				trigger_error('Not allowed set_month: '.$_GET['set_month'], E_USER_ERROR);
 			}
 			$_SESSION['cal_tag'] = 1;
-			$_SESSION['cal_monat'] = (int)substr($new_month, 0, 2);
-			$_SESSION['cal_jahr'] = (int)substr($new_month, -4);
+			$_SESSION['cal_monat'] = (int)mb_substr($new_month, 0, 2);
+			$_SESSION['cal_jahr'] = (int)mb_substr($new_month, -4);
 		}
 
 		$_SESSION['cal_view']= 'month';
@@ -1197,7 +1197,7 @@ switch($do_action) {
 
 			$filename = '../download/excel/'.getLL('res_filename_xls').strftime('%d%m%Y_%H%M%S', time()).'.xlsx';
 			$filename = ko_export_to_xlsx($header, $data, $filename, 'kOOL');
-			$onload_code = "ko_popup('".$ko_path."download.php?action=file&amp;file=".substr($filename, 3)."');";
+			$onload_code = "ko_popup('".$ko_path."download.php?action=file&amp;file=".mb_substr($filename, 3)."');";
 		}
 	break;
 

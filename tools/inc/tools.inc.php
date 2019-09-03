@@ -99,15 +99,15 @@ function beautyfy_telephone($fields = array(), $do_01_044 = FALSE, $do_10_to_spa
 
 				//Vorwahl Zürich
 				if($do_01_044) {
-					if(strlen($data) == 9 && substr($data, 0, 2) == "01") {
-						$data = "044".substr($data, 2);
+					if(mb_strlen($data) == 9 && mb_substr($data, 0, 2) == "01") {
+						$data = "044".mb_substr($data, 2);
 						$changed = TRUE;
 					}
 				}
 				//Leerschläge bei schweizer Nummern einfügen
 				if($do_10_to_spaces) {
-					if(strlen($data) == 10) {
-						$data = substr($data, 0, 3)." ".substr($data, 3, 3)." ".substr($data, 6,2)." ".substr($data, 8, 2);
+					if(mb_strlen($data) == 10) {
+						$data = mb_substr($data, 0, 3)." ".mb_substr($data, 3, 3)." ".mb_substr($data, 6,2)." ".mb_substr($data, 8, 2);
 						$changed = TRUE;
 					}
 				}
@@ -117,7 +117,7 @@ function beautyfy_telephone($fields = array(), $do_01_044 = FALSE, $do_10_to_spa
 
 			}//foreach(fields as f)
 			if($sql_update) {
-				$sql = "UPDATE `ko_leute` SET ".substr($sql_update, 0, -2)." WHERE `id` = '".$row["id"]."' LIMIT 1";
+				$sql = "UPDATE `ko_leute` SET ".mb_substr($sql_update, 0, -2)." WHERE `id` = '".$row["id"]."' LIMIT 1";
 				$result2 = mysqli_query($db_connection, $sql);
 				if(!$result2) {
 					print "ERROR! <br />";
@@ -151,7 +151,7 @@ function ko_tools_add_submenu($sm, $users, $module, $pos_="") {
 	foreach($sm as $submenu) {
 		foreach($users as $user) {
 			//Globale Submenus für Guest nicht erlauben (z.B. Notizen)
-			if($user == ko_get_guest_id() && substr($submenu, 0, 4) == "gsm_") continue;
+			if($user == ko_get_guest_id() && mb_substr($submenu, 0, 4) == "gsm_") continue;
 
 			$pref1 = explode(",", ko_get_userpref($user, "submenu_".$module."_left"));
 			$pref2 = explode(",", ko_get_userpref($user, "submenu_".$module."_left_closed"));
@@ -254,14 +254,14 @@ function ko_tools_list_submenus($output=TRUE) {
 				if($d) {
 					$add .= '<font color="red">';
 					$add .= '<a href="index.php?action=add_sm&amp;sm='.$d.'&amp;lid='.$l_i.'&amp;mid='.$m.'&amp;pos=left"><font color="red">';
-					$add .= substr($d, 0, 2)."</font></a>";
-					$add .= substr($d, 2, -2);
+					$add .= mb_substr($d, 0, 2)."</font></a>";
+					$add .= mb_substr($d, 2, -2);
 					$add .= '<a href="index.php?action=add_sm&amp;sm='.$d.'&amp;lid='.$l_i.'&amp;mid='.$m.'&amp;pos=right"><font color="red">';
-					$add .= substr($d, -2, 2)."</font></a>";
+					$add .= mb_substr($d, -2, 2)."</font></a>";
 					$add .= '</font>, ';
 				}
 			}
-			if($add) $data .= '<br />'.substr($add, 0, -2);
+			if($add) $data .= '<br />'.mb_substr($add, 0, -2);
 
 			$tpl_list_data[$l_i][++$counter] = $data;
 		}//foreach(MODULES as m)
@@ -330,7 +330,7 @@ function ko_tools_list_leute_db() {
 	print '<table border="0"><tr>';
 	print '<td style="font-weight:bold;">&nbsp;</td>';
 	print '<td style="font-weight:bold;">'.getLL("tools_listheader_people_field").'</td>';
-	foreach($WEB_LANGS as $lang) print '<td style="font-weight:bold;">'.getLL("tools_listheader_people_name")." ".mb_strtoupper(substr($lang, 0, 2)).'</td>';
+	foreach($WEB_LANGS as $lang) print '<td style="font-weight:bold;">'.getLL("tools_listheader_people_name")." ".mb_strtoupper(mb_substr($lang, 0, 2)).'</td>';
 	print '<td style="font-weight:bold;">'.getLL("tools_listheader_people_filter").'</td>';
 	print '</tr>';
 
@@ -427,7 +427,7 @@ function ko_tools_list_familie_db() {
 	print '<table border="0"><tr>';
 	print '<td style="font-weight:bold;">&nbsp;</td>';
 	print '<td style="font-weight:bold;">'.getLL("tools_listheader_people_field").'</td>';
-	foreach($WEB_LANGS as $lang) print '<td style="font-weight:bold;">'.getLL("tools_listheader_people_name")." ".mb_strtoupper(substr($lang, 0, 2)).'</td>';
+	foreach($WEB_LANGS as $lang) print '<td style="font-weight:bold;">'.getLL("tools_listheader_people_name")." ".mb_strtoupper(mb_substr($lang, 0, 2)).'</td>';
 	print '</tr>';
 
 	$tabindex = 1;
@@ -652,30 +652,24 @@ function ko_tools_write_ll_file($LL, $l) {
 
 	$fp = fopen($ko_path."locallang/locallang.$l.php", "w");
 	fputs($fp, '<?php'."\n");
-	fputs($fp, '/***************************************************************
-*  Copyright notice
+	fputs($fp, '/*******************************************************************************
 *
-*  (c) 2003-2015 Renzo Lauper (renzo@churchtool.org)
-*  All rights reserved
+*    OpenKool - Online church organization tool
 *
-*  This script is part of the kOOL project. The kOOL project is
-*  free software; you can redistribute it and/or modify
-*  it under the terms of the GNU General Public License as published by
-*  the Free Software Foundation; either version 2 of the License, or
-*  (at your option) any later version.
+*    Copyright © 2003-2015 Renzo Lauper (renzo@churchtool.org)
+*    Copyright © 2019      Daniel Lerch
 *
-*  The GNU General Public License can be found at
-*  http://www.gnu.org/copyleft/gpl.html.
-*  A copy is found in the textfile GPL.txt and important notices to the license
-*  from the author is found in LICENSE.txt distributed with these scripts.
+*    This program is free software; you can redistribute it and/or modify
+*    it under the terms of the GNU General Public License as published by
+*    the Free Software Foundation; either version 2 of the License, or
+*    (at your option) any later version.
 *
-*  kOOL is distributed in the hope that it will be useful,
-*  but WITHOUT ANY WARRANTY; without even the implied warranty of
-*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-*  GNU General Public License for more details.
+*    This program is distributed in the hope that it will be useful,
+*    but WITHOUT ANY WARRANTY; without even the implied warranty of
+*    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+*    GNU General Public License for more details.
 *
-*  This copyright notice MUST APPEAR in all copies of the script!
-***************************************************************/
+*******************************************************************************/
 ');
 
 	fputs($fp, '$LL["'.$l.'"] = array('."\n");

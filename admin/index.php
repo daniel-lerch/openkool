@@ -54,7 +54,7 @@ else if($_GET["action"]) $do_action = $_GET["action"];
 else $do_action = "";
 
 //Reset show_start if from another module
-if($_SERVER['HTTP_REFERER'] != '' && FALSE === strpos($_SERVER['HTTP_REFERER'], '/'.$ko_menu_akt.'/')) $_SESSION['show_start'] = 1;
+if($_SERVER['HTTP_REFERER'] != '' && FALSE === mb_strpos($_SERVER['HTTP_REFERER'], '/'.$ko_menu_akt.'/')) $_SESSION['show_start'] = 1;
 
 switch($do_action) {
 
@@ -344,9 +344,9 @@ switch($do_action) {
 				break;
 			}//switch()
 		}//foreach()
-		ko_save_userpref($uid, "front_modules_left", substr($fm_left,0,-1));
-		ko_save_userpref($uid, "front_modules_center", substr($fm_center,0,-1));
-		ko_save_userpref($uid, "front_modules_right", substr($fm_right,0,-1));
+		ko_save_userpref($uid, "front_modules_left", mb_substr($fm_left,0,-1));
+		ko_save_userpref($uid, "front_modules_center", mb_substr($fm_center,0,-1));
+		ko_save_userpref($uid, "front_modules_right", mb_substr($fm_right,0,-1));
 
 		//Limiten
 		ko_save_userpref($uid, "show_limit_logins", format_userinput($_POST["txt_limit_logins"], "uint"));
@@ -539,7 +539,7 @@ switch($do_action) {
 						$save_filter[$i]['name'] = $sg['name'];
 						$save_filter[$i]['filter'] = array('link' => 'and', 0 => array(0 => $sgFilter['id'], 1 => array(1 => $sg['id']), 2 => 0));
 					} else if(preg_match('/g[0-9]{6}/', $filter) == 1) {  //group
-						$gid = substr($filter, -6);
+						$gid = mb_substr($filter, -6);
 						$gr = db_select_data('ko_groups', "WHERE `id` = '$gid'", '*', '', '', TRUE);
 						$grFilter = db_select_data('ko_filter', "WHERE `typ` = 'leute' AND `name` = 'group'", 'id', '', '', TRUE);
 						$save_filter[$i]['value'] = $filter;
@@ -643,7 +643,7 @@ switch($do_action) {
 				
 					//Login aus gelöschten Gruppen entfernen
 					foreach($deleted as $gid) {
-						$gid = substr($gid, -6);  //Nur letzte ID verwenden, davor steht die Motherline
+						$gid = mb_substr($gid, -6);  //Nur letzte ID verwenden, davor steht die Motherline
 						//bisherige Rechte auslesen
 						$group = db_select_data("ko_groups", "WHERE `id` = '$gid'", "id,rights_".$mode[$i]);
 						$rights_array = explode(",", $group[$gid]["rights_".$mode[$i]]);
@@ -657,7 +657,7 @@ switch($do_action) {
 
 					//Login in neu hinzugefügten Gruppen hinzufügen
 					foreach($added as $gid) {
-						$gid = substr($gid, -6);  //Nur letzte ID verwenden, davor steht die Motherline
+						$gid = mb_substr($gid, -6);  //Nur letzte ID verwenden, davor steht die Motherline
 						//Bestehende Rechte auslesen
 						$group = db_select_data("ko_groups", "WHERE `id` = '$gid'", "id,rights_".$mode[$i]);
 						$rights_array = explode(",", $group[$gid]["rights_".$mode[$i]]);
@@ -732,7 +732,7 @@ switch($do_action) {
 					$save_string .= format_userinput($_POST["sel_rechte_".$module."_".$g_i], "uint", FALSE, 1)."@".$g_i.",";
 				}
 			} else $save_string = "0 ";
-			ko_save_admin($module, $id, substr($save_string, 0, -1), 'admingroup');
+			ko_save_admin($module, $id, mb_substr($save_string, 0, -1), 'admingroup');
 			$log_message .= getLL("module_".$module).': "'.str_replace(",", ", ", $save_string).'", ';
 		}
 
@@ -871,7 +871,7 @@ switch($do_action) {
 						$save_filter[$i]['name'] = $sg['name'];
 						$save_filter[$i]['filter'] = array('link' => 'and', 0 => array(0 => $sgFilter['id'], 1 => array(1 => $sg['id']), 2 => 0));
 					} else if(preg_match('/g[0-9]{6}/', $filter) == 1) {  //group
-						$gid = substr($filter, -6);
+						$gid = mb_substr($filter, -6);
 						$gr = db_select_data('ko_groups', "WHERE `id` = '$gid'", '*', '', '', TRUE);
 						$grFilter = db_select_data('ko_filter', "WHERE `typ` = 'leute' AND `name` = 'group'", 'id', '', '', TRUE);
 						$save_filter[$i]['value'] = $filter;
@@ -979,7 +979,7 @@ switch($do_action) {
 				
 					//Login aus gelöschten Gruppen entfernen
 					foreach($deleted as $gid) {
-						$gid = substr($gid, -6);  //Nur letzte ID verwenden, davor steht die Motherline
+						$gid = mb_substr($gid, -6);  //Nur letzte ID verwenden, davor steht die Motherline
 						//bisherige Rechte auslesen
 						$group = db_select_data("ko_groups", "WHERE `id` = '$gid'", "id,rights_".$mode[$i]);
 						$rights_array = explode(",", $group[$gid]["rights_".$mode[$i]]);
@@ -993,7 +993,7 @@ switch($do_action) {
 
 					//Login in neu hinzugefügten Gruppen hinzufügen
 					foreach($added as $gid) {
-						$gid = substr($gid, -6);  //Nur letzte ID verwenden, davor steht die Motherline
+						$gid = mb_substr($gid, -6);  //Nur letzte ID verwenden, davor steht die Motherline
 						//Bestehende Rechte auslesen
 						$group = db_select_data("ko_groups", "WHERE `id` = '$gid'", "id,rights_".$mode[$i]);
 						$rights_array = explode(",", $group[$gid]["rights_".$mode[$i]]);
@@ -1068,7 +1068,7 @@ switch($do_action) {
 					$save_string .= format_userinput($_POST["sel_rechte_".$module."_".$g_i], "uint", FALSE, 1)."@".$g_i.",";
 				}
 			} else $save_string = "0 ";
-			ko_save_admin($module, $id, substr($save_string, 0, -1));
+			ko_save_admin($module, $id, mb_substr($save_string, 0, -1));
 			$log_message .= getLL("module_".$module).': "'.str_replace(",", ", ", $save_string).'", ';
 		}
 
@@ -1129,7 +1129,7 @@ switch($do_action) {
 		//Passwörter müssen übereinstimmen
 		if($_POST["txt_pwd1"] == "" || $_POST["txt_pwd1"] != $_POST["txt_pwd2"]) $notifier->addError(2, $do_action);
 		//Loginname darf nicht ko_guest sein
-		if($txt_name == "ko_guest" || strlen($_POST["txt_name"]) >= 50) $notifier->addError(3, $do_action);
+		if($txt_name == "ko_guest" || mb_strlen($_POST["txt_name"]) >= 50) $notifier->addError(3, $do_action);
 		if($txt_name == "root") $notifier->addError(10, $do_action);
 		//Loginname darf nicht schon existieren
 		ko_get_logins($logins);
@@ -1310,7 +1310,7 @@ switch($do_action) {
 	case "submit_del_etiketten_vorlage":
 		if($access['admin']['MAX'] < 2) break;
 		$sel_vorlage = format_userinput($_POST["sel_vorlage_open"], "alphanum");
-		if(!$sel_vorlage || strlen($sel_vorlage) != 32) {
+		if(!$sel_vorlage || mb_strlen($sel_vorlage) != 32) {
 			$notifier->addError(8, $do_action);
 			break;
 		}
@@ -1509,7 +1509,7 @@ switch($do_action) {
 				$new["headerrow"][$a] = $post["headerrow"][$a];
 			}
 			if($post['columns']) {
-				if(substr($post['columns'], 0, 3) == '@G@') $value = ko_get_userpref('-1', substr($post['columns'], 3), 'leute_itemset');
+				if(mb_substr($post['columns'], 0, 3) == '@G@') $value = ko_get_userpref('-1', mb_substr($post['columns'], 3), 'leute_itemset');
 				else $value = ko_get_userpref($_SESSION['ses_userid'], $post['columns'], 'leute_itemset');
 				$new['columns'] = explode(',', $value[0]['value']);
 			}
@@ -1517,9 +1517,9 @@ switch($do_action) {
 			$new["sort"] = $post["sort"];
 			$new["sort_order"] = $post["sort_order"];
 			if($post["filter"]) {
-				if(substr($post['filter'], 0, 3) == '@G@') {
+				if(mb_substr($post['filter'], 0, 3) == '@G@') {
 					$value = ko_get_userpref('-1', '', 'filterset');
-					$post['filter'] = substr($post['filter'], 3);
+					$post['filter'] = mb_substr($post['filter'], 3);
 				} else $value = ko_get_userpref($_SESSION['ses_userid'], '', 'filterset');
 				foreach($value as $v_i => $v) {
 					if($v["key"] == $post["filter"]) $new["filter"] = unserialize($value[$v_i]["value"]);

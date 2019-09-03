@@ -123,14 +123,14 @@ function ko_res_cal_jahr($num=6, $start=1, $output=TRUE) {
 						if($date["startzeit"] == "00:00:00" && $date["endzeit"] == "00:00:00") {
               $desc .= getLL("time_all_day");
 						} else if($date["startdatum"] != $date["enddatum"]) {  //Mehrtägige Termine
-              if($t == substr($date["startdatum"], 8, 2) && $m == substr($date["startdatum"], 5, 2))
-                $desc .= getLL("time_from")." ".substr($date["startzeit"], 0, -3);
-              else if($t == substr($date["enddatum"], 8, 2) && $m == substr($date["enddatum"], 5, 2))
-                $desc .= getLL("time_to")." ".substr($date["endzeit"], 0, -3);
+              if($t == mb_substr($date["startdatum"], 8, 2) && $m == mb_substr($date["startdatum"], 5, 2))
+                $desc .= getLL("time_from")." ".mb_substr($date["startzeit"], 0, -3);
+              else if($t == mb_substr($date["enddatum"], 8, 2) && $m == mb_substr($date["enddatum"], 5, 2))
+                $desc .= getLL("time_to")." ".mb_substr($date["endzeit"], 0, -3);
               else
                 $desc .= getLL("time_all_day");
             } else {  //eintägig
-              $desc .= ($date["startzeit"] != "00:00:00" ? substr($date["startzeit"], 0, -3) : "") . (($date["endzeit"] != "00:00:00") ? ("-" . substr($date["endzeit"], 0, -3)) : "");
+              $desc .= ($date["startzeit"] != "00:00:00" ? mb_substr($date["startzeit"], 0, -3) : "") . (($date["endzeit"] != "00:00:00") ? ("-" . mb_substr($date["endzeit"], 0, -3)) : "");
             }
             $day_text .= ($desc != "") ? "<br /><b>- ".$desc."</b>" : "<br />";
 
@@ -462,9 +462,9 @@ function ko_show_res_liste($type="res", $output=TRUE) {
 			if($e["startzeit"] == "00:00:00") {
 				$zeit = getLL("time_all_day");
 			} else if($e["endzeit"] != "" && $e["endzeit"] != "00:00:00") {
-				$zeit = substr($e["startzeit"], 0, -3) . " - " . substr($e["endzeit"], 0, -3);
+				$zeit = mb_substr($e["startzeit"], 0, -3) . " - " . mb_substr($e["endzeit"], 0, -3);
 			} else {
-				$zeit = substr($e["startzeit"], 0, -3);
+				$zeit = mb_substr($e["startzeit"], 0, -3);
 			}
 			$tpl_list_data[$e_i][2] = $zeit;
 
@@ -848,7 +848,7 @@ function ko_res_store_moderation($data) {
 	foreach($data as $res) {
 		$resitem = $items[$res["item_id"]];
 		//add other data
-		$res["code"] = substr(md5($res["name"].microtime()), 2, 8);
+		$res["code"] = mb_substr(md5($res["name"].microtime()), 2, 8);
 		$res["cdate"] = strftime("%Y-%m-%d %H:%M:%S", time());
 		$res["last_change"] = strftime("%Y-%m-%d %H:%M:%S", time());
 		$res["linked_items"] = $resitem["linked_items"];
@@ -939,7 +939,7 @@ function ko_res_store_reservation($data, $send_user_email, &$double_error_txt=''
 
 		$resitem = $items[$res["item_id"]];
 		//add other data
-		if(!$res["code"]) $res["code"] = substr(md5($res["name"].microtime()), 2, 8);
+		if(!$res["code"]) $res["code"] = mb_substr(md5($res["name"].microtime()), 2, 8);
 		$res["last_change"] = strftime("%Y-%m-%d %H:%M:%S", time());
 		$res["linked_items"] = $resitem["linked_items"];
 		if(!$res["cdate"]) $res["cdate"] = strftime("%Y-%m-%d %H:%M:%S", time());
@@ -1395,11 +1395,11 @@ function ko_res_check_double($item, $datum1, $datum2, $zeit1, $zeit2, &$error_tx
 		if($row['startzeit'] == '00:00:00' && $row['endzeit'] == '00:00:00') {
 			$error_txt .= ' '.getLL('time_all_day');
 		} else {
-			$error_txt .= ' '.substr($row['startzeit'],0,-3).'-'.substr($row['endzeit'],0,-3);
+			$error_txt .= ' '.mb_substr($row['startzeit'],0,-3).'-'.mb_substr($row['endzeit'],0,-3);
 		}
 		//Only show purpose (zweck) if setting allows it for guest user
 		if(($_SESSION['ses_userid'] != ko_get_guest_id() || ko_get_setting('res_show_purpose')) && trim($row['zweck']) != '') {
-			$error_txt .= ' "'.(strlen($row['zweck']) > 30 ? substr($row['zweck'], 0, 30).'..' : $row['zweck']).'"';
+			$error_txt .= ' "'.(mb_strlen($row['zweck']) > 30 ? mb_substr($row['zweck'], 0, 30).'..' : $row['zweck']).'"';
 		}
 		//Only show details about person if setting allows it for guest-user
 		if(($_SESSION['ses_userid'] != ko_get_guest_id() || ko_get_setting('res_show_persondata')) && trim($row['name']) != '') {
@@ -1605,9 +1605,9 @@ function ko_get_resitems_css() {
 		$color = $item['farbe'];
 		if(!$color) $color = 'aaaaaa';
 
-		$cr = hexdec(substr($color, 0, 2));
-		$cg = hexdec(substr($color, 2, 2));
-		$cb = hexdec(substr($color, 4, 2));
+		$cr = hexdec(mb_substr($color, 0, 2));
+		$cg = hexdec(mb_substr($color, 2, 2));
+		$cb = hexdec(mb_substr($color, 4, 2));
 
 		foreach(array('Day', 'Week', 'Month') as $mode) {
 			$r .= 'div.fc-view-resource'.$mode.' tr.fc-week'.$item['id'].' td.fc-resourceName { background-color: #'.$color.'; color: '.ko_get_contrast_color($color).'; }'."\n";
@@ -1761,7 +1761,7 @@ function ko_reservation_export_months($num, $month, $year) {
 						ko_get_res_by_id($resid, $thisres_); $thisres = $thisres_[$resid];
 						$res['zweck'] .= $resitems[$thisres['item_id']]['name'].', ';
 					}
-					$res['zweck'] = substr($res['zweck'], 0, -2);
+					$res['zweck'] = mb_substr($res['zweck'], 0, -2);
 					//Reset color and name according to event group
 					$res['item_farbe'] = $event['eventgruppen_farbe'];
 					$res['item_name'] = getLL('res_cal_combined').' '.$event['eventgruppen_name'];
@@ -1788,15 +1788,15 @@ function ko_reservation_export_months($num, $month, $year) {
 					} else if($date == $res['enddatum']) {
 						$mode = 'last';
 					}
-					if(substr($date, 5, 2) == $month) {
+					if(mb_substr($date, 5, 2) == $month) {
 						$content['zeit'] = ko_get_time_as_string($res, $show_time, $mode);
-						$data[(int)substr($date, -2)]['inhalt'][] = $content;
+						$data[(int)mb_substr($date, -2)]['inhalt'][] = $content;
 					}
 					$date = add2date($date, 'tag', 1, TRUE);
 				}
 			} else {
 				$content['zeit'] = ko_get_time_as_string($res, $show_time, 'default');
-				$data[(int)substr($res['startdatum'], -2)]['inhalt'][] = $content;
+				$data[(int)mb_substr($res['startdatum'], -2)]['inhalt'][] = $content;
 			}
 		}//foreach(res)
 

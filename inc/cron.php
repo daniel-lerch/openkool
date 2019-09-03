@@ -271,7 +271,7 @@ class DayOfMonthField extends AbstractField
         // Check to see if this is the nearest weekday to a particular value
         if (strpos($value, 'W')) {
             // Parse the target day
-            $targetDay = substr($value, 0, strpos($value, 'W'));
+            $targetDay = mb_substr($value, 0, strpos($value, 'W'));
             // Find out if the current day is the nearest day of the week
             return $date->format('j') == self::getNearestWeekday($date->format('Y'), $date->format('m'), $targetDay)->format('j');
         }
@@ -347,7 +347,7 @@ class DayOfWeekField extends AbstractField
 
         // Find out if this is the last specific weekday of the month
         if (strpos($value, 'L')) {
-            $weekday = str_replace('7', '0', substr($value, 0, strpos($value, 'L')));
+            $weekday = str_replace('7', '0', mb_substr($value, 0, strpos($value, 'L')));
             $tdate = clone $date;
             $tdate->setDate($currentYear, $currentMonth, $lastDayOfMonth);
             while ($tdate->format('w') != $weekday) {

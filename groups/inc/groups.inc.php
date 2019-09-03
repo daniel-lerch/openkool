@@ -265,7 +265,7 @@ function ko_groups_list_roles($output=TRUE) {
 		else $role_access[$l_i] = 0;
 
 		//Add fake column used_in
-		$roles[$l_i]['used_in'] = ($used_in_num > 15) ? '('.$used_in_num.' '.getLL('groups_groups').')' : ko_html(substr($used_in, 0, -2));
+		$roles[$l_i]['used_in'] = ($used_in_num > 15) ? '('.$used_in_num.' '.getLL('groups_groups').')' : ko_html(mb_substr($used_in, 0, -2));
 	}
 
 
@@ -328,9 +328,9 @@ function ko_groups_formular_group($mode, $id = "") {
 			foreach(explode(",", $group["rights_".$level]) as $gid) {
 				if(!$gid) continue;
 				//Admingroup
-				if(substr($gid, 0, 1) == 'g') {
-					$ag_ = ko_get_admingroups(substr($gid, 1));
-					$ag = $ag_[substr($gid, 1)];
+				if(mb_substr($gid, 0, 1) == 'g') {
+					$ag_ = ko_get_admingroups(mb_substr($gid, 1));
+					$ag = $ag_[mb_substr($gid, 1)];
 					$label = getLL('admin_admingroup').': '.$ag['name'];
 				}
 				//Login
@@ -1024,7 +1024,7 @@ function ko_groups_list_rights() {
 	}
 
 	$rows = db_get_count("ko_admin", "id", $z_where);
-	$select_where = "WHERE".substr($z_where, 4);  //Erstes AND mit WHERE ersetzen
+	$select_where = "WHERE".mb_substr($z_where, 4);  //Erstes AND mit WHERE ersetzen
 	$select_where .= " AND (`disabled` = '' OR `disabled` = '0')";
 	$_logins = db_select_data("ko_admin", $select_where, "id,login,leute_id", "ORDER BY login ASC");
 	//Find logins with group module installed
@@ -1247,7 +1247,7 @@ function ko_update_group_filterpresets() {
 		foreach($set as $k => $v) {
 			if(!is_numeric($k)) continue;  //ignore link, sort, cols, etc
 			if($v[0] != $group_filter_id) continue;  //Ignore other filters
-			if(FALSE === strpos($v[1][1], ':')) continue;  //Ignore group filters with a group on the top level
+			if(FALSE === mb_strpos($v[1][1], ':')) continue;  //Ignore group filters with a group on the top level
 
 			$old_gid = $v[1][1];
 			$gid = ko_groups_decode($old_gid, 'group_id');

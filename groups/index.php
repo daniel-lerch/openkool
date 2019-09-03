@@ -59,7 +59,7 @@ else if($_GET["action"]) $do_action = $_GET["action"];
 else $do_action = "";
 
 //Reset show_start if from another module
-if($_SERVER['HTTP_REFERER'] != '' && FALSE === strpos($_SERVER['HTTP_REFERER'], '/'.$ko_menu_akt.'/')) $_SESSION['show_start'] = 1;
+if($_SERVER['HTTP_REFERER'] != '' && FALSE === mb_strpos($_SERVER['HTTP_REFERER'], '/'.$ko_menu_akt.'/')) $_SESSION['show_start'] = 1;
 
 switch($do_action) {
 
@@ -660,7 +660,7 @@ switch($do_action) {
 			
 				//Login aus gelöschten Gruppen entfernen
 				foreach($deleted as $id) {
-					$id = substr($id, -6);  //Nur letzte ID verwenden, davor steht die Motherline
+					$id = mb_substr($id, -6);  //Nur letzte ID verwenden, davor steht die Motherline
 					//bisherige Rechte auslesen
 					$group = db_select_data("ko_groups", "WHERE `id` = '$id'", "id,rights_".$mode[$i]);
 					$rights_array = explode(",", $group[$id]["rights_".$mode[$i]]);
@@ -674,7 +674,7 @@ switch($do_action) {
 
 				//Login in neu hinzugefügten Gruppen hinzufügen
 				foreach($added as $id) {
-					$id = substr($id, -6);  //Nur letzte ID verwenden, davor steht die Motherline
+					$id = mb_substr($id, -6);  //Nur letzte ID verwenden, davor steht die Motherline
 					//Bestehende Rechte auslesen
 					$group = db_select_data("ko_groups", "WHERE `id` = '$id'", "id,rights_".$mode[$i]);
 					$rights_array = explode(",", $group[$id]["rights_".$mode[$i]]);
@@ -802,12 +802,12 @@ switch($do_action) {
 		if(!$layout_id) break;
 
 		$layout = db_select_data('ko_pdf_layout', "WHERE `id` = '$layout_id'", '*', '', '', TRUE);
-		if($layout['data'] != '' && substr($layout['data'], 0, 4) == 'FCN:' && function_exists(substr($layout['data'], 4))) {
-			$filename = call_user_func(substr($layout['data'], 4), $_GET);
+		if($layout['data'] != '' && mb_substr($layout['data'], 0, 4) == 'FCN:' && function_exists(mb_substr($layout['data'], 4))) {
+			$filename = call_user_func(mb_substr($layout['data'], 4), $_GET);
 		}
 
 		if($filename) {
-			$onload_code = "ko_popup('".$ko_path.'download.php?action=file&amp;file='.substr($filename, 3)."');";
+			$onload_code = "ko_popup('".$ko_path.'download.php?action=file&amp;file='.mb_substr($filename, 3)."');";
 		} else {
 			$notifier->addError(3, $do_action);
 		}

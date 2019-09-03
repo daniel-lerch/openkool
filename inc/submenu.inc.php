@@ -106,7 +106,7 @@ function ko_get_submenus($type) {
 	}
 
 	if($sm[$type]) {
-		if(substr($type, -6) == "_right" || substr($type, -9) == "_dropdown") {
+		if(mb_substr($type, -6) == "_right" || mb_substr($type, -9) == "_dropdown") {
 			return $sm[$type];
 		} else {
 			return array_merge($sm[$type], $gsm);
@@ -189,7 +189,7 @@ function ko_get_submenu_code($module, $pos) {
 		}
 	}
 	if($new != "") {
-		$_SESSION["submenu_".$pos] = substr($new, 0, -1);
+		$_SESSION["submenu_".$pos] = mb_substr($new, 0, -1);
 		eval("\$r=submenu_".$module.'($_SESSION["submenu_".$pos], $pos, "open");');
 		$return .= $r;
 	}
@@ -202,7 +202,7 @@ function ko_get_submenu_code($module, $pos) {
 		}
 	}
 	if($new != "") {
-		$_SESSION["submenu_".$pos."_closed"] = substr($new, 0, -1);
+		$_SESSION["submenu_".$pos."_closed"] = mb_substr($new, 0, -1);
 		eval("\$r=submenu_".$module.'($_SESSION["submenu_".$pos."_closed"], $pos, "closed");');
 		$return .= $r;
 	}
@@ -1210,12 +1210,12 @@ function submenu_leute($namen, $position, $state, $display=1) {
 							//Limit length of group name for filter list
 							if(!$fulltitle) $fulltitle = $v;
 							else $fulltitle .= ', '.$v;
-							if($col[$i] == 'groups' && strlen($v) > 25) {
-								$v = substr($v, 0, 10).'[..]'.substr($v, -10);
+							if($col[$i] == 'groups' && mb_strlen($v) > 25) {
+								$v = mb_substr($v, 0, 10).'[..]'.mb_substr($v, -10);
 							}
 							$vars .= $v.', ';
 						}
-				    $vars = substr($vars, 0, -2);
+				    $vars = mb_substr($vars, 0, -2);
 
 				    //Negative Filter markieren
 				    if($f[2] == 1) $neg = "!";
@@ -1313,14 +1313,14 @@ function submenu_leute($namen, $position, $state, $display=1) {
 		      foreach($_SESSION["show_leute_cols"] as $s) if($s == $i_i) $aktiv = 1;
 
 					//Add title above first smallgroup (disabled)
-					if(substr($i_i, 0, 8) == 'MODULEkg' && !$smallgroups) {
+					if(mb_substr($i_i, 0, 8) == 'MODULEkg' && !$smallgroups) {
 						$smallgroups = TRUE;
 						$itemlist[$counter]['name'] = '---'.getLL('module_kg').'---';
 						$itemlist[$counter]['params'] = 'disabled="disabled"';
 						$itemlist[$counter++]['value'] = '';
 					}
 					//Add title above first group (disabled)
-					if(substr($i_i, 0, 9) == "MODULEgrp" && !$groups) {
+					if(mb_substr($i_i, 0, 9) == "MODULEgrp" && !$groups) {
 						$groups = TRUE;
 						$itemlist[$counter]["name"] = "---".getLL("groups")."---";
 						$itemlist[$counter]["params"] = 'disabled="disabled"';
@@ -1330,12 +1330,12 @@ function submenu_leute($namen, $position, $state, $display=1) {
 					//Group columns: only collect group ids to set the state below
 					if($groups) {
 						if($aktiv) {
-							if(FALSE === strpos($i_i, ':')) {
-								$open_ids[] = substr($i_i, 9);
+							if(FALSE === mb_strpos($i_i, ':')) {
+								$open_ids[] = mb_substr($i_i, 9);
 							} else {
-								$open_dfs[] = substr($i_i, 9);
+								$open_dfs[] = mb_substr($i_i, 9);
 								//Add group id to open, so group will show opened also if only df is selected
-								$only_open_ids[] = substr($i_i, 9, 6);
+								$only_open_ids[] = mb_substr($i_i, 9, 6);
 							}
 						}
 						continue;
@@ -1343,15 +1343,15 @@ function submenu_leute($namen, $position, $state, $display=1) {
 
 					//Einrückung bei Gruppen-Spalten separat übergeben, damit es nicht zur truncate-Länge (Smarty) gezählt wird
 					$pre = $name = "";
-					while(substr($i, 0, 6) == "&nbsp;") {
+					while(mb_substr($i, 0, 6) == "&nbsp;") {
 						$pre .= "&nbsp;";
-						$i = substr($i, 6);
+						$i = mb_substr($i, 6);
 					}
 
 		      $itemlist[$counter]["prename"] = $pre;
 		      $itemlist[$counter]["name"] = $i;
 		      $itemlist[$counter]["aktiv"] = $aktiv;
-					if(substr($i, 0, 3) == '---') $itemlist[$counter]['params'] = 'disabled="disabled"';
+					if(mb_substr($i, 0, 3) == '---') $itemlist[$counter]['params'] = 'disabled="disabled"';
 		      $itemlist[$counter++]["value"] = $i_i;
 			  }//foreach(cols)
 
@@ -2122,7 +2122,7 @@ function submenu_reservation($namen, $position, $state, $display=1) {
 						foreach(explode(',', $item['linked_items']) as $litem) {
 							$linked_items .= $all_items[$litem]['name'].', ';
 						}
-						$linked_items = substr($linked_items, 0, -2);
+						$linked_items = mb_substr($linked_items, 0, -2);
 					}
 					if($linked_items) $f_code .= '<br /><br />'.getLL('res_linked_items').': '.$linked_items;
 
@@ -2940,7 +2940,7 @@ function submenu_tapes($namen, $position, $state, $display=1) {
 								ko_get_tapes($tape_, "AND ko_tapes.id = '$tape_id'");
 								$tape = $tape_[$tape_id];
 								$sel_code .= '<option value="'.$tape_id.'">'.$num."x".strftime($GLOBALS["DATETIME"]["dm"], strtotime($tape["date"]));
-								$sel_code .= ': '.substr($tape["title"], 0, 15).(strlen($tape["title"])>15?"..":"").'</option>';
+								$sel_code .= ': '.mb_substr($tape["title"], 0, 15).(mb_strlen($tape["title"])>15?"..":"").'</option>';
 							}
 						}//foreach(_SESSION[printqueue])
 					}
@@ -2998,7 +2998,7 @@ function submenu_tapes($namen, $position, $state, $display=1) {
 				foreach($groups as $i => $group) {
 					if($all_rights > 0 || $access['tapes'][$i] > 0) {
 						$sel = $_SESSION["tape_group_filter"] == $i ? 'selected="selected"' : "";
-						$code_group .= '<option value="'.$i.'" '.$sel.'>'.substr($group["name"], 0, ITEMLIST_LENGTH_MAX).(strlen($group["name"])>ITEMLIST_LENGTH_MAX?"..":"").'</option>';
+						$code_group .= '<option value="'.$i.'" '.$sel.'>'.mb_substr($group["name"], 0, ITEMLIST_LENGTH_MAX).(mb_strlen($group["name"])>ITEMLIST_LENGTH_MAX?"..":"").'</option>';
 					}
 				}
 				$code_group .= '</select><br />';
@@ -3009,7 +3009,7 @@ function submenu_tapes($namen, $position, $state, $display=1) {
  				ko_get_tapeseries($series);
 				foreach($series as $i => $serie) {
 				  $sel = $_SESSION["tape_serie_filter"] == $i ? 'selected="selected"' : "";
-				  $code_serie .= '<option value="'.$i.'" '.$sel.'>'.substr($serie["name"], 0, ITEMLIST_LENGTH_MAX).(strlen($serie["name"])>ITEMLIST_LENGTH_MAX?"..":"").'</option>';
+				  $code_serie .= '<option value="'.$i.'" '.$sel.'>'.mb_substr($serie["name"], 0, ITEMLIST_LENGTH_MAX).(mb_strlen($serie["name"])>ITEMLIST_LENGTH_MAX?"..":"").'</option>';
 				}
 				$code_serie .= '</select><br />';
 
@@ -3029,7 +3029,7 @@ function submenu_tapes($namen, $position, $state, $display=1) {
  				ko_get_preachers($preachers);
 				foreach($preachers as $i => $preacher) {
 				  $sel = $_SESSION["tape_preacher_filter"] == $preacher ? 'selected="selected"' : "";
-				  $code_preacher .= '<option value="'.urlencode($preacher).'" '.$sel.'>'.substr($preacher, 0, ITEMLIST_LENGTH_MAX).(strlen($preacher)>ITEMLIST_LENGTH_MAX?"..":"").'</option>';
+				  $code_preacher .= '<option value="'.urlencode($preacher).'" '.$sel.'>'.mb_substr($preacher, 0, ITEMLIST_LENGTH_MAX).(mb_strlen($preacher)>ITEMLIST_LENGTH_MAX?"..":"").'</option>';
 				}
 				$code_preacher .= '</select><br />';
 
@@ -4030,7 +4030,7 @@ function submenu_projects($namen, $position, $state, $display=1) {
 					foreach($open as $oid => $amount) {
 						if(!$amount) continue;
 						$amount_projects += $amount;
-						(float)$details[substr($date[$oid], 0, 10)] += (float)$amount;
+						(float)$details[mb_substr($date[$oid], 0, 10)] += (float)$amount;
 					}
 				}
 

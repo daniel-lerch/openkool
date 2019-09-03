@@ -30,9 +30,9 @@ if(isset($_GET["ko_guest"])) {  //Stay with guest user
 }
 else if(isset($_GET['user'])) { //User hash given in URL
 	$userhash = $_GET['user'];
-	if(strlen($userhash) != 32) exit;
+	if(mb_strlen($userhash) != 32) exit;
 	for($i=0; $i<32; $i++) {
-		if(!in_array(substr($userhash, $i, 1), array(1,2,3,4,5,6,7,8,9,0,'a','b','c','d','e','f'))) exit;
+		if(!in_array(mb_substr($userhash, $i, 1), array(1,2,3,4,5,6,7,8,9,0,'a','b','c','d','e','f'))) exit;
 	}
 	if(!defined('KOOL_ENCRYPTION_KEY') || trim(KOOL_ENCRYPTION_KEY) == '') exit;
 
@@ -86,8 +86,8 @@ $use_itemset = FALSE;
 if(isset($_GET['items'])) {  //use event groups given in URL
 	foreach(explode(',', $_GET['items']) as $item) {
 		//Preset
-		if(substr($item, 0, 1) == 'p') {
-			$presetid = format_userinput(substr($item, 1), 'uint');
+		if(mb_substr($item, 0, 1) == 'p') {
+			$presetid = format_userinput(mb_substr($item, 1), 'uint');
 			if($presetid) {
 				$userpref = db_select_data('ko_userprefs', "WHERE `id` = '$presetid'", '*', '', '', TRUE);
 				if($userpref['type'] == 'res_itemset' && ($userpref['user_id'] == '-1' || $userpref['user_id'] == $_SESSION['ses_userid'])) {
@@ -99,8 +99,8 @@ if(isset($_GET['items'])) {  //use event groups given in URL
 			}
 		}
 		//Res group
-		else if(substr($item, 0, 1) == 'g') {
-			$gid = format_userinput(substr($item, 1), 'uint');
+		else if(mb_substr($item, 0, 1) == 'g') {
+			$gid = format_userinput(mb_substr($item, 1), 'uint');
 			if($gid) {
 				$group_items = db_select_data('ko_resitem', "WHERE `gruppen_id` = '$gid'");
 				foreach($group_items as $resitem) {
@@ -159,8 +159,8 @@ $z_where .= " AND startdatum >= '$start' ";
 //Set KOTA filter from GET
 unset($_SESSION['kota_filter']['ko_reservation']);
 foreach($_GET as $k => $v) {
-	if(substr($k, 0, 5) != 'kota_') continue;
-	$key = substr($k, 5);
+	if(mb_substr($k, 0, 5) != 'kota_') continue;
+	$key = mb_substr($k, 5);
 	//Check for valid KOTA field
 	$ok = FALSE;
 	foreach($KOTA['ko_reservation']['_listview'] as $klv) {
@@ -192,7 +192,7 @@ $ical = ko_get_ics_for_res($res);
 
 
 //Output
-if (isset($_SERVER["HTTP_USER_AGENT"]) && strpos($_SERVER["HTTP_USER_AGENT"], "MSIE")) {
+if (isset($_SERVER["HTTP_USER_AGENT"]) && mb_strpos($_SERVER["HTTP_USER_AGENT"], "MSIE")) {
 	// IE cannot download from sessions without a cache
 	header("Cache-Control: public");
 	// q316431 - Don't set no-cache when over HTTPS

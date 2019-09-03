@@ -51,7 +51,7 @@ if($_SERVER['SCRIPT_FILENAME']) {
 } else {
 	$ko_path = '../';
 }
-if(substr($ko_path, -1) != '/') $ko_path .= '/';
+if(mb_substr($ko_path, -1) != '/') $ko_path .= '/';
 
 require_once($ko_path.'inc/ko.inc.php');
 require_once($ko_path.'inc/class.dbStructUpdater.php');
@@ -70,7 +70,7 @@ foreach($tables as $table) {
 	$row = mysqli_fetch_assoc($res);
 
 	//Remove collation
-	if(FALSE !== strpos($row['Create Table'], 'COLLATE')) {
+	if(FALSE !== mb_strpos($row['Create Table'], 'COLLATE')) {
 		$row['Create Table'] = preg_replace('/COLLATE \S* /', '', $row['Create Table']);
 	}
 
@@ -193,11 +193,11 @@ function get_cli_options($argv) {
 	$found = FALSE;
 	foreach($argv as $k => $v) {
 		if($k == 0) continue;
-		if(substr($v, 0, 1) != '-') return FALSE;
-		$v = substr($v, 1);
+		if(mb_substr($v, 0, 1) != '-') return FALSE;
+		$v = mb_substr($v, 1);
 		$found = TRUE;
-		for($i=0; $i<strlen($v); $i++) {
-			$o = substr($v, $i, 1);
+		for($i=0; $i<mb_strlen($v); $i++) {
+			$o = mb_substr($v, $i, 1);
 			switch($o) {
 				case 'i': $options['interactive'] = TRUE; break;
 				case 'a': $options['automatic'] = TRUE; break;

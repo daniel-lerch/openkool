@@ -481,7 +481,7 @@ function kota_submit_multiedit($rights_level='', $log_type="", $lastchange_col="
 	$notifier = koNotifier::Instance();
 
 	list($table, $columns, $ids, $hash) = explode("@", $_POST["id"]);
-	if(!$table || !$columns || $ids == "" || strlen($hash) != 32) $notifier->addError(58);
+	if(!$table || !$columns || $ids == "" || mb_strlen($hash) != 32) $notifier->addError(58);
 	$query = $log_message = array();
 
 	//new entry
@@ -503,8 +503,8 @@ function kota_submit_multiedit($rights_level='', $log_type="", $lastchange_col="
 		$rights_level = $rights_level !== '' ? $rights_level : $KOTA[$table]['_access']['level'];
 		$entries = db_select_data($table, "WHERE `id` IN ('".implode("','", explode(',', $ids))."')");
 		foreach($entries as $entry) {
-			if(substr($chk_col, 0, 4) == 'ALL&') {
-				$rights[$entry['id']] = ($access[$module]['ALL'] >= $rights_level || $access[$module][$entry[substr($chk_col, 4)]] >= $rights_level);
+			if(mb_substr($chk_col, 0, 4) == 'ALL&') {
+				$rights[$entry['id']] = ($access[$module]['ALL'] >= $rights_level || $access[$module][$entry[mb_substr($chk_col, 4)]] >= $rights_level);
 			} else if($chk_col != '') {
 				$rights[$entry['id']] = ($access[$module][$entry[$chk_col]] >= $rights_level);
 			} else {
@@ -529,7 +529,7 @@ function kota_submit_multiedit($rights_level='', $log_type="", $lastchange_col="
 		if($kota_type != $KOTA[$table]['_types']['default']) {
 			//Unset fields not needed for this type
 			foreach($KOTA[$table] as $kota_col => $array) {
-				if(substr($kota_col, 0, 1) == "_") continue;
+				if(mb_substr($kota_col, 0, 1) == "_") continue;
 				if(!isset($array['form']) || $array['form']['ignore']) continue;
 
 				if(!in_array($kota_col, $KOTA[$table]['_types']['types'][$kota_type]['use_fields'])) {
@@ -570,9 +570,9 @@ function kota_submit_multiedit($rights_level='', $log_type="", $lastchange_col="
 
 		$col = format_userinput($col, "js");
 		//Spalten mit _PLUS hinten gehören zu einem Textplus-Feld, werden deshalb schon bearbeitet (in kota_process_data())
-		if(substr($col, -5) == "_PLUS") {
+		if(mb_substr($col, -5) == "_PLUS") {
 			//Add id for textplus fields, if they are not present. Can happen, if no values had been entered so far.
-			if(!in_array($col, $test["columns"])) $test["columns"][] = substr($col, 0, -5);
+			if(!in_array($col, $test["columns"])) $test["columns"][] = mb_substr($col, 0, -5);
 			continue;
 		}
 		//only allow values set in KOTA
@@ -584,8 +584,8 @@ function kota_submit_multiedit($rights_level='', $log_type="", $lastchange_col="
 			if($KOTA[$table][$col]['form']['dontsave']) {
 				//Call post
 				if($KOTA[$table][$col]['post']) {
-					if(substr($KOTA[$table][$col]['post'], 0, 4) == 'FCN:') {
-						$fcn = substr($KOTA[$table][$col]['post'], 4);
+					if(mb_substr($KOTA[$table][$col]['post'], 0, 4) == 'FCN:') {
+						$fcn = mb_substr($KOTA[$table][$col]['post'], 4);
 						if(function_exists($fcn)) {
 							eval("$fcn(\$table, \$col, (\$new_entry?\$new_id:\$id), \$value);");
 						}
@@ -610,7 +610,7 @@ function kota_submit_multiedit($rights_level='', $log_type="", $lastchange_col="
 			$value = $process_data[$col];
 
 			//Log-Message vorbereiten:
-			if(!$log && substr($col, 0, 6) != "MODULE") {
+			if(!$log && mb_substr($col, 0, 6) != "MODULE") {
 				$old_v = db_select_data($table, "WHERE `id` = '$id'", '`'.$col.'`', '', '', TRUE);
 				$old_value = $old_v[$col];
 				if($old_value != $value) {
@@ -621,9 +621,9 @@ function kota_submit_multiedit($rights_level='', $log_type="", $lastchange_col="
 			}
 
 			//Query aufbauen, aber noch nicht ausführen
-			if(substr($col, 0, 9) == 'MODULEgrp' && FALSE === strpos($col, ':')) $db_col = 'groups';
+			if(mb_substr($col, 0, 9) == 'MODULEgrp' && FALSE === mb_strpos($col, ':')) $db_col = 'groups';
 			else $db_col = $col;
-			if($db_col && substr($db_col,-7) != '_DELETE') { // ignore fields which contain information about deletion of FILES
+			if($db_col && mb_substr($db_col,-7) != '_DELETE') { // ignore fields which contain information about deletion of FILES
 				$query[] = "UPDATE $table SET `$db_col` = '$value' $lastchange_query WHERE `id` = '".($new_entry?$new_id:$id)."'";
 				$changes[$table][($new_entry?$new_id:$id)][$db_col] = $value;
 			}
@@ -645,11 +645,11 @@ function kota_submit_multiedit($rights_level='', $log_type="", $lastchange_col="
 				$test["columns"][] = $col;
 			}
 			//Also add ids for Group datafields for people, that don't have this group. There will be no input field, so no koi entry.
-			else if(substr($col, 0, 9) == 'MODULEgrp' && FALSE !== strpos($col, ':') && !$koi[$col][$id]) {
+			else if(mb_substr($col, 0, 9) == 'MODULEgrp' && FALSE !== mb_strpos($col, ':') && !$koi[$col][$id]) {
 				$test["ids"][] = $id;
 				$test["columns"][] = $col;
 				ko_get_person_by_id($id, $gdf_person);  //Get person's data to only process people who are assigned to the given group
-				if(FALSE !== strpos($gdf_person["groups"], "g".substr($col, 9, 6))) {
+				if(FALSE !== mb_strpos($gdf_person["groups"], "g".mb_substr($col, 9, 6))) {
 					//Set checkbox as given by forAll or if forAll is not being used then set it to 0
 					if($doForAll) $process_data = array($col => $koi[$col]["forAll"]);
 					else $process_data = array($col => 0);
@@ -817,7 +817,7 @@ function kota_post_ko_leute($ids, $columns, $old, $do_save) {
 
 	$groupModification = false;
 	foreach ($columns as $column) {
-		if (substr($column, 0, 9) == 'MODULEgrp') {
+		if (mb_substr($column, 0, 9) == 'MODULEgrp') {
 			$groupModification = TRUE;
 		}
 	}
@@ -1151,10 +1151,10 @@ function kota_mailing_check_unique_alias(&$value, $data) {
 	if(  1 == preg_match('/^sg([0-9]{4})([a-zA-Z.]*)$/', $value, $m)  //small group
 		|| 1 == preg_match('/^gr([0-9.]*$)/', $value, $m)               //group
 		|| $value == 'ml'                                               //my list
-		|| substr($value, 0, strlen('confirm-')) == 'confirm-'          //confirm emails start with confirm-
-		|| substr($value, 0, strlen('sms.')) == 'sms.'                  //Send sms instead of email
-		|| substr($value, 0, strlen('filter.')) == 'filter.'            //Filter preset from people module
-		|| FALSE !== strpos($value, '+')                                //No plus sign allowed, used for automatically authorized emails
+		|| mb_substr($value, 0, mb_strlen('confirm-')) == 'confirm-'          //confirm emails start with confirm-
+		|| mb_substr($value, 0, mb_strlen('sms.')) == 'sms.'                  //Send sms instead of email
+		|| mb_substr($value, 0, mb_strlen('filter.')) == 'filter.'            //Filter preset from people module
+		|| FALSE !== mb_strpos($value, '+')                                //No plus sign allowed, used for automatically authorized emails
 		) {
 		$value = '';
 		koNotifier::Instance()->addError(66);
@@ -1199,7 +1199,7 @@ function kota_mailing_link_alias(&$value, $data) {
 
 
 function kota_pic_tooltip(&$value, $data) {
-	if(substr($value, 0, strlen('my_images')) == 'my_images') {
+	if(mb_substr($value, 0, mb_strlen('my_images')) == 'my_images') {
 		$value = ko_pic_get_tooltip($value, 25, 200, 'm', 'l');
 	}
 }//kota_pic_tooltip()
@@ -1225,7 +1225,7 @@ function kota_sort_comma_list(&$value, $data) {
 function kota_smallgroup_members_post($table, $col, $kgid, $value) {
 	$kgid = zerofill($kgid, 4);
 	$new_ids = explode(',', $value);
-	$role = substr($col, -1);
+	$role = mb_substr($col, -1);
 	//Get all current small group members for this role
 	$current = db_select_data('ko_leute', "WHERE `smallgroups` LIKE '%$kgid:$role%'", '*');
 	foreach($new_ids as $pid) {
@@ -1358,7 +1358,7 @@ function kota_eventgruppen_post_rota_teams($table, $col, $id, $value) {
  * Gets people from ko_leute assigned to the selected small group / role
  */
 function kota_smallgroup_members_fill(&$row, $col) {
-	$role = substr($col, -1);
+	$role = mb_substr($col, -1);
 	ko_get_kleingruppen($kg_, '', $row['id']);
 	$kg = $kg_[$row['id']];
 
@@ -1451,15 +1451,15 @@ function kota_listview_time(&$value, $data) {
 	$d = $data["dataset"];
 
 	//Add seconds which might have been cut of by kota_process_data already
-	if(strlen($d["startzeit"]) == 5) $d["startzeit"] .= ":00";
-	if(strlen($d["endzeit"]) == 5) $d["endzeit"] .= ":00";
+	if(mb_strlen($d["startzeit"]) == 5) $d["startzeit"] .= ":00";
+	if(mb_strlen($d["endzeit"]) == 5) $d["endzeit"] .= ":00";
 
 	if($d["startzeit"] == "00:00:00") {
 		$value = getLL("time_all_day");
 	} else if($d["endzeit"] != "" && $d["endzeit"] != "00:00:00") {
-		$value = substr($d["startzeit"], 0, -3) . " - " . substr($d["endzeit"], 0, -3);
+		$value = mb_substr($d["startzeit"], 0, -3) . " - " . mb_substr($d["endzeit"], 0, -3);
 	} else {
-		$value = substr($d["startzeit"], 0, -3);
+		$value = mb_substr($d["startzeit"], 0, -3);
 	}
 }//kota_listview_time()
 
@@ -1538,7 +1538,7 @@ function kota_listview_login(&$value, $data) {
 
 
 function kota_listview_longtext25(&$value, $data) {
-	$value = '<span title="'.ko_html($value).'">'.substr($value, 0, 25).(strlen($value)>25?"..":"").'</span>';
+	$value = '<span title="'.ko_html($value).'">'.mb_substr($value, 0, 25).(mb_strlen($value)>25?"..":"").'</span>';
 }//kota_listview_longtext25()
 
 
@@ -1596,8 +1596,8 @@ function kota_listview_event_reservations(&$value, $data) {
 			if($r['startzeit'] == '00:00:00' && $r['endzeit'] == '00:00:00') {
 				$time = getLL('time_all_day');
 			} else {
-				$time = substr($r['startzeit'], 0, -3);
-				if($r['endzeit'] != '00:00:00') $time .= ' - '.substr($r['endzeit'], 0, -3);
+				$time = mb_substr($r['startzeit'], 0, -3);
+				if($r['endzeit'] != '00:00:00') $time .= ' - '.mb_substr($r['endzeit'], 0, -3);
 			}
 			$txt .= $time.'<br />';
 			//Add purpose of reservation
@@ -1854,7 +1854,7 @@ function kota_listview_ko_kleingruppen_name(&$value, $data) {
 		ko_get_person_by_id($l, $p);
 		if($p['vorname'] && $p['nachname']) $show_leiter .= $p['vorname'].' '.$p['nachname'].', ';
 	}
-	$value .= $show_leiter ? ' ('.substr($show_leiter, 0, -2).')' : '';
+	$value .= $show_leiter ? ' ('.mb_substr($show_leiter, 0, -2).')' : '';
 }//kota_listview_ko_kleingruppen_name()
 
 
@@ -1872,18 +1872,18 @@ function kota_listview_ko_tracking_filter(&$value, $data) {
 	foreach($parts as $part) {
 		if(!$part) continue;
 
-		if(substr($part, 0, 1) == 'F') {
-			$fvalue = base64_decode(substr($part, 1));
+		if(mb_substr($part, 0, 1) == 'F') {
+			$fvalue = base64_decode(mb_substr($part, 1));
 			$filterset = db_select_data('ko_userprefs', "WHERE `value` = '$fvalue' AND `user_id` IN (-1, ".$_SESSION['ses_userid'].")", '*', '', '', TRUE);
 			if($filterset['id']) {
 				$global_tag = $filterset['user_id'] == '-1' ? getLL('leute_filter_global_short').' ' : '';
 				$names[] = getLL('tracking_filter_short_filter').' "'.$global_tag.$filterset['key'].'"';
 			}
 		}
-		else if(substr($part, 0, 1) == 'g') {
-			$gid = substr($part, 1, 6);
-			if(FALSE !== strpos($part, ':r')) {
-				$rid = substr($part, -6);
+		else if(mb_substr($part, 0, 1) == 'g') {
+			$gid = mb_substr($part, 1, 6);
+			if(FALSE !== mb_strpos($part, ':r')) {
+				$rid = mb_substr($part, -6);
 				$role = db_select_data('ko_grouproles', "WHERE `id` = '$rid'", '*', '', '', TRUE);
 			} else {
 				$rid = '';
@@ -1893,7 +1893,7 @@ function kota_listview_ko_tracking_filter(&$value, $data) {
 			if($rid) $_name .= ':'.$role['name'];
 			$names[] = getLL('tracking_filter_short_group').' "'.$_name.'"';
 		}
-		else if(strlen($part) == 4) {
+		else if(mb_strlen($part) == 4) {
 			$kg = db_select_data('ko_kleingruppen', "WHERE `id` = '".intval($part)."'", '*', '', '', TRUE);
 			$names[] = getLL('tracking_filter_short_smallgroup').' "'.$kg['name'].'"';
 		}
@@ -1915,11 +1915,11 @@ function kota_listview_ko_eventgruppen_name(&$value, $data) {
 
 	if($g['notify']) {
 		$ids = array();
-		foreach(explode(',', $g['notify']) as $gid) $ids[] = substr($gid, 1);
+		foreach(explode(',', $g['notify']) as $gid) $ids[] = mb_substr($gid, 1);
 		ko_get_groups($groups, ' AND `id` IN (\''.implode("','", $ids).'\')');
 		$names = '';
 		foreach($groups as $group) $names .= $group['name'].', ';
-		$names = substr($names, 0, -2);
+		$names = mb_substr($names, 0, -2);
 		$value .= '&nbsp;<span onmouseover="tooltip.show(\''.getLL('daten_notify_hint').'<br /><b>'.$names.'</b>\');" onmouseout="tooltip.hide();"><img src="'.$ko_path.'images/comment.png" border="0" /></span>';
 	}
 
@@ -1938,13 +1938,13 @@ function kota_listview_file(&$value, $data) {
 	if(!$value) return;
 	if(!file_exists($BASE_PATH.$value)) return;
 
-	$ext = mb_strtolower(substr($value, (strrpos($value, '.')+1)));
+	$ext = mb_strtolower(mb_substr($value, (strrpos($value, '.')+1)));
 	if(file_exists($BASE_PATH.'images/mime/'.$ext.'.png')) {
 		$icon = '/images/mime/'.$ext.'.png';
 	} else {
 		$icon = '/images/mime/_default.png';
 	}
-	if(substr($value, 0, 1) == '/') $value = substr($value, 1);
+	if(mb_substr($value, 0, 1) == '/') $value = mb_substr($value, 1);
 	$link = $BASE_URL.$value;
 
 	$value = '<a href="'.$link.'" target="_blank"><img src="'.$icon.'" border="0" /></a>';
@@ -1959,7 +1959,7 @@ function kota_listview_money(&$value, $data) {
 
 
 function kota_listview_color(&$value, $data) {
-	if(!$value || strlen($value) != 6) {
+	if(!$value || mb_strlen($value) != 6) {
 		$value = '';
 	} else {
 		$value = '<span class="kota-listview-color" style="font-family: monospace; font-size: 11px; background-color: #'.$value.'; color: '.ko_get_contrast_color($value).';">'.$value.'</span>';
@@ -2052,7 +2052,7 @@ function kota_process_data($table, &$data, $modes, &$log='', $id=0) {
 	$orig_data = $data;
 	foreach($data as $col => $value) {
 		if(!isset($KOTA[$table][$col])) continue;
-		if(substr($col, -7) == '_DELETE') continue;  //File deletion will be handled below
+		if(mb_substr($col, -7) == '_DELETE') continue;  //File deletion will be handled below
 
 		$kota_data = array("table" => $table, "col" => $col, "id" => $id, "dataset" => &$data);
 
@@ -2068,20 +2068,20 @@ function kota_process_data($table, &$data, $modes, &$log='', $id=0) {
 		if(is_array($value)) $value = array_shift($value);
 
 		//Modules
-		if(substr($col, 0, 6) == "MODULE") {
-			if(substr($col, 6, 3) == "grp") {
-				if(FALSE === strpos($col, ':')) {
+		if(mb_substr($col, 0, 6) == "MODULE") {
+			if(mb_substr($col, 6, 3) == "grp") {
+				if(FALSE === mb_strpos($col, ':')) {
 					//Get id of edited group
-					$gid = substr($col, 9, 6);
+					$gid = mb_substr($col, 9, 6);
 					//Get new save string
 					ko_groups_get_savestring($value, array("id" => $id, "col" => $col), $log, NULL, TRUE, (in_array("post", $modes)));
 					//If group has been deselected then delete all group datafields for this group
-					if(in_array('post', $modes) && $gid && FALSE === strpos($value, 'g'.$gid)) db_delete_data('ko_groups_datafields_data', "WHERE `group_id` = '$gid' AND `person_id` = '".$id."'");
+					if(in_array('post', $modes) && $gid && FALSE === mb_strpos($value, 'g'.$gid)) db_delete_data('ko_groups_datafields_data', "WHERE `group_id` = '$gid' AND `person_id` = '".$id."'");
 				}
 				else {
 					//Get current datafield data
-					$gid = substr($col, 9, 6);
-					$fid = substr($col, 16, 6);
+					$gid = mb_substr($col, 9, 6);
+					$fid = mb_substr($col, 16, 6);
 					$cdf = db_select_data('ko_groups_datafields_data', "WHERE `datafield_id` = '$fid' AND `person_id` = '$id' AND `group_id` = '$gid'", '*', '', '', TRUE);
 					if(in_array('list', $modes)) {
 						//Get datafield definition
@@ -2115,8 +2115,8 @@ function kota_process_data($table, &$data, $modes, &$log='', $id=0) {
 				$done = TRUE;
 				foreach(explode(';', $KOTA[$table][$col][$mode]) as $applyMe) {
 					//Separate Funktion aufrufen
-					if(substr($applyMe, 0, 4) == 'FCN:') {
-						$fcn = substr($applyMe, 4);
+					if(mb_substr($applyMe, 0, 4) == 'FCN:') {
+						$fcn = mb_substr($applyMe, 4);
 						if(function_exists($fcn)) {
 							eval("$fcn(\$value, \$kota_data, \$log, \$orig_data);");
 						}
@@ -2251,7 +2251,7 @@ function kota_convert_dynselect_select($values, $descs) {
 	$new_values = $new_descs = array();
 	//convert all top level elements with their children elements
 	foreach($values as $ivid => $value) {
-		if(substr($ivid, 0, 1) != "i") continue;
+		if(mb_substr($ivid, 0, 1) != "i") continue;
 		foreach($value as $gid) {
 			$new_values[$gid] = $gid;
 			$new_descs[$gid] = $descs[$gid];
@@ -2259,7 +2259,7 @@ function kota_convert_dynselect_select($values, $descs) {
 	}
 	//Add top level elements without children
 	foreach($values as $gid) {
-		if(substr($gid, 0, 1) == "i") continue;
+		if(mb_substr($gid, 0, 1) == "i") continue;
 		$new_values[$gid] = $gid;
 		$new_descs[$gid] = $descs[$gid];
 	}
@@ -2289,8 +2289,8 @@ function kota_apply_filter($table) {
 		foreach($_SESSION['kota_filter'][$table] as $col => $v) {
 			if($col && in_array($col, $filter_cols) && $v != '') {
 				$not = '';
-				if(substr($v, 0, 1) == '!') {
-					$v = substr($v, 1);
+				if(mb_substr($v, 0, 1) == '!') {
+					$v = mb_substr($v, 1);
 					$not = 'NOT';
 				}
 				//Apply custom SQL from KOTA
@@ -2309,7 +2309,7 @@ function kota_apply_filter($table) {
 				}
 			}
 		}
-		if($kota_where) $kota_where = substr($kota_where, 0, -4);
+		if($kota_where) $kota_where = mb_substr($kota_where, 0, -4);
 	}
 
 	return $kota_where;
@@ -2386,7 +2386,7 @@ function kota_ft_get_content($field, $pid, $new=FALSE) {
 
 	$kota_fields = array();
 	foreach($KOTA[$table] as $k => $v) {
-		if(substr($k, 0, 1) == '_') continue;
+		if(mb_substr($k, 0, 1) == '_') continue;
 		$kota_fields[] = $k;
 		if($v['form']['type'] == 'textplus') $kota_fields[] = $k.'_PLUS';
 	}

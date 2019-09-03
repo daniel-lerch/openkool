@@ -305,8 +305,8 @@ include($ko_path."config/ko-config.php");
 include __DIR__ . '/../vendor/autoload.php';
 spl_autoload_register(function($class) {
 	$prefix = 'OpenKool\\DAV\\';
-	if (substr($class, 0, strlen($prefix)) === $prefix) {
-		include __DIR__ . '/dav/' . substr($class, strlen($prefix)) . '.php';
+	if (mb_substr($class, 0, mb_strlen($prefix)) === $prefix) {
+		include __DIR__ . '/dav/' . mb_substr($class, mb_strlen($prefix)) . '.php';
 	}
 });
 
@@ -324,7 +324,7 @@ if($ldap_enabled && (!isset($ldap_login_dn) || $ldap_login_dn == '')) {
 
 //Check and clean PDFLATEX_PATH
 if(isset($PDF_LATEX_PATH)) {
-	if($PDFLATEX_PATH != '' && substr($PDFLATEX_PATH, -1) != '/') $PDFLATEX_PATH .= '/';
+	if($PDFLATEX_PATH != '' && mb_substr($PDFLATEX_PATH, -1) != '/') $PDFLATEX_PATH .= '/';
 	if($PDFLATEX_PATH != '' && !is_executable(realpath($PDFLATEX_PATH.'pdflatex'))) $PDFLATEX_PATH = '';
 }
 
@@ -398,10 +398,10 @@ if(defined('DEBUG') && DEBUG) {
 if($ko_menu_akt == "install" && !$BASE_PATH) {
 	$bdir = str_replace("install", "", dirname($_SERVER['SCRIPT_NAME']));
 	$droot = $_SERVER["DOCUMENT_ROOT"];
-	if(substr($droot, -1) == "/") $droot = substr($droot, 0, -1);
+	if(mb_substr($droot, -1) == "/") $droot = mb_substr($droot, 0, -1);
 	$BASE_PATH = $droot.$bdir;
 }
-if($BASE_PATH != "" && substr($BASE_PATH, -1) != "/") $BASE_PATH .= "/";
+if($BASE_PATH != "" && mb_substr($BASE_PATH, -1) != "/") $BASE_PATH .= "/";
 
 //Hooks (Plugins)
 include($BASE_PATH."inc/hooks.inc.php");
@@ -681,7 +681,7 @@ function ko_get_access_all($col, $id="", &$max=0) {
 	}
 
 	//Accept module name instead of col name as well
-	if(substr($col, -6) != '_admin') {
+	if(mb_substr($col, -6) != '_admin') {
 		switch($col) {
 			case 'reservation': $col = 'res_admin'; break;
 			case 'admin': $col = 'admin'; break;
@@ -697,16 +697,16 @@ function ko_get_access_all($col, $id="", &$max=0) {
 	//Check for settings for login
 	$rights = db_select_data('ko_admin', "WHERE `id` = '$id'", '*', '', '', TRUE);
 	foreach(explode(',', $rights[$col]) as $r) {
-		if(FALSE === strpos($r, "@")) $value = $r;
-		$max = max($max, substr($r, 0, 1));
+		if(FALSE === mb_strpos($r, "@")) $value = $r;
+		$max = max($max, mb_substr($r, 0, 1));
 	}
 	//Check for settings for admingroups
 	if($rights["admingroups"]) {
 		$admingroups = db_select_data("ko_admingroups", "WHERE `id` IN ('".implode("','", explode(",", $rights["admingroups"]))."')");
 		foreach($admingroups as $ag) {
 			foreach(explode(",", $ag[$col]) as $r) {
-				if(FALSE === strpos($r, "@")) $value = max($value, $r);
-				$max = max($max, substr($r, 0, 1));
+				if(FALSE === mb_strpos($r, "@")) $value = max($value, $r);
+				$max = max($max, mb_substr($r, 0, 1));
 			}
 			//Raise max rights for people module if a admin_filter is set for the given access level
 			if($col == 'leute_admin') {
@@ -804,7 +804,7 @@ function ko_get_access($module, $uid='', $force=FALSE, $apply_admingroups=TRUE, 
 	$rights = explode(',', $row[$col]);
 	foreach($rights as $r) {
 		if(trim($r) == '') continue;
-		if(strpos($r, '@') === FALSE) {  //No @ means ALL rights
+		if(mb_strpos($r, '@') === FALSE) {  //No @ means ALL rights
 			$_access[$module]['ALL'] = $r;
 		} else {
 			list($level, $id) = explode('@', $r);
@@ -818,7 +818,7 @@ function ko_get_access($module, $uid='', $force=FALSE, $apply_admingroups=TRUE, 
 			$rights_group = explode(',', $group[$col]);
 			foreach($rights_group as $r) {
 				if(trim($r) == '') continue;
-				if(strpos($r, '@') === FALSE) {  //No @ means ALL rights
+				if(mb_strpos($r, '@') === FALSE) {  //No @ means ALL rights
 					$_access[$module]['ALL'] = max($r, $_access[$module]['ALL']);
 				} else {
 					list($level, $id) = explode('@', $r);
@@ -1279,8 +1279,8 @@ function ko_get_leute_admin_spalten($userid, $mode="login", $pid=0) {
 		if(is_array($lasc)) {
 			$p = db_select_data('ko_leute', "WHERE `id` = '$pid'", '*', '', '', TRUE);
 			foreach(explode(',', $lasc['dontapply']) as $_col) {
-				if(substr($_col, 0, 1) == '!') {
-					$_col = substr($_col, 1);
+				if(mb_substr($_col, 0, 1) == '!') {
+					$_col = mb_substr($_col, 1);
 					if(!$p[$_col]) return FALSE;
 				} else {
 					if($p[$_col]) return FALSE;
@@ -1784,17 +1784,17 @@ function ko_get_filters(&$f, $typ, $get_all=FALSE, $order='name') {
 				if($max_leute < 3) continue;
 			}
 			//Filters for the small group module
-			if((in_array($row['name'], array('smallgroup', 'smallgrouproles')) || substr($row['dbcol'], 0, strpos($row['dbcol'], '.')) == 'ko_kleingruppen') && !ko_module_installed('kg')) continue;
+			if((in_array($row['name'], array('smallgroup', 'smallgrouproles')) || mb_substr($row['dbcol'], 0, mb_strpos($row['dbcol'], '.')) == 'ko_kleingruppen') && !ko_module_installed('kg')) continue;
 
 			//Filters for the rota module
-			if(substr($row['dbcol'], 0, strpos($row['dbcol'], '.')) == 'ko_rota_schedulling' && !ko_module_installed('rota')) continue;
+			if(mb_substr($row['dbcol'], 0, mb_strpos($row['dbcol'], '.')) == 'ko_rota_schedulling' && !ko_module_installed('rota')) continue;
 
 			//Don't return filters for columns, that are not allowed
 			if(is_array($allowed_cols["view"]) && sizeof($allowed_cols["view"]) > 0) {
 				$ok = FALSE;
 
 				//Get DB column from the column ko_filter.dbcol
-				if($row['dbcol'] != '' && FALSE === strpos($row['dbcol'], '.')) {
+				if($row['dbcol'] != '' && FALSE === mb_strpos($row['dbcol'], '.')) {
 					$dbcol = $row['dbcol'];
 					//Check for allowed column
 					if(in_array($dbcol, $allowed_cols['view'])) $ok = TRUE;
@@ -1808,9 +1808,9 @@ function ko_get_filters(&$f, $typ, $get_all=FALSE, $order='name') {
 
 		//special filters for other tables
 		for($i=1; $i<4; $i++) {
-			if(substr($row["code$i"], 0, 4) == "FCN:") {
-				$fcn = substr($row["code$i"], 4);
-				if(strpos($fcn, ":")) {  //Find parameters given along with the function name (e.g. used for enum_ll)
+			if(mb_substr($row["code$i"], 0, 4) == "FCN:") {
+				$fcn = mb_substr($row["code$i"], 4);
+				if(mb_strpos($fcn, ":")) {  //Find parameters given along with the function name (e.g. used for enum_ll)
 					$params = explode(":", $fcn);
 					$fcn = $params[0];
 					if(function_exists($fcn)) eval("$fcn(\$code, \$params);");
@@ -1866,12 +1866,12 @@ function ko_get_filters(&$f, $typ, $get_all=FALSE, $order='name') {
 	*/
 function ko_get_filter_column($sql) {
 	$remove = explode(",", "(,),1,2,3,4,5,6,7,8,9,0,A,B,C,D,E,F,G,H,I,J,K,L,M,N,O,P,Q,R,S,T,U,V,W,X,Y,Z,-,>,<,=,+,*,/,[,],',`, ");
-	while(strlen($sql) > 0 && in_array(substr($sql, 0, 1), $remove)) $sql = substr($sql, 1);
+	while(mb_strlen($sql) > 0 && in_array(mb_substr($sql, 0, 1), $remove)) $sql = mb_substr($sql, 1);
 
 	$keep = explode(",", "a,b,c,d,e,f,g,h,i,j,k,l,m,n,o,p,q,r,s,t,u,v,w,x,y,z,_,1,2,3,4,5,6,7,8,9,0");
-	for($i=0; $i<strlen($sql); $i++) {
-		if(!in_array(substr($sql, $i, 1), $keep)) {
-			$sql = substr($sql, 0, $i);
+	for($i=0; $i<mb_strlen($sql); $i++) {
+		if(!in_array(mb_substr($sql, $i, 1), $keep)) {
+			$sql = mb_substr($sql, 0, $i);
 		}
 	}
 	return $sql;
@@ -2349,7 +2349,7 @@ function ko_get_moderators_by_eventgroup($gid) {
 		$email_fields .= 'l.'.$field.' AS '.$field.', ';
 		$where_email .= " l.$field != '' OR ";
 	}
-	$email_fields = substr($email_fields, 0, -2);
+	$email_fields = mb_substr($email_fields, 0, -2);
 
 	//Get moderators for this event group
 	$logins = db_select_data("ko_admin AS a LEFT JOIN ko_leute as l ON a.leute_id = l.id",
@@ -2422,7 +2422,7 @@ function ko_get_leute(&$p, $z_where = "", $z_limit = "", $z_cols = "", $z_sort =
 	} else if(is_array($_SESSION["sort_leute"]) && is_array($_SESSION["sort_leute_order"])) {
 		$sort_add = array();
 		foreach($_SESSION["sort_leute"] as $i => $col) {
-			if(substr($col, 0, 6) != "MODULE") {
+			if(mb_substr($col, 0, 6) != "MODULE") {
 				$sort_add[] = $col." ".$_SESSION["sort_leute_order"][$i];
 			}
 		}
@@ -2464,7 +2464,7 @@ function ko_get_leute(&$p, $z_where = "", $z_limit = "", $z_cols = "", $z_sort =
 			}
 			//Get old version
 			$old = ko_leute_get_version($_SESSION["leute_version"], $row["id"]);
-			$hid = strpos(ko_get_leute_hidden_sql(), "hidden = '0'");
+			$hid = mb_strpos(ko_get_leute_hidden_sql(), "hidden = '0'");
 			if($old["deleted"] == 1 || ($hid && $old["hidden"] == 1) ) {
 				//Don't display old version that used to be deleted or hidden when hidden entries are to be invisible
 				$num--;
@@ -2497,7 +2497,7 @@ function ko_manual_sorting($cols) {
 	} else {
 		$manual_columns = array('smallgroups', 'famid', 'famfunction');
 		foreach($cols as $col) {
-			if(in_array($col, $manual_columns) || substr($col, 0, 6) == "MODULE") {
+			if(in_array($col, $manual_columns) || mb_substr($col, 0, 6) == "MODULE") {
 				return TRUE;
 			}
 		}
@@ -2574,16 +2574,16 @@ function ko_add_fam_id(&$fam, $_members="") {
 	}
 	//city
 	if($fam["ort"]) {
-		$famcity = strlen($fam["ort"]) > $max_len ? substr($fam["ort"], 0, $max_len).".." : $fam["ort"];
+		$famcity = mb_strlen($fam["ort"]) > $max_len ? mb_substr($fam["ort"], 0, $max_len).".." : $fam["ort"];
 		$famcity = getLL("from")." ".$famcity;
 	}
 	//single members of the family
 	$fammembers = "";
 	if($num_members > 0) {
 		foreach($members as $p) {
-			$fammembers .= mb_strtoupper(substr($p["vorname"], 0, 1)).",";
+			$fammembers .= mb_strtoupper(mb_substr($p["vorname"], 0, 1)).",";
 		}
-		$fammembers = "(".substr($fammembers, 0, -1).")";
+		$fammembers = "(".mb_substr($fammembers, 0, -1).")";
 	}//if(num_members>0)
 
 	//put it all together into the new fam-id
@@ -2746,7 +2746,7 @@ function ko_apply_rectype($p, $force_rectype='', &$addp=array()) {
 	if($target_rectype && is_array($RECTYPES[$target_rectype])) {
 		foreach($RECTYPES[$target_rectype] as $pcol => $newcol) {
 			if(!isset($p[$pcol])) continue;
-			if(FALSE === strpos($newcol, ':')) {
+			if(FALSE === mb_strpos($newcol, ':')) {
 				$p[$pcol] = $p[$newcol];
 			} else {
 				list($table, $field) = explode(':', $newcol);
@@ -2983,7 +2983,7 @@ function ko_get_leute_col_name($groups_hierarchie=FALSE, $add_group_datafields=F
 		ko_get_groups($all_groups);
 		foreach($groups as $group) {
 			if($access['groups']['ALL'] < 1 && $access['groups'][$group['id']] < 1 && !$force) continue;
-			$name = strlen($group['name']) > ITEMLIST_LENGTH_MAX ? substr($group['name'], 0, ITEMLIST_LENGTH_MAX).'..' : $group['name'];
+			$name = mb_strlen($group['name']) > ITEMLIST_LENGTH_MAX ? mb_substr($group['name'], 0, ITEMLIST_LENGTH_MAX).'..' : $group['name'];
 			if($groups_hierarchie) {
 				$ml = ko_groups_get_motherline($group['id'], $all_groups);
 				$depth = sizeof($ml);
@@ -3111,7 +3111,7 @@ function apply_leute_filter($filter, &$where_code, $add_admin_filter=TRUE, $admi
 							"[VAR3]" => format_userinput($f[1][3], "text")
 					);
 					//Add regex escaping
-					if(FALSE !== strpos($f_["sql$i"], 'REGEXP')) {
+					if(FALSE !== mb_strpos($f_["sql$i"], 'REGEXP')) {
 						foreach($trans as $k => $v) {
 							$trans[$k] = str_replace(array('(', ')'), array('\\\\(', '\\\\)'), $v);
 						}
@@ -3128,15 +3128,15 @@ function apply_leute_filter($filter, &$where_code, $add_admin_filter=TRUE, $admi
 
 
 			//Alle AND's am Schluss entfernen (mehrere möglich!)
-			while(substr(rtrim($f_sql), -4) == " AND") {
-				$f_sql = substr(rtrim($f_sql), 0, -4);
+			while(mb_substr(rtrim($f_sql), -4) == " AND") {
+				$f_sql = mb_substr(rtrim($f_sql), 0, -4);
 			}
 
 			//Handle group filter if old groups should not be displayed
 			if($f_["_name"] == "group" && !ko_get_userpref($_SESSION['ses_userid'], 'show_passed_groups')) {
 				ko_get_groups($all_groups);
 				$not_leaves = db_select_distinct("ko_groups", "pid");
-				$_gid = substr($f[1][1], 1);
+				$_gid = mb_substr($f[1][1], 1);
 				ko_get_groups($top, "AND `id` = '$_gid'");
 				//Get subgroups of current group (if any) and exclude all with expired start and/or stop date
 				$z_where = "AND ((`start` != '0000-00-00' AND `start` > NOW()) OR (`stop` != '0000-00-00' AND `stop` < NOW()))";
@@ -3269,7 +3269,7 @@ function apply_leute_filter($filter, &$where_code, $add_admin_filter=TRUE, $admi
 
 					//Check for selected rota team preset
 					if($f[1][2] != '') {
-						if(substr($f[1][2], 0, 3) == '@G@') $value = ko_get_userpref('-1', substr($f[1][2], 3), 'rota_itemset');
+						if(mb_substr($f[1][2], 0, 3) == '@G@') $value = ko_get_userpref('-1', mb_substr($f[1][2], 3), 'rota_itemset');
 						else $value = ko_get_userpref($_SESSION['ses_userid'], $f[1][2], 'rota_itemset');
 						//Check for team ID of a single team
 						if(!$value && intval($f[1][2]) > 0) {
@@ -3297,7 +3297,7 @@ function apply_leute_filter($filter, &$where_code, $add_admin_filter=TRUE, $admi
 						if(!$row['schedule']) continue;
 						foreach(explode(',', $row['schedule']) as $pid) {
 							//Group ID
-							if(strlen($pid) == 7 && substr($pid, 0, 1) == 'g') {
+							if(mb_strlen($pid) == 7 && mb_substr($pid, 0, 1) == 'g') {
 								$gids[] = $pid;
 							} else {
 								//Person ID
@@ -3324,7 +3324,7 @@ function apply_leute_filter($filter, &$where_code, $add_admin_filter=TRUE, $admi
 				}
 				//Apply another filter preset
 				else if($db_table == "ko_filter") {
-					if(substr($f_sql, 0, 3) == '@G@') $preset = ko_get_userpref('-1', substr($f_sql, 3), 'filterset');
+					if(mb_substr($f_sql, 0, 3) == '@G@') $preset = ko_get_userpref('-1', mb_substr($f_sql, 3), 'filterset');
 					else $preset = ko_get_userpref($login_id, $f_sql, 'filterset');
 					if($preset[0]["key"]) {  //preset found
 						//Get filter and convert it into a WHERE clause
@@ -3351,7 +3351,7 @@ function apply_leute_filter($filter, &$where_code, $add_admin_filter=TRUE, $admi
 					$rows = db_select_distinct('ko_donations', 'person', "", "WHERE `person` != '' AND `promise` = '0' AND ".$f_sql);
 					$ids = array();
 					foreach($rows as $id) {
-						if(FALSE !== strpos($id, ',')) {  //find entries with multiple persons assigned to one donation
+						if(FALSE !== mb_strpos($id, ',')) {  //find entries with multiple persons assigned to one donation
 							$ids = array_merge($ids, explode(',', format_userinput($id, 'intlist')));
 						} else {
 							$ids[] = intval($id);
@@ -3366,7 +3366,7 @@ function apply_leute_filter($filter, &$where_code, $add_admin_filter=TRUE, $admi
 					}
 				}
 				else if($db_table == 'ko_admin') {
-					if(FALSE !== strpos($f_sql, '_all')) $f_sql = '1';
+					if(FALSE !== mb_strpos($f_sql, '_all')) $f_sql = '1';
 					if($_SESSION['ses_userid'] != ko_get_root_id()) $f_sql .= " AND `id` != '".ko_get_root_id()."'";
 					$f_sql .= " AND `id` != '".ko_get_guest_id()."' ";
 					$rows = db_select_data($db_table, 'WHERE '.$f_sql, 'leute_id');
@@ -3417,9 +3417,9 @@ function apply_leute_filter($filter, &$where_code, $add_admin_filter=TRUE, $admi
 		//Remove not allowed characters
 		$allowed = array('0','1','2','3','4','5','6','7','8','9', '{', '}', 'O', 'R', 'A', 'N', 'D', '(', ')', ' ', '!');
 		$new_link_adv = '';
-		for($i=0; $i<strlen($link_adv); $i++) {
-			if(in_array(substr($link_adv, $i, 1), $allowed)) {
-				$new_link_adv .= substr($link_adv, $i, 1);
+		for($i=0; $i<mb_strlen($link_adv); $i++) {
+			if(in_array(mb_substr($link_adv, $i, 1), $allowed)) {
+				$new_link_adv .= mb_substr($link_adv, $i, 1);
 			}
 		}
 		$link_adv = $new_link_adv;
@@ -3441,14 +3441,14 @@ function apply_leute_filter($filter, &$where_code, $add_admin_filter=TRUE, $admi
 		$link = $filter["link"] == "or" ? " OR " : " AND ";
 		if(sizeof($q) > 0) {
 			foreach($q as $type => $q_) {
-				if(trim(substr($q_, 0, -4)) != "") {
-					$q_ = " ( " . substr($q_, 0, -4) . " ) ";
+				if(trim(mb_substr($q_, 0, -4)) != "") {
+					$q_ = " ( " . mb_substr($q_, 0, -4) . " ) ";
 					//Use the link for all filters except for addchildren, which is always added with OR
 					$where_code .= ($type == 'addchildren' || $type == 'addparents' ? ' OR ' : $link).$q_;
 				}
 			}
 		}
-		$where_code = substr($where_code, 4);  //Erstes OR löschen
+		$where_code = mb_substr($where_code, 4);  //Erstes OR löschen
 	}
 
 	//Admin-Filter anwenden
@@ -3461,7 +3461,7 @@ function apply_leute_filter($filter, &$where_code, $add_admin_filter=TRUE, $admi
 		}
 		$add_rights[] = "login";
 		foreach($add_rights as $type) {
-			if(substr($type, 0, 10) == "admingroup") {
+			if(mb_substr($type, 0, 10) == "admingroup") {
 				list($type, $use_id) = explode(":", $type);
 			} else {
 				$use_id = $login_id;
@@ -3472,19 +3472,19 @@ function apply_leute_filter($filter, &$where_code, $add_admin_filter=TRUE, $admi
 					//apply only given level (if set) for ko_get_admin()
 					if(isset($laf[$admin_filter_level]["filter"])) {
 						apply_leute_filter($laf[$admin_filter_level]["filter"], $where, FALSE, '', $login_id, $includeAll);
-						if(trim(substr($where, 4)) != "") $admin_code .= "( ".substr($where, 4)." ) OR ";
+						if(trim(mb_substr($where, 4)) != "") $admin_code .= "( ".mb_substr($where, 4)." ) OR ";
 					}
 				} else {
 					//apply all levels for read access
 					for($i=1; $i<4; $i++) {
 						if(!isset($laf[$i]["filter"])) continue;
 						apply_leute_filter($laf[$i]["filter"], $where, FALSE, '', $login_id, $includeAll);
-						if(trim(substr($where, 4)) != "") $admin_code .= "( ".substr($where, 4)." ) OR ";
+						if(trim(mb_substr($where, 4)) != "") $admin_code .= "( ".mb_substr($where, 4)." ) OR ";
 					}//for(i=1..3)
 				}
 			}//if(sizeof(laf))
 		}
-		if($admin_code != "") $admin_code = substr($admin_code, 0, -3);
+		if($admin_code != "") $admin_code = mb_substr($admin_code, 0, -3);
 	}//if(add_admin_filter)
 
 	if(trim($where_code) != "") {
@@ -3521,7 +3521,7 @@ function apply_leute_filter($filter, &$where_code, $add_admin_filter=TRUE, $admi
 	if(!$hidden_is_set) $deleted .= ko_get_leute_hidden_sql();
 
 	if($where_code) {
-		$where_code = " AND ( ".substr($where_code, 5)." ) ".$deleted;
+		$where_code = " AND ( ".mb_substr($where_code, 5)." ) ".$deleted;
 		return TRUE;
 	} else {
 		$where_code = $deleted;
@@ -3615,14 +3615,14 @@ function map_leute_daten($data, $col, &$p, &$all_datafields=array(), $forceDataf
 	if(!is_array($all_groups)) ko_get_groups($all_groups);
 
 	//Datenbank-Spalten-Info holen, falls es keine Modul-Spalte ist (die nicht direkt als Leute-Spalte gespeichert ist)
-	if(substr($col, 0, 6) != "MODULE") {
-		if(!$data && substr($col, 0, 1) != "_") return "";
+	if(mb_substr($col, 0, 6) != "MODULE") {
+		if(!$data && mb_substr($col, 0, 1) != "_") return "";
 		$db_col = db_get_columns("ko_leute", $col);
 	}
 
 	//Call KOTA list function if set
-	if(substr($KOTA['ko_leute'][$col]['list'], 0, 4) == 'FCN:') {
-		$fcn = substr($KOTA['ko_leute'][$col]['list'], 4);
+	if(mb_substr($KOTA['ko_leute'][$col]['list'], 0, 4) == 'FCN:') {
+		$fcn = mb_substr($KOTA['ko_leute'][$col]['list'], 4);
 		if(function_exists($fcn) && $fcn != 'kota_map_leute_daten') {
 			$kota_data = array('table' => 'ko_leute', 'col' => $col, 'id' => $p['id'], 'dataset' => $p);
 			eval("$fcn(\$data, \$kota_data);");
@@ -3633,9 +3633,9 @@ function map_leute_daten($data, $col, &$p, &$all_datafields=array(), $forceDataf
 
 	if($col == "groups") {  //Used for group filters and the groups-column in the excel export (the HTML view is created in leute.inc.php)
 		$value = NULL;
-		if(substr($data, 0, 1) == "r" || substr($data, 0, 2) == ":r") {  //Rolle
-			ko_get_grouproles($role, "AND `id` = '".substr($data, (strpos($data, "r")+1))."'");
-			return $role[substr($data, (strpos($data, "r")+1))]["name"];
+		if(mb_substr($data, 0, 1) == "r" || mb_substr($data, 0, 2) == ":r") {  //Rolle
+			ko_get_grouproles($role, "AND `id` = '".mb_substr($data, (mb_strpos($data, "r")+1))."'");
+			return $role[mb_substr($data, (mb_strpos($data, "r")+1))]["name"];
 		} else {  //Gruppe(n)
 			if(!isset($access['groups'])) ko_get_access('groups');
 			foreach(explode(',', $data) as $g) {
@@ -3651,7 +3651,7 @@ function map_leute_daten($data, $col, &$p, &$all_datafields=array(), $forceDataf
 			return implode(", \n", $value);
 		}
 	} else if($col == "datafield_id") {  //Angewandte Gruppen-Datenfelder-Filter schön darstellen
-		if(strlen($data) == 6 && format_userinput($data, "uint") == $data) {
+		if(mb_strlen($data) == 6 && format_userinput($data, "uint") == $data) {
 			$df = db_select_data("ko_groups_datafields", "WHERE `id` = '$data'", "*", "", "", TRUE);
 			return $df["description"];
 		} else {
@@ -3660,7 +3660,7 @@ function map_leute_daten($data, $col, &$p, &$all_datafields=array(), $forceDataf
 	} else if($db_col[0]["Type"] == "date") {  //Datums-Typen von SQL umformatieren
 		if($data == "0000-00-00") return "";
 		return strftime($DATETIME["dmY"], strtotime($data));
-	} else if(substr($db_col[0]["Type"],0,4) == "enum") {  //Find ll values for enum
+	} else if(mb_substr($db_col[0]["Type"],0,4) == "enum") {  //Find ll values for enum
 		$ll_value = getLL('kota_ko_leute_'.$col.'_'.$data);
 		return ($ll_value ? $ll_value : $data);
 	} else if ($col == 'smallgroups') {  //Smallgroups
@@ -3668,9 +3668,9 @@ function map_leute_daten($data, $col, &$p, &$all_datafields=array(), $forceDataf
 	} else if ($col == "famid") {
 		$fam = ko_get_familie($data);
 		return $fam["id"]." ".getLL('kota_ko_leute_famfunction_short_'.$p['famfunction']);
-	} else if(substr($db_col[0]["Type"], 0, 7) == "tinyint") {  //Treat tinyint as checkbox
+	} else if(mb_substr($db_col[0]["Type"], 0, 7) == "tinyint") {  //Treat tinyint as checkbox
 		return ($data ? getLL("yes") : getLL("no"));
-	} else if(substr($col, 0, 1) == "_") {  //Children export columns
+	} else if(mb_substr($col, 0, 1) == "_") {  //Children export columns
 		if(!$p["famid"] || $p["famfunction"] != "child") return "";
 		switch($col) {
 			case "_father":
@@ -3680,11 +3680,11 @@ function map_leute_daten($data, $col, &$p, &$all_datafields=array(), $forceDataf
 				return $d["vorname"]." ".$d["nachname"];
 			break;  //father
 			default:
-				if(in_array(substr($col, 0, 8), array("_father_", "_mother_"))) {
-					$p_col = substr($col, 8);
-					$fam_function = substr($col, 0, 7) == "_father" ? "'husband'" : "'wife'";
+				if(in_array(mb_substr($col, 0, 8), array("_father_", "_mother_"))) {
+					$p_col = mb_substr($col, 8);
+					$fam_function = mb_substr($col, 0, 7) == "_father" ? "'husband'" : "'wife'";
 				} else {
-					$p_col = substr($col, 1);
+					$p_col = mb_substr($col, 1);
 					$fam_function = "'husband', 'wife'";
 				}
 				$d = db_select_data("ko_leute", "WHERE `famid` = '".$p["famid"]."' AND `famfunction` IN ($fam_function) AND `$p_col` != '' AND `deleted` = '0'", "*", "ORDER BY famfunction ASC");
@@ -3701,13 +3701,13 @@ function map_leute_daten($data, $col, &$p, &$all_datafields=array(), $forceDataf
 				}
 				return "";
 		}
-	} else if(substr($col, 0, 6) == "MODULE") {
+	} else if(mb_substr($col, 0, 6) == "MODULE") {
 
 		//Gruppen-Modul: Rolle in entsprechender Gruppe anzeigen
-		if(substr($col, 6, 3) == 'grp') {
+		if(mb_substr($col, 6, 3) == 'grp') {
 			//Only group given, datafields have :
-			if(FALSE === strpos($col, ':')) {
-				$gid = substr($col, 9);
+			if(FALSE === mb_strpos($col, ':')) {
+				$gid = mb_substr($col, 9);
 				$value = array();
 				$data = $p["groups"];
 				foreach(explode(",", $data) as $group) {
@@ -3734,7 +3734,7 @@ function map_leute_daten($data, $col, &$p, &$all_datafields=array(), $forceDataf
 			else {
 				//output datafields of this group
 				list($_col, $dfid) = explode(':', $col);
-				$gid = substr($_col, 9);
+				$gid = mb_substr($_col, 9);
 				$value = array();
 				if($all_groups[$gid]['datafields']) {
 					$group_dfs = explode(',', $all_groups[$gid]['datafields']);
@@ -3750,11 +3750,11 @@ function map_leute_daten($data, $col, &$p, &$all_datafields=array(), $forceDataf
 					}
 				}
 			}
-		} else if(substr($col, 6, 2) == 'kg') {
-			$sg_col = substr($col, 8);
+		} else if(mb_substr($col, 6, 2) == 'kg') {
+			$sg_col = mb_substr($col, 8);
 			$value = array();
 			foreach(explode(',', $p['smallgroups']) as $sgid) {
-				$id = substr($sgid, 0, 4);
+				$id = mb_substr($sgid, 0, 4);
 				if(!$id) continue;
 				$sg = ko_get_smallgroup_by_id($id);
 
@@ -3784,17 +3784,17 @@ function map_leute_daten($data, $col, &$p, &$all_datafields=array(), $forceDataf
 				return implode(', ', $value);
 			}
 		}
-		else if(substr($col, 6, 8) == 'tracking') {  //Tracking column
-			$tfid = substr($col, 14);
+		else if(mb_substr($col, 6, 8) == 'tracking') {  //Tracking column
+			$tfid = mb_substr($col, 14);
 			if(!$tfid) return '';
 
-			$delimiterPosition = strpos($tfid, 'f');
+			$delimiterPosition = mb_strpos($tfid, 'f');
 			if ($delimiterPosition == false) {
 				$tid = (int) $tfid;
 			}
 			else {
-				$tid = substr($tfid, 0, $delimiterPosition);
-				$fid = substr($tfid, $delimiterPosition + 1);
+				$tid = mb_substr($tfid, 0, $delimiterPosition);
+				$fid = mb_substr($tfid, $delimiterPosition + 1);
 			}
 
 			if (!$tid) return '';
@@ -3855,14 +3855,14 @@ function map_leute_daten($data, $col, &$p, &$all_datafields=array(), $forceDataf
 			$value = '<a href="'.$url.'" title="'.getLL('leute_show_tracking_for_person').'">'.$value.'</a>';
 			return $value;
 		}
-		else if(substr($col, 6, 6) == 'plugin') {  //Column added by a plugin
-			$fcn = 'my_leute_column_map_'.substr($col, 12);
+		else if(mb_substr($col, 6, 6) == 'plugin') {  //Column added by a plugin
+			$fcn = 'my_leute_column_map_'.mb_substr($col, 12);
 			if(function_exists($fcn)) {
 				eval("\$value = $fcn(\$data, \$col, \$p);");
 				return $value;
 			}
 		}
-		else if(substr($col, 6, 5) == 'famid') {  //Family columns
+		else if(mb_substr($col, 6, 5) == 'famid') {  //Family columns
 			if($p['famid'] > 0) {
 				if($col == 'MODULEfamid_famlastname') {
 					$family = ko_get_familie(intval($p['famid']));
@@ -3872,7 +3872,7 @@ function map_leute_daten($data, $col, &$p, &$all_datafields=array(), $forceDataf
 					if($family['famlastname'] != '') $value .= ($value != '' ? ', ' : '').$family['famlastname'];
 					return $value;
 				} else if($p['famfunction'] == 'child') {
-					$famfunction = substr($col, 12);
+					$famfunction = mb_substr($col, 12);
 					if(!in_array($famfunction, array('husband', 'wife'))) return '';
 
 					$rel = db_select_data('ko_leute', "WHERE `famid` = '".intval($p['famid'])."' AND `famfunction` = '$famfunction' AND `deleted` = '0' AND `hidden` = '0'", '*', '', '', TRUE);
@@ -3885,9 +3885,9 @@ function map_leute_daten($data, $col, &$p, &$all_datafields=array(), $forceDataf
 			} else return '';
 		}
 		//Donations
-		else if(substr($col, 6, 9) == 'donations') {
-			$year = format_userinput(substr($col, 15, 4), 'uint');
-			$account_id = format_userinput(substr($col, 19), 'uint');
+		else if(mb_substr($col, 6, 9) == 'donations') {
+			$year = format_userinput(mb_substr($col, 15, 4), 'uint');
+			$account_id = format_userinput(mb_substr($col, 19), 'uint');
 			if(!$year || $year < 1900 || $year > 3000) return '';
 
 			$datefield = ko_get_userpref($_SESSION['ses_userid'], 'donations_date_field');
@@ -3919,7 +3919,7 @@ function map_leute_daten($data, $col, &$p, &$all_datafields=array(), $forceDataf
 		$account = db_select_data('ko_donations_accounts', 'WHERE `id` = \''.$data.'\'', '*', '', '', TRUE);
 		return ($account['number'] ? $account['number'] : $account['name']);
 	} else if($col == 'plz') {  //For special filter 'plz IN (...)' with long list of zip codes (pfimi bern)
-    return strlen($data) > 20 ? substr($data, 0, 20).'..' : $data;
+    return mb_strlen($data) > 20 ? mb_substr($data, 0, 20).'..' : $data;
 	} else if($db_col[0]['Type'] == 'tinytext') {  //Picture
 		return ko_pic_get_tooltip($data, 25, 200, 'm', 'l', TRUE);
 	} else if($col == '`admingroups`') {  //Used for special filter 'logins'
@@ -4195,17 +4195,17 @@ function ko_get_kleingruppen(&$kg, $z_limit = '', $id = '', $_z_where='') {
 		foreach(explode(',', $id) as $i) {
 			$z_where .= "'".$i."',";
 		}
-		$z_where = substr($z_where, 0, -1).') ';
+		$z_where = mb_substr($z_where, 0, -1).') ';
 	} else if($_z_where != '') {
 		$z_where = $_z_where;
 	} else $z_where = '';
 
 
-	if(is_string($_SESSION['sort_kg']) && !in_array($_SESSION['sort_kg'], array('anz_leute', 'kg_leiter')) && substr($_SESSION['sort_kg'], 0, 6) != 'MODULE') {
+	if(is_string($_SESSION['sort_kg']) && !in_array($_SESSION['sort_kg'], array('anz_leute', 'kg_leiter')) && mb_substr($_SESSION['sort_kg'], 0, 6) != 'MODULE') {
 		$sort_col = $_SESSION['sort_kg'];
 		$order = 'ORDER BY `'.$_SESSION['sort_kg'].'` '.$_SESSION['sort_kg_order'];
 	} else {
-		$sort_col = substr($_SESSION['sort_kg'], 0, 6) == 'MODULE' ? substr($_SESSION['sort_kg'], 6) : 'name';
+		$sort_col = mb_substr($_SESSION['sort_kg'], 0, 6) == 'MODULE' ? mb_substr($_SESSION['sort_kg'], 6) : 'name';
 		$order = 'ORDER BY name ASC';
 	}
 
@@ -4244,7 +4244,7 @@ function ko_get_kleingruppen(&$kg, $z_limit = '', $id = '', $_z_where='') {
 	}
 
 	//Manually sort for MODULE column
-	if(substr($_SESSION['sort_kg'], 0, 6) == 'MODULE') {
+	if(mb_substr($_SESSION['sort_kg'], 0, 6) == 'MODULE') {
 		if($_SESSION['sort_kg_order'] == 'ASC') asort($sort);
 		if($_SESSION['sort_kg_order'] == 'ASC') arsort($sort);
 		$new = array();
@@ -4274,7 +4274,7 @@ function ko_kgliste($data) {
 	$r = '';
 
 	//One char is the smallgroup role set in a filter
-	if(strlen($data) == 1) {
+	if(mb_strlen($data) == 1) {
 		return getLL('kg_roles_'.$data);
 	}
 
@@ -4305,7 +4305,7 @@ function kg_get_users_kgid($uid='') {
 	$p = ko_get_logged_in_person($uid);
 	foreach(explode(',', $p['smallgroups']) as $kgid) {
 		if(!$kgid) continue;
-		$r[] = format_userinput(substr($kgid, 0, 4), 'uint');
+		$r[] = format_userinput(mb_substr($kgid, 0, 4), 'uint');
 	}
 	return $r;
 }//kg_get_users_kgid()
@@ -4516,7 +4516,7 @@ function ko_get_moderators_by_resgroup($gid) {
 		$email_fields .= 'l.'.$field.' AS '.$field.', ';
 		$where_email .= " l.$field != '' OR ";
 	}
-	$email_fields = substr($email_fields, 0, -2);
+	$email_fields = mb_substr($email_fields, 0, -2);
 
 	//Get moderators for this resgroup
 	$logins = db_select_data("ko_admin AS a LEFT JOIN ko_leute as l ON a.leute_id = l.id",
@@ -4619,8 +4619,8 @@ function ko_get_logins(&$l, $z_where = "", $z_limit = "", $sort_ = "") {
 
 
 	//Treat special order columns
-	if($ko_menu_akt == 'admin' && substr($_SESSION['sort_logins'], 0, 6) == 'MODULE') {
-		switch(substr($_SESSION['sort_logins'], 6)) {
+	if($ko_menu_akt == 'admin' && mb_substr($_SESSION['sort_logins'], 0, 6) == 'MODULE') {
+		switch(mb_substr($_SESSION['sort_logins'], 6)) {
 			//Order by name of assigned person
 			case 'leute_id':
 				$l = db_select_data('ko_admin AS a LEFT JOIN ko_leute AS l ON a.leute_id = l.id', 'WHERE 1 '.$z_where, "a.id AS id, a.*, CONCAT_WS(' ', l.vorname, l.nachname) AS _name", 'ORDER BY _name '.$_SESSION['sort_logins_order'].', login ASC', $z_limit);
@@ -4837,7 +4837,7 @@ function ko_rota_get_events($_teams='', $event_id='', $include_weekteams=FALSE) 
 		$row['_stats'] = array('total' => sizeof($all_teams), 'done' => $done);
 
 		//Add nicely formated date and time
-		$row['_time'] = $row['startzeit'] == '00:00:00' && $row['endzeit'] == '00:00:00' ? getLL('time_all_day') : substr($row['startzeit'], 0, -3);
+		$row['_time'] = $row['startzeit'] == '00:00:00' && $row['endzeit'] == '00:00:00' ? getLL('time_all_day') : mb_substr($row['startzeit'], 0, -3);
 		$row['_date'] = strftime($DATETIME['DdmY'], strtotime($row['startdatum']));
 		if($row['enddatum'] != $row['startdatum'] && $row['enddatum'] != '0000-00-00') {
 			$row['_date'] .= ' - '.strftime($DATETIME['DdmY'], strtotime($row['enddatum']));
@@ -5007,23 +5007,23 @@ function rota_timespan_startstop($timestart, $timespan) {
 		break;
 
 		case '1m':
-			$start = substr($timestart, 0, -2).'01';
+			$start = mb_substr($timestart, 0, -2).'01';
 			$stop  = add2date($start, 'month', 1, TRUE);
 		break;
 		case '2m':
-			$start = substr($timestart, 0, -2).'01';
+			$start = mb_substr($timestart, 0, -2).'01';
 			$stop  = add2date($start, 'month', 2, TRUE);
 		break;
 		case '3m':
-			$start = substr($timestart, 0, -2).'01';
+			$start = mb_substr($timestart, 0, -2).'01';
 			$stop  = add2date($start, 'month', 3, TRUE);
 		break;
 		case '6m':
-			$start = substr($timestart, 0, -2).'01';
+			$start = mb_substr($timestart, 0, -2).'01';
 			$stop  = add2date($start, 'month', 6, TRUE);
 		break;
 		case '12m':
-			$start = substr($timestart, 0, -2).'01';
+			$start = mb_substr($timestart, 0, -2).'01';
 			$stop  = add2date($start, 'month', 12, TRUE);
 		break;
 	}
@@ -5276,13 +5276,13 @@ function ko_rota_schedulled_text($schedule, $forceFormat='') {
 			ko_get_person_by_id($s, $p);
 			switch($format) {
 				case 1:
-					$r[$s] = $p['vorname'].' '.substr($p['nachname'],0,1).'.';
+					$r[$s] = $p['vorname'].' '.mb_substr($p['nachname'],0,1).'.';
 				break;
 				case 2:
-					$r[$s] = $p['vorname'].' '.substr($p['nachname'],0,2).'.';
+					$r[$s] = $p['vorname'].' '.mb_substr($p['nachname'],0,2).'.';
 				break;
 				case 3:
-					$r[$s] = substr($p['vorname'],0,1).'. '.$p['nachname'];
+					$r[$s] = mb_substr($p['vorname'],0,1).'. '.$p['nachname'];
 				break;
 				case 4:
 					$r[$s] = $p['vorname'].' '.$p['nachname'];
@@ -5330,7 +5330,7 @@ function ko_rota_get_helpers_by_event_team($eventId, $teamId, $keepGroup=FALSE) 
 		}
 		else if (preg_match('/g[0-9]{6}/', $helper)) {
 			if($keepGroup) {
-				$group = db_select_data('ko_groups', "WHERE `id` = '".substr($helper, 1)."'", '*', '', '', TRUE);
+				$group = db_select_data('ko_groups', "WHERE `id` = '".mb_substr($helper, 1)."'", '*', '', '', TRUE);
 				$helpers[] = $group['name'];
 			} else {
 				$pattern = $helper . '(:g[0-9]{6})*' . $roleString;
@@ -5522,8 +5522,8 @@ function ko_rota_get_team_members($team, $resolve_groups=FALSE, $roleid='') {
 
 	//Add sql for each given group/role
 	foreach(explode(',', $team['group_id']) as $gid) {
-		if($role && $rolepos = strpos($gid, ':r')) {  //Remove role in group_id if set
-			$gid = substr($gid, 0, $rolepos);
+		if($role && $rolepos = mb_strpos($gid, ':r')) {  //Remove role in group_id if set
+			$gid = mb_substr($gid, 0, $rolepos);
 		}
 		$where .= " `groups` REGEXP '(^|,|:)".$gid.$role."($|,|:r)' OR ";
 	}
@@ -5537,7 +5537,7 @@ function ko_rota_get_team_members($team, $resolve_groups=FALSE, $roleid='') {
 	}
 
 
-	$where = substr($where, 0, -3);
+	$where = mb_substr($where, 0, -3);
 
 
 	//Sorting
@@ -5577,7 +5577,7 @@ function ko_dienstliste($dienste) {
       $r .= $ad[$d]['name'].', ';
     }
   }
-  $r = substr($r, 0, -2);
+  $r = mb_substr($r, 0, -2);
 
   return $r;
 }//ko_dienstliste()
@@ -5704,10 +5704,10 @@ function ko_rota_get_scheduled_events($id, $start, $stop, $mode = 'person') {
 				$teamGroup = trim($teamGroup);
 				if ($teamGroup == '') continue;
 				if (preg_match('/^g[0-9]{6}$/', $teamGroup)) {
-					$teamGroups[] = substr($teamGroup, 1);
+					$teamGroups[] = mb_substr($teamGroup, 1);
 				}
 				else if (preg_match('/^g[0-9]{6}:r[0-9]{6}$/', $teamGroup)) {
-					$teamGroups[] = substr($teamGroup, 1, 6);
+					$teamGroups[] = mb_substr($teamGroup, 1, 6);
 				}
 			}
 		}
@@ -5722,7 +5722,7 @@ function ko_rota_get_scheduled_events($id, $start, $stop, $mode = 'person') {
 		$GLOBALS['kOOL']['ko_non_leaf_team_groups'] = $nonLeafTeamGroups;
 	}
 
-	if (substr($id, 0, 1) != 'g') {
+	if (mb_substr($id, 0, 1) != 'g') {
 		ko_get_person_by_id($id, $person);
 		if (!$person) return;
 		$groupsString = $person['groups'];
@@ -5732,18 +5732,18 @@ function ko_rota_get_scheduled_events($id, $start, $stop, $mode = 'person') {
 		foreach (explode(',', $groupsString) as $group) {
 			if (trim($group) == '') continue;
 			if ($roleString != '') { // only consider group memberships with 'helper' role
-				if (substr($group, -8, 8) != $roleString) continue;
-				$group = substr($group, 0, strlen($group) - 8);
+				if (mb_substr($group, -8, 8) != $roleString) continue;
+				$group = mb_substr($group, 0, mb_strlen($group) - 8);
 			}
 			else {
-				if (substr($group, -7, 1) == 'r') { // remove role so we won't search for it in the `schedule` column of ko_rota_schedulling
-					$group = substr($group, 0, strlen($group) - 8);
+				if (mb_substr($group, -7, 1) == 'r') { // remove role so we won't search for it in the `schedule` column of ko_rota_schedulling
+					$group = mb_substr($group, 0, mb_strlen($group) - 8);
 				}
 			}
 			$explodedGroups = explode(':', $group);
 			foreach ($explodedGroups as $singleGroup) {
 				if (trim($singleGroup) == '') continue;
-				$unprocGroups[] = (int) substr($singleGroup, 1);
+				$unprocGroups[] = (int) mb_substr($singleGroup, 1);
 			}
 		}
 		sort($unprocGroups);
@@ -6308,7 +6308,7 @@ function ko_groups_get_group_id_names($gid, &$groups, &$roles, $do_roles=TRUE) {
 function ko_groups_decode($all, $type, $limit=0) {
 	global $all_groups;
 
-	if(strlen($all) == 6) { //Einzelne Gruppen-ID übergeben
+	if(mb_strlen($all) == 6) { //Einzelne Gruppen-ID übergeben
 		$mother_line = array();
 		$base_group = $all;
 	} else { //Sonst handelt es sich um ein g:000001:r000002 usw.
@@ -6317,27 +6317,27 @@ function ko_groups_decode($all, $type, $limit=0) {
 		$mother_line = array();
 		$mother_line_names = array();
 		for($i=(sizeof($parts)-1); $i>=0; $i--) {
-			if(substr($parts[$i], 0, 1) == "r") {
-				$rolle = substr($parts[$i], 1);
-			} else if(substr($parts[$i], 0, 1) == "g") {
+			if(mb_substr($parts[$i], 0, 1) == "r") {
+				$rolle = mb_substr($parts[$i], 1);
+			} else if(mb_substr($parts[$i], 0, 1) == "g") {
 				if(!$base_found) {
-					$base_group = substr($parts[$i], 1);
+					$base_group = mb_substr($parts[$i], 1);
 					$base_found = TRUE;
 				} else {
-					$mother_line[] = substr($parts[$i], 1);
+					$mother_line[] = mb_substr($parts[$i], 1);
 					//Save the groupnames of the motherline aswell for the full path plus role
 					if($type == "group_desc_full") {
-						if(isset($all_groups[substr($parts[$i], 1)])) {
-							$mother_line_names[] = $all_groups[substr($parts[$i], 1)]["name"];
+						if(isset($all_groups[mb_substr($parts[$i], 1)])) {
+							$mother_line_names[] = $all_groups[mb_substr($parts[$i], 1)]["name"];
 						} else {
-							ko_get_groups($group, "AND `id` = '".substr($parts[$i], 1)."'");
-							$mother_line_names[] = $group[substr($parts[$i], 1)]["name"];
+							ko_get_groups($group, "AND `id` = '".mb_substr($parts[$i], 1)."'");
+							$mother_line_names[] = $group[mb_substr($parts[$i], 1)]["name"];
 						}
 					}
 				}
 			}
 		}
-	}//if..else(strlen(all) == 6)
+	}//if..else(mb_strlen(all) == 6)
 
 	switch($type) {
 		case "group_id":
@@ -6370,9 +6370,9 @@ function ko_groups_decode($all, $type, $limit=0) {
 			} else {
 				if($type == "group_desc_full") {
         			$value = implode(":", array_reverse($mother_line_names)).(sizeof($mother_line_names)>0?":":"").$group[$base_group]["name"];
-        			if($limit && strlen($value) > $limit) {
+        			if($limit && mb_strlen($value) > $limit) {
             			$limit = floor($limit/2)-2;
-            			return substr($value, 0, $limit)."[..]".substr($value, -1*$limit);
+            			return mb_substr($value, 0, $limit)."[..]".mb_substr($value, -1*$limit);
           			} else {
             			return $value;
           			}
@@ -6489,7 +6489,7 @@ function ko_groups_get_savestring(&$value, $data, &$log, $_bisher=NULL, $apply_s
 		$group = ko_groups_decode($b, "group");
 		//Falls col==MODULEgrp ist (also die Funktion aus multiedit heraus aufgerufen wird), nur gewählte Gruppe bearbeiten,
 		//sonst fallen alle anderen Gruppen-Einteilungen raus
-		if(substr($data["col"], 0, 9) == "MODULEgrp" && $group["id"] != substr($data["col"], 9)) continue;
+		if(mb_substr($data["col"], 0, 9) == "MODULEgrp" && $group["id"] != mb_substr($data["col"], 9)) continue;
 	  //Don't work on timed groups
 		if($apply_start_stop && ($group["stop"] != "0000-00-00" && $group["stop"] <= strftime("%Y-%m-%d", time()))) continue;
 		if($apply_start_stop && ($group["start"] != "0000-00-00" && $group["start"] > strftime("%Y-%m-%d", time()))) continue;
@@ -6585,11 +6585,11 @@ function ko_groups_remove_spare_norole($groups) {
 			unset($groups[$k]);
 			continue;
 		}
-		if (strpos($group, 'r') === false) {
+		if (mb_strpos($group, 'r') === false) {
 			$roles = db_select_data('ko_groups', 'where id = ' . $groupId, 'roles', '', '', TRUE, TRUE);
 			if ($roles !== null) {
 				$roles = $roles['roles'];
-				if (strpos($roles, ',') === false) {
+				if (mb_strpos($roles, ',') === false) {
 					$lastNoroleIndex = $k;
 					$lastNoroleGroup = $groupId;
 				}
@@ -6715,7 +6715,7 @@ function ko_groups_render_group_datafields($groups, $id, $values=FALSE, $_option
 			//Only render given datafields if set
 			if(sizeof($do_dfs) > 0 && !$do_dfs[$fid]) continue;
 
-			$value = htmlspecialchars($values[$group["id"]][$fid], ENT_QUOTES, 'ISO-8859-1');
+			$value = htmlspecialchars($values[$group["id"]][$fid], ENT_QUOTES);
 
 			//get datafield
 			$field = db_select_data("ko_groups_datafields", "WHERE `id` = '$fid'", "*", "", "", TRUE);
@@ -7015,7 +7015,7 @@ function ko_include_kota($tables=array()) {
 		$cols = ko_access_get_kota_columns($_SESSION['ses_userid'], $table);
 		if(sizeof($cols) > 0) {
 			foreach($KOTA[$table] as $k => $v) {
-				if(substr($k, 0, 1) == '_') continue;
+				if(mb_substr($k, 0, 1) == '_') continue;
 				if(!in_array($k, $cols)) {
 					$delcols[] = $k;
 					unset($KOTA[$table][$k]);
@@ -7058,7 +7058,7 @@ function ko_multiedit_formular($table, $columns=NULL, $ids=0, $order="", $form_d
 			$table_cols[] = $col['Field'];
 		}
 		foreach($KOTA[$table] as $kota_col => $array) {
-			if(substr($kota_col, 0, 1) == "_") continue;   // _multititle, _listview, _access
+			if(mb_substr($kota_col, 0, 1) == "_") continue;   // _multititle, _listview, _access
 			if(!isset($array['form']) || $array['form']['ignore']) continue;         // ignore this column all together
 			$columns[] = $kota_col;
 		}
@@ -7085,8 +7085,8 @@ function ko_multiedit_formular($table, $columns=NULL, $ids=0, $order="", $form_d
 		$mode = "multi";
 		$showForAll = TRUE;
 		foreach($columns as $c_i => $col) {
-			if(substr($col, 0, 6) == "MODULE") {
-				switch(substr($col, 6, 3)) {
+			if(mb_substr($col, 0, 6) == "MODULE") {
+				switch(mb_substr($col, 6, 3)) {
 					case "grp":
 						$db_cols .= "`groups`,";
 					break;
@@ -7120,7 +7120,7 @@ function ko_multiedit_formular($table, $columns=NULL, $ids=0, $order="", $form_d
 			foreach($ids as $id) {
 				$sel_ids .= "'$id', ";
 			}
-			$sel_ids = substr($sel_ids, 0, -2);
+			$sel_ids = mb_substr($sel_ids, 0, -2);
 		} else {
 			$sel_ids = $ids;
 			$ids = array($ids);
@@ -7196,7 +7196,7 @@ function ko_multiedit_formular($table, $columns=NULL, $ids=0, $order="", $form_d
 
 			//Call a fill function to prefill this input
 			if($KOTA[$table][$col]['fill']) {
-				$fcn = substr($KOTA[$table][$col]['fill'], 4);
+				$fcn = mb_substr($KOTA[$table][$col]['fill'], 4);
 				if(function_exists($fcn)) {
 					eval("$fcn(\$row, \$col);");
 				}
@@ -7209,21 +7209,21 @@ function ko_multiedit_formular($table, $columns=NULL, $ids=0, $order="", $form_d
 			}
 			$col = str_replace("`", "", $col);
 			//Module bearbeiten, damit in row[col] überhaupt etwas steht
-			if(substr($col, 0, 6) == "MODULE") {
-				switch(substr($col, 6, 3)) {
+			if(mb_substr($col, 0, 6) == "MODULE") {
+				switch(mb_substr($col, 6, 3)) {
 					case "grp":
-						if(FALSE === strpos($col, ':')) {
+						if(FALSE === mb_strpos($col, ':')) {
 							$g_value = array();
-							$gid = substr($col, 9);
+							$gid = mb_substr($col, 9);
 							foreach(explode(",", $row["groups"]) as $g) {
 								if(ko_groups_decode($g, "group_id") == $gid) $g_value[] = $g;
 							}
 							$row[$col] = implode(",", $g_value);
 						} else {
-							$gid = substr($col, 9, 6);  //group id
-							$fid = substr($col, 16, 6); //datafield id
+							$gid = mb_substr($col, 9, 6);  //group id
+							$fid = mb_substr($col, 16, 6); //datafield id
 							//only continue if person is assigned to this group
-							if(FALSE !== strpos($row["groups"], "g".$gid) || $showForAll) {
+							if(FALSE !== mb_strpos($row["groups"], "g".$gid) || $showForAll) {
 								$koi_name = $keep_name ? $keep_name : "koi[ko_leute][$col][".$row["id"]."]";
 								$code = ko_groups_render_group_datafields($gid, $row["id"], FALSE, array("koi" => $koi_name), array($fid => TRUE));
 								$KOTA[$table][$col]["form"] = array("desc" => getLL("groups_edit_datafield"), "type" => "html", "value" => $code);
@@ -7262,7 +7262,7 @@ function ko_multiedit_formular($table, $columns=NULL, $ids=0, $order="", $form_d
 					$date = $_POST['koi'][$table][$col][$row['id']];
 				} else {
 					$date = $KOTA[$table][$col]["form"]["value"];
-					if(strlen($date) > 10) $date = "";  //if several jsdate inputs are used on one page, value still contains HTML from the last one
+					if(mb_strlen($date) > 10) $date = "";  //if several jsdate inputs are used on one page, value still contains HTML from the last one
 				}
 				if(!$date && $row[$col] != "0000-00-00") $date = sql2datum($row[$col]);
 
@@ -7417,7 +7417,7 @@ function ko_multiedit_formular($table, $columns=NULL, $ids=0, $order="", $form_d
 							//If current value is not found on top level then go through all lower levels to find it and display this level
 							if(!in_array($row[$col], array_keys($values))) {
 								foreach($values as $vid => $value) {
-									if(substr($vid, 0, 1) != "i") continue;
+									if(mb_substr($vid, 0, 1) != "i") continue;
 									if(in_array($row[$col], $value)) {
 										$values = array("i-" => "i-");
 										//Add all values from this level
@@ -7479,7 +7479,7 @@ function ko_multiedit_formular($table, $columns=NULL, $ids=0, $order="", $form_d
 						$v = map_leute_daten($filter[1][$i], ($fcol[$i] ? $fcol[$i] : $fcol[1]), $t1, $t2, FALSE, array('num' => $i));
 						if($v) $text .= $v.',';
 					}
-					$text = substr($text, 0, -1);
+					$text = mb_substr($text, 0, -1);
 					$adescs[] = $text;
 				}
 				$KOTA[$table][$col]['form']['avalue'] = $row[$col];
@@ -7857,7 +7857,7 @@ function db_insert_data($table, $data) {
 			$query2 .= "'" . mysqli_real_escape_string($db_connection, stripslashes($value)) . "', ";
 		}
 	}
-	$query .= "(" . substr($query1, 0, -2) . ") VALUES (" . substr($query2, 0, -2) . ")";
+	$query .= "(" . mb_substr($query1, 0, -2) . ") VALUES (" . mb_substr($query2, 0, -2) . ")";
 
 	if(defined('DEBUG_INSERT') && DEBUG_INSERT) $time_start = microtime(TRUE);
 	$result = mysqli_query($db_connection, $query);
@@ -7919,7 +7919,7 @@ function db_update_data($table, $where, $data) {
 		}
 	}
 	if(!$found) return FALSE;
-	$query = substr($query, 0, -2);
+	$query = mb_substr($query, 0, -2);
 
 	//WHERE-Bedingung
 	$query .= " $where ";
@@ -7996,7 +7996,7 @@ function db_select_data($table, $where="", $columns="*", $order="", $limit="", $
 	} else {
 		if($no_index) {
 			$index = '';
-		} elseif(substr($columns, 0, 1) == '*' || FALSE !== strpos($columns, 'AS id') || in_array('id', explode(',', $columns)) || in_array('*', explode(',', $columns))) {
+		} elseif(mb_substr($columns, 0, 1) == '*' || FALSE !== mb_strpos($columns, 'AS id') || in_array('id', explode(',', $columns)) || in_array('*', explode(',', $columns))) {
 			$index = 'id';
 		} else {
 			$cols = explode(",", $columns);
@@ -8053,7 +8053,7 @@ function db_query($query, $index = '') {
 function db_get_column($table, $where, $column, $split=" ") {
 	if(is_int($where)) {
 		$where = "WHERE `id` = '$where'";
-	} else if(substr($where, 0, 5) == "WHERE") {
+	} else if(mb_substr($where, 0, 5) == "WHERE") {
 		$where = $where;
 	} else return FALSE;
 
@@ -8153,28 +8153,28 @@ function db_import_sql($tobe) {
 
 
 		//INSERT Statement
-		if(mb_strtoupper(substr($line, 0, 11)) == "INSERT INTO") {
+		if(mb_strtoupper(mb_substr($line, 0, 11)) == "INSERT INTO") {
 			$do_sql[] = $line;
 			continue;
 		}
 
 
 		//UPDATE Statement
-		if(mb_strtoupper(substr($line, 0, 7)) == "UPDATE ") {
+		if(mb_strtoupper(mb_substr($line, 0, 7)) == "UPDATE ") {
 			$do_sql[] = $line;
 			continue;
 		}
 
 
 		//ALTER Statement
-		if(mb_strtoupper(substr($line, 0, 6)) == "ALTER ") {
+		if(mb_strtoupper(mb_substr($line, 0, 6)) == "ALTER ") {
     		$do_sql[] = $line;
     		continue;
     	}
 
 
 		//start of a create table statement
-		if(mb_strtoupper(substr($line, 0, 12)) == "CREATE TABLE") {
+		if(mb_strtoupper(mb_substr($line, 0, 12)) == "CREATE TABLE") {
 			//find table-name to be edited
 			$temp = explode(" ", $line);
 			$table = str_replace("`", "", trim($temp[2]));
@@ -8196,7 +8196,7 @@ function db_import_sql($tobe) {
 		}
 
 		//end of create table
-		else if(substr($line, 0, 1) == ")") {
+		else if(mb_substr($line, 0, 1) == ")") {
 			if($new_table_sql != "") {
 				$do_sql[] = sprintf($create_code, $table, $new_table_sql);
 			}
@@ -8213,7 +8213,7 @@ function db_import_sql($tobe) {
 		}
 
 		//empty or comment line
-		else if(substr($line, 0, 1) == "#" || substr($line, 0, 1) == "-" || $line == "") {
+		else if(mb_substr($line, 0, 1) == "#" || mb_substr($line, 0, 1) == "-" || $line == "") {
 			continue;
 		}
 
@@ -8258,7 +8258,7 @@ function db_import_sql($tobe) {
 
 	foreach($do_sql as $query) {
 		if($query) {
-			if(substr($query, -1) == ",") $query = substr($query, 0, -1);
+			if(mb_substr($query, -1) == ",") $query = mb_substr($query, 0, -1);
 			$result = mysqli_query($db_connection, $query);
 			if($result === FALSE) trigger_error('DB ERROR (db_import_sql): '.mysqli_errno($db_connection).': '.mysqli_error($db_connection), E_USER_ERROR);
 		}
@@ -8292,7 +8292,7 @@ function ko_fuzzy_search($data, $table, $error=1, $case=FALSE, $lev_limit="") {
 
 	//Concatenate data to search for
 	$orig = implode("", $data);
-	$orig_length = strlen($orig);
+	$orig_length = mb_strlen($orig);
 	//Calculate limit for string length
 	$limit = $num_cols*$error+1;
 
@@ -8463,7 +8463,7 @@ function ko_export_to_xlsx($header, $data, $filename, $title = '', $format="land
             //Add subtitle
             if(is_array($header['subtitle']) && sizeof($header['subtitle']) > 0) {
                 foreach($header['subtitle'] as $k => $v) {
-                    if(substr($k, -1) != ':') {
+                    if(mb_substr($k, -1) != ':') {
                         $k .= ':';
                     }
                     $sheet->getStyleByColumnAndRow(0, $row)->applyFromArray($xlsSubtitleFormat);
@@ -8566,8 +8566,8 @@ function ko_export_to_xlsx($header, $data, $filename, $title = '', $format="land
     $objWriter = new PHPExcel_Writer_Excel2007($objPHPExcel);
     if ($format == 'xls') {
         $objWriter = new PHPExcel_Writer_Excel5($objPHPExcel);
-        if (substr($filename, -1) == 'x') {
-            $filename = substr($filename, 0, -1);
+        if (mb_substr($filename, -1) == 'x') {
+            $filename = mb_substr($filename, 0, -1);
         }
     }
 
@@ -8598,7 +8598,7 @@ function ko_export_to_excel($header, $data, $filename, $title, $format="landscap
 	require_once($ko_path.'inc/class.excelwriter.php');
 
 	$workbook = new writeexcel_workbook($filename);
-	$worksheet =& $workbook->addworksheet(substr($title, 0, 30));
+	$worksheet =& $workbook->addworksheet(mb_substr($title, 0, 30));
 	if($format == "landscape") $worksheet->set_landscape();
 	else $worksheet->set_portrait();
 
@@ -8634,7 +8634,7 @@ function ko_export_to_excel($header, $data, $filename, $title, $format="landscap
 			//Add subtitle
 			if(is_array($header['subtitle']) && sizeof($header['subtitle']) > 0) {
 				foreach($header['subtitle'] as $k => $v) {
-					if(substr($k, -1) != ':') $k .= ':';
+					if(mb_substr($k, -1) != ':') $k .= ':';
 					$worksheet->write($row, 0, $k, $format_subtitle);
 					$worksheet->write($row++, 1, $v, $format_default);
 				}
@@ -8926,7 +8926,7 @@ function ko_get_fitting_text_width(FPDF $pdf, $width, &$text, &$time, &$size, $m
 
 		if ($mode == 0) {
 			// shorten $time if possible
-			$newTime = (substr($time, 0, 1) == '0' ? substr($time, 1) : $time);
+			$newTime = (mb_substr($time, 0, 1) == '0' ? mb_substr($time, 1) : $time);
 			$shortTime = ($newTime != $time);
 			$looping = true;
 
@@ -8945,16 +8945,16 @@ function ko_get_fitting_text_width(FPDF $pdf, $width, &$text, &$time, &$size, $m
 		// shorten $text to make it fit into $width
 		$repr = $text;
 		while ($pdf->GetStringWidth($text) > $width && $text != '..') {
-			if (substr($repr, strlen($repr) - 4, strlen($repr)) == '@..@') {
-				$rTemp = substr($repr, 0, strlen($repr) - 5);
-				$tTemp = substr($text, 0, strlen($text) - 3);
+			if (mb_substr($repr, mb_strlen($repr) - 4, mb_strlen($repr)) == '@..@') {
+				$rTemp = mb_substr($repr, 0, mb_strlen($repr) - 5);
+				$tTemp = mb_substr($text, 0, mb_strlen($text) - 3);
 
 				$text = $tTemp . '..';
 				$repr = $rTemp . '@..@';
 			}
 			else {
-				$rTemp = substr($repr, 0, strlen($repr) - 1);
-				$tTemp = substr($text, 0, strlen($text) - 1);
+				$rTemp = mb_substr($repr, 0, mb_strlen($repr) - 1);
+				$tTemp = mb_substr($text, 0, mb_strlen($text) - 1);
 
 				$text = $tTemp . '..';
 				$repr = $rTemp . '@..@';
@@ -9179,8 +9179,8 @@ function ko_export_cal_weekly_view($module, $_size='', $_start='', $pages='') {
 				if($ev['endzeit'] == '24:00:00') $ev['endzeit'] = '23:59:59';
 				if($ev['startzeit'] == '24:00:00') $ev['startzeit'] = '23:59:59';
 
-				$eventArr[$id]['startMin'] = substr($ev['startzeit'],0,2)*60 + substr($ev['startzeit'], 3, 2);
-				$eventArr[$id]['stopMin'] = substr($ev['endzeit'],0,2)*60 + substr($ev['endzeit'], 3, 2);
+				$eventArr[$id]['startMin'] = mb_substr($ev['startzeit'],0,2)*60 + mb_substr($ev['startzeit'], 3, 2);
+				$eventArr[$id]['stopMin'] = mb_substr($ev['endzeit'],0,2)*60 + mb_substr($ev['endzeit'], 3, 2);
 				$eventStart = strtotime($ev['startdatum'].' '.$ev['startzeit']);
 				$eventEnd = strtotime($ev['enddatum'].' '.$ev['endzeit']);
 
@@ -9293,7 +9293,7 @@ function ko_export_cal_weekly_view($module, $_size='', $_start='', $pages='') {
 				//Get color from event group
 				$hex_color = $currEvent['eventgruppen_farbe'];
 				if(!$hex_color) $hex_color = 'aaaaaa';
-				$pdf->SetFillColor(hexdec(substr($hex_color, 0, 2)), hexdec(substr($hex_color, 2, 2)), hexdec(substr($hex_color, 4, 2)));
+				$pdf->SetFillColor(hexdec(mb_substr($hex_color, 0, 2)), hexdec(mb_substr($hex_color, 2, 2)), hexdec(mb_substr($hex_color, 4, 2)));
 
 				$pdf->RoundedRect($left+$sPos+0.3, $y, $width-0.3, $height-0.2, 1.2, $currEvent['roundedCorners'], 'F');
 
@@ -9338,7 +9338,7 @@ function ko_export_cal_weekly_view($module, $_size='', $_start='', $pages='') {
 				//prepare text to render
 				$hex_color = ko_get_contrast_color($currEvent['eventgruppen_farbe'], '000000', 'ffffff');
 				if(!$hex_color) $hex_color = '000000';
-				$pdf->SetTextColor(hexdec(substr($hex_color, 0, 2)), hexdec(substr($hex_color, 2, 2)), hexdec(substr($hex_color, 4, 2)));
+				$pdf->SetTextColor(hexdec(mb_substr($hex_color, 0, 2)), hexdec(mb_substr($hex_color, 2, 2)), hexdec(mb_substr($hex_color, 4, 2)));
 
 				//check if text is to be rendered vertically
 				if($width < 15) {
@@ -9347,20 +9347,20 @@ function ko_export_cal_weekly_view($module, $_size='', $_start='', $pages='') {
 					if($pdf->GetStringWidth($eventText[0]) > $height) $eventText = $eventShortText;
 					//Shorten texts so they'll fit
 					$textLength0 = $pdf->GetStringWidth($eventText[0]);
-					while($textLength0 > $height && strlen($eventText[0]) > 0) {
-						$eventText[0] = substr($eventText[0], 0, -1);
+					while($textLength0 > $height && mb_strlen($eventText[0]) > 0) {
+						$eventText[0] = mb_substr($eventText[0], 0, -1);
 						$textLength0 = $pdf->GetStringWidth($eventText[0]);
 					}
 					$pdf->SetFont('fontn', '', 7);
 					$textLength1 = $pdf->GetStringWidth($eventText[1]);
-					while($textLength1 > $height && strlen($eventText[1]) > 0) {
-						$eventText[1] = substr($eventText[1], 0, -1);
+					while($textLength1 > $height && mb_strlen($eventText[1]) > 0) {
+						$eventText[1] = mb_substr($eventText[1], 0, -1);
 						$textLength1 = $pdf->GetStringWidth($eventText[1]);
 					}
 					$eventText[2] = ': '.$eventText[1];
 					$textLength2 = $pdf->GetStringWidth($eventText[2]);
-					while($textLength2 > $height - $textLength0 -3 && strlen($eventText[2]) > 0) {
-						$eventText[2] = substr($eventText[2], 0, -1);
+					while($textLength2 > $height - $textLength0 -3 && mb_strlen($eventText[2]) > 0) {
+						$eventText[2] = mb_substr($eventText[2], 0, -1);
 						$textLength2 = $pdf->GetStringWidth($eventText[2]);
 					}
 
@@ -9391,13 +9391,13 @@ function ko_export_cal_weekly_view($module, $_size='', $_start='', $pages='') {
 					$pdf->SetFont('fontn','',7);
 					$textHeight = $pdf->NbLines($width, $eventText[1]) + 1;
 					if($titleHeight == 2) $textHeigth = $textHeigth +3;
-					while($textHeight*3 > $height && strlen($eventText[1]) > 0) {
-						if(FALSE !== strpos($eventText[1], ' ')) {
+					while($textHeight*3 > $height && mb_strlen($eventText[1]) > 0) {
+						if(FALSE !== mb_strpos($eventText[1], ' ')) {
 							//Remove a whole word if possible
-							$eventText[1] = substr($eventText[1], 0, strrpos($eventText[1], ' '));
+							$eventText[1] = mb_substr($eventText[1], 0, strrpos($eventText[1], ' '));
 						} else {
 							//If no more word just remove last letter
-							$eventText[1] = substr($eventText[1], 0, -1);
+							$eventText[1] = mb_substr($eventText[1], 0, -1);
 						}
 						$textHeight = $pdf->NbLines($width,$eventText[1]) + 1;
 					}
@@ -9507,7 +9507,7 @@ function ko_export_cal_weekly_view_resource($_size='', $_start='') {
 		$hour_start = "00:00";
 		$timeDelimiter[] = $hour_start;
 	}
-	else if (strlen($hour_start) == 1) {
+	else if (mb_strlen($hour_start) == 1) {
 		$hour_start = "0" . $hour_start . ":00";
 		if (ko_has_time_format($hour_start) != 1) {
 			$timeDelimiter[] = "00:00";
@@ -9517,7 +9517,7 @@ function ko_export_cal_weekly_view_resource($_size='', $_start='') {
 			$timeDelimiter[] = $hour_start;
 		}
 	}
-	else if (strlen($hour_start) == 2) {
+	else if (mb_strlen($hour_start) == 2) {
 		$hour_start = $hour_start . ":00";
 		if (ko_has_time_format($hour_start) != 1) {
 			$timeDelimiter[] = "00:00";
@@ -9548,7 +9548,7 @@ function ko_export_cal_weekly_view_resource($_size='', $_start='') {
 		$hour_end = "23:59";
 		$timeDelimiter[] = $hour_end;
 	}
-	else if (strlen($hour_end) == 1) {
+	else if (mb_strlen($hour_end) == 1) {
 		$hour_end = "0" . $hour_end . ":00";
 		if (ko_has_time_format($hour_end) != 1) {
 			$timeDelimiter[] = "23:59";
@@ -9558,7 +9558,7 @@ function ko_export_cal_weekly_view_resource($_size='', $_start='') {
 			$timeDelimiter[] = $hour_end;
 		}
 	}
-	else if (strlen($hour_end) == 2) {
+	else if (mb_strlen($hour_end) == 2) {
 		$hour_end = $hour_end . ":00";
 		if (ko_has_time_format($hour_end) != 1) {
 			$timeDelimiter[] = "23:59";
@@ -9609,7 +9609,7 @@ function ko_export_cal_weekly_view_resource($_size='', $_start='') {
 				$items[$key]['name'] .= '..';
 			}
 			else {
-				$items[$key]['name'] = substr($items[$key]['name'], 0, strlen($items[$key]['name']) - 3) . '..';
+				$items[$key]['name'] = mb_substr($items[$key]['name'], 0, mb_strlen($items[$key]['name']) - 3) . '..';
 			}
 			$firstIter = false;
 		}
@@ -9686,7 +9686,7 @@ function ko_export_cal_weekly_view_resource($_size='', $_start='') {
 				$date = strftime('%d.%m.%Y', $currentStamp);
 
 				$weekday = strftime('%a', $currentStamp);
-				$weekday = substr($weekday, 0, strlen($weekday) - 1);
+				$weekday = mb_substr($weekday, 0, mb_strlen($weekday) - 1);
 
 				$pdf->SetFillColor(33, 66, 99);
 				$pdf->SetDrawColor(255);
@@ -10060,7 +10060,7 @@ function ko_export_cal_weekly_view_resource($_size='', $_start='') {
 				$pdf->SetTextColor(255, 255, 255);
 				$hex_color = $item['farbe'];
 				if(!$hex_color) $hex_color = 'aaaaaa';
-				$pdf->SetFillColor(hexdec(substr($hex_color, 0, 2)), hexdec(substr($hex_color, 2, 2)), hexdec(substr($hex_color, 4, 2)));
+				$pdf->SetFillColor(hexdec(mb_substr($hex_color, 0, 2)), hexdec(mb_substr($hex_color, 2, 2)), hexdec(mb_substr($hex_color, 4, 2)));
 				$leftValue = $left + ($ut['start']/$planTime*($pageW - $resWidth - $timeWidth)) + $itemMarginH;
 				$topValue = $top-4 + $itemMarginV;
 				$width = (($ut['end']-$ut['start'])/$planTime*($pageW - $resWidth - $timeWidth)) - 2 * $itemMarginH;
@@ -10071,7 +10071,7 @@ function ko_export_cal_weekly_view_resource($_size='', $_start='') {
 				// draw start_time and purpose of reservation, if possible
 				if ($ut['drawText'] === true) {
 					$text = $ut['zweck'];
-					$time = substr($ut['startzeit'], 0, sizeof($ut['startzeit']) - 4);
+					$time = mb_substr($ut['startzeit'], 0, sizeof($ut['startzeit']) - 4);
 
 					$size = 9;
 					if (2 * ko_fontsize_to_mm($size) > $height) {
@@ -10083,7 +10083,7 @@ function ko_export_cal_weekly_view_resource($_size='', $_start='') {
 
 					if ($fits) {
 						$hex_color = ko_get_contrast_color($hex_color, '000000', 'FFFFFF');
-						$pdf->SetTextColor(hexdec(substr($hex_color, 0, 2)), hexdec(substr($hex_color, 2, 2)), hexdec(substr($hex_color, 4, 2)));
+						$pdf->SetTextColor(hexdec(mb_substr($hex_color, 0, 2)), hexdec(mb_substr($hex_color, 2, 2)), hexdec(mb_substr($hex_color, 4, 2)));
 						$pdf->SetFontSize($size);
 						$marginBetwLabels = ($height - 2 * ko_fontsize_to_mm($size)) / 3;
 						$pdf->Text($leftValue + $textMargin, $topValue + 0.8 * ko_fontsize_to_mm($size) + $marginBetwLabels, $time);
@@ -10237,8 +10237,8 @@ function ko_export_cal_one_month(&$pdf, $monat, $jahr, $kw, $day, $titel, $show_
 	$dayofweek = $weekcounter = 0;
 	while((int)str_replace("-", "", $date) <= (int)str_replace("-", "", $enddate)) {
 		$pdf->SetTextColor(0);
-		$thisday = $day[(int)substr($date, 8, 2)];
-		$thisday['tag'] = (int)substr($date, 8, 2);
+		$thisday = $day[(int)mb_substr($date, 8, 2)];
+		$thisday['tag'] = (int)mb_substr($date, 8, 2);
 		//KW ausgeben
 		if($dayofweek == 0) {
 			$pdf->SetFillColor(200);
@@ -10250,7 +10250,7 @@ function ko_export_cal_one_month(&$pdf, $monat, $jahr, $kw, $day, $titel, $show_
 			$x += $width_kw;
 		}
 		//Tag vor und nach aktuellem Monat
-		if(substr($date, 5, 2) != $monat) {
+		if(mb_substr($date, 5, 2) != $monat) {
 			$pdf->SetFillColor(230);
 			$pdf->Rect($x, $y, $width_day, $height_day, "FD");
 		}
@@ -10282,7 +10282,7 @@ function ko_export_cal_one_month(&$pdf, $monat, $jahr, $kw, $day, $titel, $show_
 					else $height_event = $height_event_1;
 
 					$color_hex = $c["farbe"] ? $c["farbe"] : "999999";
-					$pdf->SetFillColor(hexdec(substr($color_hex, 0, 2)), hexdec(substr($color_hex, 2, 2)), hexdec(substr($color_hex, 4, 2)));
+					$pdf->SetFillColor(hexdec(mb_substr($color_hex, 0, 2)), hexdec(mb_substr($color_hex, 2, 2)), hexdec(mb_substr($color_hex, 4, 2)));
 					$pdf->Rect($x+0.1, $y_day, $width_day-0.2, $height_event, "F");
 					if($num_events > 11) {
             $pdf->SetFont('fontn', '', 5);
@@ -10299,10 +10299,10 @@ function ko_export_cal_one_month(&$pdf, $monat, $jahr, $kw, $day, $titel, $show_
 					if($pdf->getStringWidth($t) > ($width_day-2*$offset_x)) $t = ($c['zeit'] != '' ? $c['zeit'].': ' : '').ko_unhtml($c['short']);
 					//Truncate text if it is too long
 					while($pdf->GetStringWidth($t) > ($width_day-2*$offset_x)) {
-						$t = substr($t, 0, -1);
+						$t = mb_substr($t, 0, -1);
 					}
 					$textcolor = ko_get_contrast_color($color_hex, '000000', 'ffffff');
-					$pdf->SetTextColor(hexdec(substr($textcolor, 0, 2)), hexdec(substr($textcolor, 2, 2)), hexdec(substr($textcolor, 4, 2)));
+					$pdf->SetTextColor(hexdec(mb_substr($textcolor, 0, 2)), hexdec(mb_substr($textcolor, 2, 2)), hexdec(mb_substr($textcolor, 4, 2)));
 					$pdf->Text($x+$offset_x, $y_day+$offset_y_events, $t);
 
 					//Add title
@@ -10311,7 +10311,7 @@ function ko_export_cal_one_month(&$pdf, $monat, $jahr, $kw, $day, $titel, $show_
 						$t = " ".ko_unhtml($c["kommentar"]);
 						$pdf->SetFont('fontn', '', $font2);
 						while($pdf->GetStringWidth($t) > ($width_day-2*$offset_x)) {
-							$t = substr($t, 0, -1);
+							$t = mb_substr($t, 0, -1);
 						}
 						$pdf->Text($x+$offset_x, $y_day+$offset_y_events, $t);
 						$y_day += $height_event/2;
@@ -10351,23 +10351,23 @@ function ko_get_time_as_string($event, $show_time, $mode='default') {
 		} else {
 			if($mode == 'default') {
 				if($show_time == 1) {  //Only show start time
-					$time = substr($event['startzeit'], 3, 2) == '00' ? substr($event['startzeit'], 0, 2) : substr($event['startzeit'], 0, -3);
+					$time = mb_substr($event['startzeit'], 3, 2) == '00' ? mb_substr($event['startzeit'], 0, 2) : mb_substr($event['startzeit'], 0, -3);
 				} else if($show_time == 2) {  //Show start and end time
-					$time  = substr($event['startzeit'], 3, 2) == '00' ? substr($event['startzeit'], 0, 2) : substr($event['startzeit'], 0, -3);
+					$time  = mb_substr($event['startzeit'], 3, 2) == '00' ? mb_substr($event['startzeit'], 0, 2) : mb_substr($event['startzeit'], 0, -3);
 					$time .= '-';
-					$time .= substr($event['endzeit'], 3, 2) == '00' ? substr($event['endzeit'], 0, 2) : substr($event['endzeit'], 0, -3);
+					$time .= mb_substr($event['endzeit'], 3, 2) == '00' ? mb_substr($event['endzeit'], 0, 2) : mb_substr($event['endzeit'], 0, -3);
 				}
 			}
 			else if($mode == 'first') {
 				$time = getLL('time_from').' ';
-				$time .= substr($event['startzeit'], 3, 2) == '00' ? substr($event['startzeit'], 0, 2) : substr($event['startzeit'], 0, -3);
+				$time .= mb_substr($event['startzeit'], 3, 2) == '00' ? mb_substr($event['startzeit'], 0, 2) : mb_substr($event['startzeit'], 0, -3);
 			}
 			else if($mode == 'middle') {
 				$time = getLL('time_all_day');
 			}
 			else if($mode == 'last') {
 				$time = getLL('time_to').' ';
-				$time .= substr($event['endzeit'], 3, 2) == '00' ? substr($event['endzeit'], 0, 2) : substr($event['endzeit'], 0, -3);
+				$time .= mb_substr($event['endzeit'], 3, 2) == '00' ? mb_substr($event['endzeit'], 0, 2) : mb_substr($event['endzeit'], 0, -3);
 			}
 		}
 	} else {
@@ -10453,7 +10453,7 @@ function ko_export_cal_pdf_year($module, $_month, $_year, $_months=0) {
 			$month = $month-12;
 			$year = $startYear + 1;
 		}
-		$offsetDate = 7 - (int)substr(date_find_next_sunday($year.'-'.$month.'-01'), 8, 2);
+		$offsetDate = 7 - (int)mb_substr(date_find_next_sunday($year.'-'.$month.'-01'), 8, 2);
 		$offsetDayArr[str_to_2($month).$year] =  $offsetDate;
 
 		$maxDays = max($maxDays, $offsetDate+(int)strftime('%d', mktime(1,1,1, ($month==12 ? 1 : $month+1), 0, ($month==12 ? ($year+1) : $year))));
@@ -10525,8 +10525,8 @@ function ko_export_cal_pdf_year($module, $_month, $_year, $_months=0) {
 		$pdf->Rect($left, $top-3, $monthWidth, 3, "FD");
 		$pdf->SetFont('fontn','',7);
 		$pdf->SetTextColor(255 , 255, 255);
-		$month = substr($key,0,2);
-		$year = substr($key,2);
+		$month = mb_substr($key,0,2);
+		$year = mb_substr($key,2);
 		$title = strftime('%B',strtotime('2000-'.$month.'-10'));
 		$pdf->Text($left+$monthWidth/2-$pdf->GetStringWidth($title)/2, $top-0.7, $title);
 
@@ -10573,7 +10573,7 @@ function ko_export_cal_pdf_year($module, $_month, $_year, $_months=0) {
 			// draw the dates
 			$pdf->SetFont('fontn','',5);
 			$pdf->SetTextColor(0 ,0, 0);
-			$weekDay = substr(strftime('%a', mktime(1,1,1, $month, $i, $year)), 0, 2);
+			$weekDay = mb_substr(strftime('%a', mktime(1,1,1, $month, $i, $year)), 0, 2);
 			$cPos = (3 - $pdf->GetStringWidth($weekDay))/2;
 			$pdf->Text($left+$cPos,$pos+2, $weekDay);
 			$cPos = (3 - $pdf->GetStringWidth($i))/2;
@@ -10618,15 +10618,15 @@ function ko_export_cal_pdf_year($module, $_month, $_year, $_months=0) {
 
 			ko_add_color_legend_entry($legend, $currEvent, $egs[$currEvent[$db_group_field]]);
 
-			$endDay = (int)substr($currEvent['enddatum'],8,2);
+			$endDay = (int)mb_substr($currEvent['enddatum'],8,2);
 			$duration = $currEvent['duration'];
 			$eventStart = intval(str_replace('-','',$currEvent['startdatum']));
 			$eventEnd = intval(str_replace('-','',$currEvent['enddatum']));
-			if ((int)substr($currEvent['startdatum'],5,2) != $month){
+			if ((int)mb_substr($currEvent['startdatum'],5,2) != $month){
 				$startDay = 1;
 				$durationActMonth = $endDay;
 			}else{
-				$startDay = (int)substr($currEvent['startdatum'],8,2);
+				$startDay = (int)mb_substr($currEvent['startdatum'],8,2);
 				$durationActMonth = $duration;
 			}
 			$durationActMonth = $endDay;
@@ -10675,7 +10675,7 @@ function ko_export_cal_pdf_year($module, $_month, $_year, $_months=0) {
 			$hex_color = $currEvent['eventgruppen_farbe'];
 			if(!$hex_color) $hex_color = $egs[$currEvent[$db_group_field]]['farbe'];
 			if(!$hex_color) $hex_color = 'aaaaaa';
-			$pdf->SetFillColor(hexdec(substr($hex_color, 0, 2)), hexdec(substr($hex_color, 2, 2)), hexdec(substr($hex_color, 4, 2)));
+			$pdf->SetFillColor(hexdec(mb_substr($hex_color, 0, 2)), hexdec(mb_substr($hex_color, 2, 2)), hexdec(mb_substr($hex_color, 4, 2)));
 			//Render event box
 			$pdf->RoundedRect($left+$sPos, $y+0.1, $stripeWidth, $height-0.2, 1.2, $roundedCorners, 'F');
 
@@ -10695,14 +10695,14 @@ function ko_export_cal_pdf_year($module, $_month, $_year, $_months=0) {
 			$pdf->SetFont('fontn','',6);
 			$hex_color = ko_get_contrast_color($hex_color, '000000', 'ffffff');
 			if(!$hex_color) $hex_color = '000000';
-			$pdf->SetTextColor(hexdec(substr($hex_color, 0, 2)), hexdec(substr($hex_color, 2, 2)), hexdec(substr($hex_color, 4, 2)));
+			$pdf->SetTextColor(hexdec(mb_substr($hex_color, 0, 2)), hexdec(mb_substr($hex_color, 2, 2)), hexdec(mb_substr($hex_color, 4, 2)));
 
 			//Use shortText if text is too long
 			if($pdf->GetStringWidth($text) > $height && $shortText != '') $text = $shortText;
 			//Shorten text so it'll fit
 			$textLength = $pdf->GetStringWidth($text);
 			while($textLength > $height) {
-				$text = substr($text, 0, -1);
+				$text = mb_substr($text, 0, -1);
 				$textLength = $pdf->GetStringWidth($text);
 			}
 			$pdf->TextWithDirection($left+$sPos+2, $y+$height/2+($textLength/2), $text, $direction='U');
@@ -10745,9 +10745,9 @@ function ko_export_cal_pdf_year($module, $_month, $_year, $_months=0) {
 		$events = array();
 		foreach($singleEventArr as $event) {
 			//Add start date
-			$dayNum = (int)substr($event['startdatum'], 8, 2);
+			$dayNum = (int)mb_substr($event['startdatum'], 8, 2);
 			//Add end date if different from start date (2-day event)
-			$dayNum2 = (int)substr($event['enddatum'], 8, 2);
+			$dayNum2 = (int)mb_substr($event['enddatum'], 8, 2);
 
 			//Two-days event: Make two single entries
 			if($dayNum2 != $dayNum) {
@@ -10756,7 +10756,7 @@ function ko_export_cal_pdf_year($module, $_month, $_year, $_months=0) {
 				$event1['enddatum'] = $event1['startdatum'];
 				$event2['startdatum'] = $event2['enddatum'];
 				//If start and stop date are in the same month, then draw both this time
-				if ((int)substr($event['startdatum'],5,2) == (int)substr($event['enddatum'],5,2)){
+				if ((int)mb_substr($event['startdatum'],5,2) == (int)mb_substr($event['enddatum'],5,2)){
 					$events[] = $event1;
 					$events[] = $event2;
 					$eventsByDay[$dayNum] += 1;
@@ -10764,11 +10764,11 @@ function ko_export_cal_pdf_year($module, $_month, $_year, $_months=0) {
 				}
 				//If start and stop are in different months, only draw the one in the current month
 				else {
-					if((int)substr($event1['enddatum'], 5, 2) == $month) {
+					if((int)mb_substr($event1['enddatum'], 5, 2) == $month) {
 						$events[] = $event1;
 						$eventsByDay[$dayNum] += 1;
 					}
-					if((int)substr($event2['enddatum'], 5, 2) == $month) {
+					if((int)mb_substr($event2['enddatum'], 5, 2) == $month) {
 						$events[] = $event2;
 						$eventsByDay[$dayNum2] += 1;
 					}
@@ -10785,7 +10785,7 @@ function ko_export_cal_pdf_year($module, $_month, $_year, $_months=0) {
 		foreach($events as $event) {
 			ko_add_color_legend_entry($legend, $event, $egs[$event[$db_group_field]]);
 
-			$startDay = (int)substr($event['startdatum'], 8, 2);
+			$startDay = (int)mb_substr($event['startdatum'], 8, 2);
 			$duration = $event['duration'];
 			$eventStart = intval(str_replace('-', '', $event['startdatum']));
 
@@ -10812,7 +10812,7 @@ function ko_export_cal_pdf_year($module, $_month, $_year, $_months=0) {
 				} else {  //Other events only fill half
 					$eventHeight = $dayHeight/2;
 					$radius = 0.6;
-					if((int)substr($event['startzeit'], 0, 2) > 12) $y += $dayHeight/2;
+					if((int)mb_substr($event['startzeit'], 0, 2) > 12) $y += $dayHeight/2;
 				}
 			}
 
@@ -10843,7 +10843,7 @@ function ko_export_cal_pdf_year($module, $_month, $_year, $_months=0) {
 			$hex_color = $event['eventgruppen_farbe'];
 			if(!$hex_color) $hex_color = $egs[$event[$db_group_field]]['farbe'];
 			if(!$hex_color) $hex_color = 'aaaaaa';
-			$pdf->SetFillColor(hexdec(substr($hex_color, 0, 2)), hexdec(substr($hex_color, 2, 2)), hexdec(substr($hex_color, 4, 2)));
+			$pdf->SetFillColor(hexdec(mb_substr($hex_color, 0, 2)), hexdec(mb_substr($hex_color, 2, 2)), hexdec(mb_substr($hex_color, 4, 2)));
 			//Render event box
 			$pdf->RoundedRect($x, $y, $eventWidth, $eventHeight, $radius, '234', 'F');
 
@@ -10863,7 +10863,7 @@ function ko_export_cal_pdf_year($module, $_month, $_year, $_months=0) {
 			$pdf->SetFont('fontn','',6);
 			$hex_color = ko_get_contrast_color($hex_color, '000000', 'ffffff');
 			if(!$hex_color) $hex_color = '000000';
-			$pdf->SetTextColor(hexdec(substr($hex_color, 0, 2)), hexdec(substr($hex_color, 2, 2)), hexdec(substr($hex_color, 4, 2)));
+			$pdf->SetTextColor(hexdec(mb_substr($hex_color, 0, 2)), hexdec(mb_substr($hex_color, 2, 2)), hexdec(mb_substr($hex_color, 4, 2)));
 			$textPos = $y+1.8;
 			$textPos += $fullHeight ? $eventHeight/4 : 0;
 
@@ -10873,8 +10873,8 @@ function ko_export_cal_pdf_year($module, $_month, $_year, $_months=0) {
 			if($pdf->GetStringWidth($text) > $eventWidth && $shortText != '') $text = $shortText;
 			//Shorten text so it'll fit
 			$textLength = $pdf->GetStringWidth($text);
-			while($textLength > $eventWidth && strlen($text) > 0) {
-				$text = substr($text, 0, -1);
+			while($textLength > $eventWidth && mb_strlen($text) > 0) {
+				$text = mb_substr($text, 0, -1);
 				$textLength = $pdf->GetStringWidth($text);
 			}
 			$pdf->Text($x+0.1, $textPos, $text);
@@ -10889,7 +10889,7 @@ function ko_export_cal_pdf_year($module, $_month, $_year, $_months=0) {
 			$pos = $top + $offsetDays*$dayHeight;
 			$pdf->SetFont('fontn','',5);
 			for($i=1; $i<=$numDays; $i++) {
-				if(substr(strftime('%u', mktime(1,1,1, $month, $i, $year)), 0, 2) == 1) {
+				if(mb_substr(strftime('%u', mktime(1,1,1, $month, $i, $year)), 0, 2) == 1) {
 					$pdf->SetTextColor(150);
 					$pdf->SetFillColor(255, 255, 255);
 					$pdf->Circle($left+3.7, $pos+0.1, 1.15, 'F');
@@ -10935,7 +10935,7 @@ function ko_cal_export_legend(&$pdf, $legend, $top, $right) {
 	//Sort legends by length of title for maximum space usage
 	$sort = array();
 	foreach($legend as $title => $color) {
-		$sort[$title] = strlen($title);
+		$sort[$title] = mb_strlen($title);
 	}
 	asort($sort);
 	$new = array();
@@ -10967,11 +10967,11 @@ function ko_cal_export_legend(&$pdf, $legend, $top, $right) {
 	foreach($legend as $title => $color) {
 		$hex_color = ko_get_contrast_color($color, '000000', 'ffffff');
 		if(!$hex_color) $hex_color = '000000';
-		$pdf->SetTextColor(hexdec(substr($hex_color, 0, 2)), hexdec(substr($hex_color, 2, 2)), hexdec(substr($hex_color, 4, 2)));
+		$pdf->SetTextColor(hexdec(mb_substr($hex_color, 0, 2)), hexdec(mb_substr($hex_color, 2, 2)), hexdec(mb_substr($hex_color, 4, 2)));
 
 		$hex_color = $color;
 		if(!$hex_color) $hex_color = 'aaaaaa';
-		$pdf->SetFillColor(hexdec(substr($hex_color, 0, 2)), hexdec(substr($hex_color, 2, 2)), hexdec(substr($hex_color, 4, 2)));
+		$pdf->SetFillColor(hexdec(mb_substr($hex_color, 0, 2)), hexdec(mb_substr($hex_color, 2, 2)), hexdec(mb_substr($hex_color, 4, 2)));
 		$pdf->SetDrawColor(255);
 
 		$pdf->Rect($x, $y, $widths[$colCounter], $boxSize, 'FD');
@@ -11166,14 +11166,14 @@ function ko_export_etiketten($_vorlage, $_start, $_rahmen, $data, $fill_page=0, 
 			$ra .= $person['adresse'] ? $person['adresse'].', ' : '';
 			$ra .= $person['plz'] ? $person['plz'].' ' : '';
 			$ra .= $person['ort'] ? $person['ort'].', ' : '';
-			if(substr($ra, -2) == ', ') $ra = substr($ra, 0, -2);
+			if(mb_substr($ra, -2) == ', ') $ra = mb_substr($ra, 0, -2);
 		}
 		else {
 			$ra  = ko_get_setting('info_name') ? ko_get_setting('info_name').', ' : '';
 			$ra .= ko_get_setting('info_address') ? ko_get_setting('info_address').', ' : '';
 			$ra .= ko_get_setting('info_zip') ? ko_get_setting('info_zip').' ' : '';
 			$ra .= ko_get_setting('info_city') ? ko_get_setting('info_city').', ' : '';
-			if(substr($ra, -2) == ', ') $ra = substr($ra, 0, -2);
+			if(mb_substr($ra, -2) == ', ') $ra = mb_substr($ra, 0, -2);
 		}
 		if (strstr($return_address_mode, 'pp') != false) {
 			$ra = getLL('leute_return_address_pp') . ' ' . $ra;
@@ -11310,10 +11310,10 @@ function ko_get_pdf_fonts() {
 	$font_path = $BASE_PATH."fpdf/schriften";
 	if($dh = opendir($font_path)) {
 		while(($file = readdir($dh)) !== false) {
-			if(substr($file, -2) == ".z") {
-				$files_z[] = substr($file, 0, -2);
-			} else if(substr($file, -4) == ".php") {
-				$files_php[] = substr($file, 0, -4);
+			if(mb_substr($file, -2) == ".z") {
+				$files_z[] = mb_substr($file, 0, -2);
+			} else if(mb_substr($file, -4) == ".php") {
+				$files_php[] = mb_substr($file, 0, -4);
 			}
 		}
 		closedir($dh);
@@ -11359,7 +11359,7 @@ function ko_latex_check() {
 
 	exec($PDFLATEX_PATH.'pdflatex -version', $ret);
 	if(sizeof($ret) == 0) return FALSE;
-	if(FALSE !== strpos($ret[0], 'TeX')) return TRUE;
+	if(FALSE !== mb_strpos($ret[0], 'TeX')) return TRUE;
 	return FALSE;
 }//ko_latex_check()
 
@@ -11390,8 +11390,8 @@ function ko_latex_get_layouts($type) {
 	$layouts = array();
 	if($handle = opendir($ko_path.'latex/layouts/')) {
 		while(false !== ($file = readdir($handle))) {
-			if($file == '.' || $file == '..' || substr($file, -4) != '.lco' || substr($file, 0, strlen($type)) != $type) continue;
-			$layouts[] = substr($file, strlen($type)+1, -4);
+			if($file == '.' || $file == '..' || mb_substr($file, -4) != '.lco' || mb_substr($file, 0, mb_strlen($type)) != $type) continue;
+			$layouts[] = mb_substr($file, mb_strlen($type)+1, -4);
 		}
 	}
 	closedir($handle);
@@ -11435,7 +11435,7 @@ function ko_latex_escape_chars($text) {
 function ko_check_for_pdftk() {
 	exec('pdftk --version', $ret);
 	if(sizeof($ret) == 0) return FALSE;
-	if(FALSE !== strpos($ret[1], 'pdftk')) return TRUE;
+	if(FALSE !== mb_strpos($ret[1], 'pdftk')) return TRUE;
 	return FALSE;
 }//ko_check_for_pdftk()
 
@@ -11486,12 +11486,12 @@ function ko_parse_vcf($content) {
 			list($new_data["nachname"], $new_data["vorname"], $temp1, $new_data["anrede"], $temp2) = explode(";", $value);
 		}
 		//address
-		else if(substr($prop, 0, 3) == "ADR") {
+		else if(mb_substr($prop, 0, 3) == "ADR") {
 			$values = explode(";", $value);
 			list($temp1, $new_data["adresse_zusatz"], $new_data["adresse"], $new_data["ort"], $temp2, $new_data["plz"], $new_data["land"]) = $values;
 		}
 		//Phone
-		else if(substr($prop, 0, 3) == "TEL") {
+		else if(mb_substr($prop, 0, 3) == "TEL") {
 			if(strstr($prop, "HOME")) {
 				$new_data["telp"] = $value;
 			} else if(strstr($prop, "WORK")) {
@@ -11503,19 +11503,19 @@ function ko_parse_vcf($content) {
 			}
 		}
 		//email
-		else if(substr($prop, 0, 5) == "EMAIL") {
+		else if(mb_substr($prop, 0, 5) == "EMAIL") {
 			$new_data["email"] = $value;
 		}
 		//Birthdate
-		else if(substr($prop, 0, 4) == "BDAY") {
-			$new_data["geburtsdatum"] = substr($value, 0, 10);
+		else if(mb_substr($prop, 0, 4) == "BDAY") {
+			$new_data["geburtsdatum"] = mb_substr($value, 0, 10);
 		}
 		//note
-		else if(substr($prop, 0, 4) == "NOTE") {
+		else if(mb_substr($prop, 0, 4) == "NOTE") {
 			$new_data["memo1"] = $value;
 		}
 		//url
-		else if(substr($prop, 0, 3) == "URL") {
+		else if(mb_substr($prop, 0, 3) == "URL") {
 			$new_data["web"] = $value;
 		}
 		//End of a vCard
@@ -11550,7 +11550,7 @@ function ko_parse_csv($content, $options, $test=FALSE) {
 	$table_cols = db_get_columns("ko_leute");
 	foreach($table_cols as $col) {
 		if($col["Type"] == "date") $date_cols[] = $col["Field"];
-		if(substr($col["Type"],0,4) == "enum") $enum_cols[] = $col["Field"];
+		if(mb_substr($col["Type"],0,4) == "enum") $enum_cols[] = $col["Field"];
 	}
 
 
@@ -11644,7 +11644,7 @@ function ko_get_csv_values($string, $sep=",", $csep="") {
 			if ($nquotes > 0) {
 				// Remove first and last quotes, then merge pairs of quotes
 				$qstr =& $elements[$i];
-				$qstr = substr_replace($qstr, '', strpos($qstr, $csep), 1);
+				$qstr = substr_replace($qstr, '', mb_strpos($qstr, $csep), 1);
 				$qstr = substr_replace($qstr, '', strrpos($qstr, $csep), 1);
 				$qstr = str_replace('""', '"', $qstr);
 			}
@@ -11676,7 +11676,7 @@ function ko_pic_get_thumbnail($img, $max_dim, $imgtag=TRUE) {
 
 	//Get modification time for the image
 	$file = $BASE_PATH.'my_images/'.$img;
-	$ext = mb_strtolower(substr($img, strrpos($img, '.')));
+	$ext = mb_strtolower(mb_substr($img, strrpos($img, '.')));
 	$filemtime = filemtime($file);
 
 	//Create filename for cache image (using filename and file's modification time)
@@ -11807,7 +11807,7 @@ function ko_pic_cleanup_cache() {
 	$hashes = array();
 	if($dh = opendir($BASE_PATH.'my_images/')) {
 		while(($file = readdir($dh)) !== false) {
-			if(!in_array(mb_strtolower(substr($file, -4)), array('.gif', '.jpg', 'jpeg', '.png'))) continue;
+			if(!in_array(mb_strtolower(mb_substr($file, -4)), array('.gif', '.jpg', 'jpeg', '.png'))) continue;
 			$hashes[] = md5($file.filemtime($BASE_PATH.'my_images/'.$file));
 		}
 	}
@@ -11816,8 +11816,8 @@ function ko_pic_cleanup_cache() {
 	//Check all cache files for corresponding hash from above
 	if($dh = opendir($BASE_PATH.'my_images/cache/')) {
 		while(($file = readdir($dh)) !== false) {
-			if(!in_array(mb_strtolower(substr($file, -4)), array('.gif', '.jpg', 'jpeg', '.png'))) continue;
-			$hash = substr($file, 0, strpos($file, '_'));
+			if(!in_array(mb_strtolower(mb_substr($file, -4)), array('.gif', '.jpg', 'jpeg', '.png'))) continue;
+			$hash = mb_substr($file, 0, mb_strpos($file, '_'));
 			if(!in_array($hash, $hashes)) unlink($BASE_PATH.'my_images/cache/'.$file);
 		}
 	}
@@ -12074,7 +12074,7 @@ function ko_leute_sort(&$data, $sort_col, $sort_order, $dont_apply_limit=FALSE, 
 				break;
 				case 'famid':
 					//Use the full family name without the fam function for sorting, so families with same names in the same city still don't get mixed
-					$col_value = substr($col_value, 0, strpos($col_value, ')'));
+					$col_value = mb_substr($col_value, 0, mb_strpos($col_value, ')'));
 				break;
 				case 'famfunction':
 					if(isset($FAMFUNCTION_SORT_ORDER[$v[$col]])) $col_value = $FAMFUNCTION_SORT_ORDER[$v[$col]];
@@ -12500,7 +12500,7 @@ function send_sms($recipients, $text, $from, $climsgid, $msg_type, &$success, &$
 		//Neue Balance speichern
     set_cache_sms_balance($sms->getbalance());
 
-		$log_message = format_userinput(strtr($sms_message['text'], array("\n" => ' ', "\r" => '')), 'text') . ' - ' . substr($log_message, 0, -2) . " - $success/$done - " . substr($problems, 0, -2) . " - $charges";
+		$log_message = format_userinput(strtr($sms_message['text'], array("\n" => ' ', "\r" => '')), 'text') . ' - ' . mb_substr($log_message, 0, -2) . " - $success/$done - " . mb_substr($problems, 0, -2) . " - $charges";
     ko_log("sms_sent", $log_message);
 
 		return TRUE;
@@ -12538,16 +12538,16 @@ function ko_ezmlm_unsubscribe($list, $moderator, $email) {
  * Found on http://24ways.org/2010/calculating-color-contrast/
  */
 function ko_get_contrast_color($hexcolor, $dark = '#000000', $light = '#FFFFFF') {
-	$r = hexdec(substr($hexcolor,0,2));
-	$g = hexdec(substr($hexcolor,2,2));
-	$b = hexdec(substr($hexcolor,4,2));
+	$r = hexdec(mb_substr($hexcolor,0,2));
+	$g = hexdec(mb_substr($hexcolor,2,2));
+	$b = hexdec(mb_substr($hexcolor,4,2));
 	$yiq = (($r*299)+($g*587)+($b*114))/1000;
 	return ($yiq >= 128) ? $dark : $light;
 
-	//$sum3 = hexdec(substr($hexcolor, 0, 2)) + 1.6*hexdec(substr($hexcolor, 2, 2)) + hexdec(substr($hexcolor, 4, 2));
+	//$sum3 = hexdec(mb_substr($hexcolor, 0, 2)) + 1.6*hexdec(mb_substr($hexcolor, 2, 2)) + hexdec(mb_substr($hexcolor, 4, 2));
   //return ($sum3 > 3*127 || $hexcolor == '') ? $dark : $light;
 
-	//$sum3 = hexdec(substr($hexcolor, 0, 2)) + hexdec(substr($hexcolor, 2, 2)) + hexdec(substr($hexcolor, 4, 2));
+	//$sum3 = hexdec(mb_substr($hexcolor, 0, 2)) + hexdec(mb_substr($hexcolor, 2, 2)) + hexdec(mb_substr($hexcolor, 4, 2));
   //return ($sum3 > 3*0x000088 || $hexcolor == "") ? $dark : $light;
 }
 
@@ -12608,7 +12608,7 @@ function ko_task_delete_old_downloads() {
 		$dh = opendir($dir);
 		while($file = readdir($dh)) {
 			if(!is_file($dir.$file)) continue;  //Only check files and ignore dirs and links
-			if(substr($file, 0, 1) == '.') continue;  //Ignore hidden files and ./..
+			if(mb_substr($file, 0, 1) == '.') continue;  //Ignore hidden files and ./..
 			if($file == 'index.php') continue;  //Ignore index.php files
 
 			$stat = stat($dir.$file);
@@ -12679,8 +12679,8 @@ function ko_task_reminder($reminderId = null) {
 	foreach ($reminders as $reminder) {
 
 		$filter = $reminder['filter'];
-		$type = substr($filter, 0, 4);
-		$value = substr($filter, 4);
+		$type = mb_substr($filter, 0, 4);
+		$value = mb_substr($filter, 4);
 		if (trim($value) == '' || trim($type) == '') continue;
 		switch ($type) {
 			case 'LEPR':
@@ -12698,8 +12698,8 @@ function ko_task_reminder($reminderId = null) {
 				$zWhere = (trim($egsString) == '' ? '' : ' AND `ko_event`.`eventgruppen_id` in (' . $egsString . ')');
 				break;
 			case 'EGPR': // event group preset
-				if (substr($value, 0, 4) == '[G] ') {
-					$egIdsString = ko_get_userpref('-1', substr($value, 4), 'daten_itemset');
+				if (mb_substr($value, 0, 4) == '[G] ') {
+					$egIdsString = ko_get_userpref('-1', mb_substr($value, 4), 'daten_itemset');
 				}
 				else {
 					$egIdsString = ko_get_userpref($_SESSION['ses_userid'], $value, 'daten_itemset');
@@ -12775,7 +12775,7 @@ function ko_task_reminder($reminderId = null) {
 					$recipientsByAddress[] = $recipientFromDBMail;
 				}
 				foreach ($recipientsFromDBGroups as $recipientFromDBGroup) {
-					if(!$recipientFromDBGroup || strlen($recipientFromDBGroup) != 7) continue;
+					if(!$recipientFromDBGroup || mb_strlen($recipientFromDBGroup) != 7) continue;
 
 					$res = db_select_data('ko_leute', "where `groups` like '%" . $recipientFromDBGroup . "%'");
 					foreach ($res as $person) {
@@ -13009,8 +13009,8 @@ function check_datum(&$d) {
 	if($date[2] == "") $date[2] = $jahr;  //Falls noch kein Jahr gefunden, dann einfach auf aktuelles setzen
 
 	//Jahr auf vier Stellen ergänzen, falls nötig (immer 20XX verwenden)
-	if(strlen($date[2]) == 2) $date[2] = (int)("20".$date[2]);
-	else if(strlen($date[2]) == 1) $date[2] = (int)("200".$date[2]);
+	if(mb_strlen($date[2]) == 2) $date[2] = (int)("20".$date[2]);
+	else if(mb_strlen($date[2]) == 1) $date[2] = (int)("200".$date[2]);
 
 	$d = strftime('%d.%m.%Y', mktime(1,1,1, $date[1], $date[0], $date[2]));
 	return ($date[0] > 0 && $date[1] > 0 && $date[2] > 0);
@@ -13040,7 +13040,7 @@ function check_zeit(&$z) {
 	*/
 function check_email($email) {
 	$email = trim($email);
-	if(strpos($email, ' ') !== FALSE) {
+	if(mb_strpos($email, ' ') !== FALSE) {
 		return FALSE;
 	}
 	return preg_match('^[A-Za-z0-9\._-]+[@][A-Za-z0-9\._-]+[\.].[A-Za-z0-9]+$', $email) ? TRUE : FALSE;
@@ -13058,12 +13058,12 @@ function check_natel(&$natel) {
 	//Ignore invalid numbers (e.g. strings)
 	if($natel == '') return FALSE;
 	//Check for min/max length for a reasonable mobile number
-	if(strlen($natel) < 9 OR strlen($natel) > 18) return FALSE;
+	if(mb_strlen($natel) < 9 OR mb_strlen($natel) > 18) return FALSE;
 
-	if(substr($natel, 0, 2) == '00') {  //Area code given as 00XY
-		$natel = substr($natel, 2);
-	} else if(substr($natel, 0, 1) == "0") {
-		$natel = ko_get_setting("sms_country_code").substr($natel, 1);
+	if(mb_substr($natel, 0, 2) == '00') {  //Area code given as 00XY
+		$natel = mb_substr($natel, 2);
+	} else if(mb_substr($natel, 0, 1) == "0") {
+		$natel = ko_get_setting("sms_country_code").mb_substr($natel, 1);
 	}
 	if($natel) return TRUE;
 	else return FALSE;
@@ -13075,7 +13075,7 @@ function check_natel(&$natel) {
 	* Fügt einem String eine "0" vorne hinzu, falls der String nur 1 Zeichen enthält
 	*/
 function str_to_2($s) {
-	while(strlen($s) < 2) {
+	while(mb_strlen($s) < 2) {
 		$s = "0" . $s;
 	}
 	return $s;
@@ -13083,7 +13083,7 @@ function str_to_2($s) {
 
 
 function zerofill($s, $l) {
-	while(strlen($s) < $l) {
+	while(mb_strlen($s) < $l) {
 		$s = '0'.$s;
 	}
 	return $s;
@@ -13100,7 +13100,7 @@ function sql_zeit($z) {
 		switch(sizeof($z_1)) {
 			case 1: $r = $z.':00'; break;
 			case 2: $r = $z; break;
-			case 3: $r = substr($z, 0, -3); break;
+			case 3: $r = mb_substr($z, 0, -3); break;
 		}
   } else {
     $r = '';
@@ -13243,22 +13243,22 @@ function format_userinput($s, $type, $enforce=FALSE, $length=0, $replace=array()
 
 	//Bei falscher Länge abbrechen
 	if($length != 0) {
-		if(substr($length, 0, 1) == "=") {  //Falls exakte Länge verlangt...
-			if(strlen($s) != $length) {
+		if(mb_substr($length, 0, 1) == "=") {  //Falls exakte Länge verlangt...
+			if(mb_strlen($s) != $length) {
 				if($enforce) {
 					$s = "";
 					return FALSE;
 				} else {
-					$s = substr($s, 0, $length);
+					$s = mb_substr($s, 0, $length);
 				}
 			}
 		} else {  //...sonst auf maximale Länge prüfen
-			if(strlen($s) > $length) {
+			if(mb_strlen($s) > $length) {
 				if($enforce) {
 					$s = "";
 					return FALSE;
 				} else {
-					$s = substr($s, 0, $length);
+					$s = mb_substr($s, 0, $length);
 				}
 			}
 		}
@@ -13352,9 +13352,9 @@ function format_userinput($s, $type, $enforce=FALSE, $length=0, $replace=array()
 	if($add_own) $allowed .= $add_own;
 
 	$new = "";
-	for($i=0; $i<strlen($s); $i++) {
-	    if(FALSE !== strstr($allowed, substr($s, $i, 1))) {
-    		$new .= substr($s, $i, 1);
+	for($i=0; $i<mb_strlen($s); $i++) {
+	    if(FALSE !== strstr($allowed, mb_substr($s, $i, 1))) {
+    		$new .= mb_substr($s, $i, 1);
     	} else if($enforce) {
 			return FALSE;  //Bei ungültigen Zeichen nur abbrechen, wenn enforce true ist.
 		}
@@ -13420,12 +13420,12 @@ function ko_unhtml($string) {
  */
 function ko_js_escape($in) {
 	$out = '';
-	for($i=0; $i<strlen($in); $i++) {
+	for($i=0; $i<mb_strlen($in); $i++) {
 		$hex = dechex(ord($in[$i]));
 		if($hex=='') {
 			$out = $out.urlencode($in[$i]);
 		} else {
-			$out = $out .'%'.((strlen($hex)==1) ? ('0'.mb_strtoupper($hex)):(mb_strtoupper($hex)));
+			$out = $out .'%'.((mb_strlen($hex)==1) ? ('0'.mb_strtoupper($hex)):(mb_strtoupper($hex)));
 		}
 	}
 	$out = str_replace('+','%20',$out);
@@ -13482,9 +13482,9 @@ function date2code($d) {
 }
 
 function code2date($d) {
-	$r[2] = substr($d, 0, 4);
-	$r[1] = substr($d, 4, 2);
-	$r[0] = substr($d, 6, 2);
+	$r[2] = mb_substr($d, 0, 4);
+	$r[1] = mb_substr($d, 4, 2);
+	$r[0] = mb_substr($d, 6, 2);
 	return $r;
 }
 
@@ -13495,9 +13495,9 @@ function code2date($d) {
  */
 function add2date($datum, $mode, $inc, $sqlformat=FALSE) {
 	if($sqlformat) {
-		$d[0] = substr($datum, 8, 2);
-		$d[1] = substr($datum, 5, 2);
-		$d[2] = substr($datum, 0, 4);
+		$d[0] = mb_substr($datum, 8, 2);
+		$d[1] = mb_substr($datum, 5, 2);
+		$d[2] = mb_substr($datum, 0, 4);
 	} else {
 		if(is_array($datum)) $d = $datum;
 		else $d = explode('.', $datum);
@@ -13806,9 +13806,9 @@ function ko_get_wiederholung($d1, $d2, $repeat_mode, $inc, $bis_tag, $bis_monat,
 	//Exclude repetition dates that collide with holiday eventgroup
 	if($holiday_eg > 0) {
 		$first = $r[0];
-		$min = substr($first, -4).'-'.substr($first, 3, 2).'-'.substr($first, 0, 2);
+		$min = mb_substr($first, -4).'-'.mb_substr($first, 3, 2).'-'.mb_substr($first, 0, 2);
 		$last = $r[sizeof($r)-1] ? $r[sizeof($r)-1] : $r[sizeof($r)-2];
-		$max = substr($last, -4).'-'.substr($last, 3, 2).'-'.substr($last, 0, 2);
+		$max = mb_substr($last, -4).'-'.mb_substr($last, 3, 2).'-'.mb_substr($last, 0, 2);
 		$holidays = db_select_data('ko_event', "WHERE `eventgruppen_id` = '$holiday_eg' AND `enddatum` >= '$min' AND `startdatum` <= '$max'");
 		$holiday_days = array();
 		foreach($holidays as $day) {
@@ -13820,11 +13820,11 @@ function ko_get_wiederholung($d1, $d2, $repeat_mode, $inc, $bis_tag, $bis_monat,
 			}
 		}
 		for($i=0; $i<sizeof($r); $i+=2) {
-			$dstart = substr($r[$i], -4).'-'.substr($r[$i], 3, 2).'-'.substr($r[$i], 0, 2);
+			$dstart = mb_substr($r[$i], -4).'-'.mb_substr($r[$i], 3, 2).'-'.mb_substr($r[$i], 0, 2);
 			if($r[$i+1] == '') {
 				$dstop = $dstart;
 			} else {
-				$dstop = substr($r[$i+1], -4).'-'.substr($r[$i+1], 3, 2).'-'.substr($r[$i+1], 0, 2);
+				$dstop = mb_substr($r[$i+1], -4).'-'.mb_substr($r[$i+1], 3, 2).'-'.mb_substr($r[$i+1], 0, 2);
 			}
 			$del = FALSE;
 			while(str_replace('-', '', $dstart) <= str_replace('-', '', $dstop)) {
@@ -13903,7 +13903,7 @@ function ko_log_diff($type, $data, $old=array()) {
 		}
 	}
 	if(isset($old["id"])) $msg = "id: ".$old["id"].", ".$msg;
-	ko_log($type, substr($msg, 0, -2));
+	ko_log($type, mb_substr($msg, 0, -2));
 }//ko_log_diff()
 
 
@@ -13974,7 +13974,7 @@ function ko_menuitem($module, $show) {
 
 function ko_get_filename($file_name) {
   $newfile = basename($file_name);
-  if (strpos($newfile,'\\') !== false) {
+  if (mb_strpos($newfile,'\\') !== false) {
      $tmp = preg_split("[\\\]",$newfile);
      $newfile = $tmp[count($tmp) - 1];
      return($newfile);
@@ -13998,7 +13998,7 @@ function ko_returnfile($file_, $path_="download/pdf/", $filename_="") {
     return false;
   }
 
-  if (isset($_SERVER["HTTP_USER_AGENT"]) && strpos($_SERVER["HTTP_USER_AGENT"], "MSIE")) {
+  if (isset($_SERVER["HTTP_USER_AGENT"]) && mb_strpos($_SERVER["HTTP_USER_AGENT"], "MSIE")) {
 	  // IE cannot download from sessions without a cache
    	header("Cache-Control: public");
 
@@ -14017,7 +14017,7 @@ function ko_returnfile($file_, $path_="download/pdf/", $filename_="") {
   header("Content-Type: ".$mime);
 
   // Inline text files, don't separatly save them
-  $ext = substr($file, -3);
+  $ext = mb_substr($file, -3);
   if ($ext != "txt") {
     header("Content-Disposition: attachment; filename=\"".$filename."\"");
   }
@@ -14243,7 +14243,7 @@ function ko_prepare_mail($from = null, $to = null, $subject = null, $body = null
 	if(is_string($to)) {
 		$to = array($to => $to);
 	}
-	Swift_Preferences::getInstance()->setCharset('iso-8859-1');
+	Swift_Preferences::getInstance()->setCharset('utf-8');
 	$message = Swift_Message::newInstance();
 	$message->setBody($body)
 		->setSubject($subject)
@@ -14518,10 +14518,10 @@ function ko_bar_chart($data, $legend, $mode="", $total_width=600) {
 
 
 function ko_truncate($s, $l, $l2=0, $add="..") {
-	if(strlen($s) <= $l) {
+	if(mb_strlen($s) <= $l) {
 		return $s;
 	} else {
-		return substr($s, 0, $l-$l2).$add.($l2 > 0 ? substr($s, -$l2) : "");
+		return mb_substr($s, 0, $l-$l2).$add.($l2 > 0 ? mb_substr($s, -$l2) : "");
 	}
 }//ko_truncate()
 
@@ -14588,7 +14588,7 @@ function ko_check_ssl() {
 
 	if(FORCE_SSL === TRUE && (empty($_SERVER['HTTPS']) || mb_strtolower($_SERVER['HTTPS']) == 'off')) {
 		//Only redirect if https URL is set in BASE_URL
-		if(mb_strtolower(substr($BASE_URL, 0, 5)) == 'https') {
+		if(mb_strtolower(mb_substr($BASE_URL, 0, 5)) == 'https') {
 			header('Location: '.$BASE_URL, TRUE, 301);
 			exit;
 		}
@@ -14615,7 +14615,7 @@ function ko_check_login() {
 		$crypt->setKey(KOOL_ENCRYPTION_KEY);
 		list($kool_user, $timestamp, $ssoID, $user) = explode("@@@", $crypt->decrypt(base64_decode($_GET["sig"])));
 		$kool_user = trim(format_userinput($kool_user, "js")); $timestamp = trim($timestamp); $ssoID = trim($ssoID); $user = trim($user);
-		if(!$kool_user || (int)$timestamp < (int)time() || strlen($ssoID) != 32) $ssoError = TRUE;
+		if(!$kool_user || (int)$timestamp < (int)time() || mb_strlen($ssoID) != 32) $ssoError = TRUE;
 		//Check for unique ssoID
 		$usedID = db_get_count("ko_log", "id", "AND `type` = 'singlesignon' AND `comment` REGEXP '$ssoID$'");
 		if($usedID > 0) $ssoError = TRUE;
@@ -14815,7 +14815,7 @@ function ko_update_ko_config($mode, $data) {
 			$line = fgets($fp);
 			switch($mode) {
 				case "plugins":
-					if(!$start && substr(trim($line), 0, 8) == '$PLUGINS') {
+					if(!$start && mb_substr(trim($line), 0, 8) == '$PLUGINS') {
 						$found = TRUE;
 						$start = TRUE;
 						$ignore = TRUE;
@@ -14827,11 +14827,11 @@ function ko_update_ko_config($mode, $data) {
 				break;  //plugins
 
 				case "db":
-					if(!$start && substr(trim($line), 0, 11) == '$mysql_user') {
+					if(!$start && mb_substr(trim($line), 0, 11) == '$mysql_user') {
 						$found = TRUE;
 						$start = TRUE;
 						$ignore = TRUE;
-					} else if($start == TRUE && substr(trim($line), 0, 9) == '$mysql_db') {
+					} else if($start == TRUE && mb_substr(trim($line), 0, 9) == '$mysql_db') {
 						$start = FALSE;
 						$ignore = FALSE;
 						$line = $data;
@@ -14840,50 +14840,50 @@ function ko_update_ko_config($mode, $data) {
 
 				case "html_title":
 					$found = TRUE;
-					if(substr(trim($line), 0, 11) == '$HTML_TITLE') $line = $data;
+					if(mb_substr(trim($line), 0, 11) == '$HTML_TITLE') $line = $data;
 				break;
 
 				case "base_url":
 					$found = TRUE;
-					if(substr(trim($line), 0, 9) == '$BASE_URL') $line = $data;
+					if(mb_substr(trim($line), 0, 9) == '$BASE_URL') $line = $data;
 				break;
 
 				case "base_path":
 					$found = TRUE;
-					if(substr(trim($line), 0, 10) == '$BASE_PATH') $line = $data;
+					if(mb_substr(trim($line), 0, 10) == '$BASE_PATH') $line = $data;
 				break;
 
 				case "modules":
 					$found = TRUE;
-					if(substr(trim($line), 0, 8) == '$MODULES') $line = $data;
+					if(mb_substr(trim($line), 0, 8) == '$MODULES') $line = $data;
 				break;
 
 				case "web_langs":
 					$found = TRUE;
-					if(substr(trim($line), 0, 10) == '$WEB_LANGS') $line = $data;
+					if(mb_substr(trim($line), 0, 10) == '$WEB_LANGS') $line = $data;
 				break;
 
 				case "get_lang_from_browser":
 					$found = TRUE;
-					if(substr(trim($line), 0, 22) == '$GET_LANG_FROM_BROWSER') $line = $data;
+					if(mb_substr(trim($line), 0, 22) == '$GET_LANG_FROM_BROWSER') $line = $data;
 				break;
 
 				case "sms":
 					$found = TRUE;
-					if(substr(trim($line), 0, 14) == '$SMS_PARAMETER') $line = $data;
+					if(mb_substr(trim($line), 0, 14) == '$SMS_PARAMETER') $line = $data;
 				break;  //sms
 
 				case "mail_transport":
 					$found = TRUE;
-					if(substr(trim($line), 0, 15) == '$MAIL_TRANSPORT') $line = $data;
+					if(mb_substr(trim($line), 0, 15) == '$MAIL_TRANSPORT') $line = $data;
 					break;  //sms
 
 				case "warranty":
-					if(!$start && substr(trim($line), 0, 23) == "@define('WARRANTY_GIVER") {
+					if(!$start && mb_substr(trim($line), 0, 23) == "@define('WARRANTY_GIVER") {
 						$found = TRUE;
 						$start = TRUE;
 						$ignore = TRUE;
-					} else if($start == TRUE && substr(trim($line), 0, 21) == "@define('WARRANTY_URL") {
+					} else if($start == TRUE && mb_substr(trim($line), 0, 21) == "@define('WARRANTY_URL") {
 						$start = FALSE;
 						$ignore = FALSE;
 						$line = $data;
@@ -14892,7 +14892,7 @@ function ko_update_ko_config($mode, $data) {
 
 				case "webfolders":
 					$found = TRUE;
-					if(substr(trim($line), 0, 19) == '@define("WEBFOLDERS') $line = $data;
+					if(mb_substr(trim($line), 0, 19) == '@define("WEBFOLDERS') $line = $data;
 				break;
 			}//switch(mode)
 

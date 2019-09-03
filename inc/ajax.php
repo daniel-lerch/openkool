@@ -81,7 +81,7 @@ if(isset($_GET) && isset($_GET["action"])) {
 				}
 			}
 			//Werte neu speichern
-			ko_save_userpref($_SESSION["ses_userid"], "submenu_".$sm_module."_".$pos."_closed", substr($new_closed, 0, -1));
+			ko_save_userpref($_SESSION["ses_userid"], "submenu_".$sm_module."_".$pos."_closed", mb_substr($new_closed, 0, -1));
 			ko_save_userpref($_SESSION["ses_userid"], "submenu_".$sm_module."_".$pos, $new_open);
 
 			//Neuen HTML-Code für SM ausgeben
@@ -118,7 +118,7 @@ if(isset($_GET) && isset($_GET["action"])) {
 			}
 			//Werte neu speichern
 			ko_save_userpref($_SESSION["ses_userid"], "submenu_".$sm_module."_".$pos."_closed", $new_closed);
-			ko_save_userpref($_SESSION["ses_userid"], "submenu_".$sm_module."_".$pos, substr($new_open, 0, -1));
+			ko_save_userpref($_SESSION["ses_userid"], "submenu_".$sm_module."_".$pos, mb_substr($new_open, 0, -1));
 
 			//Neuen HTML-Code für SM ausgeben
 			eval("\$r=submenu_".$sm_module.'($id, $pos, "closed", 2);');
@@ -321,8 +321,8 @@ if(isset($_GET) && isset($_GET["action"])) {
 			$chk_col = $KOTA[$table]['_access']['chk_col'];
 			$rights_level = $KOTA[$table]['_access']['level'];
 			$ok = FALSE;
-			if(substr($chk_col, 0, 4) == 'ALL&') {
-				$ok = ($access[$module]['ALL'] >= $rights_level || $access[$module][$entry[substr($chk_col, 4)]] >= $rights_level);
+			if(mb_substr($chk_col, 0, 4) == 'ALL&') {
+				$ok = ($access[$module]['ALL'] >= $rights_level || $access[$module][$entry[mb_substr($chk_col, 4)]] >= $rights_level);
 			} else if($chk_col != '') {
 				$ok = ($access[$module][$entry[$chk_col]] >= $rights_level);
 			} else {
@@ -338,7 +338,7 @@ if(isset($_GET) && isset($_GET["action"])) {
 				if(is_array($allowed_cols) && sizeof($allowed_cols) > 0) {
 					foreach($cols as $ci => $column) {
 						//Ignore MODULE column like groups and datafields.
-						if(substr($column, 0, 6) == 'MODULE') continue;
+						if(mb_substr($column, 0, 6) == 'MODULE') continue;
 						if(is_array($allowed_cols['edit']) && !in_array($column, $allowed_cols['edit'])) unset($cols[$ci]);
 					}
 					if(sizeof($cols) == 0) $ok = FALSE;
@@ -364,8 +364,8 @@ if(isset($_GET) && isset($_GET["action"])) {
 			if(!$ok) break;
 
 
-			if($table == 'ko_leute' && substr($col, 0, 9) == 'MODULEgrp' && FALSE !== strpos($col, ':')) {
-				$dfid = substr($col, 16, 6);
+			if($table == 'ko_leute' && mb_substr($col, 0, 9) == 'MODULEgrp' && FALSE !== mb_strpos($col, ':')) {
+				$dfid = mb_substr($col, 16, 6);
 				$df = db_select_data('ko_groups_datafields', "WHERE `id` = '$dfid'", '*', '', '', TRUE);
 			}
 
@@ -415,16 +415,16 @@ if(isset($_GET) && isset($_GET["action"])) {
 				}
 			}
 			//Check for GDF checkbox
-			else if($table == 'ko_leute' && substr($col, 0, 9) == 'MODULEgrp' && FALSE !== strpos($col, ':') && $df['type'] == 'checkbox') {
+			else if($table == 'ko_leute' && mb_substr($col, 0, 9) == 'MODULEgrp' && FALSE !== mb_strpos($col, ':') && $df['type'] == 'checkbox') {
 				//Find current entry for GDF
-				$dfid = substr($col, 16, 6);
-				$gid = substr($col, 9, 6);
+				$dfid = mb_substr($col, 16, 6);
+				$gid = mb_substr($col, 9, 6);
 				if($access['groups']['ALL'] < 2 && $access['groups'][$gid] < 2) break;
 				$dfdata = db_select_data('ko_groups_datafields_data', "WHERE `datafield_id` = '$dfid' AND `person_id` = '$id' AND `group_id` = '$gid' AND `deleted` = '0'");
 
 				//Check if this person is assigned to the given group
 				$person = db_select_data($table, "WHERE `id` = '$id'", '*', '', '', TRUE);
-				if(FALSE === strpos($person['groups'], 'g'.$gid)) break;
+				if(FALSE === mb_strpos($person['groups'], 'g'.$gid)) break;
 
 				//Save changes for ko_leute
 				ko_save_leute_changes($id, $person);
@@ -453,8 +453,8 @@ if(isset($_GET) && isset($_GET["action"])) {
 			//For all other input types show form
 			else {
 				//Check for group with no ore only one role - add/remove assignment directly
-				if($table == 'ko_leute' && substr($col, 0, 9) == 'MODULEgrp' && strlen($col) == 15) {
-					$gid = format_userinput(substr($col, 9), 'uint');
+				if($table == 'ko_leute' && mb_substr($col, 0, 9) == 'MODULEgrp' && mb_strlen($col) == 15) {
+					$gid = format_userinput(mb_substr($col, 9), 'uint');
 					//Access check
 					if($access['groups']['ALL'] < 2 && $access['groups'][$gid] < 2) break;
 					if($gid) {
@@ -468,13 +468,13 @@ if(isset($_GET) && isset($_GET["action"])) {
 							if($rid) $rid = ':r'.$rid;
 							//Add or remove person from group
 							$full_gid = ko_groups_decode($gid, 'full_gid').$rid;
-							if(FALSE === strpos($person['groups'], 'g'.$gid)) {
+							if(FALSE === mb_strpos($person['groups'], 'g'.$gid)) {
 								$new_groups = $person['groups'].($person['groups'] != '' ? ',' : '').$full_gid;
 								$mode = 'add';
 							} else {
 								$curr_groups = explode(',', $person['groups']);
 								foreach($curr_groups as $k => $cg) {
-									if(FALSE !== strpos($cg, 'g'.$gid)) unset($curr_groups[$k]);
+									if(FALSE !== mb_strpos($cg, 'g'.$gid)) unset($curr_groups[$k]);
 								}
 								$new_groups = implode(',', $curr_groups);
 								$mode = 'remove';
@@ -537,7 +537,7 @@ if(isset($_GET) && isset($_GET["action"])) {
 
 					//Add submit button for input types doubleselect
 					if(in_array($KOTA[$table][$col]['form']['type'], array('doubleselect'))
-						|| ($table == 'ko_leute' && substr($col, 0, 9) == 'MODULEgrp' && FALSE !== strpos($col, ':') && $df['type'] == 'multiselect')) {
+						|| ($table == 'ko_leute' && mb_substr($col, 0, 9) == 'MODULEgrp' && FALSE !== mb_strpos($col, ':') && $df['type'] == 'multiselect')) {
 						$classes[] = 'if-doubleselect';
 						$code .= '<div><input type="button" name="if_submit" class="if_submit" value="'.getLL('OK').'" /></div>';
 					}
@@ -564,7 +564,7 @@ if(isset($_GET) && isset($_GET["action"])) {
 
 			$data = db_select_data($table, "WHERE `id` = '$id'", '*', '', '', TRUE);
 			//Add column if a special column has been shown
-			if(substr($col, 0, 6) == 'MODULE') $data[$col] = '';
+			if(mb_substr($col, 0, 6) == 'MODULE') $data[$col] = '';
 			$kota_data = $data;
 			kota_process_data($table, $kota_data, 'list', $log, $id);
 
@@ -635,7 +635,7 @@ if(isset($_GET) && isset($_GET["action"])) {
 				//Get record from DB
 				$data = db_select_data($table, "WHERE `id` = '$id'", '*', '', '', TRUE);
 				//Add column if a special column has been edited
-				if(substr($col, 0, 6) == 'MODULE') $data[$col] = $_POST['koi'][$table][$col][$id];
+				if(mb_substr($col, 0, 6) == 'MODULE') $data[$col] = $_POST['koi'][$table][$col][$id];
 				kota_process_data($table, $data, 'list', $log, $id);
 
 				$redrawString = '';
@@ -667,8 +667,8 @@ if(isset($_GET) && isset($_GET["action"])) {
 
 				$val = $_SESSION['kota_filter'][$table][$col];
 				if($val != '') $show_clear = TRUE;
-				if(substr($val, 0, 1) == '!') {
-					$val = substr($val, 1);
+				if(mb_substr($val, 0, 1) == '!') {
+					$val = mb_substr($val, 1);
 					$negChk = 'checked="checked"';
 				} else {
 					$negChk = '';
@@ -716,8 +716,8 @@ if(isset($_GET) && isset($_GET["action"])) {
 
 						//Find FCN for list to apply
 						$applyMe = FALSE;
-						if(FALSE !== strpos($KOTA[$table][$col]['list'], '(')) {
-							$fcn = substr($KOTA[$table][$col]['list'], 0, strpos($KOTA[$table][$col]['list'], '('));
+						if(FALSE !== mb_strpos($KOTA[$table][$col]['list'], '(')) {
+							$fcn = mb_substr($KOTA[$table][$col]['list'], 0, mb_strpos($KOTA[$table][$col]['list'], '('));
 							if(function_exists($fcn)) {
 								$applyMe = $KOTA[$table][$col]['list'];
 							}
@@ -756,7 +756,7 @@ if(isset($_GET) && isset($_GET["action"])) {
 						$values = db_select_distinct($table, $col, '', $KOTA[$table][$col]['form']['where'], FALSE);
 						$ids = array();
 						foreach($values as $value) {
-							if(FALSE !== strpos($value, ',')) {
+							if(FALSE !== mb_strpos($value, ',')) {
 								foreach(explode(',', $value) as $v) {
 									if(!$v || !intval($v)) continue;
 									$ids[] = intval($v);
@@ -942,7 +942,7 @@ if(isset($_GET) && isset($_GET["action"])) {
 			} else if($name == '_none_') {
 				$_SESSION['kota_show_cols_'.$table] = array();
 			} else {
-				if(substr($name, 0, 3) == '@G@') $value = ko_get_userpref('-1', substr($name, 3), $table.'_colitemset');
+				if(mb_substr($name, 0, 3) == '@G@') $value = ko_get_userpref('-1', mb_substr($name, 3), $table.'_colitemset');
 				else $value = ko_get_userpref($_SESSION['ses_userid'], $name, $table.'_colitemset');
 				$_SESSION['kota_show_cols_'.$table] = explode(',', $value[0]['value']);
 			}
@@ -963,8 +963,8 @@ if(isset($_GET) && isset($_GET["action"])) {
 			$name = format_userinput($_GET['name'], 'js', FALSE, 0, array(), '@');
 			if($name == '') break;
 
-			if(substr($name, 0, 3) == '@G@') {
-				if($access[$module]['MAX'] > 3) ko_delete_userpref('-1', substr($name, 3), $table.'_colitemset');
+			if(mb_substr($name, 0, 3) == '@G@') {
+				if($access[$module]['MAX'] > 3) ko_delete_userpref('-1', mb_substr($name, 3), $table.'_colitemset');
 			} else ko_delete_userpref($_SESSION['ses_userid'], $name, $table.'_colitemset');
 
 			print 'main_content@@@';
@@ -1004,8 +1004,8 @@ if(isset($_GET) && isset($_GET["action"])) {
 			// Check if presets are allowed
 			if (!isset($KOTA[$ptable][$col]['form']['foreign_table_preset'])) break;
 
-			if(substr($KOTA[$ptable][$col]['form']['foreign_table_preset']['check_access'], 0, 4) == 'FCN:') {
-				$fcn = substr($KOTA[$ptable][$col]['form']['foreign_table_preset']['check_access'], 4);
+			if(mb_substr($KOTA[$ptable][$col]['form']['foreign_table_preset']['check_access'], 0, 4) == 'FCN:') {
+				$fcn = mb_substr($KOTA[$ptable][$col]['form']['foreign_table_preset']['check_access'], 4);
 				if(function_exists($fcn)) {
 					eval("$fcn(\$pid, \$joinValueLocal, \$result);");
 					if (!$result) break;

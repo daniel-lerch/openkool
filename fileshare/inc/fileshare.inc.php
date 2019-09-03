@@ -141,7 +141,7 @@ function ko_fileshare_list_shares($uid, $folderid=0, $output=TRUE) {
 		$tpl_list_data[$e_i][3] = $e["type"];
 
 		//Erstellungszeit
-		$tpl_list_data[$e_i][4] = substr(sqldatetime2datum($e["c_date"]), 0, -3);
+		$tpl_list_data[$e_i][4] = mb_substr(sqldatetime2datum($e["c_date"]), 0, -3);
 
 	}//foreach(shares as e)
 
@@ -177,12 +177,12 @@ function ko_fileshare_list_shares($uid, $folderid=0, $output=TRUE) {
 		$share_rights_text = array(1 => getLL("fileshare_share_rights_1"), 2 => getLL("fileshare_share_rights_2"), 3 => getLL("fileshare_share_rights_3"));
 		$share_code  = '('.$share_rights_text[$af["share_rights"]].': ';
 		foreach(explode(",", $af["share_users"]) as $u) {
-			$uid = substr($u, 1, -1);
+			$uid = mb_substr($u, 1, -1);
 			ko_get_login($uid, $login);
 			ko_get_person_by_id($login["leute_id"], $p);
 			$users .= $p["vorname"]." ".$p["nachname"].", ";
 		}
-		$share_code .= substr($users, 0, -2).')';
+		$share_code .= mb_substr($users, 0, -2).')';
 
 		$code .= '<br /><br /><hr />';
 		$code .= '<span style="font-size:0.75em;font-style:italic;"><b>'.getLL("fileshare_share_settings").' '.$af["name"].':</b><br />';
@@ -210,9 +210,9 @@ function ko_fileshare_formular_folder($mode, $id=0) {
 		$txt_name = $afolder["name"];
 		$txt_comment = $afolder["comment"];
 		foreach(explode(",", $afolder["share_users"]) as $user) {
-			if(substr($user, 0, 1) != "@" || substr($user, -1, 1) != "@") continue;
-			$login_avalues[] = substr($user, 1, -1);
-			ko_get_login(substr($user, 1, -1), $al);
+			if(mb_substr($user, 0, 1) != "@" || mb_substr($user, -1, 1) != "@") continue;
+			$login_avalues[] = mb_substr($user, 1, -1);
+			ko_get_login(mb_substr($user, 1, -1), $al);
 			ko_get_person_by_id($al["leute_id"], $ap);
 			$login_adescs[] = $ap["vorname"]." ".$ap["nachname"];
 		}
@@ -363,7 +363,7 @@ function ko_fileshare_formular_send($files) {
 	//File-IDs übergeben
 	foreach($files as $file) {
 		$file_ = format_userinput($file, "alphanum", FALSE, 32);
-		if(strlen($file_) == 32) $tpl_files[] = $file;
+		if(mb_strlen($file_) == 32) $tpl_files[] = $file;
 		//Label erstellen, mit allen zu sendenen Datein
 		$as_ = ko_get_shares(" AND `id` = '$file'"); $as = $as_[0];
 		$label_sendfiles .= "<div>".$as["filename"]." (".ko_nice_size($as["filesize"]).")</div>";
@@ -383,7 +383,7 @@ function ko_fileshare_formular_send($files) {
 				$imported_recipients .= $p["email"].",";
 			}
 		}//foreach(my_list as m)
-		$imported_recipients = substr($imported_recipients, 0, -1);
+		$imported_recipients = mb_substr($imported_recipients, 0, -1);
 	}
 
 	//Logins für interne Empfänger
@@ -735,7 +735,7 @@ function ko_fileshare_webfolder_details($id) {
 
 	foreach($folders as $folder) {
 		$name = str_replace($WEBFOLDERS_BASE, "", $folder);
-		$name = substr($name, strlen($id));
+		$name = mb_substr($name, mb_strlen($id));
 		if(!$name) continue;
 
 		print '<div>';
@@ -828,7 +828,7 @@ function ko_fileshare_get_folder_content($root_dir, &$folders, &$files, $mode=""
 function ko_fileshare_webfolders_rights($folder) {
 	global $WEBFOLDERS_BASE_HTACCESS;
 
-	if(substr($folder, -1) != "/") $folder = $folder."/";
+	if(mb_substr($folder, -1) != "/") $folder = $folder."/";
 	$contents = file($WEBFOLDERS_BASE_HTACCESS.$folder.".htaccess");
 	if(sizeof($contents) == 0) return FALSE;
 

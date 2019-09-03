@@ -356,7 +356,7 @@ class kOOL_listview {
 			if($mode == 'xls') {
 				foreach($KOTA[$this->table] as $kota_col) {
 					$addRows = array();
-					if(substr($kota_col, 0, 1) == '_') continue;
+					if(mb_substr($kota_col, 0, 1) == '_') continue;
 					if($kota_col['form']['type'] != 'foreign_table') continue;
 					$ft_table = $kota_col['form']['table'];
 					if(!$ft_table) continue;
@@ -524,13 +524,13 @@ class kOOL_listview {
 				if($this->disableAccessRights) {
 					$r[$type] = TRUE;
 				} else {
-					if(substr($this->chk_col, 0, 4) == 'ALL&') {
-						$r[$type] = ($this->access['ALL'] >= $this->accessLevels[$type] || $this->access[$data[substr($this->chk_col, 4)]] >= $this->accessLevels[$type]);
-					} else if($this->chk_col != '' && substr($this->accessLevels[$type], 0, 3) != 'ALL') {
+					if(mb_substr($this->chk_col, 0, 4) == 'ALL&') {
+						$r[$type] = ($this->access['ALL'] >= $this->accessLevels[$type] || $this->access[$data[mb_substr($this->chk_col, 4)]] >= $this->accessLevels[$type]);
+					} else if($this->chk_col != '' && mb_substr($this->accessLevels[$type], 0, 3) != 'ALL') {
 						$r[$type] = ($this->access[$data[$this->chk_col]] >= $this->accessLevels[$type]);
 					} else {
-						if(substr($this->accessLevels[$type], 0, 3) == 'ALL') {
-							$al = substr($this->accessLevels[$type], 3);
+						if(mb_substr($this->accessLevels[$type], 0, 3) == 'ALL') {
+							$al = mb_substr($this->accessLevels[$type], 3);
 						} else {
 							$al = $this->accessLevels[$type];
 						}

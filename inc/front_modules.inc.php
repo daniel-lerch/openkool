@@ -133,25 +133,25 @@ function ko_fm_daten_cal($uid, $pos) {
 	foreach($events as $event) {
 		$content = array();
 		$content['text'] = $event['eventgruppen_name'].($event['kommentar'] ? ': '.$event['kommentar'] : '');
-		if(strlen($content['text']) > $title_length) $content['text'] = substr($content['text'], 0, $title_length).'..';
+		if(mb_strlen($content['text']) > $title_length) $content['text'] = mb_substr($content['text'], 0, $title_length).'..';
 
 		if($event['startzeit'] == '00:00:00' && $event['endzeit'] == '00:00:00') {
 			$content['zeit'] = getLL('time_all_day');
 		} else {
-			$content['zeit'] = substr($event['startzeit'], 0, -3).'-'.substr($event['endzeit'], 0, -3);
+			$content['zeit'] = mb_substr($event['startzeit'], 0, -3).'-'.mb_substr($event['endzeit'], 0, -3);
 		}
 
 		//Multiday events
 		if($event['startdatum'] != $event['enddatum']) {
 			$date = $event['startdatum'];
 			while((int)str_replace('-', '', $date) <= (int)str_replace('-', '', $event['enddatum'])) {
-				if(substr($date, 5, 2) == date('m')) {
-					$data[(int)substr($date, -2)][] = $content;
+				if(mb_substr($date, 5, 2) == date('m')) {
+					$data[(int)mb_substr($date, -2)][] = $content;
 				}
 				$date = add2date($date, 'tag', 1, TRUE);
 			}
 		} else {
-			$data[(int)substr($event['startdatum'], -2)][] = $content;
+			$data[(int)mb_substr($event['startdatum'], -2)][] = $content;
 		}
 	}//foreach(events)
 
@@ -174,7 +174,7 @@ function ko_fm_daten_cal($uid, $pos) {
 	$r .= '<tr><td kalender_header>&nbsp;</td>';
 	$tempdate = $date;
 	for($i=0; $i<7; $i++) {
-		$r .= '<td class="kalender_header">'.substr(strftime('%a', strtotime($tempdate)), 0, 1).'</td>';
+		$r .= '<td class="kalender_header">'.mb_substr(strftime('%a', strtotime($tempdate)), 0, 1).'</td>';
 		$tempdate = add2date($tempdate, 'tag', 1, TRUE);
 	}
 	$r .= '</tr>';
@@ -190,8 +190,8 @@ function ko_fm_daten_cal($uid, $pos) {
 		$class = $today == $date ? 'kalender_tag_aktiv' : 'kalender_tag';
 		if(strftime('%m', strtotime($date)) == date('m')) {
 			$tooltip = '';
-			if(isset($data[substr($date, -2)])) {
-				foreach($data[substr($date, -2)] as $entry) {
+			if(isset($data[mb_substr($date, -2)])) {
+				foreach($data[mb_substr($date, -2)] as $entry) {
 					$tooltip .= '<b>'.strtr($entry['text'], $jsmap).'</b><br />'.strtr($entry['zeit'], $jsmap).'<br />';
 				}
 				$ph = $pos == 'r' ? 'l' : 'r';
@@ -252,17 +252,17 @@ function ko_fm_geburtstage($uid, $pos) {
 	$today = date('Y-m-d');
 	for($inc = -1*$deadline_minus; $inc <= $deadline_plus; $inc++) {
 		$d = add2date($today, 'day', $inc, TRUE);
-		$dates[substr($d, 5)] = $inc;
-		list($month, $day) = explode('-', substr($d, 5));
+		$dates[mb_substr($d, 5)] = $inc;
+		list($month, $day) = explode('-', mb_substr($d, 5));
 		$where .= " OR (MONTH(`geburtsdatum`) = '$month' AND DAY(`geburtsdatum`) = '$day') ";
 	}
-	$where = " AND (".substr($where, 3).") ".ko_get_birthday_filter();
+	$where = " AND (".mb_substr($where, 3).") ".ko_get_birthday_filter();
 	
 	$es = db_select_data('ko_leute', 'WHERE 1=1 '.$where.$z_where, '*');
 
 	$sort = array();
 	foreach($es as $pid => $p) {
-		$sort[$pid] = $dates[substr($p['geburtsdatum'], 5)];
+		$sort[$pid] = $dates[mb_substr($p['geburtsdatum'], 5)];
 	}
 	asort($sort);
 
@@ -272,7 +272,7 @@ function ko_fm_geburtstage($uid, $pos) {
 		$p = $es[$pid];
 
 		$p['deadline'] = $deadline;
-		$p['alter'] = (int)substr(add2date(date('Y-m-d'), 'day', $deadline, TRUE), 0, 4) - (int)substr($p['geburtsdatum'], 0, 4);
+		$p['alter'] = (int)mb_substr(add2date(date('Y-m-d'), 'day', $deadline, TRUE), 0, 4) - (int)mb_substr($p['geburtsdatum'], 0, 4);
 
 		$data[$row] = $p;
 		$data[$row]['geburtsdatum'] = sql2datum($p['geburtsdatum']);
@@ -612,12 +612,12 @@ function ko_fm_today($uid, $pos) {
 			ko_get_logins($logins);
 			$lids = array();
 			foreach($logs as $logid => $log) {
-				$logs[$logid]['_leute_id'] = $lids[] = (int)substr($log['comment'], 0, strpos($log['comment'], ' '));
+				$logs[$logid]['_leute_id'] = $lids[] = (int)mb_substr($log['comment'], 0, mb_strpos($log['comment'], ' '));
 			}
 			ko_get_leute($people, " AND `id` IN ('".implode("','", $lids)."')");
 			foreach($logs as $log) {
 				$tpl_person[$p_counter]['user'] = $logins[$log['user_id']]['login'];
-				$tpl_person[$p_counter]['log'] = ko_html(substr($log['comment'], strpos($log['comment'], ':')+2));
+				$tpl_person[$p_counter]['log'] = ko_html(mb_substr($log['comment'], mb_strpos($log['comment'], ':')+2));
 				//Name of the edited person
 				$person = $people[$log['_leute_id']];
 				if(isset($person['firm']) && $person['firm']) {

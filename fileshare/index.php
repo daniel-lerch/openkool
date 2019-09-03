@@ -112,7 +112,7 @@ switch($do_action) {
 		}
 
 		foreach($ids as $id) {
-			if(!$id || strlen($id) != 32) continue;
+			if(!$id || mb_strlen($id) != 32) continue;
 
 			$filter = " AND `id` = '$id' ";
 			$share_ = ko_get_shares($filter); $share = $share_[0];
@@ -150,7 +150,7 @@ switch($do_action) {
 
 		if(!$error) {
 			foreach($ids as $id) {
-				if(!$id || strlen($id) != 32) continue;
+				if(!$id || mb_strlen($id) != 32) continue;
 				db_update_data("ko_fileshare", "WHERE `id` = '$id'", array("parent" => $target_id));
 			}
 			$info = 3;
@@ -171,7 +171,7 @@ switch($do_action) {
 
 		if(!$error) {
 			foreach($ids as $id) {
-				if(!$id || strlen($id) != 32) continue;
+				if(!$id || mb_strlen($id) != 32) continue;
 				$file_ = ko_get_shares(" AND `id` = '$id'");
 				$file = $file_[0];
       	$new_id = md5($file["filename"][$i].microtime());
@@ -519,7 +519,7 @@ switch($do_action) {
 			else {
 				$old_name = format_userinput($_POST["hid_origname"], "dir");
 				$name = $WEBFOLDERS_BASE.$path.$name;
-				if(substr($name, 0, strlen($WEBFOLDERS_BASE)) != $WEBFOLDERS_BASE) {
+				if(mb_substr($name, 0, mb_strlen($WEBFOLDERS_BASE)) != $WEBFOLDERS_BASE) {
 					//error
 				} else {
 					//rename folder and relink .htaccess
@@ -543,7 +543,7 @@ switch($do_action) {
 			//Create folder in .webfolder if not there yet
 			if(!file_exists($WEBFOLDERS_BASE_HTACCESS.$path.$name)) {
 				$check_path = $WEBFOLDERS_BASE_HTACCESS;
-				$check_path = substr($check_path, -1) == "/" ? substr($check_path, 0, -1) : $check_path;
+				$check_path = mb_substr($check_path, -1) == "/" ? mb_substr($check_path, 0, -1) : $check_path;
 				foreach(explode("/", $path) as $path_element) {
 					if(!$path_element) continue;
 					$check_path = $check_path."/".$path_element;
@@ -589,14 +589,14 @@ switch($do_action) {
 		
 		$folder = urldecode($_GET["id"]);
 		$folder = realpath($WEBFOLDERS_BASE.$folder);
-		if(substr($folder, 0, strlen($WEBFOLDERS_BASE)) != $WEBFOLDERS_BASE) {
+		if(mb_substr($folder, 0, mb_strlen($WEBFOLDERS_BASE)) != $WEBFOLDERS_BASE) {
 			//error
 		} else {
 			$folder = str_replace($WEBFOLDERS_BASE, "", $folder);
 			unlink($WEBFOLDERS_BASE.$folder."/.htaccess");
 			unlink($WEBFOLDERS_BASE_HTACCESS.$folder."/.htaccess");
 		}
-		$details_id = substr($folder, 0, strpos($folder, "/"))."/";
+		$details_id = mb_substr($folder, 0, mb_strpos($folder, "/"))."/";
 		$_SESSION["show"] = "webfolder_details";
 	break;
 
@@ -611,7 +611,7 @@ switch($do_action) {
 
 		$folder = urldecode($_POST["id"]);
 		$folder = realpath($WEBFOLDERS_BASE.$folder);
-		if(substr($folder, 0, strlen($WEBFOLDERS_BASE)) != $WEBFOLDERS_BASE) {
+		if(mb_substr($folder, 0, mb_strlen($WEBFOLDERS_BASE)) != $WEBFOLDERS_BASE) {
 			//error
 		} else {
 			$folder = str_replace($WEBFOLDERS_BASE, "", $folder);

@@ -89,7 +89,7 @@ if(isset($_GET) && isset($_GET["action"])) {
 					$r .= $line["value"].",".$line["desc"];
 					$r .= "#";
 				}
-				$r = substr($r, 0, -1);
+				$r = mb_substr($r, 0, -1);
 
 				print $r;
 			}//if(access)
@@ -116,7 +116,7 @@ if(isset($_GET) && isset($_GET["action"])) {
 				$r .= $line["value"].",".$line["desc"];
 				$r .= "#";
 			}
-			$r = substr($r, 0, -1);
+			$r = mb_substr($r, 0, -1);
 
 			print $r;
 		break;
@@ -227,7 +227,7 @@ if(isset($_GET) && isset($_GET["action"])) {
 				$date1 = str_replace('-', '', $event['startdatum']);
 				$date2 = str_replace('-', '', $event['enddatum']);
 				while($date1 <= $date2) {
-					$date = substr($date1, 0, 4).'-'.substr($date1, 4, 2).'-'.substr($date1, 6, 2);
+					$date = mb_substr($date1, 0, 4).'-'.mb_substr($date1, 4, 2).'-'.mb_substr($date1, 6, 2);
 					$_dates[] = $date;
 					$date1 = str_replace('-', '', add2date($date, 'day', 1, TRUE));
 				}

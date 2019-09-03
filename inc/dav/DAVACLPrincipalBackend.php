@@ -116,7 +116,7 @@ class DAVACLPrincipalBackend extends AbstractBackend {
             WHERE `ko_admin`.`login` = ? AND `ko_admin`.`disabled` = ''");
 
         //trick this into an uri in the form principals/<login> ...
-        $path_login = substr($path, strlen('principals/'));
+        $path_login = mb_substr($path, mb_strlen('principals/'));
         $stmt->bind_param('s', $path_login);
         $stmt->execute();
         $stmt->bind_result($id, $login, $email, $leute_email, $deleted);

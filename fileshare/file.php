@@ -25,9 +25,9 @@ require($ko_path."inc/ko.inc.php");
 function sanitize($s) {
   $allowed = "abcdefABCDEF1234567890";  //MD5-Wert ist eine Hex-Zahl
   $new = "";
-  for($i=0; $i<strlen($s); $i++) {
-    if(FALSE !== strstr($allowed, substr($s, $i, 1))) {
-      $new .= substr($s, $i, 1);
+  for($i=0; $i<mb_strlen($s); $i++) {
+    if(FALSE !== strstr($allowed, mb_substr($s, $i, 1))) {
+      $new .= mb_substr($s, $i, 1);
 		}
   }
   return $new;
@@ -44,7 +44,7 @@ if(!isset($_GET["di"]) || !isset($_GET["ei"])) $error = 1;
 if(!$error) {
 	$file_id = sanitize($_GET["di"]);
 	$recipient_id = sanitize($_GET["ei"]);
-	if(strlen($file_id) != 32 || strlen($recipient_id) != 32) {
+	if(mb_strlen($file_id) != 32 || mb_strlen($recipient_id) != 32) {
 		$error = 1;
 	}
 }
@@ -69,7 +69,7 @@ if(!$error) {
 				$allowed_users[] = array();
 				if($folder["share_rights"] >= 1) {
 					foreach(explode(",", $folder["share_users"]) as $u) {
-						$allowed_users[] = substr($u, 1, -1);
+						$allowed_users[] = mb_substr($u, 1, -1);
 					}
 					if(in_array($_SESSION["ses_userid"], $allowed_users)) {
 						$found = TRUE;

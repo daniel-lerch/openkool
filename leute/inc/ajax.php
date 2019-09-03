@@ -103,9 +103,9 @@ if(isset($_GET) && isset($_GET["action"])) {
 			else if($action == "leutedelfilterset") {
 				if($_GET["name"] == "") break;
 				//Check for global filter
-				if(substr($_GET['name'], 0, 3) == '@G@') {
+				if(mb_substr($_GET['name'], 0, 3) == '@G@') {
 					if($access['leute']['MAX'] > 3) {
-						ko_delete_userpref('-1', format_userinput(substr($_GET['name'], 3), 'js'), 'filterset');
+						ko_delete_userpref('-1', format_userinput(mb_substr($_GET['name'], 3), 'js'), 'filterset');
 					}
 				} else {
 					ko_delete_userpref($_SESSION["ses_userid"], format_userinput($_GET["name"], "js"), "filterset");
@@ -253,8 +253,8 @@ if(isset($_GET) && isset($_GET["action"])) {
 			}
 			//Filter-Vorlage öffnen
 			else if($action == "leuteopenfilterset") {
-				$name = substr($_GET['name'], 0, 3) == '@G@' ? substr($_GET['name'], 3) : $_GET['name'];
-				$value = substr($_GET['name'], 0, 3) == '@G@' ? (array)ko_get_userpref('-1', '', 'filterset') : (array)ko_get_userpref($_SESSION['ses_userid'], '', 'filterset');
+				$name = mb_substr($_GET['name'], 0, 3) == '@G@' ? mb_substr($_GET['name'], 3) : $_GET['name'];
+				$value = mb_substr($_GET['name'], 0, 3) == '@G@' ? (array)ko_get_userpref('-1', '', 'filterset') : (array)ko_get_userpref($_SESSION['ses_userid'], '', 'filterset');
 				$_SESSION["filter"] = array();
 				foreach($value as $v_i => $v) {
 					if($v["key"] == $name) {
@@ -423,11 +423,11 @@ if(isset($_GET) && isset($_GET["action"])) {
 
 					//group column to show all datafields as well
 					if(ko_get_userpref($_SESSION['ses_userid'], 'group_shows_datafields') == 1
-						&& substr($id, 0, 9) == 'MODULEgrp'
-						&& FALSE === strpos($id, ':')
+						&& mb_substr($id, 0, 9) == 'MODULEgrp'
+						&& FALSE === mb_strpos($id, ':')
 						) {
 						foreach($cols as $col) {
-							if(substr($col, 0, 15) != substr($id, 0, 15)) continue;
+							if(mb_substr($col, 0, 15) != mb_substr($id, 0, 15)) continue;
 							if(!in_array($col, $_SESSION['show_leute_cols'])) $_SESSION['show_leute_cols'][] = $col;
 						}
 					}
@@ -453,11 +453,11 @@ if(isset($_GET) && isset($_GET["action"])) {
 
 					//group column to show all datafields as well
 					if(ko_get_userpref($_SESSION['ses_userid'], 'group_shows_datafields') == 1
-						&& substr($id, 0, 9) == 'MODULEgrp'
-						&& FALSE === strpos($id, ':')
+						&& mb_substr($id, 0, 9) == 'MODULEgrp'
+						&& FALSE === mb_strpos($id, ':')
 						) {
 						foreach($cols as $col) {
-							if(substr($col, 0, 15) != substr($id, 0, 15)) continue;
+							if(mb_substr($col, 0, 15) != mb_substr($id, 0, 15)) continue;
 							if(in_array($col, $_SESSION['show_leute_cols'])) {
 								$_SESSION["show_leute_cols"] = array_diff($_SESSION["show_leute_cols"], array($col));
 							}
@@ -620,7 +620,7 @@ if(isset($_GET) && isset($_GET["action"])) {
 				} else if($name == '_none_') {
 					$_SESSION['kota_show_cols_ko_kleingruppen'] = array();
 				} else {
-					if(substr($name, 0, 3) == '@G@') $value = ko_get_userpref('-1', substr($name, 3), "leute_kg_itemset");
+					if(mb_substr($name, 0, 3) == '@G@') $value = ko_get_userpref('-1', mb_substr($name, 3), "leute_kg_itemset");
 					else $value = ko_get_userpref($_SESSION['ses_userid'], $name, "leute_kg_itemset");
 					$_SESSION["kota_show_cols_ko_kleingruppen"] = explode(",", $value[0]["value"]);
 				}
@@ -637,7 +637,7 @@ if(isset($_GET) && isset($_GET["action"])) {
 				} else if($name == '_none_') {
 					$_SESSION['show_leute_chart'] = array();
 				} else {
-					if(substr($name, 0, 3) == '@G@') $value = ko_get_userpref('-1', substr($name, 3), "leute_chart_itemset");
+					if(mb_substr($name, 0, 3) == '@G@') $value = ko_get_userpref('-1', mb_substr($name, 3), "leute_chart_itemset");
 					else $value = ko_get_userpref($_SESSION['ses_userid'], $name, "leute_chart_itemset");
 					$_SESSION["show_leute_chart"] = explode(",", $value[0]["value"]);
 				}
@@ -653,14 +653,14 @@ if(isset($_GET) && isset($_GET["action"])) {
 					$cols = ko_get_leute_col_name();
 					//Remove small group and group columns
 					foreach($cols as $k => $v) {
-						if(substr($k, 0, 6) == 'MODULE') unset($cols[$k]);
+						if(mb_substr($k, 0, 6) == 'MODULE') unset($cols[$k]);
 					}
 					$_SESSION['show_leute_cols'] = array_keys($cols);
 				} else if($name == '_none_') {
 					$_SESSION['show_leute_cols'] = array();
 				} else {
 					//global or user itemlist
-					if(substr($name, 0, 3) == '@G@') $value = ko_get_userpref('-1', substr($name, 3), "leute_itemset");
+					if(mb_substr($name, 0, 3) == '@G@') $value = ko_get_userpref('-1', mb_substr($name, 3), "leute_itemset");
 					else $value = ko_get_userpref($_SESSION['ses_userid'], $name, "leute_itemset");
 					$_SESSION["show_leute_cols"] = explode(",", $value[0]["value"]);
 				}
@@ -690,21 +690,21 @@ if(isset($_GET) && isset($_GET["action"])) {
 			if($name == "") break;
 
 			if($_SESSION["show"] == "list_kg") {
-				if(substr($name, 0, 3) == '@G@') {
+				if(mb_substr($name, 0, 3) == '@G@') {
 					$kg_all_rights = ko_get_access_all('kg', '', $kg_max_rights);
-					if($kg_max_rights > 2) ko_delete_userpref('-1', substr($name, 3), "leute_kg_itemset");
+					if($kg_max_rights > 2) ko_delete_userpref('-1', mb_substr($name, 3), "leute_kg_itemset");
 				} else ko_delete_userpref($_SESSION['ses_userid'], $name, "leute_kg_itemset");
 				print submenu_leute("itemlist_spalten_kg", $pos, "open", 2);
 			} else if($_SESSION["show"] == "chart") {
 				if($access['leute']['MAX'] < 1) break;
-				if(substr($name, 0, 3) == '@G@') {
-					if($access['leute']['MAX'] > 3) ko_delete_userpref('-1', substr($name, 3), "leute_chart_itemset");
+				if(mb_substr($name, 0, 3) == '@G@') {
+					if($access['leute']['MAX'] > 3) ko_delete_userpref('-1', mb_substr($name, 3), "leute_chart_itemset");
 				} else ko_delete_userpref($_SESSION['ses_userid'], $name, "leute_chart_itemset");
 				print submenu_leute("itemlist_chart", $pos, "open", 2);
 			} else {
 				if($access['leute']['MAX'] < 1) break;
-				if(substr($name, 0, 3) == '@G@') {
-					if($access['leute']['MAX'] > 3) ko_delete_userpref('-1', substr($name, 3), "leute_itemset");
+				if(mb_substr($name, 0, 3) == '@G@') {
+					if($access['leute']['MAX'] > 3) ko_delete_userpref('-1', mb_substr($name, 3), "leute_itemset");
 				} else ko_delete_userpref($_SESSION['ses_userid'], $name, "leute_itemset");
 				print submenu_leute("itemlist_spalten", $pos, "open", 2);
 			}
@@ -769,7 +769,7 @@ if(isset($_GET) && isset($_GET["action"])) {
 			$limit = 30;
 
 			$string = format_userinput($_GET['string'], 'text');
-			if(!$string || strlen($string) < 3) {
+			if(!$string || mb_strlen($string) < 3) {
 				print '';
 				break;
 			}
@@ -781,7 +781,7 @@ if(isset($_GET) && isset($_GET["action"])) {
 				$accessAll = FALSE;
 			}
 
-			$input_name = format_userinput(substr($_GET['name'], 0, strrpos($_GET['name'], '[')), 'text');
+			$input_name = format_userinput(mb_substr($_GET['name'], 0, strrpos($_GET['name'], '[')), 'text');
 			$name = str_replace('txt_', 'sel_ds1_', $input_name);
 			$filter = unserialize(ko_get_setting('ps_filter_'.$name));
 			apply_leute_filter($filter, $base_where, ($access['leute']['ALL'] < 1 && !$accessAll));
@@ -789,8 +789,8 @@ if(isset($_GET) && isset($_GET["action"])) {
 
 			//Apply filters set in KOTA
 			list($temp, $table, $field) = explode('[', $input_name);
-			$table = substr($table, 0, -1);
-			$field = substr($field, 0, -1);
+			$table = mb_substr($table, 0, -1);
+			$field = mb_substr($field, 0, -1);
 			if(!isset($KOTA[$table][$field])) {
 				ko_include_kota(array($table));
 			}
@@ -933,7 +933,7 @@ if(isset($_GET) && isset($_GET["action"])) {
 
 						foreach($diff as $c => $d) {
 							//Don't treat columns not in ko_leute (anymore) (but go on for _df_ columns (changed datafields))
-							if(substr($c, 0, 4) != '_df_' && !in_array($c, $db_columns)) continue;
+							if(mb_substr($c, 0, 4) != '_df_' && !in_array($c, $db_columns)) continue;
 
 							//Entry deleted
 							if($c == "deleted" && $d == 1) {
@@ -947,7 +947,7 @@ if(isset($_GET) && isset($_GET["action"])) {
 							//groups
 							if($c == "groups") {
 								ko_groups_get_savestring($d, array("id" => $id), $log, $data_old[$c], $apply_start_stop=FALSE, $store=FALSE);
-								$row_value .= '<b>'.getLL("groups").'</b>:'.substr($log, 0, -2).", ";
+								$row_value .= '<b>'.getLL("groups").'</b>:'.mb_substr($log, 0, -2).", ";
 								$do_row = TRUE;
 							}
 							//rota (keep to display old changes)
@@ -985,7 +985,7 @@ if(isset($_GET) && isset($_GET["action"])) {
 								$do_row = TRUE;
 							}
 							//Datafields
-							else if(substr($c, 0, 4) == "_df_") {
+							else if(mb_substr($c, 0, 4) == "_df_") {
 								if($d["old"]["value"] == "" && $d["new"]["value"] == "") continue;
 								//Title
 								if(!$df_done) {
@@ -1112,7 +1112,7 @@ if(isset($_GET) && isset($_GET["action"])) {
 							}
 						}
 
-						$row_value = substr($row_value, 0, -2).'</td></tr>';
+						$row_value = mb_substr($row_value, 0, -2).'</td></tr>';
 
 						if($do_row) {
 							$diff_value .= $row_value;
@@ -1227,7 +1227,7 @@ if(isset($_GET) && isset($_GET["action"])) {
 			if($access['leute']['ALL'] < 1 && $access['leute'][$pid] < 1) break;
 
 			$filename = ko_word_address($pid);
-			print 'DOWNLOAD@@@'.substr($ko_path.'download/word/'.$filename, 3);
+			print 'DOWNLOAD@@@'.mb_substr($ko_path.'download/word/'.$filename, 3);
 		break;
 
 

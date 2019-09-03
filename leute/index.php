@@ -105,7 +105,7 @@ if($_POST["action"]) {
 if(FALSE === format_userinput($do_action, "alphanum+", TRUE, 50)) trigger_error("invalid action: ".$do_action, E_USER_ERROR);
 
 //Reset show_start if from another module
-if($_SERVER['HTTP_REFERER'] != '' && FALSE === strpos($_SERVER['HTTP_REFERER'], '/'.$ko_menu_akt.'/')) $_SESSION['show_start'] = 1;
+if($_SERVER['HTTP_REFERER'] != '' && FALSE === mb_strpos($_SERVER['HTTP_REFERER'], '/'.$ko_menu_akt.'/')) $_SESSION['show_start'] = 1;
 
 switch($do_action) {
 
@@ -319,8 +319,8 @@ switch($do_action) {
 			}
 
 			// Remove type details e.g. 'tinyint(4) unsigned' to 'tinyint'
-			$endpos = strpos($c["Type"], "(") ? strpos($c["Type"], "(") : strlen($c["Type"]);
-			$input_type = substr($c["Type"], 0, $endpos);
+			$endpos = mb_strpos($c["Type"], "(") ? mb_strpos($c["Type"], "(") : strlen($c["Type"]);
+			$input_type = mb_substr($c["Type"], 0, $endpos);
 
 			switch($input_type) {
 
@@ -344,7 +344,7 @@ switch($do_action) {
 						foreach($options as $o) {
 							$enum_code .= "'$o', ";
 						}
-						$enum_code = substr($enum_code, 0, -2);
+						$enum_code = mb_substr($enum_code, 0, -2);
 						db_alter_table("ko_leute", "CHANGE `".$c["Field"]."` `".$c["Field"]."` ENUM( $enum_code ) DEFAULT NULL ");
 
 						if(function_exists("my_enumplus")) {
@@ -564,13 +564,13 @@ switch($do_action) {
 
 		//Log-Meldung
 		if($do_action == "submit_neue_person") {
-			ko_log("new_person", $leute_id . ": " . substr($log_message,0,-2));
+			ko_log("new_person", $leute_id . ": " . mb_substr($log_message,0,-2));
 			$notifier->addInfo(1, $do_action);
 		} else {
 			if($log_message != "") {
 				$name = $person["vorname"]." ".$person["nachname"];
 				if(!$name) $name = $person["firm"];
-				ko_log("edit_person", $leute_id . " ($name): " . substr($log_message,0,-2));
+				ko_log("edit_person", $leute_id . " ($name): " . mb_substr($log_message,0,-2));
 				//Save changes for versioning
 				ko_save_leute_changes($leute_id, $person, $datafields);
 
@@ -582,7 +582,7 @@ switch($do_action) {
 						if(!$lid) continue;
 
 						$person = ko_get_logged_in_person($lid);
-						$text = sprintf(getLL('leute_announce_changes_email_text'), $sender['vorname'].' '.$sender['nachname'], $name)."\n\n".str_replace(',', "\n", substr($log_message, 0, -2));
+						$text = sprintf(getLL('leute_announce_changes_email_text'), $sender['vorname'].' '.$sender['nachname'], $name)."\n\n".str_replace(',', "\n", mb_substr($log_message, 0, -2));
 						ko_send_mail(array($sender['email'] => $sender['vorname'] . ' ' . $sender['nachname']), $person['email'], getLL('leute_announce_changes_email_subject'), $text);
 					}
 				}//if(POST[sel_announce_changes])
@@ -936,7 +936,7 @@ switch($do_action) {
 
 			//Daten für Formular-Aufruf vorbereiten
 			if(!$notifier->hasErrors()) {
-				if(substr($_SESSION["sort_leute"][0], 0, 6) == "MODULE") {
+				if(mb_substr($_SESSION["sort_leute"][0], 0, 6) == "MODULE") {
 					$order = "ORDER BY nachname ASC";
 				} else {
 					$order = "ORDER BY ".$_SESSION["sort_leute"][0]." ".$_SESSION["sort_leute_order"][0];
@@ -1234,7 +1234,7 @@ switch($do_action) {
 			$new_person = $_p;
 			//Unset fields not to be stored in ko_leute
 			foreach($new_person as $k => $v) {
-				if(substr($k, 0, 1) == "_") unset($new_person[$k]);
+				if(mb_substr($k, 0, 1) == "_") unset($new_person[$k]);
 			}
 			$new_person["crdate"] = date("Y-m-d H:i:s");
 			$new_person["cruserid"] = $_SESSION["ses_userid"];
@@ -1308,7 +1308,7 @@ switch($do_action) {
 		foreach($_p as $k => $v) {
 			if($k && $v != '') $logdata .= $k.': '.$v.', ';
 		}
-		if($logdata != '') $logdata = substr($logdata, 0, -2);
+		if($logdata != '') $logdata = mb_substr($logdata, 0, -2);
 
 
 		if($do_action == "submit_gs_aa" || $do_action == "submit_gs_ps_aa") {
@@ -1352,7 +1352,7 @@ switch($do_action) {
 		foreach($_p as $k => $v) {
 			if($k && $v != '') $logdata .= $k.': '.$v.', ';
 		}
-		if($logdata != '') $logdata = substr($logdata, 0, -2);
+		if($logdata != '') $logdata = mb_substr($logdata, 0, -2);
 
 		ko_log("del_groupsubscription", $_p["vorname"]." " .$_p["nachname"].": ".$_p["_group_id"].' - '.$logdata);
 	break;
@@ -1391,22 +1391,22 @@ switch($do_action) {
 				foreach(explode(',', ko_get_userpref($_SESSION['ses_userid'], 'leute_children_columns')) as $col) {
 					$ll = getLL("leute_children_col".$col);
 					if(!$ll) {
-						if(in_array(substr($col, 0, 8), array("_father_", "_mother_"))) {
-							$ll = getLL("kota_ko_leute_".substr($col, 8))." ".getLL("leute_children_col".substr($col, 0, 7));
+						if(in_array(mb_substr($col, 0, 8), array("_father_", "_mother_"))) {
+							$ll = getLL("kota_ko_leute_".mb_substr($col, 8))." ".getLL("leute_children_col".mb_substr($col, 0, 7));
 						} else {
 							$ll = getLL("kota_ko_leute".$col);
 						}
 					}
-					$leute_col_name_add[$col] = $ll ? $ll : substr($col, 1);
+					$leute_col_name_add[$col] = $ll ? $ll : mb_substr($col, 1);
 					$xls_cols[] = $col;
 				}
 				$leute_col_name = array_merge($leute_col_name, (array)$leute_col_name_add);
 			break;  //children
 
 			default:
-				if(substr($_POST["sel_cols"], 0, 4) == "set_") {
-					$setname = substr($_POST["sel_cols"], 4);
-					if(substr($setname, 0, 3) == '@G@') $set = ko_get_userpref('-1', substr($setname, 3), "leute_itemset");
+				if(mb_substr($_POST["sel_cols"], 0, 4) == "set_") {
+					$setname = mb_substr($_POST["sel_cols"], 4);
+					if(mb_substr($setname, 0, 3) == '@G@') $set = ko_get_userpref('-1', mb_substr($setname, 3), "leute_itemset");
 					else $set = ko_get_userpref($_SESSION["ses_userid"], $setname, "leute_itemset");
 					$xls_cols = explode(",", $set[0]["value"]);
 				}
@@ -1428,8 +1428,8 @@ switch($do_action) {
 
 		//Zeilen:
 		$pidlist = $famlist = array();
-		if(substr($_POST["sel_auswahl"], 0, 4) == "alle" && ($_SESSION["show"] == "show_all" || $_SESSION["show"] == "xls_settings")) {
-			$mode = substr($_POST["sel_auswahl"], 4);
+		if(mb_substr($_POST["sel_auswahl"], 0, 4) == "alle" && ($_SESSION["show"] == "show_all" || $_SESSION["show"] == "xls_settings")) {
+			$mode = mb_substr($_POST["sel_auswahl"], 4);
 
 			apply_leute_filter($_SESSION["filter"], $z_where, ($access['leute']['ALL'] < 1));
 			ko_get_leute($es, $z_where);
@@ -1438,7 +1438,7 @@ switch($do_action) {
 			}
 		}
 		//Birthday list
-		else if(($_POST['sel_auswahl'] == 'markierte' || substr($_POST['sel_auswahl'], 0, 4) == 'alle') && $_SESSION['show'] == 'geburtstagsliste') {
+		else if(($_POST['sel_auswahl'] == 'markierte' || mb_substr($_POST['sel_auswahl'], 0, 4) == 'alle') && $_SESSION['show'] == 'geburtstagsliste') {
 			$mode = 'p';
 			$deadline_plus = ko_get_userpref($_SESSION['ses_userid'], 'geburtstagsliste_deadline_plus');
 			$deadline_minus = ko_get_userpref($_SESSION['ses_userid'], 'geburtstagsliste_deadline_minus');
@@ -1458,8 +1458,8 @@ switch($do_action) {
 			$es = db_select_data('ko_leute', 'WHERE 1=1 '.$where, $cols, 'ORDER BY `deadline` ASC');
 		}
 		//Use mylist
-		else if(substr($_POST["sel_auswahl"], 0, 4) == "alle") {
-			$mode = substr($_POST["sel_auswahl"], 4);
+		else if(mb_substr($_POST["sel_auswahl"], 0, 4) == "alle") {
+			$mode = mb_substr($_POST["sel_auswahl"], 4);
 			$pidlist = $_SESSION["my_list"];
 		}
 		else if($_POST["sel_auswahl"] == "markierte") {
@@ -1789,7 +1789,7 @@ switch($do_action) {
 						if(!$leute_col_name[$c]) continue;
 						$header[] = $leute_col_name[$c];
 						//Define wrapping for excel cells (only wrap for group columns)
-						if($c == 'groups' || substr($c, 0, 9) == 'MODULEgrp') {
+						if($c == 'groups' || mb_substr($c, 0, 9) == 'MODULEgrp') {
 							$wrap[] = TRUE;
 						} else {
 							$wrap[] = FALSE;
@@ -1825,7 +1825,7 @@ switch($do_action) {
 					if(!$show) $show = 'show_all';
 					$_SESSION['show'] = $show;
 
-					$onload_code = "ko_popup('".$ko_path."download.php?action=file&amp;file=".substr($filename, 3)."');";
+					$onload_code = "ko_popup('".$ko_path."download.php?action=file&amp;file=".mb_substr($filename, 3)."');";
 				break;
 
 
@@ -1875,12 +1875,12 @@ switch($do_action) {
 					$smarty->assign("tpl_show_recipients", 1);
 					$smarty->assign("tpl_show_sendbutton", 1);
 					$smarty->assign("tpl_show_header", 1);
-					$smarty->assign("tpl_recipients_names", ko_html(substr($recipients_names, 0, -2)));
+					$smarty->assign("tpl_recipients_names", ko_html(mb_substr($recipients_names, 0, -2)));
 
 					//XLS-Datei aller Leute ohne GSM-Nummer erstellen
 					if($rec_invalid != "") {
-						$rec_invalid = substr($rec_invalid, 0, -2);
-						$rec_invalid_ids = substr($rec_invalid_ids, 0, -1);
+						$rec_invalid = mb_substr($rec_invalid, 0, -2);
+						$rec_invalid_ids = mb_substr($rec_invalid_ids, 0, -1);
 						$smarty->assign("tpl_recipients_invalid", ko_html($rec_invalid));
 						$smarty->assign("tpl_recipients_invalid_ids", $rec_invalid_ids);
 
@@ -1913,7 +1913,7 @@ switch($do_action) {
 					foreach($array_empfaenger as $e) {
 						$tpl_recipients .= $e . ",";
 					}
-					$tpl_recipients = substr($tpl_recipients, 0, -1);
+					$tpl_recipients = mb_substr($tpl_recipients, 0, -1);
 					$smarty->assign("tpl_recipients", ko_html($tpl_recipients));
 					$smarty->assign('tpl_num_recipients', sizeof($array_empfaenger));
 
@@ -1982,7 +1982,7 @@ switch($do_action) {
 						$returnAddressLogin .= $person['adresse'] ? $person['adresse'].', ' : '';
 						$returnAddressLogin .= $person['plz'] ? $person['plz'].' ' : '';
 						$returnAddressLogin .= $person['ort'] ? $person['ort'].', ' : '';
-						if(substr($returnAddressLogin, -2) == ', ') $returnAddressLogin = substr($returnAddressLogin, 0, -2);
+						if(mb_substr($returnAddressLogin, -2) == ', ') $returnAddressLogin = mb_substr($returnAddressLogin, 0, -2);
 					}
 					else {
 						$returnAddressLogin = null;
@@ -1993,7 +1993,7 @@ switch($do_action) {
 						$returnAddressInfo .= ko_get_setting('info_address') ? ko_get_setting('info_address').', ' : '';
 						$returnAddressInfo .= ko_get_setting('info_zip') ? ko_get_setting('info_zip').' ' : '';
 						$returnAddressInfo .= ko_get_setting('info_city') ? ko_get_setting('info_city').', ' : '';
-						if(substr($returnAddressInfo, -2) == ', ') $returnAddressInfo = substr($returnAddressInfo, 0, -2);
+						if(mb_substr($returnAddressInfo, -2) == ', ') $returnAddressInfo = mb_substr($returnAddressInfo, 0, -2);
 					}
 					else {
 						$returnAddressInfo = null;
@@ -2079,7 +2079,7 @@ switch($do_action) {
 						$letters[] = ''; $letters_ids[] = '';
 						foreach($rows as $letter) {
 							$letters_ids[] = $letter['id'];
-							$letters[] = strftime($DATETIME['dmy'], strtotime($letter['crdate'])).' '.ko_html(substr($letter['subject'], 0, 40)).' ('.$letter['num_recipients'].')';
+							$letters[] = strftime($DATETIME['dmy'], strtotime($letter['crdate'])).' '.ko_html(mb_substr($letter['subject'], 0, 40)).' ('.$letter['num_recipients'].')';
 						}
 						$smarty->assign('letters', $letters);
 						$smarty->assign('letters_ids', $letters_ids);
@@ -2140,7 +2140,7 @@ switch($do_action) {
 					$txt_empfaenger = implode(",", $array_empfaenger);
 					$txt_empfaenger_semicolon = implode(';', $array_empfaenger);
 
-					$ohne_email = substr($ohne_email, 0, -2);
+					$ohne_email = mb_substr($ohne_email, 0, -2);
 					//XLS-Datei aller Leute ohne Email erstellen
 					if($ohne_email != "") {
 						$dateiname = $ko_path."download/excel/".getLL("export_filename").strftime("%d%m%Y_%H%M%S", time()).".xlsx";
@@ -2171,7 +2171,7 @@ switch($do_action) {
 						$v->addPerson($person);
 					}
 					$filename = $v->writeCard();
-					$onload_code = "ko_popup('".$ko_path.'download.php?action=file&amp;file='.substr($filename, 3)."');";
+					$onload_code = "ko_popup('".$ko_path.'download.php?action=file&amp;file='.mb_substr($filename, 3)."');";
 				break;
 			}
 		}//if(!error)
@@ -2202,7 +2202,7 @@ switch($do_action) {
 
 		$filename = ko_export_leute_as_pdf($layout_id);
 
-		$onload_code = "ko_popup('".$ko_path."download.php?action=file&amp;file=".substr($filename, 3)."');";
+		$onload_code = "ko_popup('".$ko_path."download.php?action=file&amp;file=".mb_substr($filename, 3)."');";
 		$_SESSION["show"] = $_SESSION["show_back"] ? $_SESSION["show_back"] : "show_all";
 	break;
 
@@ -2265,7 +2265,7 @@ switch($do_action) {
 			if($ret) {
 				$notifier->addInfo(99, $do_action);
 				$info_txt = getLL('info_leute_99a').$success.'/'.$done. getLL('info_leute_99b');
-				if($problems) $info_txt .= getLL('info_leute_99c').substr($problems, 0, -2);
+				if($problems) $info_txt .= getLL('info_leute_99c').mb_substr($problems, 0, -2);
 				$info_txt .= getLL('info_leute_99d').' '.$charges;
 			} else {
 				$my_error_txt = $error_message;
@@ -2318,7 +2318,7 @@ switch($do_action) {
 		foreach($data as $p_id => $p) {
 			$temp = "";
 			foreach($cols as $i => $col) {
-				if(substr($col, 0, 6) == "MODULE") {
+				if(mb_substr($col, 0, 6) == "MODULE") {
 					$value = map_leute_daten($p[$col], $col, $p, $all_datafields);
 					if(is_array($value)) {
 						$values = NULL;
@@ -2328,7 +2328,7 @@ switch($do_action) {
 						$temp .= strip_tags(ko_unhtml($value));
 					}
 				}
-				else if (substr($col, 0, 4) == 'free') {
+				else if (mb_substr($col, 0, 4) == 'free') {
 					$value = trim($_POST[$col]);
 					if ($value == '') continue;
 					$temp .= $value;
@@ -2429,7 +2429,7 @@ switch($do_action) {
 			//Used to store values for marks ###COL_X### to be replaced in text and subject below
 			$mapCols = array(); $colcounter = 0;
 			foreach($cols as $col) {
-				if(substr($col, 0, 6) == 'MODULE') {
+				if(mb_substr($col, 0, 6) == 'MODULE') {
 					$value = map_leute_daten($p[$col], $col, $p, $all_datafields);
 					if(is_array($value)) {
             $values = NULL;
@@ -2514,18 +2514,18 @@ switch($do_action) {
 				if($line == '') {
 					//Add a \par for new lines and remove the last "\\" (if not within a list)
 					if(!$itemize) {
-						while(substr($txt, -1) == '\\') $txt = substr($txt, 0, -1);
+						while(mb_substr($txt, -1) == '\\') $txt = mb_substr($txt, 0, -1);
 						$txt .= "\n".'\par'."\n";
 					}
 				} else {
-					if(substr($line, 0, 1) == '-') {  //List
+					if(mb_substr($line, 0, 1) == '-') {  //List
 						//item number > 1
-						if($itemize) $txt .= '\item '.substr($line, 1)."\n";
+						if($itemize) $txt .= '\item '.mb_substr($line, 1)."\n";
 						//First item
 						else {
 							$itemize = TRUE;
 							$txt .= '\begin{itemize}'."\n";
-							$txt .= '\item '.substr($line, 1)."\n";
+							$txt .= '\item '.mb_substr($line, 1)."\n";
 						}
 					} else if($itemize) {  //no more item but still inside a list, so finish the list
 						$itemize = FALSE;
@@ -2536,7 +2536,7 @@ switch($do_action) {
 				}
 			}
 			//Remove any newlines at the end of the text
-			while(substr($txt, -2) == '\\\\') $txt = substr($txt, 0, -2);
+			while(mb_substr($txt, -2) == '\\\\') $txt = mb_substr($txt, 0, -2);
 
 			$text = $txt;
 
@@ -2589,7 +2589,7 @@ switch($do_action) {
 			$filename = $ko_path.'download/pdf/'.getLL('leute_mailmerge_filename').strftime('%d%m%Y_%H%M%S', time()).'.pdf';
 			copy($ko_path.'latex/compile/'.$file.'.pdf', $filename);
 			unlink($ko_path.'latex/compile/'.$file.'.pdf');
-			$onload_code = "ko_popup('".$ko_path."download.php?action=file&amp;file=".substr($filename, 3)."');";
+			$onload_code = "ko_popup('".$ko_path."download.php?action=file&amp;file=".mb_substr($filename, 3)."');";
 		} else {
 			$notifier->addError(21, $do_action);
 			break;
@@ -2763,7 +2763,7 @@ switch($do_action) {
 			//Get preset from userprefs
 			$name = format_userinput($cols, 'js', FALSE, 0, array(), '@');
 			if($name == '') break;
-			if(substr($name, 0, 3) == '@G@') $preset = ko_get_userpref('-1', substr($name, 3), 'leute_kg_itemset');
+			if(mb_substr($name, 0, 3) == '@G@') $preset = ko_get_userpref('-1', mb_substr($name, 3), 'leute_kg_itemset');
 			else $preset = ko_get_userpref($_SESSION['ses_userid'], $name, 'leute_kg_itemset');
 			$use_cols = explode(',', $preset[0]['value']);
 		}
@@ -2776,7 +2776,7 @@ switch($do_action) {
 		$_SESSION['kota_show_cols_ko_kleingruppen'] = $use_cols;
 
 		$filename = ko_list_kg(TRUE, 'xls');
-		$onload_code = "ko_popup('".$ko_path.'download.php?action=file&amp;file='.substr($filename, 3)."');";
+		$onload_code = "ko_popup('".$ko_path.'download.php?action=file&amp;file='.mb_substr($filename, 3)."');";
 
 		//Restore columns
 		$_SESSION['kota_show_cols_ko_kleingruppen'] = $orig_cols;
@@ -2826,7 +2826,7 @@ switch($do_action) {
 				$cols = array_keys(ko_get_leute_col_name(FALSE, TRUE));
 				if(ko_get_userpref($_SESSION['ses_userid'], 'group_shows_datafields') == 1) {
 					foreach($cols as $col) {
-						if(substr($col, 0, 15) != 'MODULEgrp'.$id) continue;
+						if(mb_substr($col, 0, 15) != 'MODULEgrp'.$id) continue;
 						if(!in_array($col, $_SESSION['show_leute_cols'])) $_SESSION['show_leute_cols'][] = $col;
 					}
 				}
@@ -2951,7 +2951,7 @@ switch($do_action) {
 				if($_SESSION["import_mode"] == "vcard") {
 					//file
 					$file = $_FILES["vcf"];
-					if(substr($file["type"], 0, 4) == "text") {  //text/x-vcard, text/directory
+					if(mb_substr($file["type"], 0, 4) == "text") {  //text/x-vcard, text/directory
 						$content = file($file["tmp_name"]);
 						$_SESSION["import_data"] = ko_parse_vcf($content);
 						$_SESSION["import_state"] = 4;
@@ -3044,10 +3044,10 @@ switch($do_action) {
 				// Check if some group fields are either filled with a role or with yes
 				$newGroups = array();
 				foreach ($data as $key => $entry) {
-					if (substr($key, 0, 9) == 'MODULEgrp') {
+					if (mb_substr($key, 0, 9) == 'MODULEgrp') {
 						$entryLower = trim(mb_strtolower($entry));
-						$fullGroupId = substr($key, 9);
-						$groupId = substr($key, -6);
+						$fullGroupId = mb_substr($key, 9);
+						$groupId = mb_substr($key, -6);
 						if (!isset($roles[$groupId])) {
 							$group = null;
 							ko_get_groups($group, 'and id = ' . $groupId);
@@ -3188,7 +3188,7 @@ switch($do_action) {
 				if(!isset($all_teams[(int)$did])) continue;
 				list($gid) = explode(',', $all_teams[(int)$did]['group_id']);
 				$full_gid = ko_groups_decode($gid, 'full_gid');
-				if($role_team && FALSE === strpos($full_gid, ':r')) $full_gid .= ':r'.$role_team;
+				if($role_team && FALSE === mb_strpos($full_gid, ':r')) $full_gid .= ':r'.$role_team;
 				$grps[] = $full_gid;
 			}
 
@@ -3198,7 +3198,7 @@ switch($do_action) {
 				if(!isset($all_teams[(int)$did])) continue;
 				list($gid) = explode(',', $all_teams[(int)$did]['group_id']);
 				$full_gid = ko_groups_decode($gid, 'full_gid');
-				if($role_leader && FALSE === strpos($full_gid, ':r')) $full_gid .= ':r'.$role_leader;
+				if($role_leader && FALSE === mb_strpos($full_gid, ':r')) $full_gid .= ':r'.$role_leader;
 				$grps[] = $full_gid;
 			}
 
@@ -3310,8 +3310,8 @@ switch($do_action) {
 		} else if($birthday_filter == -1) {
 			//Don't touch, the current filter was set by a different user and no change has been made
 		} else {
-			$user_id = substr($birthday_filter, 0, 3) == '@G@' ? -1 : $_SESSION['ses_userid'];
-			$key = substr($birthday_filter, 0, 3) == '@G@' ? substr($birthday_filter, 3) : $birthday_filter;
+			$user_id = mb_substr($birthday_filter, 0, 3) == '@G@' ? -1 : $_SESSION['ses_userid'];
+			$key = mb_substr($birthday_filter, 0, 3) == '@G@' ? mb_substr($birthday_filter, 3) : $birthday_filter;
 			$filter = ko_get_userpref($user_id, $key, 'filterset');
 			$filter = array_pop($filter);
 			if($filter['value']) ko_save_userpref($_SESSION['ses_userid'], 'birthday_filter', serialize($filter));

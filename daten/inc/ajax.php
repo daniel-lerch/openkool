@@ -282,7 +282,7 @@ if(isset($_GET) && isset($_GET["action"])) {
 			} else if($name == '_none_') {
 				$_SESSION['show_tg'] = array();
 			} else {
-				if(substr($name, 0, 3) == '@G@') $value = ko_get_userpref('-1', substr($name, 3), 'daten_itemset');
+				if(mb_substr($name, 0, 3) == '@G@') $value = ko_get_userpref('-1', mb_substr($name, 3), 'daten_itemset');
 				else $value = ko_get_userpref($_SESSION['ses_userid'], $name, 'daten_itemset');
 				$_SESSION["show_tg"] = explode(",", $value[0]["value"]);
 			}
@@ -316,8 +316,8 @@ if(isset($_GET) && isset($_GET["action"])) {
 			$name = format_userinput($_GET['name'], 'js', FALSE, 0, array(), '@');
 			if($name == "") break;
 
-			if(substr($name, 0, 3) == '@G@') {
-				if($access['daten']['MAX'] > 3) ko_delete_userpref('-1', substr($name, 3), 'daten_itemset');
+			if(mb_substr($name, 0, 3) == '@G@') {
+				if($access['daten']['MAX'] > 3) ko_delete_userpref('-1', mb_substr($name, 3), 'daten_itemset');
 			} else ko_delete_userpref($_SESSION['ses_userid'], $name, 'daten_itemset');
 
 			print submenu_daten("itemlist_termingruppen", $pos, "open", 2);
@@ -336,7 +336,7 @@ if(isset($_GET) && isset($_GET["action"])) {
 			kota_ko_event_eventgruppen_id_dynselect($v, $d, 2);
 			if($id == "-") {  //Back to index
 				foreach($v as $vid => $_v) {
-					$suffix = substr($vid, 0, 1) == "i" ? "-->" : "";
+					$suffix = mb_substr($vid, 0, 1) == "i" ? "-->" : "";
 					$values[] = $vid.",".$d[$vid].$suffix;
 				}
 			} else {  //Show event groups for the chosen calendar
@@ -389,11 +389,11 @@ if(isset($_GET) && isset($_GET["action"])) {
 					$fake_eg = array('name' => $event['eventgruppen_name']);
 					$event_title = ko_daten_get_event_title($event, $fake_eg, $monthly_title);
 					$title = $event_title['text'];
-					if(strlen($title) > $title_length) $title = substr($title, 0, $title_length).'..';
+					if(mb_strlen($title) > $title_length) $title = mb_substr($title, 0, $title_length).'..';
 
 					//Format time for tooltip
 					if($event['startzeit'] == '00:00:00' && $event['endzeit'] == '00:00:00') $time = getLL('time_all_day');
-					else $time = substr($event['startzeit'], 0, -3).' - '.substr($event['endzeit'], 0, -3);
+					else $time = mb_substr($event['startzeit'], 0, -3).' - '.mb_substr($event['endzeit'], 0, -3);
 
 					$comment = $event['kommentar'] ? nl2br($event['kommentar']) : '';
 					$room = $event['room'] ? $event['room'] : '';
@@ -449,8 +449,8 @@ if(isset($_GET) && isset($_GET["action"])) {
 								if($r['startzeit'] == '00:00:00' && $r['endzeit'] == '00:00:00') {
 									$time = getLL('time_all_day');
 								} else {
-									$time = substr($r['startzeit'], 0, -3);
-									if($r['endzeit'] != '00:00:00') $time .= ' - '.substr($r['endzeit'], 0, -3);
+									$time = mb_substr($r['startzeit'], 0, -3);
+									if($r['endzeit'] != '00:00:00') $time .= ' - '.mb_substr($r['endzeit'], 0, -3);
 								}
 								$tooltip .= '- '.$r['resitem_name'].': '.$time.'<br />';
 							}
@@ -542,7 +542,7 @@ if(isset($_GET) && isset($_GET["action"])) {
 							$bddate = add2date($bddate, 'day', 1, TRUE);
 							$i++;
 						}
-						$where = 'WHERE ('.substr($where, 3).') ';
+						$where = 'WHERE ('.mb_substr($where, 3).') ';
 
 						//Allow plugins to add to the query
 						$where .= ko_get_birthday_filter();
@@ -556,7 +556,7 @@ if(isset($_GET) && isset($_GET["action"])) {
 						foreach($birthdays as $day => $birthday) {
 							//Calculate correct year for this birthday
 							$year = $curyear;
-							$thismonth = (int)substr($bd, 0, 2);
+							$thismonth = (int)mb_substr($bd, 0, 2);
 							if($thismonth == $startmonth) {
 								if($startmonth > $curmonth) $year = $curyear-1;
 							} else if($thismonth == $endmonth) {
@@ -567,16 +567,16 @@ if(isset($_GET) && isset($_GET["action"])) {
 							foreach($birthday as $b) {
 								//Only add people the user has view access for
 								if($access['leute']['ALL'] > 0 || $access['leute'][$b['id']] > 0) {
-									$age = $year - (int)substr($b['geburtsdatum'], 0, 4);
+									$age = $year - (int)mb_substr($b['geburtsdatum'], 0, 4);
 
 									$tooltip .= $b['vorname'].' '.$b['nachname'].' ('.$age.')<br />';
 								}
 							}
 							if($tooltip) {
-								$tooltip = '<b>'.getLL('fm_birthdays_title').': '.strftime($DATETIME['dM'], mktime(1,1,1, substr($day, 0, 2), substr($day, 2, 2), $year)).'</b><br />'.$tooltip;
+								$tooltip = '<b>'.getLL('fm_birthdays_title').': '.strftime($DATETIME['dM'], mktime(1,1,1, mb_substr($day, 0, 2), mb_substr($day, 2, 2), $year)).'</b><br />'.$tooltip;
 								$data[] = array('id' => 'bd'.$day,
-									'start' => $year.'-'.substr($day, 0, 2).'-'.substr($day, 2, 2),
-									'end' => $year.'-'.substr($day, 0, 2).'-'.substr($day, 2, 2),
+									'start' => $year.'-'.mb_substr($day, 0, 2).'-'.mb_substr($day, 2, 2),
+									'end' => $year.'-'.mb_substr($day, 0, 2).'-'.mb_substr($day, 2, 2),
 									'allDay' => true,
 									'title' => '',
 									'editable' => FALSE,

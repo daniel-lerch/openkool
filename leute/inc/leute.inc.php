@@ -48,10 +48,10 @@ function ko_formular_leute($mode, $id=0, $show_save_as_new=true) {
 	$leute_cols = db_get_columns("ko_leute");
 	foreach($leute_cols as $c_i => $c) {
 		if(!in_array($c["Field"], $LEUTE_EXCLUDE)) {
-			$endpos = strpos($c["Type"], "(") ? strpos($c["Type"], "(") : strlen($c["Type"]);
-			$endpos2 = strpos($c["Type"], ")") ? strpos($c["Type"], ")") : strlen($c["Type"]);
-			$input_type[$c["Field"]] = substr($c["Type"], 0, $endpos);
-			$input_size[$c["Field"]] = ($endpos && $endpos2) ? substr($c["Type"], ($endpos+1), ($endpos2-$endpos-1)) : 0;
+			$endpos = mb_strpos($c["Type"], "(") ? mb_strpos($c["Type"], "(") : mb_strlen($c["Type"]);
+			$endpos2 = mb_strpos($c["Type"], ")") ? mb_strpos($c["Type"], ")") : mb_strlen($c["Type"]);
+			$input_type[$c["Field"]] = mb_substr($c["Type"], 0, $endpos);
+			$input_size[$c["Field"]] = ($endpos && $endpos2) ? mb_substr($c["Type"], ($endpos+1), ($endpos2-$endpos-1)) : 0;
 		}
 	}
 
@@ -113,7 +113,7 @@ function ko_formular_leute($mode, $id=0, $show_save_as_new=true) {
 				} else {
 					$cols_familie[$fc]["value"] = "";
 				}
-				if(substr($type, 0, 4) == "enum") {
+				if(mb_substr($type, 0, 4) == "enum") {
 					$cols_familie[$fc]["type"] = "select";
 					$ffs = db_get_enums_ll("ko_familie", $col);
 					foreach($ffs as $f => $ll) {
@@ -146,11 +146,11 @@ function ko_formular_leute($mode, $id=0, $show_save_as_new=true) {
 
 		foreach($ll as $l) {
 
-			if(substr($l, 0, 3) == '---') {  //Divider
-				if(strlen($l) > 3) {
+			if(mb_substr($l, 0, 3) == '---') {  //Divider
+				if(mb_strlen($l) > 3) {
 					$inputs[0]['desc'] = '  ';  //will be deleted
 					$inputs[0]['type'] = 'header';
-					$v = trim(substr($l, 3));
+					$v = trim(mb_substr($l, 3));
 					$inputs[0]['value'] = getLL($v) != '' ? getLL($v) : $v;
 				} else {
 					$inputs[0]['desc'] = '  ';  //will be deleted
@@ -159,8 +159,8 @@ function ko_formular_leute($mode, $id=0, $show_save_as_new=true) {
 			}
 
 			//Exclude MODULE::kg here, as this is handled by smallgroups below since R40
-			else if(substr($l, 0, 8) == "MODULE::" && $l != 'MODULE::kg') {
-				$module = substr($l, 8);
+			else if(mb_substr($l, 0, 8) == "MODULE::" && $l != 'MODULE::kg') {
+				$module = mb_substr($l, 8);
 				switch($module) {
 
 					/* KG-Seit-Modul */
@@ -476,7 +476,7 @@ function ko_formular_leute($mode, $id=0, $show_save_as_new=true) {
 
 					case "date":
 						$inputs[$col_counter]["type"] = "html";
-						if(false === strpos($inputs[$col_counter]["params"], 'disabled')) {
+						if(false === mb_strpos($inputs[$col_counter]["params"], 'disabled')) {
 							$inputs[$col_counter]["value"] = $js_calendar->make_input_field(array(), array("name" => $inputs[$col_counter]["name"], "value" => $inputs[$col_counter]["value"]));
 						}
 					break;
@@ -502,7 +502,7 @@ function ko_formular_leute($mode, $id=0, $show_save_as_new=true) {
 				//Add checkboxes for email fields, if multiple are used and field may be edited
 				if(in_array($l, $LEUTE_EMAIL_FIELDS) && sizeof($LEUTE_EMAIL_FIELDS) > 1) {
 					$value = db_select_data('ko_leute_preferred_fields', "WHERE `type` = 'email' AND `lid` = '$id' AND `field` = '$l'", '*', '', '', true);
-					if(false === strpos($inputs[$col_counter]['params'], 'disabled')) {
+					if(false === mb_strpos($inputs[$col_counter]['params'], 'disabled')) {
 						$code = '<input type="checkbox" name="email_chk_'.$l.'"'.($value['id'] ? ' checked="checked"' : '').' title="'.sprintf(getLL('leute_preferred_fields_email_chk'), $leute_col_name[$LEUTE_EMAIL_FIELDS[0]]).'" />';
 						$inputs[$col_counter]['chk_preferred'] = $code;
 					} else {
@@ -513,7 +513,7 @@ function ko_formular_leute($mode, $id=0, $show_save_as_new=true) {
 				//Add checkboxes for mobile fields, if multiple are used
 				if(in_array($l, $LEUTE_MOBILE_FIELDS) && sizeof($LEUTE_MOBILE_FIELDS) > 1) {
 					$value = db_select_data('ko_leute_preferred_fields', "WHERE `type` = 'mobile' AND `lid` = '$id' AND `field` = '$l'", '*', '', '', true);
-					if(false === strpos($inputs[$col_counter]['params'], 'disabled')) {
+					if(false === mb_strpos($inputs[$col_counter]['params'], 'disabled')) {
 						$code = '<input type="checkbox" name="mobile_chk_'.$l.'"'.($value['id'] ? ' checked="checked"' : '').' title="'.sprintf(getLL('leute_preferred_fields_mobile_chk'), $leute_col_name[$LEUTE_MOBILE_FIELDS[0]]).'" />';
 						$inputs[$col_counter]['chk_preferred'] = $code;
 					} else {
@@ -650,19 +650,19 @@ function ko_list_personen($mode="liste", $output=true) {
 		$today = date('Y-m-d');
 		for($inc = -1*$deadline_minus; $inc <= $deadline_plus; $inc++) {
 			$d = add2date($today, 'day', $inc, TRUE);
-			$dates[substr($d, 5)] = $inc;
-			list($month, $day) = explode('-', substr($d, 5));
+			$dates[mb_substr($d, 5)] = $inc;
+			list($month, $day) = explode('-', mb_substr($d, 5));
 			$z_where .= " OR (MONTH(`geburtsdatum`) = '$month' AND DAY(`geburtsdatum`) = '$day') ";
 		}
 		$where = " AND deleted = '0' ".ko_get_leute_hidden_sql()." AND `geburtsdatum` != '0000-00-00' ";
-		$where .= " AND (".substr($z_where, 3).") ".ko_get_birthday_filter();
+		$where .= " AND (".mb_substr($z_where, 3).") ".ko_get_birthday_filter();
 
 		$rows = db_get_count('ko_leute', 'id', $where);
 		$_es = db_select_data('ko_leute', 'WHERE 1=1 '.$where, '*');
 
 		$sort = array();
 		foreach($_es as $pid => $p) {
-			$sort[$pid] = $dates[substr($p['geburtsdatum'], 5)];
+			$sort[$pid] = $dates[mb_substr($p['geburtsdatum'], 5)];
 		}
 		asort($sort);
 
@@ -672,7 +672,7 @@ function ko_list_personen($mode="liste", $output=true) {
 			$p = $_es[$pid];
 
 			$p['deadline'] = $deadline;
-			$p['alter'] = (int)substr(add2date(date('Y-m-d'), 'day', $deadline, TRUE), 0, 4) - (int)substr($p['geburtsdatum'], 0, 4);
+			$p['alter'] = (int)mb_substr(add2date(date('Y-m-d'), 'day', $deadline, TRUE), 0, 4) - (int)mb_substr($p['geburtsdatum'], 0, 4);
 
 			$es[$pid] = $p;
 		}//foreach(_es)
@@ -800,13 +800,13 @@ function ko_list_personen($mode="liste", $output=true) {
 		foreach($_SESSION["show_leute_cols"] as $c) {
 			if($c != "" && isset($leute_col_name[$c])) {
 				$h_counter++;
-				if(substr($c, 0, 9) == "MODULEgrp") {
+				if(mb_substr($c, 0, 9) == "MODULEgrp") {
 					$tpl_table_header[$h_counter]['sort'] = $mode != 'birthdays' ? $c : '';
 					$tpl_table_header[$h_counter]['name'] = $leute_col_name[$c];
 					$tpl_table_header[$h_counter]['id'] = 'col_'.$c;
-					if(false !== strpos($c, ':')) {
+					if(false !== mb_strpos($c, ':')) {
 						$tpl_table_header[$h_counter]['class'] = 'ko_list ko_list_datafields';
-						$tpl_table_header[$h_counter]['title'] = getLL('leute_listheader_df_group').': '.$leute_col_name[substr($c, 0, 15)];
+						$tpl_table_header[$h_counter]['title'] = getLL('leute_listheader_df_group').': '.$leute_col_name[mb_substr($c, 0, 15)];
 					}
 				} else {
 					if($c != "groups" && $mode != 'birthdays') {
@@ -825,7 +825,7 @@ function ko_list_personen($mode="liste", $output=true) {
 		$multisort["select_values"][] = "";
 		$multisort["select_descs"][] = "";
 		foreach($leute_col_name as $i => $col) {
-			if(substr($i, 0, 6) == "MODULE") continue;  //Only add "normal" columns without groups
+			if(mb_substr($i, 0, 6) == "MODULE") continue;  //Only add "normal" columns without groups
 			$sort_col = $i;
 			if($i == 'geburtsdatum')
 				$sort_col = ko_get_userpref($_SESSION['ses_userid'], 'leute_sort_birthdays') == 'year' ? $i : 'MODULE'.$i;
@@ -836,7 +836,7 @@ function ko_list_personen($mode="liste", $output=true) {
 		$multisort["select_values"][] = "";
 		$multisort['select_descs'][] = '------';
 		foreach($tpl_table_header as $i => $col) {
-			if(substr($col['sort'], 0, 6) != 'MODULE' || $col['sort'] == 'MODULEgeburtsdatum') continue;
+			if(mb_substr($col['sort'], 0, 6) != 'MODULE' || $col['sort'] == 'MODULEgeburtsdatum') continue;
 			$multisort["select_values"][] = $col["sort"];
 			$multisort["select_descs"][] = $col["name"];
 		}
@@ -877,7 +877,7 @@ function ko_list_personen($mode="liste", $output=true) {
 				if(isset($KOTA['ko_leute'][$col])) {
 					if(!is_array($allowed_cols['edit'])
 						|| (is_array($allowed_cols['edit']) && in_array($col, $allowed_cols['edit']))
-						|| substr($col, 0, 6) == 'MODULE'
+						|| mb_substr($col, 0, 6) == 'MODULE'
 						) {
 						$edit_columns[] = $col;
 					} else {
@@ -1006,7 +1006,7 @@ function ko_list_personen($mode="liste", $output=true) {
 		if($e['ort']) $maps_link .= '+'.str_replace(array_keys($replace), $replace, $e['ort']);
 		if($e['land']) $maps_link .= '+'.str_replace(array_keys($replace), $replace, $e['land']);
 		if($maps_link != '') {
-			$maps_link = 'http://maps.google.com/maps?f=q&hl='.$_SESSION['lang'].'&q='.substr($maps_link, 1);
+			$maps_link = 'http://maps.google.com/maps?f=q&hl='.$_SESSION['lang'].'&q='.mb_substr($maps_link, 1);
 		}
 		$tpl_list_data[$e_i]['maps_link'] = $maps_link;
 
@@ -1074,10 +1074,10 @@ function ko_list_personen($mode="liste", $output=true) {
 					//all other columns are handled in map_leute_daten()
 					else {
 						$value = map_leute_daten($e[$c], $c, $e, $all_datafields);
-						if(substr($c, 0, 9) != "MODULEgrp"
-							&& substr($c, 0, 14) != 'MODULEtracking'
+						if(mb_substr($c, 0, 9) != "MODULEgrp"
+							&& mb_substr($c, 0, 14) != 'MODULEtracking'
 							&& !in_array($c, array('MODULEkgpicture', 'MODULEkgmailing_alias', 'picture'))
-							&& substr($c, 0, 11) != 'MODULEfamid'
+							&& mb_substr($c, 0, 11) != 'MODULEfamid'
 							&& !$KOTA['ko_leute'][$c]['allow_html']
 							) $value = ko_html($value);
 					}
@@ -1087,7 +1087,7 @@ function ko_list_personen($mode="liste", $output=true) {
 							$tpl_list_cols[$colcounter] = $colcounter;
 							$tpl_list_data[$e_i][$colcounter++] = $v;
 							if($dfid > 0) {  //Later columns contain group datafields
-								$db_cols[] = 'MODULEgdf'.substr($c, 9).$dfid;
+								$db_cols[] = 'MODULEgdf'.mb_substr($c, 9).$dfid;
 							} else {  //First column contains group
 								$db_cols[] = $c;
 							}
@@ -1110,8 +1110,8 @@ function ko_list_personen($mode="liste", $output=true) {
 			foreach($LEUTE_ADRESSLISTE_LAYOUT as $c) {
 				$tpl_list_data[$e_i]["daten"][$rowcounter] = "";
 				foreach($c as $cc) {
-					if(substr($cc, 0, 1) == "@") {  //Kommentar (beginnend mit @) direkt ausgeben
-						$tpl_list_data[$e_i]["daten"][$rowcounter] .= "<i>".ko_html(substr($cc, 1))."</i> ";
+					if(mb_substr($cc, 0, 1) == "@") {  //Kommentar (beginnend mit @) direkt ausgeben
+						$tpl_list_data[$e_i]["daten"][$rowcounter] .= "<i>".ko_html(mb_substr($cc, 1))."</i> ";
 					} else if(is_string($cc)) {  //Einträge als Personendaten formatiert ausgeben
 						//Get preferred email
 						if($cc == 'email') {
@@ -1239,12 +1239,12 @@ function ko_list_mod_leute() {
 		$mutationen[$counter]["id"] = $p["_id"];
 
 		foreach($cols as $c) {
-			if(substr($c['Field'], 0, 1) == '_') continue;
+			if(mb_substr($c['Field'], 0, 1) == '_') continue;
 
 			if( ( ($p[$c['Field']] != '' && $p[$c['Field']] != '0000-00-00') || $old_p[$c['Field']]) && $p[$c['Field']] != $old_p[$c['Field']]) {
 				$mutationen[$counter]['fields'][$fields_counter]['name'] = $c['Field'];
 				$mutationen[$counter]['fields'][$fields_counter]['desc'] = $col_names[$c['Field']];
-				if(substr($c['Type'], 0, 4) == 'enum') {
+				if(mb_substr($c['Type'], 0, 4) == 'enum') {
 					$mutationen[$counter]['fields'][$fields_counter]['type'] = 'select';
 					$mutationen[$counter]['fields'][$fields_counter]['values'] = array_merge(array(''), db_get_enums('ko_leute_mod', $c['Field']));
 					$mutationen[$counter]['fields'][$fields_counter]['descs'] = array_merge(array(''), db_get_enums_ll('ko_leute_mod', $c['Field']));
@@ -1384,8 +1384,8 @@ function ko_list_groupsubscriptions() {
 		$gs[$counter]["email"] = $p["email"];
 		$gs[$counter]["geburtsdatum"] = sql2datum($p["geburtsdatum"]);
 		//Add age as calculated by the DOB
-		$age = (int)date('Y') - (int)substr($p['geburtsdatum'], 0, 4);
-		if((int)(substr($p['geburtsdatum'], 5, 2).substr($p['geburtsdatum'], 8, 2)) > (int)(date('md'))) $age--;
+		$age = (int)date('Y') - (int)mb_substr($p['geburtsdatum'], 0, 4);
+		if((int)(mb_substr($p['geburtsdatum'], 5, 2).mb_substr($p['geburtsdatum'], 8, 2)) > (int)(date('md'))) $age--;
 		$gs[$counter]['_age'] = $age;
 
 		$gs[$counter]["_bemerkung"] = ko_html($p["_bemerkung"]);
@@ -1647,8 +1647,8 @@ function ko_leute_import($state, $mode) {
 			//found entries
 			$entries = "<table><tr>";
 			foreach($_SESSION["import_data"][0] as $key => $value) {
-				if (substr($key, 0, 9) == "MODULEgrp") {
-					$entries .= '<th>'.ko_groups_decode(substr($key, 9), "group_desc_full").'</th>';
+				if (mb_substr($key, 0, 9) == "MODULEgrp") {
+					$entries .= '<th>'.ko_groups_decode(mb_substr($key, 9), "group_desc_full").'</th>';
 				}
 				else {
 					$entries .= '<th>'.getLL("kota_ko_leute_".$key).'</th>';
@@ -1922,7 +1922,7 @@ function ko_export_leute_as_pdf($layout_id, $settings="", $force=false) {
 	}
 	//Get columns from userprefs
 	else if($post["columns"] && $post["columns"] != "_current") {
-		if(substr($post['columns'], 0, 3) == '@G@') $value = ko_get_userpref('-1', substr($post["columns"], 3), "leute_itemset");
+		if(mb_substr($post['columns'], 0, 3) == '@G@') $value = ko_get_userpref('-1', mb_substr($post["columns"], 3), "leute_itemset");
 		else $value = ko_get_userpref($_SESSION["ses_userid"], $post["columns"], "leute_itemset");
 		$do_cols = explode(",", $value[0]["value"]);
 	}
@@ -1940,13 +1940,13 @@ function ko_export_leute_as_pdf($layout_id, $settings="", $force=false) {
 		foreach(explode(',', ko_get_userpref($_SESSION['ses_userid'], 'leute_children_columns')) as $col) {
 			$ll = getLL("leute_children_col".$col);
 			if(!$ll) {
-				if(in_array(substr($col, 0, 8), array('_father_', '_mother_'))) {
-					$ll = $leute_col_name[substr($col, 8)].' '.getLL('leute_children_col'.substr($col, 0, 7));
+				if(in_array(mb_substr($col, 0, 8), array('_father_', '_mother_'))) {
+					$ll = $leute_col_name[mb_substr($col, 8)].' '.getLL('leute_children_col'.mb_substr($col, 0, 7));
 				} else {
-					$ll = $leute_col_name[substr($col, 1)];
+					$ll = $leute_col_name[mb_substr($col, 1)];
 				}
 			}
-			$leute_col_name_add[$col] = $ll ? $ll : substr($col, 1);
+			$leute_col_name_add[$col] = $ll ? $ll : mb_substr($col, 1);
 			$do_cols[] = $col;
 		}
 	}
@@ -1967,7 +1967,7 @@ function ko_export_leute_as_pdf($layout_id, $settings="", $force=false) {
 		$layout["sort"] = explode(',', $layout["filter"]["sort"]);
 		$layout["sort_order"] = explode(',', $layout["filter"]["sort_order"]);
 	} else if ($post["filter"] != "_current" && $post["filter"] != "_currently_sel") {
-		if(substr($post["filter"], 0, 3) == '@G@') $value = ko_get_userpref('-1', substr($post["filter"], 3), "filterset");
+		if(mb_substr($post["filter"], 0, 3) == '@G@') $value = ko_get_userpref('-1', mb_substr($post["filter"], 3), "filterset");
 		else $value = ko_get_userpref($_SESSION["ses_userid"], $post["filter"], "filterset");
 		$filter = unserialize($value[0]["value"]);
 		if (trim($filter["sort"]) != '') {
@@ -2021,9 +2021,9 @@ function ko_export_leute_as_pdf($layout_id, $settings="", $force=false) {
 	}
 	//Get filter from userpref
 	else if($post["filter"] && $post["filter"] != "_current") {
-		if(substr($post['filter'], 0, 3) == '@G@') {
+		if(mb_substr($post['filter'], 0, 3) == '@G@') {
 			$value = ko_get_userpref('-1', "", "filterset");
-			$post['filter'] = substr($post['filter'], 3);
+			$post['filter'] = mb_substr($post['filter'], 3);
 		} else $value = ko_get_userpref($_SESSION["ses_userid"], "", "filterset");
 		foreach($value as $v_i => $v) {
 			if($v["key"] == $post["filter"]) $do_filter = unserialize($value[$v_i]["value"]);
@@ -2048,7 +2048,7 @@ function ko_export_leute_as_pdf($layout_id, $settings="", $force=false) {
 
 	//Get data from ko_leute
 	foreach($layout["sort"] as $i => $col) {
-		if(substr($col, 0, 6) != "MODULE") {
+		if(mb_substr($col, 0, 6) != "MODULE") {
 			$sort_add[] = $col." ".$layout["sort_order"][$i];
 		}
 	}
@@ -2265,7 +2265,7 @@ function ko_leute_chart_subgroups($where_base) {
 		$value = $label = array();
 		foreach($groups as $id => $group) {
 			$value[] = db_get_count("ko_leute", "id", $where_base." AND `groups` REGEXP 'g$id".($rid != '' ? '[gr0-9:]*:r'.$rid : '')."'");
-			$label[] = strlen($group["name"]) > 15 ? ko_truncate($group["name"], 15, 4) : $group["name"];
+			$label[] = mb_strlen($group["name"]) > 15 ? ko_truncate($group["name"], 15, 4) : $group["name"];
 		}
 
 		//Create img link for preview chart
@@ -3111,7 +3111,7 @@ function ko_word_address($pid) {
 	$person = ko_apply_rectype($person);
 
 	$file = ko_word_get_template();
-	if(substr($file, -4) == 'docx') return ko_word_docx($file, $person);
+	if(mb_substr($file, -4) == 'docx') return ko_word_docx($file, $person);
 	else return ko_word_rtf($person);
 }//ko_word_address()
 

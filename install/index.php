@@ -122,7 +122,7 @@ switch($do_action) {
 		$base_url = format_userinput($_POST["txt_base_url"], "text");
 		if($base_url) ko_update_ko_config("base_url", ('$BASE_URL = "'.$base_url.'";'."\n"));
 		$base_path = format_userinput($_POST["txt_base_path"], "text");
-		if(substr($base_path, -1) != "/") $base_path .= "/";
+		if(mb_substr($base_path, -1) != "/") $base_path .= "/";
 		if($base_path) ko_update_ko_config("base_path", ('$BASE_PATH = "'.$base_path.'";'."\n"));
 
 		//modules
@@ -134,8 +134,8 @@ switch($do_action) {
 		foreach($save_modules as $mod) {
 			$data .= '"'.$mod.'", ';
 		}
-		if (strlen($data) >= 2) {
-			$data = substr($data, 0, -2).");";
+		if (mb_strlen($data) >= 2) {
+			$data = mb_substr($data, 0, -2).");";
 		}
 		ko_update_ko_config("modules", $data."\n");
 		$MODULES = $save_modules;
@@ -151,7 +151,7 @@ switch($do_action) {
 			foreach($save_lang as $lang) {
 				$data .= '"'.$lang.'", ';
 			}
-			$data = substr($data, 0, -2).");";
+			$data = mb_substr($data, 0, -2).");";
 		} else {
 			$data .= ');';
 		}
@@ -173,7 +173,7 @@ switch($do_action) {
 		$warranty_giver = format_userinput($_POST["txt_warranty_giver"], "text");
 		$warranty_url = $_POST["txt_warranty_url"];
 		$warranty_email = $_POST["txt_warranty_email"];
-		if(substr($warranty_url, 0, 7) != "http://") $warranty_url = "http://".$warranty_url;
+		if(mb_substr($warranty_url, 0, 7) != "http://") $warranty_url = "http://".$warranty_url;
 		$data  = sprintf('@define("WARRANTY_GIVER", "%s");', $warranty_giver)."\n";
 		$data .= sprintf('@define("WARRANTY_EMAIL", "%s");', $warranty_email)."\n";
 		$data .= sprintf('@define("WARRANTY_URL", "%s");', $warranty_url)."\n";
@@ -481,7 +481,7 @@ switch($_SESSION["show"]) {
 																 "value" => $BASE_URL ? $BASE_URL : ("http://".$_SERVER["HTTP_HOST"]."/"),
 																 "params" => 'size="40"',
 																 );
-		$doc_root = substr($_SERVER["DOCUMENT_ROOT"], -1) == "/" ? $_SERVER["DOCUMENT_ROOT"] : ($_SERVER["DOCUMENT_ROOT"]."/");
+		$doc_root = mb_substr($_SERVER["DOCUMENT_ROOT"], -1) == "/" ? $_SERVER["DOCUMENT_ROOT"] : ($_SERVER["DOCUMENT_ROOT"]."/");
 		$frmgroup[$gc]["row"][$rowcounter++]["inputs"][0] = array("desc" => getLL("install_settings_paths_basepath"),
 																 "type" => "text",
 																 "name" => "txt_base_path",

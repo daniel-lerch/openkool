@@ -73,7 +73,7 @@ if(!$_SESSION['lang2']) {
 	}
 }
 
-setlocale(LC_ALL, ($_SESSION["lang"]."_".$_SESSION["lang2"].'.ISO-8859-1'));
+setlocale(LC_ALL, ($_SESSION["lang"]."_".$_SESSION["lang2"].'.UTF-8'));
 
 
 //Include locallang-files to the current language

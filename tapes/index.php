@@ -551,7 +551,7 @@ switch($do_action) {
 		$onload_code = "ko_popup('".$ko_path."download.php?action=passthrough&amp;file=".$dateiname."');";
 
 		$log_tapes = ""; foreach($_SESSION["printqueue"] as $id => $num) $log_tapes .= $num."x".$id.", ";
-		$log_message = "preset: ".$layout_id.", start: ".format_userinput($_POST["sel_printstart"], "uint").", tapes: ".substr($log_tapes,0,-2);
+		$log_message = "preset: ".$layout_id.", start: ".format_userinput($_POST["sel_printstart"], "uint").", tapes: ".mb_substr($log_tapes,0,-2);
 		ko_log("tapes_print", $log_message);
 		
 		//Queue löschen, falls gewünscht

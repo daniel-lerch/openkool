@@ -13,7 +13,7 @@ function my_map_map24($data) {
 	if($data["land"]) $link .= "+".$data["land"];
 
 	if($link != "") {
-		$link = "http://www.map24.com/search?q=".substr($link, 1);
+		$link = "http://www.map24.com/search?q=".mb_substr($link, 1);
 	} else {
 		return "";
 	}

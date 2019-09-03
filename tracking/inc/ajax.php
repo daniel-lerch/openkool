@@ -478,7 +478,7 @@ if(isset($_GET) && isset($_GET['action'])) {
 			} else if($name == '_none_') {
 				$_SESSION['show_tracking_groups'] = array();
 			} else {
-				if(substr($name, 0, 3) == '@G@') $value = ko_get_userpref('-1', substr($name, 3), 'tracking_itemset');
+				if(mb_substr($name, 0, 3) == '@G@') $value = ko_get_userpref('-1', mb_substr($name, 3), 'tracking_itemset');
 				else $value = ko_get_userpref($_SESSION['ses_userid'], $name, 'tracking_itemset');
 				$_SESSION['show_tracking_groups'] = explode(',', $value[0]['value']);
 			}
@@ -499,8 +499,8 @@ if(isset($_GET) && isset($_GET['action'])) {
 			$name = format_userinput($_GET['name'], 'js', FALSE, 0, array(), '@');
 			if($name == '') break;
 
-			if(substr($name, 0, 3) == '@G@') {
-				if($access['tracking']['MAX'] > 3) ko_delete_userpref('-1', substr($name, 3), 'tracking_itemset');
+			if(mb_substr($name, 0, 3) == '@G@') {
+				if($access['tracking']['MAX'] > 3) ko_delete_userpref('-1', mb_substr($name, 3), 'tracking_itemset');
 			} else ko_delete_userpref($_SESSION['ses_userid'], $name, 'tracking_itemset');
 
 			print submenu_tracking('itemlist_trackinggroups', $pos, 'open', 2);
@@ -539,12 +539,12 @@ if(isset($_GET) && isset($_GET['action'])) {
 			} else if($name == '_none_') {
 				$_SESSION['show_tracking_groups'] = array();
 			} else {
-				if(substr($name, 0, 3) == '@G@') $value = ko_get_userpref('-1', substr($name, 3), 'tracking_itemset');
+				if(mb_substr($name, 0, 3) == '@G@') $value = ko_get_userpref('-1', mb_substr($name, 3), 'tracking_itemset');
 				else $value = ko_get_userpref($_SESSION['ses_userid'], $name, 'tracking_itemset');
 				$_SESSION['show_tracking_groups'] = explode(',', $value[0]['value']);
 			}*/
 
-			if(substr($name, 0, 3) == '@G@') $value = ko_get_userpref('-1', substr($name, 3), 'tracking_filterpreset');
+			if(mb_substr($name, 0, 3) == '@G@') $value = ko_get_userpref('-1', mb_substr($name, 3), 'tracking_filterpreset');
 			else $value = ko_get_userpref($_SESSION['ses_userid'], $name, 'tracking_filterpreset');
 			list($date1, $date2) = explode(',', $value[0]['value']);
 			$_SESSION['tracking_filter']['date1'] = $date1;
@@ -572,8 +572,8 @@ if(isset($_GET) && isset($_GET['action'])) {
 			$name = format_userinput($_GET['name'], 'js', FALSE, 0, array(), '@');
 			if($name == '') break;
 
-			if(substr($name, 0, 3) == '@G@') {
-				if($access['tracking']['MAX'] > 3) ko_delete_userpref('-1', substr($name, 3), 'tracking_filterpreset');
+			if(mb_substr($name, 0, 3) == '@G@') {
+				if($access['tracking']['MAX'] > 3) ko_delete_userpref('-1', mb_substr($name, 3), 'tracking_filterpreset');
 			} else ko_delete_userpref($_SESSION['ses_userid'], $name, 'tracking_filterpreset');
 
 			print submenu_tracking('filter', $pos, 'open', 2);

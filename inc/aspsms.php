@@ -103,8 +103,8 @@ class SMS {
 		if ($parse) {
 			$this->content = '';
 			$in = false;
-			for ($i = 0; $i < strlen($content); $i++) {
-				$c = $content[$i];
+			for ($i = 0; $i < mb_strlen($content); $i++) {
+				$c = mb_substr($content, $i, 1);
 				if ($c == '[' && !$in) {
 					$this->content .= '<blink>';
 					$in = true;

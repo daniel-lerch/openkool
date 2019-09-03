@@ -24,7 +24,7 @@ include($ko_path.'inc/ko.inc.php');
 $string = base64_decode($_GET['s']);
 if(!$string) exit;
 $hash = $_GET['h'];
-if(strlen($hash) != 32) exit;
+if(mb_strlen($hash) != 32) exit;
 
 $check = md5(KOOL_ENCRYPTION_KEY.$string);
 if($check != $hash) exit;
@@ -32,8 +32,8 @@ if($check != $hash) exit;
 $size = $_GET['size'];
 if(!$size || $size > 1000 || $size < 100) $size = 250;
 
-if(substr($string, 0, 4) == 'pid:') {
-	$pid = intval(substr($string, 4));
+if(mb_substr($string, 0, 4) == 'pid:') {
+	$pid = intval(mb_substr($string, 4));
 	if(!$pid) exit;
 	ko_get_access('leute');
 	if($access['leute']['ALL'] > 0 || $access['leute'][$pid]) {

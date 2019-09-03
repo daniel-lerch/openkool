@@ -374,8 +374,8 @@ function ko_rota_settings() {
 	$values = $descs = $avalues = $adescs = array();
 	$exclude = array('eventgruppen_id', 'startdatum', 'enddatum', 'startzeit', 'endzeit', 'room', 'rota', 'reservationen');
 	foreach($KOTA['ko_event'] as $field => $data) {
-		if(substr($field, 0, 1) == '_' || in_array($field, $exclude)) continue;
-		if(substr($field, 0, 9) == 'rotateam_') continue;
+		if(mb_substr($field, 0, 1) == '_' || in_array($field, $exclude)) continue;
+		if(mb_substr($field, 0, 9) == 'rotateam_') continue;
 		$values[] = $field;
 		$descs[] = getLL('kota_ko_event_'.$field) ? getLL('kota_ko_event_'.$field) : $field;
 	}
@@ -464,8 +464,8 @@ function ko_rota_settings() {
 		$values = $descs = $avalues = $adescs = array();
 		$exclude = array('eventgruppen_id', 'startdatum', 'enddatum', 'startzeit', 'endzeit', 'room', 'rota', 'reservationen');
 		foreach($KOTA['ko_event'] as $field => $data) {
-			if(substr($field, 0, 1) == '_' || in_array($field, $exclude)) continue;
-			if(substr($field, 0, 9) == 'rotateam_') continue;
+			if(mb_substr($field, 0, 1) == '_' || in_array($field, $exclude)) continue;
+			if(mb_substr($field, 0, 9) == 'rotateam_') continue;
 			$values[] = $field;
 			$descs[] = getLL('kota_ko_event_'.$field) ? getLL('kota_ko_event_'.$field) : $field;
 		}
@@ -981,8 +981,8 @@ function ko_rota_get_placeholders($p, $eventid='') {
 
 	//Consensus
 	$consensus_link = $BASE_URL;
-	if(substr($BASE_URL, -1) != '/') $consensus_link .= '/';
-	$r['[[CONSENSUS_LINK]]'] = $consensus_link.'consensus/?x=' . $p['id'] . 'x' . str_replace('-', '', $_SESSION['rota_timestart']) . 'x' . $_SESSION['rota_timespan'] . 'x' . substr(md5($p['id'] . $_SESSION['rota_timestart'] . $_SESSION['rota_timespan'] . KOOL_ENCRYPTION_KEY), 0, 6);
+	if(mb_substr($BASE_URL, -1) != '/') $consensus_link .= '/';
+	$r['[[CONSENSUS_LINK]]'] = $consensus_link.'consensus/?x=' . $p['id'] . 'x' . str_replace('-', '', $_SESSION['rota_timestart']) . 'x' . $_SESSION['rota_timespan'] . 'x' . mb_substr(md5($p['id'] . $_SESSION['rota_timestart'] . $_SESSION['rota_timespan'] . KOOL_ENCRYPTION_KEY), 0, 6);
 
 	$r['[[FIRSTNAME]]'] = $p['vorname'];
 	$r['[[LASTNAME]]'] = $p['nachname'];
@@ -991,11 +991,11 @@ function ko_rota_get_placeholders($p, $eventid='') {
 	foreach($personal_teams as $team) {
 		$r['[[TEAM_NAME]]'] .= $team['name'].', ';
 	}
-	$r['[[TEAM_NAME]]'] = substr($r['[[TEAM_NAME]]'], 0, -2);
+	$r['[[TEAM_NAME]]'] = mb_substr($r['[[TEAM_NAME]]'], 0, -2);
 	foreach($leader_teams as $team) {
 		$r['[[LEADER_TEAM_NAME]]'] .= $team['name'].', ';
 	}
-	$r['[[LEADER_TEAM_NAME]]'] = substr($r['[[LEADER_TEAM_NAME]]'], 0, -2);
+	$r['[[LEADER_TEAM_NAME]]'] = mb_substr($r['[[LEADER_TEAM_NAME]]'], 0, -2);
 
 
 	foreach($all_events as $event) {
@@ -1088,7 +1088,7 @@ function ko_rota_timespan_title($start, $ts) {
 
 		case '1w':
 		case '2w':
-			$inc = substr($ts, 0, -1);
+			$inc = mb_substr($ts, 0, -1);
 			$sT = strtotime($start);
 			$eT = strtotime(add2date(add2date($start, 'week', $inc, TRUE), 'day', -1, TRUE));
 		break;
@@ -1098,7 +1098,7 @@ function ko_rota_timespan_title($start, $ts) {
 		case '3m':
 		case '6m':
 		case '12m':
-			$inc = substr($ts, 0, -1);
+			$inc = mb_substr($ts, 0, -1);
 			$sT = strtotime($start);
 			$eT = strtotime(add2date(add2date($start, 'month', $inc, TRUE), 'day', -1, TRUE));
 		break;
@@ -1131,8 +1131,8 @@ function ko_rota_timespan_title($start, $ts) {
 function ko_rota_week_get_startstop($week_id) {
 	$one_day = 24*3600;
 	$one_week = $one_day*7;
-	$year = substr($week_id, 0, 4);
-	$week = substr($week_id, 5);
+	$year = mb_substr($week_id, 0, 4);
+	$week = mb_substr($week_id, 5);
 	$test = strtotime(date_find_last_monday($year.'-01-01'));
 	if(date('W', $test) > 1) $test += $one_week;
 	$start = $test+($week-1)*$one_week;
@@ -1234,11 +1234,11 @@ function ko_rota_export_landscape_pdf() {
 
 		//Header
 		if(defined('DP_HEADER_FORMAT')) {
-			$e_title = strtr(DP_HEADER_FORMAT, array('DATE' => sql2datum($e['startdatum']), 'TIME' => substr($e['startzeit'], 0, -3), 'OCLOCK' => getLL('time_oclock'), 'EG_NAME' => $grp['name'], 'ROOM' => $e['room']));
+			$e_title = strtr(DP_HEADER_FORMAT, array('DATE' => sql2datum($e['startdatum']), 'TIME' => mb_substr($e['startzeit'], 0, -3), 'OCLOCK' => getLL('time_oclock'), 'EG_NAME' => $grp['name'], 'ROOM' => $e['room']));
 		} else {
 			$e_title  = sql2datum($e['startdatum'])."\n";
 			$e_title .= $e['eventgruppen_name']."\n";
-			$e_title .= substr($e['startzeit'], 0, -3).' '.getLL('time_oclock');
+			$e_title .= mb_substr($e['startzeit'], 0, -3).' '.getLL('time_oclock');
 		}
 		$headerrow[] = $e_title;
 
@@ -1476,7 +1476,7 @@ function ko_dp_create_dienste_pdf($dienste_, $monate) {
 			$pdf->SetFont('arialb', '', $PDF_fontsize_event);
 			$title  = strftime($GLOBALS["DATETIME"]["dMY"], strtotime($e["startdatum"]));
 			$title .= ", ".$tg["name"];
-			$title .= " (".substr($e["startzeit"], 0, -3).")";
+			$title .= " (".mb_substr($e["startzeit"], 0, -3).")";
 
 			//Seitenumbruch
 			if(($PDF_y+sizeof($dienste)*$PDF_space_row) > $PDF_page_end) {
@@ -1495,7 +1495,7 @@ function ko_dp_create_dienste_pdf($dienste_, $monate) {
 			if($comment != "") {
 				$PDF_y += 2*$PDF_space_title;
 				$pdf->SetFont('arial', '', $PDF_fontsize_einteilung);
-				$pdf->Text($PDF_rand_rechts, ($PDF_y+0.5*$PDF_space_title), ("  ".substr($comment, 0, -3)) );
+				$pdf->Text($PDF_rand_rechts, ($PDF_y+0.5*$PDF_space_title), ("  ".mb_substr($comment, 0, -3)) );
 			}
 
 			//Einteilungen
@@ -1592,7 +1592,7 @@ function ko_rota_send_file_form($get) {
 	}
 	//Set default subject
 	else {
-		if(substr($get['filetype'], 0, 5) == 'event') {
+		if(mb_substr($get['filetype'], 0, 5) == 'event') {
 			list($mode, $eventid) = explode(':', $get['filetype']);
 			$event = db_select_data('ko_event AS e, ko_eventgruppen AS eg', "WHERE e.id = '$eventid' AND eg.id = e.eventgruppen_id", 'e.*, eg.name AS eventgruppen_name', '', '', TRUE);
 			$subject = '[kOOL] '.getLL('download_send_subject_default').' '.$event['eventgruppen_name'].' '.strftime($DATETIME['dMY'], strtotime($event['startdatum']));
@@ -1721,7 +1721,7 @@ function ko_rota_send_file_form($get) {
 	foreach($files as $file) {
 		if(!file_exists($ko_path.$file)) continue;
 		$check = realpath($ko_path.$file);
-		if(substr($check, 0, strlen($BASE_PATH)) != $BASE_PATH) continue;
+		if(mb_substr($check, 0, mb_strlen($BASE_PATH)) != $BASE_PATH) continue;
 
 		$filelist[$fc]  = '<a href="'.$ko_path.$file.'" target="_blank">'.basename($file).'</a>&nbsp;&nbsp;';
 		$filelist[$fc] .= '<input type="image" onclick="set_action(\'filesend_delfile\', this); set_hidden_value(\'id\', '.$fc.', this);" src="'.$ko_path.'images/icon_trash.png" border="0" />';

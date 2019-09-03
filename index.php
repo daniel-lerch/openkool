@@ -153,7 +153,7 @@ switch($do_action) {
 		//Spalten auswerten
 		$cols = db_get_columns("ko_leute_mod");
 		foreach($cols as $c) {
-			if(substr($c["Field"], 0, 1) != "_") {
+			if(mb_substr($c["Field"], 0, 1) != "_") {
 				if($c["Type"] == "date") {  //Datum-Eingaben wieder in SQL-Format konvertieren.
 					$data[$c["Field"]] = sql_datum($_POST["aa_input_".$c["Field"]]);
 				} else {
@@ -257,7 +257,7 @@ switch($do_action) {
 			$counter = 0;
 			$col_namen = ko_get_leute_col_name();
 			foreach($cols as $c) {
-				if(substr($c["Field"], 0, 1) != "_") {  //Alle Spalten, die mit "_" beginnen, ignorieren
+				if(mb_substr($c["Field"], 0, 1) != "_") {  //Alle Spalten, die mit "_" beginnen, ignorieren
 					$tpl_input[$counter]["name"] = "aa_input_".$c["Field"];
 					$tpl_input[$counter]["desc"] = $col_namen[$c["Field"]];
 					//Vor- und Nachname immer ausgeben, denn diese dürfen immer angezeigt werden, da diese ja vorher selber eingegeben wurden.
@@ -266,13 +266,13 @@ switch($do_action) {
 					else
 						$tpl_input[$counter]["value"] = "";
 
-					if(substr($c["Type"], 0, 7) == "varchar" || substr($c["Type"], 0, 4) == "date") {
+					if(mb_substr($c["Type"], 0, 7) == "varchar" || mb_substr($c["Type"], 0, 4) == "date") {
 						$tpl_input[$counter]["type"] = "text";
 					}
-					if(substr($c["Type"], 0, 4) == "date") {
+					if(mb_substr($c["Type"], 0, 4) == "date") {
 						$tpl_input[$counter]["value"] = ($do_fillout) ? sql2datum($tpl_input[$counter]["value"]) : "";
 					}
-					if(substr($c["Type"], 0, 4) == "enum") {
+					if(mb_substr($c["Type"], 0, 4) == "enum") {
 						$tpl_input[$counter]["type"] = "select";
 						$tpl_input[$counter]["values"] = db_get_enums("ko_leute_mod", $c["Field"]);
 						$tpl_input[$counter]["descs"] = db_get_enums_ll("ko_leute_mod", $c["Field"]);

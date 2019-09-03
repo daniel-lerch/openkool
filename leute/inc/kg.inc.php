@@ -155,7 +155,7 @@ function ko_kg_update_people() {
 		$p_kgs = explode(',', $p['smallgroups']);
 		$new_kgs = array();
 		foreach($p_kgs as $kg) {
-			if(in_array(substr($kg, 0, 4), $all_ids)) {
+			if(in_array(mb_substr($kg, 0, 4), $all_ids)) {
 				$new_kgs[] = $kg;
 			}
 		}

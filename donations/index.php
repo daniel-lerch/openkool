@@ -70,7 +70,7 @@ if($_POST["action"]) {
 if(!$do_action) $do_action = "list_donations";
 
 //Reset show_start if from another module
-if($_SERVER['HTTP_REFERER'] != '' && FALSE === strpos($_SERVER['HTTP_REFERER'], '/'.$ko_menu_akt.'/')) $_SESSION['show_start'] = 1;
+if($_SERVER['HTTP_REFERER'] != '' && FALSE === mb_strpos($_SERVER['HTTP_REFERER'], '/'.$ko_menu_akt.'/')) $_SESSION['show_start'] = 1;
 
 switch($do_action) {
 
@@ -126,7 +126,7 @@ switch($do_action) {
 				if(!trim($v)) continue;
 				$info_txt_add .= $k.': <b>'.$v.'</b>, ';
 			}
-			if($info_txt_add != '') $info_txt_add = '<br />'.substr($info_txt_add, 0, -2);
+			if($info_txt_add != '') $info_txt_add = '<br />'.mb_substr($info_txt_add, 0, -2);
 		}
 	break;
 
@@ -163,7 +163,7 @@ switch($do_action) {
 				if(!trim($v)) continue;
 				$info_txt_add .= $k.': <b>'.$v.'</b>, ';
 			}
-			if($info_txt_add != '') $info_txt_add = '<br />'.substr($info_txt_add, 0, -2);
+			if($info_txt_add != '') $info_txt_add = '<br />'.mb_substr($info_txt_add, 0, -2);
 		}
 	break;
 
@@ -271,7 +271,7 @@ switch($do_action) {
 		foreach($merge_from as $id) {
 			$in .= "'$id', ";
 		}
-		$in = substr($in, 0, -2);
+		$in = mb_substr($in, 0, -2);
 
 		//Get all donations of these people and reassign them to person1
 		$donations2 = db_select_data("ko_donations", "WHERE `person` IN ($id)", "*");
@@ -355,7 +355,7 @@ switch($do_action) {
 				if(!trim($v)) continue;
 				$info_txt_add .= $k.': <b>'.$v.'</b>, ';
 			}
-			if($info_txt_add != '') $info_txt_add = '<br />'.substr($info_txt_add, 0, -2);
+			if($info_txt_add != '') $info_txt_add = '<br />'.mb_substr($info_txt_add, 0, -2);
 		}
 	break;
 
@@ -446,7 +446,7 @@ switch($do_action) {
 				$order = "ORDER BY number ASC";
 				$_SESSION["show"] = "multiedit_accounts";
 			} else if($_SESSION["show"] == "list_donations") {
-				if(substr($_SESSION['sort_donations'], 0, 6) == 'MODULE') $order = 'ORDER BY date DESC';
+				if(mb_substr($_SESSION['sort_donations'], 0, 6) == 'MODULE') $order = 'ORDER BY date DESC';
 				else $order = 'ORDER BY '.$_SESSION['sort_donations'].' '.$_SESSION['sort_donations_order'];
 				$_SESSION["show"] = "multiedit";
 			}
@@ -577,8 +577,8 @@ switch($do_action) {
 			break;  //monthly
 
 			default:  //statsYYEAR
-				if(substr($mode, 0, 6) == 'statsY') {
-					$year = intval(substr($mode, 6));
+				if(mb_substr($mode, 0, 6) == 'statsY') {
+					$year = intval(mb_substr($mode, 6));
 					if(!$year) $year = date('Y');
 					$filename = ko_donations_stats(TRUE, 'xls', $year);
 				}
@@ -586,15 +586,15 @@ switch($do_action) {
 					//Check for ID from ko_pdf_layout
 					$layout_id = intval($mode);
 					$pdf_layout = db_select_data('ko_pdf_layout', "WHERE `id` = '$layout_id' AND `type` = 'donations'", '*', '', '', TRUE);
-					if($pdf_layout['id'] > 0 && $pdf_layout['id'] == $layout_id && substr($pdf_layout['data'], 0, 4) == 'FCN:' && function_exists(substr($pdf_layout['data'], 4))) {
-						$filename = call_user_func(substr($pdf_layout['data'], 4), $_GET);
+					if($pdf_layout['id'] > 0 && $pdf_layout['id'] == $layout_id && mb_substr($pdf_layout['data'], 0, 4) == 'FCN:' && function_exists(mb_substr($pdf_layout['data'], 4))) {
+						$filename = call_user_func(mb_substr($pdf_layout['data'], 4), $_GET);
 					}
 				}
 			break;  //stats
 			
 		}
 		if($filename) {
-			$filename = substr($filename, 3);
+			$filename = mb_substr($filename, 3);
 			$onload_code = "ko_popup('".$ko_path."download.php?action=file&amp;file=$filename');";
 			ko_log("export_donations", $filename);
 		}
@@ -622,7 +622,7 @@ switch($do_action) {
 		ko_save_userpref($_SESSION['ses_userid'], 'donations_date_field', format_userinput($_POST['sel_date_field'], 'alpha'));
 
 		if($access['donations']['MAX'] > 3) {
-			$id = substr($_POST['sel_ps_filter'], 0, 3) == '@G@' ? '-1' : $_SESSION['ses_userid'];
+			$id = mb_substr($_POST['sel_ps_filter'], 0, 3) == '@G@' ? '-1' : $_SESSION['ses_userid'];
 			$key = str_replace('@G@', '', $_POST['sel_ps_filter']);
 			//Only store, if new filterset has been selected (-1 is the value for a saved filter preset not available anymore)
 			if($key != -1) {

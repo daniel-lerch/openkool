@@ -45,13 +45,13 @@ function selEventGroup(gid) {
 		}
 		$code .= sprintf("r['%s'] = new EG('%s', '%s', %s, '%s', '%s', '%s', '%s', '%s', '%s', %s);\n",
 										 $eg["id"],                            //id
-										 substr($eg["startzeit"], 0, -3),      //Startzeit
-										 substr($eg["endzeit"], 0, -3),        //Endzeit
+										 mb_substr($eg["startzeit"], 0, -3),      //Startzeit
+										 mb_substr($eg["endzeit"], 0, -3),        //Endzeit
 										 ($eg["rota"] ? "true" : "false"),     //Rota
 										 $eg["room"],                          //Room
 										 $resitems,                            //Resitems
-										 substr($eg["res_startzeit"], 0, -3),  //Res Startzeit
-										 substr($eg["res_endzeit"], 0, -3),    //Res Endzeit
+										 mb_substr($eg["res_startzeit"], 0, -3),  //Res Startzeit
+										 mb_substr($eg["res_endzeit"], 0, -3),    //Res Endzeit
 										 strtr($eg["title"], array("'" => "\'")),  //Title
 										 strtr($eg["kommentar"], array("\n" => "|", "\r" => "", "\t" => "", "'" => "\'")),  //Comments
 										 (($eg['moderation'] == 0 || $access['daten'][$eg['id']] >= 3) ? "true" : "false") // allow adding program entries

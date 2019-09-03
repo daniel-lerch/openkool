@@ -1,28 +1,22 @@
 <?php
-/***************************************************************
- *  Copyright notice
- *
- *  (c) 2003-2015 Renzo Lauper (renzo@churchtool.org)
- *  All rights reserved
- *
- *  This script is part of the kOOL project. The kOOL project is
- *  free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
- *
- *  The GNU General Public License can be found at
- *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
- *  from the author is found in LICENSE.txt distributed with these scripts.
- *
- *  kOOL is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
+/*******************************************************************************
+*
+*    OpenKool - Online church organization tool
+*
+*    Copyright © 2003-2015 Renzo Lauper (renzo@churchtool.org)
+*    Copyright © 2019      Daniel Lerch
+*
+*    This program is free software; you can redistribute it and/or modify
+*    it under the terms of the GNU General Public License as published by
+*    the Free Software Foundation; either version 2 of the License, or
+*    (at your option) any later version.
+*
+*    This program is distributed in the hope that it will be useful,
+*    but WITHOUT ANY WARRANTY; without even the implied warranty of
+*    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+*    GNU General Public License for more details.
+*
+*******************************************************************************/
 
 
 function ko_consensus_list_consensus () {
@@ -295,7 +289,7 @@ function ko_consensus_get_end($start, $ts) {
 
 		case '1w':
 		case '2w':
-			$inc = substr($ts, 0, -1);
+			$inc = mb_substr($ts, 0, -1);
 			$eT = strtotime(add2date(add2date($start, 'week', $inc, TRUE), 'day', -1, TRUE));
 			break;
 
@@ -304,7 +298,7 @@ function ko_consensus_get_end($start, $ts) {
 		case '3m':
 		case '6m':
 		case '12m':
-			$inc = substr($ts, 0, -1);
+			$inc = mb_substr($ts, 0, -1);
 			$eT = strtotime(add2date(add2date($start, 'month', $inc, TRUE), 'day', -1, TRUE));
 			break;
 	}
@@ -329,7 +323,7 @@ function ko_consensus_timespan_title($start, $ts) {
 
 		case '1w':
 		case '2w':
-			$inc = substr($ts, 0, -1);
+			$inc = mb_substr($ts, 0, -1);
 			$sT = strtotime($start);
 			$eT = strtotime(add2date(add2date($start, 'week', $inc, TRUE), 'day', -1, TRUE));
 			break;
@@ -339,7 +333,7 @@ function ko_consensus_timespan_title($start, $ts) {
 		case '3m':
 		case '6m':
 		case '12m':
-			$inc = substr($ts, 0, -1);
+			$inc = mb_substr($ts, 0, -1);
 			$sT = strtotime($start);
 			$eT = strtotime(add2date(add2date($start, 'month', $inc, TRUE), 'day', -1, TRUE));
 			break;

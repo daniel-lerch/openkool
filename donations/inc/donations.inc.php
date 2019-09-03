@@ -28,7 +28,7 @@ function ko_list_donations($output=TRUE, $mode="html", $dontApplyLimit=FALSE) {
 	if($access['donations']['MAX'] < 1) return;
 	apply_donations_filter($z_where, $z_limit);
 
-	if(substr($_SESSION['sort_donations'], 0, 6) == 'MODULE') $order = 'ORDER BY date DESC';
+	if(mb_substr($_SESSION['sort_donations'], 0, 6) == 'MODULE') $order = 'ORDER BY date DESC';
 	else $order = 'ORDER BY '.$_SESSION['sort_donations'].' '.$_SESSION['sort_donations_order'];
 
 	$rows = db_get_count('ko_donations', 'id', $z_where);
@@ -160,7 +160,7 @@ function ko_list_reoccuring_donations($output=TRUE) {
 
 	if($access['donations']['MAX'] < 1) return;
 
-	if(substr($_SESSION['sort_donations'], 0, 6) == 'MODULE') $order = '';
+	if(mb_substr($_SESSION['sort_donations'], 0, 6) == 'MODULE') $order = '';
 	else $order = "ORDER BY ".$_SESSION["sort_donations"]." ".$_SESSION["sort_donations_order"];
 	$z_where = " AND reoccuring > 0 ";
 
@@ -175,8 +175,8 @@ function ko_list_reoccuring_donations($output=TRUE) {
 
 	//Prepare due date as new column
 	foreach($es as $i => $e) {
-		if(substr($e['reoccuring'], -1) == 'm') {
-			$due = add2date($e['date'], 'month', substr($e['reoccuring'], 0, -1), TRUE);
+		if(mb_substr($e['reoccuring'], -1) == 'm') {
+			$due = add2date($e['date'], 'month', mb_substr($e['reoccuring'], 0, -1), TRUE);
 		} else {
 			$due = add2date($e['date'], 'day', $e['reoccuring'], TRUE);
 		}
@@ -629,8 +629,8 @@ function ko_donations_export_monthly() {
 	
 	apply_donations_filter($z_where, $z_limit);
 		
-	$start = substr( $startDate , 0 , 4 ).substr( $startDate , 5 , 2 );
-	$end = substr( $endDate , 0 , 4 ).substr( $endDate , 5 , 2 );
+	$start = mb_substr( $startDate , 0 , 4 ).mb_substr( $startDate , 5 , 2 );
+	$end = mb_substr( $endDate , 0 , 4 ).mb_substr( $endDate , 5 , 2 );
 	
 	//if sessiondates are set to defaultdate, set back
 	if ($resetStart == 1) $_SESSION["donations_filter"]["date1"] = '';
@@ -679,8 +679,8 @@ function ko_donations_export_monthly() {
 		$accountSum = array();
 		$monthcounter = $start;
 		while ($monthcounter <= $end ) {
-			$month = substr($monthcounter, 4, 2);
-			$year = substr($monthcounter, 0, 4);
+			$month = mb_substr($monthcounter, 4, 2);
+			$year = mb_substr($monthcounter, 0, 4);
 
 			if($combine_accounts) {
 				$donations = db_select_data("ko_donations", "WHERE `person` = '$pid' AND `account` IN (".implode(',', array_keys($accounts)).") AND MONTH(`$date_field`) = '$month' AND YEAR(`$date_field`) = '$year' AND $where", "*, SUM(`amount`) AS total", 'GROUP BY person');
@@ -704,7 +704,7 @@ function ko_donations_export_monthly() {
 				}
 			}
 			$monthcounter++;
-			if (substr($monthcounter, 4, 2) == '13') $monthcounter = intval($monthcounter) + 100 - 12; // 100 = add a year - 12 = set to january (01)
+			if (mb_substr($monthcounter, 4, 2) == '13') $monthcounter = intval($monthcounter) + 100 - 12; // 100 = add a year - 12 = set to january (01)
 		}
 		
 		foreach($accountSum as $s) {
@@ -724,9 +724,9 @@ function ko_donations_export_monthly() {
 	}
 	$monthcounter = $start;
 	while($monthcounter <= $end ) {
-		$month = substr($monthcounter , 4,2);
+		$month = mb_substr($monthcounter , 4,2);
 		$month = strftime('%B',mktime(1,1,1, $month, 01, date('Y')));
-		$year = substr($monthcounter , 0,4);
+		$year = mb_substr($monthcounter , 0,4);
 		$set = 0;
 		if($combine_accounts) {
 			$header1[] = $month.' '.$year;
@@ -741,7 +741,7 @@ function ko_donations_export_monthly() {
 			}
 		}
 		$monthcounter++;
-		if (substr($monthcounter , 4,2) == '13') $monthcounter = intval($monthcounter) + 100 - 12; // 100 = add a year - 12 = set to january (01)
+		if (mb_substr($monthcounter , 4,2) == '13') $monthcounter = intval($monthcounter) + 100 - 12; // 100 = add a year - 12 = set to january (01)
 	}
 	$set = 0;
 	if($combine_accounts) {
@@ -768,7 +768,7 @@ function ko_donations_export_monthly() {
 			$header2[] = $account["number"]." ".$account["name"];
 		}
 		$monthcounter++;
-		if (substr($monthcounter , 4,2) == '13') $monthcounter = intval($monthcounter) + 100 - 12; // 100 = add a year - 12 = set to january (01)
+		if (mb_substr($monthcounter , 4,2) == '13') $monthcounter = intval($monthcounter) + 100 - 12; // 100 = add a year - 12 = set to january (01)
 	}
 	foreach($accounts as $account) {
 		$header2[] = $account["number"]." ".$account["name"];
@@ -846,7 +846,7 @@ function apply_donations_filter(&$z_where, &$z_limit) {
 	foreach($_SESSION["show_accounts"] as $d) {
 		if($access['donations']['ALL'] > 0 || $access['donations'][$d] > 0) $z_where .= " `account` = '$d' OR ";
 	}
-	if($z_where) $z_where = " AND (".substr($z_where, 0, -3).") ";
+	if($z_where) $z_where = " AND (".mb_substr($z_where, 0, -3).") ";
 	else $z_where = " AND 1=2 ";
 
 
@@ -873,7 +873,7 @@ function apply_donations_filter(&$z_where, &$z_limit) {
 			break;
 
 			case "leute":
-				if(substr($_SESSION['donations_filter'][$key], 0, 3) == '@G@') $filterset = ko_get_userpref('-1', substr($_SESSION['donations_filter'][$key], 3), 'filterset');
+				if(mb_substr($_SESSION['donations_filter'][$key], 0, 3) == '@G@') $filterset = ko_get_userpref('-1', mb_substr($_SESSION['donations_filter'][$key], 3), 'filterset');
 				else $filterset = ko_get_userpref($_SESSION["ses_userid"], $_SESSION["donations_filter"][$key], "filterset");
 				$filter = unserialize($filterset[0]["value"]);
 				if(TRUE === apply_leute_filter($filter, $leute_where)) {
@@ -910,12 +910,12 @@ function apply_donations_filter(&$z_where, &$z_limit) {
 
 			case "amount":
 				$v = $_SESSION['donations_filter'][$key];
-				if(in_array(substr($v, 0, 1), array('>', '<', '='))) {
-					$a = intval(substr($v, 1));
-					$o = substr($v, 0, 1);
+				if(in_array(mb_substr($v, 0, 1), array('>', '<', '='))) {
+					$a = intval(mb_substr($v, 1));
+					$o = mb_substr($v, 0, 1);
 					if($o == '<' || $o == '>') $o .= '=';
-					$z_where .= " AND `amount` ".substr($v, 0, 1)." '$a' ";
-				} else if(FALSE !== strpos($v, '-')) {
+					$z_where .= " AND `amount` ".mb_substr($v, 0, 1)." '$a' ";
+				} else if(FALSE !== mb_strpos($v, '-')) {
 					list($a1, $a2) = explode('-', $v);
 					$a1 = intval($a1); $a2 = intval($a2);
 					if($a2 < $a1) {

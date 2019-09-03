@@ -72,19 +72,19 @@ class iCalReader {
 		preg_match('/[0-9]{8}[T][0-9]{6}/',trim($str),$date);
 		if(isset($date[0])) {
 			if($date[0] != '') {
-				$y = substr($date[0], 0, 4);
-				$mn = substr($date[0], 4, 2);
-				$d = substr($date[0], 6, 2);
-				$h = substr($date[0], 9, 2);
-				$m = substr($date[0], 11, 2);
-				$s = substr($date[0], 13, 2);
+				$y = mb_substr($date[0], 0, 4);
+				$mn = mb_substr($date[0], 4, 2);
+				$d = mb_substr($date[0], 6, 2);
+				$h = mb_substr($date[0], 9, 2);
+				$m = mb_substr($date[0], 11, 2);
+				$s = mb_substr($date[0], 13, 2);
 				return $y.'-'.$mn.'-'.$d.' '.$h.':'.$m.':'.$s;
 			}
 		}
 		elseif(strlen(trim($str)) == 8) {
-			$y = substr($str, 0, 4);
-			$mn = substr($str, 4, 2);
-			$d = substr($str, 6, 2);
+			$y = mb_substr($str, 0, 4);
+			$mn = mb_substr($str, 4, 2);
+			$d = mb_substr($str, 6, 2);
 			return $y.'-'.$mn.'-'.$d.' 00:00:00';
 		}
 	}
@@ -107,7 +107,7 @@ class iCalReader {
 				$all = $mas;
 				unset($all[0]);
 				$mas[1] = implode(':', $all);
-				while ($y + 1 < sizeof($arr2) && substr($arr2[$y + 1], 0, 1) == ' ') $mas[1] .= "\n" . substr($arr2[($y++) + 1], 1);
+				while ($y + 1 < sizeof($arr2) && mb_substr($arr2[$y + 1], 0, 1) == ' ') $mas[1] .= "\n" . mb_substr($arr2[($y++) + 1], 1);
 				switch(trim($mas[0])) {
 					case 'DTSTART':
 						$arr_n[$x]['start_date'] = date('Y-m-d H:i:s', strtotime($mas[1]));
@@ -138,8 +138,8 @@ class iCalReader {
 									$bayday = explode(',',$rrule_n[1]);
 									if(sizeof($bayday) == 1) {
 										if(strlen(trim($bayday[0])) == 3) {
-											$arr_n[$x]['day'] = substr($bayday[0], 0, 1);
-											$arr_n[$x]['counts'] = $this->getConvertDay(substr($bayday[0], 1, 2), true);
+											$arr_n[$x]['day'] = mb_substr($bayday[0], 0, 1);
+											$arr_n[$x]['counts'] = $this->getConvertDay(mb_substr($bayday[0], 1, 2), true);
 										}
 										else {
 											$arr_n[$x]['days'] = $this->getConvertDay($bayday[0], true);
@@ -250,7 +250,7 @@ class iCalReader {
 			$e['startdatum'] = date('Y-m-d', $ts1);
 
 			//All day event, enddate is given as +1
-			if(substr($d['start_date'], -8) == '00:00:00' && substr($d['end_date'], -8) == '00:00:00') {
+			if(mb_substr($d['start_date'], -8) == '00:00:00' && mb_substr($d['end_date'], -8) == '00:00:00') {
 				$e['enddatum'] = date('Y-m-d', strtotime(date('Y-m-d', $ts2).' -1 day'));
 				$e['startzeit'] = $e['endzeit'] = '';
 			}
@@ -301,7 +301,7 @@ class iCalReader {
 		$exdates = array();
 		if(isset($d['exdate']) && is_array($d['exdate'])) {
 			foreach($d['exdate'] as $exd) {
-				$exdates[] = substr($exd, 0, 10);
+				$exdates[] = mb_substr($exd, 0, 10);
 			}
 		}
 

@@ -126,7 +126,7 @@ function hook_get_by_type($type) {
 
 			//Dateiname nur gemäss BASE_PATH erlauben
 			$full_path = realpath($temp);
-	    if(substr($full_path, 0, strlen($BASE_PATH."plugins")) != ($BASE_PATH."plugins")) {
+	    if(mb_substr($full_path, 0, mb_strlen($BASE_PATH."plugins")) != ($BASE_PATH."plugins")) {
 				trigger_error("Not allowed Hook-File: ".$temp, E_USER_ERROR);
 	      exit;
 	    }
@@ -145,7 +145,7 @@ function hook_action_handler($action) {
 
 	$found = FALSE;
 	foreach($PLUGINS as $plugin) {
-		if($plugin["name"] == substr($action, 0, strlen($plugin["name"]))) $found = TRUE;
+		if($plugin["name"] == mb_substr($action, 0, mb_strlen($plugin["name"]))) $found = TRUE;
 	}
 
 	if($found && function_exists("my_action_handler_".$action)) {
@@ -193,7 +193,7 @@ function hook_show_case($show) {
 
 	$found = FALSE;
 	foreach($PLUGINS as $plugin) {
-		if($plugin["name"] == substr($show, 0, strlen($plugin["name"]))) $found = TRUE;
+		if($plugin["name"] == mb_substr($show, 0, mb_strlen($plugin["name"]))) $found = TRUE;
 	}
 
 	if($found && function_exists("my_show_case_".$show)) {

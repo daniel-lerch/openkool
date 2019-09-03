@@ -268,10 +268,10 @@ switch($action) {
 		//manual sort for MODULE-Columns
 		if(TRUE === ko_manual_sorting(array($sort))) {
 			//Datafields
-			if(FALSE !== strpos($sort, ":")) {
+			if(FALSE !== mb_strpos($sort, ":")) {
 				list($prefix, $dfid) = explode(":", $sort);
 				$counter = 0;
-				foreach(explode(",", $all_groups[substr($prefix, 9)]["datafields"]) as $_dfid) {
+				foreach(explode(",", $all_groups[mb_substr($prefix, 9)]["datafields"]) as $_dfid) {
 					$counter++;
 					if($dfid == $_dfid) break;
 				}
@@ -296,11 +296,11 @@ switch($action) {
 			if(sizeof($columns) > 0) {
 				if(!in_array("id", $columns)) array_unshift($columns, "id");
 				foreach($columns as $col) {
-					if(FALSE !== strpos($col, ":")) continue;  //Datafields (MODULEgrp000001:000002) are being return with their group (MODULEgrp000001)
+					if(FALSE !== mb_strpos($col, ":")) continue;  //Datafields (MODULEgrp000001:000002) are being return with their group (MODULEgrp000001)
 
 					$value = map_leute_daten($_person[$col], $col, $_person, $all_datafields, $forceDatafields=TRUE, array('MODULEkg_firstOnly' => TRUE));
 					if(is_array($value)) {  //Group with datafields is returned as array
-						$gid = substr($col, 9);
+						$gid = mb_substr($col, 9);
 						$person[$col] = array_shift($value);
 						foreach(explode(",", $all_groups[$gid]["datafields"]) as $dfid) {
 							if(!$dfid) continue;
@@ -353,8 +353,8 @@ switch($action) {
 				if(!$c || $c == "id") continue;
 				$header[] = $leute_col_name[$c];
 				//add group-datafields if needed
-				if(substr($c, 0, 9) == "MODULEgrp" && $all_groups[substr($c, 9)]["datafields"]) {
-					list($gid, $fid) = explode(":", substr($c, 9));
+				if(mb_substr($c, 0, 9) == "MODULEgrp" && $all_groups[mb_substr($c, 9)]["datafields"]) {
+					list($gid, $fid) = explode(":", mb_substr($c, 9));
 					if(!isset($all_datafields[$fid])) continue;
 					$header[] = $leute_col_name[$c];
 				}
@@ -365,7 +365,7 @@ switch($action) {
 			$filename = ko_export_to_xlsx($header, $data, $filename, "kOOL");
             $fp = fopen ($filename, "r");
 			$r["filename"] = basename($filename);
-            if (substr($filename, -1) == 'x') {
+            if (mb_substr($filename, -1) == 'x') {
                 $r["filetype"] = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
             } else {
                 $r["filetype"] = 'application/vnd.ms-excel';

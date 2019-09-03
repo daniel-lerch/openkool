@@ -66,7 +66,7 @@ if($_POST['action']) {
 if(!$do_action) $do_action = 'list_trackings';
 
 //Reset show_start if from another module
-if($_SERVER['HTTP_REFERER'] != '' && FALSE === strpos($_SERVER['HTTP_REFERER'], '/'.$ko_menu_akt.'/')) $_SESSION['show_start'] = 1;
+if($_SERVER['HTTP_REFERER'] != '' && FALSE === mb_strpos($_SERVER['HTTP_REFERER'], '/'.$ko_menu_akt.'/')) $_SESSION['show_start'] = 1;
 
 switch($do_action) {
 
@@ -266,7 +266,7 @@ switch($do_action) {
 			$filename = $ko_path.'download/'.$folder.'/'.getLL('tracking_export_filename').strftime('%d%m%Y_%H%M%S', time()).'.'. ($mode == 'xls' ? $format : $mode);
 			ko_tracking_export($mode, $filename, $tid, $_POST['sel_cols'], $_POST['sel_dates'], $_POST['sel_layout'], $_POST['sel_addrows'], $_POST['chk_family'], $_POST['chk_sums']);
 		}
-		$onload_code = "ko_popup('".$ko_path.'download.php?action=file&amp;file='.substr($filename, 3)."');";
+		$onload_code = "ko_popup('".$ko_path.'download.php?action=file&amp;file='.mb_substr($filename, 3)."');";
 		//Set userprefs with current selections
 		ko_save_userpref($_SESSION['ses_userid'], 'tracking_export_cols', $_POST['sel_cols']);
 		ko_save_userpref($_SESSION['ses_userid'], 'tracking_export_layout', $_POST['sel_layout']);
@@ -320,7 +320,7 @@ switch($do_action) {
 			}
 
 			$zip->close();
-			$onload_code = "ko_popup('".$ko_path.'download.php?action=file&amp;file='.substr($zip_filename, 3)."');";
+			$onload_code = "ko_popup('".$ko_path.'download.php?action=file&amp;file='.mb_substr($zip_filename, 3)."');";
 		}
 	break;
 

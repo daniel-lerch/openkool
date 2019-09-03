@@ -39,9 +39,9 @@ if(isset($_GET['ko_guest']) || isset($_GET['guest'])) { //Stay with guest user
 }
 else if(isset($_GET['user'])) { //User hash given in URL
 	$userhash = $_GET['user'];
-	if(strlen($userhash) != 32) exit;
+	if(mb_strlen($userhash) != 32) exit;
 	for($i=0; $i<32; $i++) {
-		if(!in_array(substr($userhash, $i, 1), array(1,2,3,4,5,6,7,8,9,0,'a','b','c','d','e','f'))) exit;
+		if(!in_array(mb_substr($userhash, $i, 1), array(1,2,3,4,5,6,7,8,9,0,'a','b','c','d','e','f'))) exit;
 	}
 	if(!defined('KOOL_ENCRYPTION_KEY') || trim(KOOL_ENCRYPTION_KEY) == '') exit;
 
@@ -95,8 +95,8 @@ ko_get_access('daten', $_SESSION['ses_userid'], TRUE);
 $use_itemset = FALSE;
 if(isset($_GET['egs'])) {  //use event groups given in URL
 	foreach(explode(',', $_GET['egs']) as $eg) {
-		if(substr($eg, 0, 1) == 'p') {  //Preset
-			$presetid = format_userinput(substr($eg, 1), 'uint');
+		if(mb_substr($eg, 0, 1) == 'p') {  //Preset
+			$presetid = format_userinput(mb_substr($eg, 1), 'uint');
 			if($presetid) {
 				$userpref = db_select_data('ko_userprefs', "WHERE `id` = '$presetid'", '*', '', '', TRUE);
 				if($userpref['type'] == 'daten_itemset' && ($userpref['user_id'] == '-1' || $userpref['user_id'] == $_SESSION['ses_userid'])) {
@@ -107,8 +107,8 @@ if(isset($_GET['egs'])) {  //use event groups given in URL
 				}
 			}
 		}
-		else if(substr($eg, 0, 1) == 'c') {  //Calendar
-			$calid = format_userinput(substr($eg, 1), 'uint');
+		else if(mb_substr($eg, 0, 1) == 'c') {  //Calendar
+			$calid = format_userinput(mb_substr($eg, 1), 'uint');
 			if($calid) {
 				$calendar_egs = db_select_data('ko_eventgruppen', "WHERE `calendar_id` = '$calid'", 'id');
 				foreach($calendar_egs as $eventgroup) {
@@ -149,8 +149,8 @@ if($ical_deadline >= 0) $ical_deadline = 'today';
 //Set KOTA filter from GET
 unset($_SESSION['kota_filter']['ko_event']);
 foreach($_GET as $k => $v) {
-	if(substr($k, 0, 5) != 'kota_') continue;
-	$key = substr($k, 5);
+	if(mb_substr($k, 0, 5) != 'kota_') continue;
+	$key = mb_substr($k, 5);
 	//Check for valid KOTA field
 	$ok = FALSE;
 	foreach($KOTA['ko_event']['_listview'] as $klv) {
@@ -237,7 +237,7 @@ unset($eventgroups);
 
 
 //Output
-if (isset($_SERVER["HTTP_USER_AGENT"]) && strpos($_SERVER["HTTP_USER_AGENT"], "MSIE")) {
+if (isset($_SERVER["HTTP_USER_AGENT"]) && mb_strpos($_SERVER["HTTP_USER_AGENT"], "MSIE")) {
 	// IE cannot download from sessions without a cache
 	header("Cache-Control: public");
 	// q316431 - Don't set no-cache when over HTTPS

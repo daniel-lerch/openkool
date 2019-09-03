@@ -469,19 +469,19 @@ switch($do_action) {
 		$col_names = ko_get_leute_col_name();
 		$col_name = $col_names[$id];
 		//Maxlength
-		$endpos = strpos($col["Type"], "(") ? strpos($col["Type"], "(") : strlen($col["Type"]);
-		$endpos2 = strpos($col["Type"], ")") ? strpos($col["Type"], ")") : strlen($col["Type"]);
-		$max_length = ($endpos && $endpos2) ? substr($col["Type"], ($endpos+1), ($endpos2-$endpos-1)) : 0;
+		$endpos = mb_strpos($col["Type"], "(") ? mb_strpos($col["Type"], "(") : mb_strlen($col["Type"]);
+		$endpos2 = mb_strpos($col["Type"], ")") ? mb_strpos($col["Type"], ")") : mb_strlen($col["Type"]);
+		$max_length = ($endpos && $endpos2) ? mb_substr($col["Type"], ($endpos+1), ($endpos2-$endpos-1)) : 0;
 
 		//find type
 		$type  = "";
 		$type_ = mb_strtolower($col["Type"]);
-		if(substr($type_, 0, 4) == "enum") {
+		if(mb_substr($type_, 0, 4) == "enum") {
 			$type = "enum";
 		} else {
-			for($i=0; $i<strlen($type_); $i++) {
-				if(in_array(substr($type_, $i, 1), explode(",", "a,b,c,d,e,f,g,h,i,j,k,l,m,n,o,p,q,r,s,t,u,v,w,x,y,z"))) {
-					$type .= substr($type_, $i, 1);
+			for($i=0; $i<mb_strlen($type_); $i++) {
+				if(in_array(mb_substr($type_, $i, 1), explode(",", "a,b,c,d,e,f,g,h,i,j,k,l,m,n,o,p,q,r,s,t,u,v,w,x,y,z"))) {
+					$type .= mb_substr($type_, $i, 1);
 				}
 			}
 		}

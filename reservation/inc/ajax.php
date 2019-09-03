@@ -258,7 +258,7 @@ if(isset($_GET) && isset($_GET["action"])) {
 			} else if($name == '_none_') {
 				$_SESSION['show_items'] = array();
 			} else {
-				if(substr($name, 0, 3) == '@G@') $value = ko_get_userpref('-1', substr($name, 3), 'res_itemset');
+				if(mb_substr($name, 0, 3) == '@G@') $value = ko_get_userpref('-1', mb_substr($name, 3), 'res_itemset');
 				else $value = ko_get_userpref($_SESSION['ses_userid'], $name, 'res_itemset');
 				$_SESSION["show_items"] = explode(",", $value[0]["value"]);
 			}
@@ -292,8 +292,8 @@ if(isset($_GET) && isset($_GET["action"])) {
 			$name = format_userinput($_GET['name'], 'js', FALSE, 0, array(), '@');
 			if($name == "") break;
 
-			if(substr($name, 0, 3) == '@G@') {
-				if($access['reservation']['MAX'] > 3) ko_delete_userpref('-1', substr($name, 3), 'res_itemset');
+			if(mb_substr($name, 0, 3) == '@G@') {
+				if($access['reservation']['MAX'] > 3) ko_delete_userpref('-1', mb_substr($name, 3), 'res_itemset');
 			} else ko_delete_userpref($_SESSION['ses_userid'], $name, 'res_itemset');
 
 			print submenu_reservation("itemlist_objekte", $pos, "open", 2);
@@ -389,11 +389,11 @@ if(isset($_GET) && isset($_GET["action"])) {
 								ko_get_res_by_id($resid, $thisres_); $thisres = $thisres_[$resid];
 								$event_items .= $resitems[$thisres['item_id']]['name'].', ';
 							}
-							$event_items = substr($event_items, 0, -2);
+							$event_items = mb_substr($event_items, 0, -2);
 							//Reset color and name according to event group
 							$res['item_farbe'] = $event['eventgruppen_farbe'];
 							if($event['kommentar']) {
-								$res['zweck'] = substr($event['kommentar'], 0, $daten_title_length).' ('.$event['eventgruppen_name'].')';
+								$res['zweck'] = mb_substr($event['kommentar'], 0, $daten_title_length).' ('.$event['eventgruppen_name'].')';
 								$res['item_name'] = $event_items;
 							} else {
 								$res['zweck'] = getLL('res_cal_combined').' '.$event['eventgruppen_name'];
@@ -416,17 +416,17 @@ if(isset($_GET) && isset($_GET["action"])) {
 						default:
 							$title = $res['item_name'];
 					}
-					if(strlen($title) > $title_length) $title = substr($title, 0, $title_length).'..';
+					if(mb_strlen($title) > $title_length) $title = mb_substr($title, 0, $title_length).'..';
 
 					//Format time for tooltip
 					if($res['startzeit'] == '00:00:00' && $res['endzeit'] == '00:00:00') $time = getLL('time_all_day');
-					else $time = substr($res['startzeit'], 0, -3).' - '.substr($res['endzeit'], 0, -3);
+					else $time = mb_substr($res['startzeit'], 0, -3).' - '.mb_substr($res['endzeit'], 0, -3);
 
 					$tooltip = '';
 
 					//Moderated events
 					if($i == 1) {
-						if(!ko_res_check_double($res['item_id'], sql2datum($res['startdatum']), sql2datum($res['enddatum']), substr($res['startzeit'], 0, -3), substr($res['endzeit'], 0, -3), $double_error)) {
+						if(!ko_res_check_double($res['item_id'], sql2datum($res['startdatum']), sql2datum($res['enddatum']), mb_substr($res['startzeit'], 0, -3), mb_substr($res['endzeit'], 0, -3), $double_error)) {
 							$title = '! '.$title.' !';
 							$tooltip .= '<b>'.getLL('res_collision_text').'</b><br />'.$double_error.'<br /><br />';
 							$checkLink = FALSE;

@@ -64,7 +64,7 @@ if($_POST['action']) {
 
 
 //Reset show_start if from another module
-if($_SERVER['HTTP_REFERER'] != '' && FALSE === strpos($_SERVER['HTTP_REFERER'], '/'.$ko_menu_akt.'/')) $_SESSION['show_start'] = 1;
+if($_SERVER['HTTP_REFERER'] != '' && FALSE === mb_strpos($_SERVER['HTTP_REFERER'], '/'.$ko_menu_akt.'/')) $_SESSION['show_start'] = 1;
 
 switch($do_action) {
 
@@ -373,14 +373,14 @@ switch($do_action) {
 		$send_files = array();
 		foreach($_POST['files'] as $k => $file) {
 			$file = realpath($BASE_PATH.$file);
-			if(substr($file, 0, strlen($BASE_PATH)) != $BASE_PATH) continue;
+			if(mb_substr($file, 0, mb_strlen($BASE_PATH)) != $BASE_PATH) continue;
 			$send_files[$file] = basename($file);
 		}
 
 
 		//Get recipients according to recipients mode
 		if(in_array($_POST['recipients'], array('schedulled', 'selectedschedulled', 'manualschedulled'))) {
-			if(substr($_POST['filetype'], 0, 5) == 'event') {
+			if(mb_substr($_POST['filetype'], 0, 5) == 'event') {
 				list($mode, $eventid) = explode(':', $filetype);
 			} else {
 				$events = ko_rota_get_events();
@@ -587,8 +587,8 @@ if(!isset($_SESSION['rota_timespan'])) {
 }
 if(!isset($_SESSION['rota_timestart'])) {
 	$_SESSION['rota_timestart'] = date('Y-m-d');
-	if(substr($_SESSION['rota_timespan'], -1) == 'w') $_SESSION['rota_timestart'] = date_find_last_monday($_SESSION['rota_timestart']);
-	else if(substr($_SESSION['rota_timespan'], -1) == 'm') $_SESSION['rota_timestart'] = substr($_SESSION['rota_timestart'], 0, -2).'01';
+	if(mb_substr($_SESSION['rota_timespan'], -1) == 'w') $_SESSION['rota_timestart'] = date_find_last_monday($_SESSION['rota_timestart']);
+	else if(mb_substr($_SESSION['rota_timespan'], -1) == 'm') $_SESSION['rota_timestart'] = mb_substr($_SESSION['rota_timestart'], 0, -2).'01';
 }
 
 

@@ -163,7 +163,7 @@ if(isset($_GET) && isset($_GET["action"])) {
 
 			//Check for picture for this label preset
 			ko_get_etiketten_vorlage($id, $v);
-			if($v['pic_file'] && file_exists($BASE_PATH.$v['pic_file']) && $BASE_PATH == substr(realpath($BASE_PATH.$v['pic_file']), 0, strlen($BASE_PATH))) {
+			if($v['pic_file'] && file_exists($BASE_PATH.$v['pic_file']) && $BASE_PATH == mb_substr(realpath($BASE_PATH.$v['pic_file']), 0, mb_strlen($BASE_PATH))) {
 				//Remove image from label preset
 				db_update_data('ko_etiketten', "WHERE `vorlage` = '$id' AND `key` = 'pic_file'", array('value' => ''));
 				//Remove file from my_images

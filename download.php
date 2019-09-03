@@ -33,14 +33,14 @@ switch($_GET["action"]) {
 		if($full_path == '') ko_die('No file found');
 		//Replace \ with / for windows systems otherwise the check below will always trigger an error
 		if(DIRECTORY_SEPARATOR == '\\') $full_path = str_replace('\\', '/', $full_path);
-		if(substr($full_path, 0, strlen($BASE_PATH."download")) != ($BASE_PATH."download")) {
+		if(mb_substr($full_path, 0, mb_strlen($BASE_PATH."download")) != ($BASE_PATH."download")) {
 			trigger_error('Not allowed download file: '.$_GET['file'], E_USER_ERROR);
 			exit;
 		}
 		if(!file_exists($_GET["file"])) {
 			exit;
 		}
-		if(substr($_GET["file"], 0, 1) == "/") {
+		if(mb_substr($_GET["file"], 0, 1) == "/") {
 			exit;
 		}
 

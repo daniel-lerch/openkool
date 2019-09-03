@@ -180,23 +180,23 @@ switch ($action) {
 			responseError(1, $action);
 		}
 
-		if (strpos($groupString, ':') !== false) {
+		if (mb_strpos($groupString, ':') !== false) {
 
 			list($groupId, $roleId) = explode(':', $groupString);
-			if (substr($groupId, 0, 1) != 'g') {
+			if (mb_substr($groupId, 0, 1) != 'g') {
 				responseError(1, $action);
 			}
-			$groupId = substr($groupId, 1);
-			if (substr($roleId, 0, 1) != 'r') {
+			$groupId = mb_substr($groupId, 1);
+			if (mb_substr($roleId, 0, 1) != 'r') {
 				responseError(2, $action);
 			}
-			$roleId = substr($roleId, 1);
+			$roleId = mb_substr($roleId, 1);
 		}
 		else {
-			if (substr($groupString, 0, 1) != 'g') {
+			if (mb_substr($groupString, 0, 1) != 'g') {
 				responseError(1, $action);
 			}
-			$groupId = substr($groupString, 1);
+			$groupId = mb_substr($groupString, 1);
 			$roleId = null;
 		}
 
@@ -222,7 +222,7 @@ switch ($action) {
 		$dbColumns = array();
 		foreach ($dbColumnsRaw as $dbColumnRaw) $dbColumns[] = $dbColumnRaw['Field'];
 		foreach ($request as $requestColumn => $v) {
-			if (substr($requestColumn, 0, 1) != '_' && !in_array($requestColumn, $dbColumns)) {
+			if (mb_substr($requestColumn, 0, 1) != '_' && !in_array($requestColumn, $dbColumns)) {
 				responseError(4, $action);
 			}
 		}
@@ -242,7 +242,7 @@ switch ($action) {
 		$insert = array();
 		foreach ($request as $requestColumn => $v) {
 			// Check if column is writable
-			if (substr($requestColumn, 0, 1) == '_' && !in_array($requestColumn, $allowFilling)) {
+			if (mb_substr($requestColumn, 0, 1) == '_' && !in_array($requestColumn, $allowFilling)) {
 				responseError(5, $action);
 			}
 

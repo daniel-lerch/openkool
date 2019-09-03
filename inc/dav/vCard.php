@@ -157,10 +157,10 @@ class vCard {
 							//Add country code if necessary
 							if($ok && $person[$field] != '' && $person[$field] != '0000-00-00' && $person[$field] != '0000-00-00 00:00:00') {
 								$field_content = trim($person[$field]);
-								if (substr($propKey, 0, 4) == 'TEL;' && $field_content != '') {
-									if (substr($field_content, 0, 1) != '+' && substr($field_content, 0, 2) != '00' && $resident_of_country_code != '') {
-										if (substr($field_content, 0, 1) == '0' && !$keep_zero) {
-											$field_content = '+' . $resident_of_country_code . substr($field_content, 1, strlen($field_content) - 1);
+								if (mb_substr($propKey, 0, 4) == 'TEL;' && $field_content != '') {
+									if (mb_substr($field_content, 0, 1) != '+' && mb_substr($field_content, 0, 2) != '00' && $resident_of_country_code != '') {
+										if (mb_substr($field_content, 0, 1) == '0' && !$keep_zero) {
+											$field_content = '+' . $resident_of_country_code . mb_substr($field_content, 1, mb_strlen($field_content) - 1);
 										}
 										else {
 											$field_content = '+' . $resident_of_country_code . $field_content;

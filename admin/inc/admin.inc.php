@@ -421,8 +421,8 @@ function ko_show_sms_log($output=TRUE) {
 		$last = date('Y-m-d');
 		$mark_stats = '';
 		foreach($marks as $date => $mark) {
-			$mark_stats .= '<br />'.substr($date, 0, 10).' - '.$last.': '.$mark;
-			$last = substr($date, 0, 10);
+			$mark_stats .= '<br />'.mb_substr($date, 0, 10).' - '.$last.': '.$mark;
+			$last = mb_substr($date, 0, 10);
 		}
 		$list_footer[] = array('label' => $mark_stats, 'button' => '');
 
@@ -1082,7 +1082,7 @@ function ko_login_formular($mode, $id=0, $type="login") {
 			ko_include_kota(array($coltable));
 			$col_values = $col_descs = array();
 			foreach($KOTA[$coltable] as $k => $v) {
-				if(substr($k, 0, 1) == '_') continue;
+				if(mb_substr($k, 0, 1) == '_') continue;
 				$ll = getLL('kota_'.$coltable.'_'.$k);
 				if(!$ll) continue;
 				$col_values[] = $k;
@@ -1155,7 +1155,7 @@ function ko_login_details($id) {
 					if(!intval($k) || $v < $level) continue;
 					$rights .= $k.', ';
 				}
-				print $level.': '.($rights != '' ? substr($rights, 0, -2) : '&radic;').'<br />';
+				print $level.': '.($rights != '' ? mb_substr($rights, 0, -2) : '&radic;').'<br />';
 			} else {
 				print $level.':<br />';
 			}

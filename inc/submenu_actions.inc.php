@@ -59,7 +59,7 @@ function ko_submenu_actions($sm_module, $action) {
 					$new_right .= $c.",";
 				}
 			}
-			ko_save_userpref($_SESSION["ses_userid"], "submenu_".$sm_module."_right".$state, substr($new_right,0,-1));
+			ko_save_userpref($_SESSION["ses_userid"], "submenu_".$sm_module."_right".$state, mb_substr($new_right,0,-1));
 		break;
 
 		case "move_sm_right":
@@ -89,7 +89,7 @@ function ko_submenu_actions($sm_module, $action) {
 					$new_left .= $c.",";
 				}
 			}
-			ko_save_userpref($_SESSION["ses_userid"], "submenu_".$sm_module."_left".$state, substr($new_left,0,-1));
+			ko_save_userpref($_SESSION["ses_userid"], "submenu_".$sm_module."_left".$state, mb_substr($new_left,0,-1));
 		break;
 	}//switch(action)
 }//ko_submenu_actions

@@ -131,10 +131,10 @@ function ko_mailing_main ($test = false, $mail_id_in = null, $recipient_in = nul
 		}
 
 		//Find quoted-printable in header
-		if(FALSE !== strpos(strtolower($mail['header']), 'content-transfer-encoding: quoted-printable')) $qp = TRUE;
+		if(FALSE !== mb_strpos(strtolower($mail['header']), 'content-transfer-encoding: quoted-printable')) $qp = TRUE;
 		else $qp = FALSE;
 		//Find utf-8 encoding. If set then encode recipient's name
-		//if(FALSE !== strpos(strtolower($mail['header']), 'charset=utf-8')) $utf8 = TRUE;
+		//if(FALSE !== mb_strpos(strtolower($mail['header']), 'charset=utf-8')) $utf8 = TRUE;
 		//else $utf8 = FALSE;
 
 		//Set return path to sender's email
@@ -248,9 +248,9 @@ function ko_mailing_main ($test = false, $mail_id_in = null, $recipient_in = nul
 
 				//Check for automatically authorized emails
 				$auto_confirmed = FALSE;
-				if(FALSE !== strpos($to, '+')) {
+				if(FALSE !== mb_strpos($to, '+')) {
 					list($to, $auth) = explode('+', $to);
-					if(KOOL_ENCRYPTION_KEY != '' && strlen($auth) == 32) {
+					if(KOOL_ENCRYPTION_KEY != '' && mb_strlen($auth) == 32) {
 						$auto_confirmed = md5(date('d').$to.KOOL_ENCRYPTION_KEY) == $auth;
 					}
 				}
@@ -263,8 +263,8 @@ function ko_mailing_main ($test = false, $mail_id_in = null, $recipient_in = nul
 					$found = TRUE;
 				}
 				//Find confirm emails
-				else if(substr($to, 0, strlen('confirm-')) == 'confirm-') {
-					$code = substr($to, strlen('confirm-'));
+				else if(mb_substr($to, 0, mb_strlen('confirm-')) == 'confirm-') {
+					$code = mb_substr($to, mb_strlen('confirm-'));
 					$error = ko_mailing_check_code($code, $mail2);
 
 					if($error) {
@@ -435,10 +435,10 @@ function ko_mailing_main ($test = false, $mail_id_in = null, $recipient_in = nul
 		$done = $done_names = array();
 
 		//Find quoted-printable in header
-		if(FALSE !== strpos(strtolower($mail['header']), 'content-transfer-encoding: quoted-printable')) $qp = TRUE;
+		if(FALSE !== mb_strpos(mb_strtolower($mail['header']), 'content-transfer-encoding: quoted-printable')) $qp = TRUE;
 		else $qp = FALSE;
 		//Find utf-8 encoding. If set then encode recipient's name
-		//if(FALSE !== strpos(strtolower($mail['header']), 'charset=utf-8')) $utf8 = TRUE;
+		//if(FALSE !== mb_strpos(mb_strtolower($mail['header']), 'charset=utf-8')) $utf8 = TRUE;
 		//else $utf8 = FALSE;
 
 		//Get next recipients and send emails
@@ -504,7 +504,7 @@ function ko_mailing_main ($test = false, $mail_id_in = null, $recipient_in = nul
 		$log = '';
 		$logcols = array('id', 'crdate', 'recipient', 'from', 'subject');
 		foreach($logcols as $c) $log .= (getLL('mailing_header_'.$c) ? getLL('mailing_header_'.$c) : $c).': '.$mail[$c].', ';
-		db_insert_data('ko_log', array('type' => 'mailing_delete_old', 'comment' => substr($log, 0, -2), 'user_id' => $mail['user_id'], 'date' => date('Y-m-d H:i:s')));
+		db_insert_data('ko_log', array('type' => 'mailing_delete_old', 'comment' => mb_substr($log, 0, -2), 'user_id' => $mail['user_id'], 'date' => date('Y-m-d H:i:s')));
 		db_delete_data('ko_mailing_mails', "WHERE `id` = '".$mail['id']."'");
 	}
 
@@ -521,8 +521,8 @@ function ko_mailing_get_sender_login(&$from) {
 	//Find sender email address
 	$pos1 = strrpos($from, '<');
 	if(FALSE !== $pos1) {
-		$pos2 = strpos($from, '>', $pos1);
-		$from = substr($from, $pos1 + 1, ($pos2 ? $pos2 : strlen($from)) - $pos1 - 1);
+		$pos2 = mb_strpos($from, '>', $pos1);
+		$from = mb_substr($from, $pos1 + 1, ($pos2 ? $pos2 : mb_strlen($from)) - $pos1 - 1);
 	}
 	if(!check_email($from)) return FALSE;
 	$from = strtolower($from);
@@ -590,8 +590,8 @@ function ko_mailing_mail_confirmed($code) {
 function ko_mailing_get_recipients($rec) {
 	global $access, $login_id, $sender_email;
 
-	$mode = substr($rec, 0, 2);
-	$data = substr($rec, 2);
+	$mode = mb_substr($rec, 0, 2);
+	$data = mb_substr($rec, 2);
 	$_recipients = array();
 	$allow = false;
 
@@ -656,8 +656,8 @@ function ko_mailing_get_recipients($rec) {
 function ko_mailing_get_rec_name($rec) {
 	global $all_groups, $db_user;
 
-	$mode = substr($rec, 0, 2);
-	$data = substr($rec, 2);
+	$mode = mb_substr($rec, 0, 2);
+	$data = mb_substr($rec, 2);
 
 	switch($mode) {
 		case 'gr':
@@ -733,7 +733,7 @@ function ko_mailing_error($error, $mail, $to='') {
 	foreach($mail as $k => $v) {
 		if($k && $v) $log .= $k.': '.$v.', ';
 	}
-	if(substr($log, 0, -2) == ', ') $log = substr($log, 0, -2);
+	if(mb_substr($log, 0, -2) == ', ') $log = mb_substr($log, 0, -2);
 	db_insert_data('ko_log', array('type' => 'mailing_error', 'comment' => $log, 'user_id' => $db_user['id'], 'date' => date('Y-m-d H:i:s')));
 }//ko_mailing_error()
 
@@ -885,7 +885,7 @@ function ko_mailing_summary($mail, $body='') {
 		if(!$bodytext) $bodytext = trim(imap_fetchbody($imap, $mail['msgno'], '1'));
 		if(!$bodytext) $bodytext = trim(imap_fetchbody($imap, $mail['msgno'], '2.1'));
 
-		$summary .= "\n".($bodytext ? $bodytext : (substr($body, 0, 200)."\n[...]\n"));
+		$summary .= "\n".($bodytext ? $bodytext : (mb_substr($body, 0, 200)."\n[...]\n"));
 	}
 
 	return $summary;
@@ -914,16 +914,16 @@ function ko_mailing_check_group($gid, $rid, &$no_mod) {
 	$no_mod_s = false;
 
 	//Check for correct gid
-	if(!$gid || strlen($gid) != 6) return ERROR_INVALID_GROUP_ID;
-	for($i=0; $i<strlen($gid); $i++) {
-		if(!in_array(substr($gid, $i, 1), array(0,1,2,3,4,5,6,7,8,9))) return ERROR_INVALID_GROUP_ID;
+	if(!$gid || mb_strlen($gid) != 6) return ERROR_INVALID_GROUP_ID;
+	for($i=0; $i<mb_strlen($gid); $i++) {
+		if(!in_array(mb_substr($gid, $i, 1), array(0,1,2,3,4,5,6,7,8,9))) return ERROR_INVALID_GROUP_ID;
 	}
 
 	//Check role id if given
 	if($rid) {
-		if(strlen($rid) != 6) return ERROR_INVALID_GROUP_ROLE_ID;
-		for($i=0; $i<strlen($rid); $i++) {
-			if(!in_array(substr($rid, $i, 1), array(0,1,2,3,4,5,6,7,8,9))) return ERROR_INVALID_GROUP_ROLE_ID;
+		if(mb_strlen($rid) != 6) return ERROR_INVALID_GROUP_ROLE_ID;
+		for($i=0; $i<mb_strlen($rid); $i++) {
+			if(!in_array(mb_substr($rid, $i, 1), array(0,1,2,3,4,5,6,7,8,9))) return ERROR_INVALID_GROUP_ROLE_ID;
 		}
 	}
 
@@ -1028,11 +1028,11 @@ function ko_mailing_get_sender_roles(&$group, $sender_email) {
 	$people = db_select_data('ko_leute', "WHERE 1 AND (".implode(' OR ', $where).") AND `deleted` = '0' AND `hidden` = '0'");
 	foreach($people as $p) {
 		//Find members. Just a member of the group not regarding the role
-		if(FALSE !== strpos($p['groups'], 'g'.$group['id'])) {
+		if(FALSE !== mb_strpos($p['groups'], 'g'.$group['id'])) {
 			$roles[] = 'member';
 		}
 		//Find moderator for the selected moderator role for this group
-		if($group['mailing_mod_role'] && $group['mailing_mod_role'] != '_none' && in_array($group['mailing_mod_role'], explode(',', $group['roles'])) && FALSE !== strpos($p['groups'], 'g'.$group['id'].':r'.$group['mailing_mod_role'])) {
+		if($group['mailing_mod_role'] && $group['mailing_mod_role'] != '_none' && in_array($group['mailing_mod_role'], explode(',', $group['roles'])) && FALSE !== mb_strpos($p['groups'], 'g'.$group['id'].':r'.$group['mailing_mod_role'])) {
 			$roles[] = 'moderator';
 		}
 		//Find moderator if mod_role is set to _none
@@ -1147,9 +1147,9 @@ function ko_mailing_check_smallgroup($sgid, $rid) {
 	global $SMALLGROUPS_ROLES, $max_recipients, $access, $login_id;
 
 	//Check for correct sgid
-	if(!$sgid || strlen($sgid) != 4) return ERROR_INVALID_SMALLGROUP_ID;
-	for($i=0; $i<strlen($sgid); $i++) {
-		if(!in_array(substr($sgid, $i, 1), array(0,1,2,3,4,5,6,7,8,9))) return ERROR_INVALID_SMALLGROUP_ID;
+	if(!$sgid || mb_strlen($sgid) != 4) return ERROR_INVALID_SMALLGROUP_ID;
+	for($i=0; $i<mb_strlen($sgid); $i++) {
+		if(!in_array(mb_substr($sgid, $i, 1), array(0,1,2,3,4,5,6,7,8,9))) return ERROR_INVALID_SMALLGROUP_ID;
 	}
 
 	//Check for access
@@ -1157,7 +1157,7 @@ function ko_mailing_check_smallgroup($sgid, $rid) {
 
 	//Check role id if given
 	if($rid) {
-		if(strlen($rid) != 1) return ERROR_INVALID_SMALLGROUP_ID;
+		if(mb_strlen($rid) != 1) return ERROR_INVALID_SMALLGROUP_ID;
 		if(!in_array($rid, $SMALLGROUPS_ROLES)) return ERROR_INVALID_SMALLGROUP_ID;
 	}
 
@@ -1179,9 +1179,9 @@ function ko_mailing_check_smallgroup($sgid, $rid) {
 
 function ko_mailing_check_code($code, &$mail2) {
 	//Check for valid md5 hash
-	if(strlen($code) != 32) return ERROR_INVALID_CODE;
-	for($i=0; $i<strlen($code); $i++) {
-		if(!in_array(substr($code, $i, 1), array(0,1,2,3,4,5,6,7,8,9,'a','b','c','d','e','f'))) return ERROR_INVALID_CODE;
+	if(mb_strlen($code) != 32) return ERROR_INVALID_CODE;
+	for($i=0; $i<mb_strlen($code); $i++) {
+		if(!in_array(mb_substr($code, $i, 1), array(0,1,2,3,4,5,6,7,8,9,'a','b','c','d','e','f'))) return ERROR_INVALID_CODE;
 	}
 
 	//Check db for mail with this code
@@ -1232,7 +1232,7 @@ function ko_mailing_markers($string, $leute_id, $email, $qp=FALSE) {
 	if($edit_base_link && $email) {
 		$userhash = md5($email.KOOL_ENCRYPTION_KEY);
 		$map['###_USERHASH###'] = $userhash;
-		$link = FALSE !== strpos($edit_base_link, '?') ? '&' : '?';
+		$link = FALSE !== mb_strpos($edit_base_link, '?') ? '&' : '?';
 		$map['###_EDIT_LINK###'] = $edit_base_link.$link.'hash=e'.$userhash;
 		$map['###_DELETE_LINK###'] = $edit_base_link.$link.'hash=d'.$userhash;
 	} else {
@@ -1242,7 +1242,7 @@ function ko_mailing_markers($string, $leute_id, $email, $qp=FALSE) {
 	}
 
 	//kOOL ID to be used in e.g. kool_groupsusbscribe
-	$map['###_KID###'] = $leute_id.'p'.substr(md5($leute_id.KOOL_ENCRYPTION_KEY), 0, 10);
+	$map['###_KID###'] = $leute_id.'p'.mb_substr(md5($leute_id.KOOL_ENCRYPTION_KEY), 0, 10);
 
 	//If email text itself is encoded with quoted-printable then first decode, replace markers and re-encode
 	//Otherwise markers might be split (##=\n#_EDIT_LINK###) and not found
