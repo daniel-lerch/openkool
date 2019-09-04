@@ -10,3 +10,4 @@
 
 ## Plugins
 - Rename the `kota.inc` file in plugin root to `kota.inc.php` if existent.
+- The function `ko_export_to_excel` has been removed. Plugins using it have to find an alternative.

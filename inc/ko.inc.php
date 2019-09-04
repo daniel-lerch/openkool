@@ -8580,119 +8580,6 @@ function ko_export_to_xlsx($header, $data, $filename, $title = '', $format="land
 
 
 
-/**
- * Creates an XLS file
- * Based upon php_writeexcel (http://www.bettina-attack.de/jonny/view.php/projects/php_writeexcel)
- *
- * @param array header: Array holding the header row's cells
- * @param array data: Two dimensional array holding the cell's values
- * @param string filename: Filename two use for the xls file
- * @param string title: Title for the worksheet
- * @param string format: landscape or portrait
- * @param array wrap: Array with column number as key if this column's values should be wrapped
- * @param array formatting: Array containing formatting information
- */
-function ko_export_to_excel($header, $data, $filename, $title, $format="landscape", $wrap=array(), $formatting=array()) {
-	global $ko_path;
-
-	require_once($ko_path.'inc/class.excelwriter.php');
-
-	$workbook = new writeexcel_workbook($filename);
-	$worksheet =& $workbook->addworksheet(mb_substr($title, 0, 30));
-	if($format == "landscape") $worksheet->set_landscape();
-	else $worksheet->set_portrait();
-
-	//set encoding
-	//$worksheet->setInputEncoding('ISO-8859-1');
-
-  $col = $row = 0;
-
-	//Define formats
-	$xls_default_font = ko_get_setting('xls_default_font');
-	$xls_title_font = ko_get_setting('xls_title_font');
-	$xls_title_bold = ko_get_setting('xls_title_bold');
-	$xls_title_color = ko_get_setting('xls_title_color');
-
-	$format_header =& $workbook->addformat(array('bold' => $xls_title_bold, 'color' => $xls_title_color, 'font' => $xls_title_font));
-	$format_title =& $workbook->addformat(array('bold' => $xls_title_bold, 'size' => '12', 'font' => $xls_title_font));
-	$format_subtitle =& $workbook->addformat(array('bold' => $xls_title_bold, 'font' => $xls_default_font));
-	$format_wrap =& $workbook->addformat(array('text_wrap' => 1, 'font' => $xls_default_font));
-	$format_default =& $workbook->addformat(array('font' => $xls_default_font));
-
-	//Create formats given in formatting array
-	foreach($formatting['formats'] as $f => $format) {
-		${'f_'.$f} =& $workbook->addformat($format);
-	}
-
-	//Add header
-	if(is_array($header)) {
-		if(isset($header['header'])) {
-			//Add title
-			if($header['title']) {
-				$worksheet->write($row++, 0, $header['title'], $format_title);
-			}
-			//Add subtitle
-			if(is_array($header['subtitle']) && sizeof($header['subtitle']) > 0) {
-				foreach($header['subtitle'] as $k => $v) {
-					if(mb_substr($k, -1) != ':') $k .= ':';
-					$worksheet->write($row, 0, $k, $format_subtitle);
-					$worksheet->write($row++, 1, $v, $format_default);
-				}
-			} else if($header['subtitle']) {
-				$worksheet->write($row++, 0, $header['subtitle'], $format_subtitle);
-			}
-			$row++;
-			//Add column headers
-			$col = 0;
-			foreach($header['header'] as $h) {
-				$worksheet->write($row, $col++, ko_unhtml($h), $format_header);
-			}
-			$row++;
-		}
-		else {
-			if(is_array($header[0])) {
-				foreach($header as $r) {
-					$col = 0;
-					foreach($r as $h) {
-						$worksheet->write($row, $col++, ko_unhtml($h), $format_header);
-					}
-					$row++;
-				}
-			} else {
-				foreach($header as $h) {
-					$worksheet->write($row, $col++, ko_unhtml($h), $format_header);
-				}
-				$row++;
-			}
-		}
-	}
-
-	//Daten
-	foreach($data as $dd) {
-		$col=0;
-		foreach($dd as $d) {
-			if($wrap[$col] == TRUE) {
-				$worksheet->write($row, $col++, strip_tags(ko_unhtml($d)), $format_wrap);
-			} else {
-				//Set format of cell according to formatting definition
-				if(isset($formatting['cells'][$row.':'.$col])) $format =& ${'f_'.$formatting['cells'][$row.':'.$col]};
-				else if(isset($formatting['rows'][$row])) $format =& ${'f_'.$formatting['rows'][$row]};
-				else $format =& $format_default;
-
-				$worksheet->write($row, $col++, strip_tags(ko_unhtml($d)), $format);
-			}
-		}
-		$row++;
-	}
-	$workbook->close();
-	unset($workbook);
-
-}//ko_export_to_excel()
-
-
-
-
-
 function ko_export_to_csv($header, $data, $filename) {
   $fp = fopen($filename, 'w');
   fputcsv($fp, $header);
@@ -8713,7 +8600,7 @@ function ko_export_to_pdf($layout, $data, $filename) {
 	define('FPDF_FONTPATH',$ko_path.'fpdf/schriften/');
 	require($ko_path.'fpdf/pdf_leute.php');
 	$pdf = new PDF_leute($layout["page"]["orientation"], 'mm', 'A4');
-  $pdf->Open();
+	$pdf->Open();
 	$pdf->layout = $layout;
 	$pdf->SetAutoPageBreak(true, $layout["page"]["margin_bottom"]);
 
