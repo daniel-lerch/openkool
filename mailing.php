@@ -18,6 +18,9 @@
 *
 *******************************************************************************/
 
+use PHPMailer\PHPMailer\Exception;
+use PHPMailer\PHPMailer\PHPMailer;
+
 // return warning if called from console
 if(isset($argc) && $argc >= 1) {
 	die("This script can't be executed from console anylonger. You have to create a scheduler-task which calls the function 'ko_mailing_main' \n");
@@ -423,9 +426,15 @@ function ko_mailing_main ($test = false, $mail_id_in = null, $recipient_in = nul
 //Close connection and expunge
 	imap_close($imap, CL_EXPUNGE);
 
-
-	require($ko_path . 'inc/class.rawSmtpMailer.php');
-	$mailer = new RawSmtpMailer(true);
+	
+	$mailer = new PHPMailer(true);
+	$mailer->isSMTP();
+	$mailer->Host = $MAILING_PARAMETER['host'];
+	$mailer->Port = $MAILING_PARAMETER['port'];
+	$mailer->SMTPAuth = ($MAIL_TRANSPORT['auth_user'] || $MAIL_TRANSPORT['auth_pass']);
+	$mailer->SMTPSecure = ($MAIL_TRANSPORT['tls'] ? 'tls' : ($MAIL_TRANSPORT['ssl'] ? 'ssl' : ""));
+	$mailer->Username = $MAIL_TRANSPORT['auth_user'];
+	$mailer->Password = $MAIL_TRANSPORT['auth_pass'];
 
 
 	//Check db for mails to be sent
@@ -462,11 +471,11 @@ function ko_mailing_main ($test = false, $mail_id_in = null, $recipient_in = nul
 			$message = ko_emailtext(trim($mail['header'])).$to.$bulkHeader.$subject.CRLF.ko_emailtext(ko_mailing_markers($mail['body'], $rec['leute_id'], $rec['email'], $qp));
 			$sender = $mail['from'];
 
-			$mailer->removeAddresses();
+			$mailer->clearAddresses();
 
-			$mailer->setSender($sender);
-			$mailer->addAddress($rcpt);
-			$mailer->setMessage($message);
+			$mailer->setFrom($mail['from']);
+			$mailer->addAddress($rec['email'], $rec['name']);
+			$mailer->Body = $message;
 			try {
 				$mailer->send();
 				$done[] = $rec['id'];
