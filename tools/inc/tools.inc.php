@@ -18,9 +18,7 @@
 *
 *******************************************************************************/
 
-
-require_once($BASE_PATH.'inc/class.kOOL_listview.php');
-
+use OpenKool\ListView;
 
 function ko_show_testmail () {
 	global $MAIL_TRANSPORT, $BASE_URL;
@@ -832,7 +830,7 @@ function ko_list_tasks($output=TRUE) {
   $z_limit = 'LIMIT '.($_SESSION['show_start']-1).', '.$_SESSION['show_limit'];
 	$es = db_select_data('ko_scheduler_tasks', '', '*', 'ORDER BY name ASC', $z_limit);
 
-	$list = new kOOL_listview();
+	$list = new ListView();
 
 	$list->init('tools', 'ko_scheduler_tasks', array('chk', 'edit', 'delete'), $_SESSION['show_start'], $_SESSION['show_limit']);
 	$list->setTitle(getLL('tools_scheduler_tasks_list_title'));

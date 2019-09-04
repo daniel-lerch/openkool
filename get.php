@@ -22,7 +22,7 @@ error_reporting(0);
 $ko_path = "./";
 $ko_menu_akt = 'get.php';
 
-require($ko_path."config/ko-config.php");
+require __DIR__ . '/inc/ko.inc.php';
 
 //Get request from _POST or _GET (for backwards compatibility)
 $q = '';
@@ -42,8 +42,7 @@ if($no_enc) {
 }
 //Use encryption
 else {
-	require($ko_path."inc/class.mcrypt.php");
-	$crypt = new mcrypt("aes");
+	$crypt = new OpenKool\mcrypt("aes");
 	$crypt->setKey(KOOL_ENCRYPTION_KEY);
 	$request_xml = $crypt->decrypt(base64_decode($q));
 	//Don't allow direct db access to these tables
@@ -65,8 +64,6 @@ if($no_enc) {
 
 //Get lang
 $_SESSION["lang"] = $req["language"][0];
-
-include($ko_path."inc/ko.inc.php");
 
 //Include KOTA
 ko_include_kota(array('ko_leute', 'ko_kleingruppen'));

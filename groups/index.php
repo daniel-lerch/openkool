@@ -25,6 +25,7 @@ $ko_menu_akt = "groups";
 
 include($ko_path . "inc/ko.inc.php");
 include("inc/groups.inc.php");
+use OpenKool\koNotifier;
 
 //Redirect to SSL if needed
 ko_check_ssl();

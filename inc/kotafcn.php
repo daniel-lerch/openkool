@@ -18,6 +18,7 @@
 *
 *******************************************************************************/
 
+use OpenKool\koNotifier;
 
 /**
   * Liefert Select-Werte für einzelne Tabelle-Spalten

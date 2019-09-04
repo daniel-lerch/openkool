@@ -18,9 +18,7 @@
 *
 *******************************************************************************/
 
-
-require_once($BASE_PATH.'inc/class.kOOL_listview.php');
-
+use OpenKool\ListView;
 
 /**
   * Jahres-Kalender
@@ -216,7 +214,7 @@ function ko_list_reservations($output=TRUE) {
 	}
 
 
-	$list = new kOOL_listview();
+	$list = new ListView();
 	$list->init('reservation', 'ko_reservation', array('chk', 'edit', 'delete'), $_SESSION['show_start'], $_SESSION['show_limit']);
 	$list->showColItemlist();
 	$list->setTitle(getLL('res_list_title'));
@@ -550,7 +548,7 @@ function ko_show_items_liste($output=TRUE) {
 	$z_limit = "LIMIT " . ($_SESSION["show_start"]-1) . ", " . $_SESSION["show_limit"];
 	ko_get_resitems($res, $z_limit, 'WHERE 1 '.$z_where);
 
-	$list = new kOOL_listview();
+	$list = new ListView();
 	$list->init('reservation', 'ko_resitem', array('chk', 'edit', 'delete'), $_SESSION['show_start'], $_SESSION['show_limit']);
 	$list->setTitle(getLL('res_items_list_title'));
 	$list->setAccessRights(array('edit' => 4, 'delete' => 4), $access['reservation']);

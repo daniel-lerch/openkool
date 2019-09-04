@@ -30,6 +30,7 @@
  *                                                                       *
  *************************************************************************/
 
+namespace OpenKool;
 
 /**
  *  Takes HTML and converts it to formatted, plain text.
@@ -307,7 +308,7 @@ class html2text
      *  @access public
      *  @return void
      */
-    function html2text( $source = '', $from_file = false )
+    function __construct( $source = '', $from_file = false )
     {
         if ( !empty($source) ) {
             $this->set_html($source, $from_file);

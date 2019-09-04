@@ -18,8 +18,8 @@
 *
 *******************************************************************************/
 
-require_once($BASE_PATH."inc/class.kOOL_listview.php");
-
+use OpenKool\koNotifier;
+use OpenKool\ListView;
 
 function apply_daten_filter(&$z_where, &$z_limit, $_start="", $_ende="", $_tg="") {
 	global $access;
@@ -120,7 +120,7 @@ function ko_list_events($method, $output=TRUE, $mode='html', $dontApplyLimit=FAL
 	if($access['daten']['MAX'] < 1) return FALSE;
 	apply_daten_filter($z_where, $z_limit);
 
-	$list = new kOOL_listview();
+	$list = new ListView();
 
 	$rows = db_get_count("ko_event", "id", $z_where);
 	if($_SESSION['show_start'] > $rows) {
@@ -269,7 +269,7 @@ function ko_list_mod_events($mode, $output=TRUE) {
 	}
 	if($rows == 0) return;
 
-	$list = new kOOL_listview();
+	$list = new ListView();
 
 	//Build fake accessRights arrays (TODO: Only show check if no "Doppelbelegung" for new)
 	$mod_access = array('ALL' => $access['daten']['ALL'] == 4 ? 5 : $access['daten']['ALL']);
@@ -331,7 +331,7 @@ function ko_list_reminders($output=TRUE, $mode='html') {
 
 	$rows = sizeof($es);
 
-	$list = new kOOL_listview();
+	$list = new ListView();
 
 	$list->init('daten', 'ko_reminder', array('chk', 'send', 'edit', 'delete'), 1, 1000);
 	$list->setTitle(getLL('ko_event_reminder_list_title'));
@@ -398,7 +398,7 @@ function ko_list_groups($method, $output=TRUE) {
 
 	if($access['daten']['MAX'] < 3) return;
 
-	$list = new kOOL_listview();
+	$list = new ListView();
 
 	//Nur die erlaubten Termingruppen anzeigen
 	if($access['daten']['ALL'] < 3) {
@@ -2506,8 +2506,7 @@ function ko_daten_import_ical($eg) {
 	if(!$icalData) return;
 
 	//Convert iCal data to array of kOOL events
-	require_once($ko_path.'inc/class.iCalReader.php');
-	$ical = new iCalReader();
+	$ical = new OpenKool\DAV\iCalReader();
 	$events = $ical->getEvents($icalData, $egid);
 
 
@@ -2760,7 +2759,7 @@ function ko_daten_list_export_presets() {
 	$es = db_select_data('ko_pdf_layout', "WHERE `type` = 'daten'", '*', 'ORDER BY `name` ASC');
 	$rows = sizeof($es);
 
-	$list = new kOOL_listview();
+	$list = new ListView();
 
 	$list->init('daten', 'ko_pdf_layout', array('chk', 'edit', 'delete'), 1, 1000);
 	$list->setTitle(getLL('submenu_daten_export_presets'));

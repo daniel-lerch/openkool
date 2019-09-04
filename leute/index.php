@@ -25,6 +25,7 @@ $ko_menu_akt = "leute";
 
 include($ko_path . "inc/ko.inc.php");
 include("inc/leute.inc.php");
+use OpenKool\koNotifier;
 
 //get notifier instance
 $notifier = koNotifier::Instance();

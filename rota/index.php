@@ -25,6 +25,7 @@ $ko_menu_akt = 'rota';
 
 include($ko_path . 'inc/ko.inc.php');
 include('inc/rota.inc.php');
+use OpenKool\koNotifier;
 
 //Redirect to SSL if needed
 ko_check_ssl();

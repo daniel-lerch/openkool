@@ -22,6 +22,7 @@ $ko_path = "./";
 $ko_menu_akt = "home";
 
 include($ko_path . "inc/ko.inc.php");
+use OpenKool\koNotifier;
 
 //Redirect to SSL if needed
 ko_check_ssl();

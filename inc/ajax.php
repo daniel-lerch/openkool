@@ -33,6 +33,7 @@ error_reporting(0);
 $ko_menu_akt = 'home';
 $ko_path = "../";
 require($ko_path."inc/ko.inc.php");
+use OpenKool\koNotifier;
 
 //Smarty-Templates-Engine laden
 require($BASE_PATH."inc/smarty.inc.php");

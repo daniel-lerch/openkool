@@ -18,8 +18,7 @@
 *
 *******************************************************************************/
 
-require_once($BASE_PATH."inc/class.kOOL_listview.php");
-
+use OpenKool\ListView;
 
 function ko_set_logins_list($output=TRUE) {
 	global $smarty, $ko_path;
@@ -194,7 +193,7 @@ function ko_list_admingroups($output=TRUE) {
 		$es[$k]['logins'] = '';
 	}
 
-	$list = new kOOL_listview();
+	$list = new ListView();
 
 	$list->init('admin', 'ko_admingroups', array('chk', 'edit', 'delete'), 1, 1000);
 	$list->setTitle(getLL('admin_admingroups_list_title'));
@@ -276,7 +275,7 @@ function ko_show_logs($output=TRUE) {
 	$rows = db_get_count('ko_log', 'id', $z_where);
 	$es = db_select_data('ko_log', 'WHERE 1 '.$z_where, '*', $order, $z_limit);
 
-	$list = new kOOL_listview();
+	$list = new ListView();
 
 	$list->init('admin', 'ko_log', '', $_SESSION['show_logs_start'], $_SESSION['show_logs_limit']);
 	$list->setTitle(getLL('admin_log_list_title'));
@@ -351,7 +350,7 @@ function ko_show_sms_log($output=TRUE) {
 		$c++;
 	}
 
-	$list = new kOOL_listview();
+	$list = new ListView();
 
 	$list->init('admin', '_ko_sms_log', array(), $_SESSION['show_start'], $_SESSION['show_limit']);
 	$list->setTitle(getLL("admin_sms_log_list_title"));
@@ -1482,7 +1481,7 @@ function ko_list_leute_pdf($output=TRUE) {
 	$es = db_select_data("ko_pdf_layout", "WHERE `type` = 'leute'", "*", "ORDER BY `name` ASC");
 	$rows = sizeof($es);
 
-	$list = new kOOL_listview();
+	$list = new ListView();
 
 	$list->init("admin", "ko_pdf_layout", array("chk", "edit", "delete"), 1, 1000);
 	$list->setTitle(getLL("admin_pdf_list_title"));
@@ -2244,7 +2243,7 @@ function ko_list_news($output=TRUE) {
 	$rows = db_get_count('ko_news', 'id', '');
 	$es = db_select_data('ko_news', 'WHERE 1=1', '*', $order);
 
-	$list = new kOOL_listview();
+	$list = new ListView();
 
 	$list->init('admin', 'ko_news', array('chk', 'edit', 'delete'), 1, 100);
 	$list->disableMultiedit();

@@ -18,6 +18,10 @@
 *
 *******************************************************************************/
 
+namespace OpenKool;
+
+use ReflectionClass;
+
 class koNotifier {
 
 	const
@@ -59,7 +63,7 @@ class koNotifier {
 	private function __clone () {}
 	private function __construct () {
 
-		$reflector = new ReflectionClass('koNotifier');
+		$reflector = new ReflectionClass('OpenKool\\koNotifier');
 
 		foreach($reflector->getConstants() as $constantKey => $constantValue) {
 			if ($constantValue != 'ALL' && $constantValue != 'NONE' && $constantValue != 'ERRORS') {

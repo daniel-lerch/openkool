@@ -282,9 +282,18 @@ $COUNTRY_CODES = array(
 	'40' => array('names' => array('ro', 'romania', 'roumania', 'rumänien')),
 );
 
+// Configure autoloading
+include __DIR__ . '/../vendor/autoload.php';
+spl_autoload_register(function($class) {
+	$prefix = 'OpenKool\\';
+	$prefixLength = mb_strlen($prefix);
+	if (mb_substr($class, 0, $prefixLength) === $prefix) {
+		include __DIR__ . '/../src/' . str_replace('\\', '/', mb_substr($class, $prefixLength)) . '.php';
+	}
+});
 
 //Set default notification levels
-require($ko_path . "inc/class.koNotifier.php");
+use OpenKool\koNotifier;
 $NOTIFIER_LEVEL_DISPLAY = koNotifier::ERRS | koNotifier::INFO | koNotifier::WARNING;
 $NOTIFIER_LEVEL_LOG_TO_DB = koNotifier::ALL ^ koNotifier::DEBUG ^ koNotifier::INFO;
 $NOTIFIER_LEVEL_LOG_TO_FILE = koNotifier::DEBUG;
@@ -299,16 +308,7 @@ $LEUTE_NO_FAMILY = false;
 
 
 //Kunden-spezifische Konfiguration einlesen (kann oben stehende Werte überschreiben)
-include($ko_path."config/ko-config.php");
-
-// Configure autoloading
-include __DIR__ . '/../vendor/autoload.php';
-spl_autoload_register(function($class) {
-	$prefix = 'OpenKool\\DAV\\';
-	if (mb_substr($class, 0, mb_strlen($prefix)) === $prefix) {
-		include __DIR__ . '/dav/' . mb_substr($class, mb_strlen($prefix)) . '.php';
-	}
-});
+include __DIR__ . '/../config/ko-config.php';
 
 //set notification levels
 koNotifier::Instance()->setDisplayLevel($NOTIFIER_LEVEL_DISPLAY);
@@ -11843,8 +11843,7 @@ function plugin_connect_TYPO3() {
 
 	//Get password and decrypt
 	$pwd_enc = ko_get_setting('typo3_pwd');
-	include_once($BASE_PATH.'inc/class.mcrypt.php');
-	$crypt = new mcrypt('aes');
+	$crypt = new OpenKool\mcrypt('aes');
 	$crypt->setKey(KOOL_ENCRYPTION_KEY);
 	$pwd = trim($crypt->decrypt($pwd_enc));
 
@@ -14210,8 +14209,7 @@ function ko_send_html_mail($from, $to, $subject, $body, $files = array(), $cc = 
 	try {
 		$message = ko_prepare_mail($from, $to, $subject, $body, $files, $cc, $bcc);
 		$message->setContentType('text/html');
-		require_once($BASE_PATH . 'inc/class.html2text.php');
-		$html2text = new html2text($body);
+		$html2text = new OpenKool\html2text($body);
 		$plainText = $html2text->get_text();
 		$message->addPart($plainText, 'text/plain');
 	} catch (Exception $e) {
@@ -14610,8 +14608,7 @@ function ko_check_login() {
 	if(ALLOW_SSO && KOOL_ENCRYPTION_KEY && $_GET["sso"] && $_GET["sig"]) {
 		$ssoError = FALSE;
 		//Decrypt SSO data
-		require($ko_path."inc/class.mcrypt.php");
-		$crypt = new mcrypt("aes");
+		$crypt = new OpenKool\mcrypt("aes");
 		$crypt->setKey(KOOL_ENCRYPTION_KEY);
 		list($kool_user, $timestamp, $ssoID, $user) = explode("@@@", $crypt->decrypt(base64_decode($_GET["sig"])));
 		$kool_user = trim(format_userinput($kool_user, "js")); $timestamp = trim($timestamp); $ssoID = trim($ssoID); $user = trim($user);

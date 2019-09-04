@@ -18,10 +18,7 @@
 *
 *******************************************************************************/
 
-require_once($BASE_PATH.'inc/class.kOOL_listview.php');
-
-
-
+use OpenKool\ListView;
 
 /**
  * List currently available trackings
@@ -49,7 +46,7 @@ function ko_list_trackings($output=TRUE) {
 		}
 	}
 
-	$list = new kOOL_listview();
+	$list = new ListView();
 
 	$list->init('tracking', 'ko_tracking', array('chk', 'edit', 'delete'), $_SESSION['show_start'], $_SESSION['show_limit']);
 	$list->setTitle(getLL('tracking_list_title'));
@@ -90,7 +87,7 @@ function ko_list_tracking_mod_entries($output=TRUE) {
 	}
 	$es = db_select_data('ko_tracking_entries', "WHERE `status` = '1' $z_where", '*', $order, $z_limit);
 
-	$list = new kOOL_listview();
+	$list = new ListView();
 
 	$list->init('tracking', 'ko_tracking_entries', array('chk', 'check', 'delete'), $_SESSION['show_start'], $_SESSION['show_limit']);
 	$list->setTitle(getLL('tracking_entries_list_title'));

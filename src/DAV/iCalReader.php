@@ -21,7 +21,7 @@
 *
 *******************************************************************************/
 
-
+namespace OpenKool\DAV;
 
 class iCalReader {
 	//returns the string value of the day instead of its ordinal number or return number

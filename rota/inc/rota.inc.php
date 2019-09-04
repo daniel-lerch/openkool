@@ -18,9 +18,8 @@
 *
 *******************************************************************************/
 
-require_once($BASE_PATH."inc/class.kOOL_listview.php");
 require_once($BASE_PATH."consensus/consensus.inc.php");
-
+use OpenKool\ListView;
 
 $ROTA_TIMESPANS = array('1d', '1w', '2w', '1m', '2m', '3m', '6m', '12m');
 
@@ -239,7 +238,7 @@ function ko_rota_list_teams($output=TRUE) {
 	$es = db_select_data('ko_rota_teams', 'WHERE 1=1 '.$z_where, '*', $order);
 
 
-	$list = new kOOL_listview();
+	$list = new ListView();
 
 	$list->init('rota', 'ko_rota_teams', array('chk', 'edit', 'delete'), 1, 9999);
 	$list->setTitle(getLL('rota_teams_list_title'));

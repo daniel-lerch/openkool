@@ -18,6 +18,8 @@
 *
 *******************************************************************************/
 
+use OpenKool\koNotifier;
+
 function ko_get_submenus($type) {
 	//$access has to stand here so it is available in the plugins which are included below with hook_include_sm()
 	global $ko_path, $access;

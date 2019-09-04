@@ -18,6 +18,7 @@
 *
 *******************************************************************************/
 
+namespace OpenKool;
 
 /**
  * Class to render list views
@@ -25,7 +26,7 @@
  * the smarty template ko_list2.tpl.
  * It takes the definitions from $KOTA to render the list.
  */
-class kOOL_listview {
+class ListView {
 	var $_editColumns = array('chk', 'chk2', 'edit', 'delete', 'check', 'forward', 'undelete', 'tracking_show', 'tracking_add', 'mailing', 'add', 'remove', 'send');
 	var $tmpl = array();  //Holds the values to be submitted to smarty on rendering
 	var $doFooter = FALSE;

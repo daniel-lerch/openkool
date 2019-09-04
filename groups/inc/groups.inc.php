@@ -18,8 +18,7 @@
 *
 *******************************************************************************/
 
-include_once($BASE_PATH."inc/class.kOOL_listview.php");
-
+use OpenKool\ListView;
 
 function ko_groups_list($output=TRUE) {
 	global $smarty, $ko_path;
@@ -69,7 +68,7 @@ function ko_groups_list($output=TRUE) {
 
 	ko_get_groups($es, $z_where, $z_limit);
 
-	$list = new kOOL_listview();
+	$list = new ListView();
 	$list->init('groups', 'ko_groups', array('chk', 'edit', 'delete', 'tracking_show', 'tracking_add', 'mailing'), $_SESSION['show_start'], $_SESSION['show_limit']);
 	$list->setTitle(getLL('groups_groups'));
 	$list->setSubTitle($list_title);
@@ -208,7 +207,7 @@ function ko_groups_list_datafields() {
 	}
 
 
-	$list = new kOOL_listview();
+	$list = new ListView();
 
 	$list->init('groups', 'ko_groups_datafields', array('chk', 'edit', 'delete'), 1, 1000);
 	$list->setTitle(getLL('groups_datafields_list_title'));
@@ -269,7 +268,7 @@ function ko_groups_list_roles($output=TRUE) {
 	}
 
 
-	$list = new kOOL_listview();
+	$list = new ListView();
 
 	$list->init('groups', 'ko_grouproles', array('chk', 'edit', 'delete'), 1, 1000);
 	$list->setTitle(getLL('groups_roles_list_title'));

@@ -28,6 +28,7 @@ include($ko_path . 'consensus/consensus.inc.php');
 include("inc/daten.inc.php");
 if(ko_module_installed("reservation")) 
 	include("../reservation/inc/reservation.inc.php");
+use OpenKool\koNotifier;
 
 $notifier = koNotifier::Instance();
 

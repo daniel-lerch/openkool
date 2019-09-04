@@ -25,6 +25,7 @@ $ko_menu_akt = "reservation";
 
 include($ko_path . "inc/ko.inc.php");
 include("inc/reservation.inc.php");
+use OpenKool\koNotifier;
 
 //get notifier instance
 $notifier = koNotifier::Instance();
@@ -1175,7 +1176,7 @@ switch($do_action) {
     if(sizeof($es) == 0) $notifier->addError(8, $do_action);
 
     if(!$notifier->hasErrors()) {
-			//TODO: Use kOOL_listview with xls mode?
+			//TODO: Use ListView with xls mode?
 			$columns = array();
 			ksort($KOTA['ko_reservation']['_listview']);
 			foreach($KOTA['ko_reservation']['_listview'] as $kc) {

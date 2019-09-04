@@ -25,6 +25,7 @@ $ko_menu_akt = 'tracking';
 
 include($ko_path.'inc/ko.inc.php');
 include('inc/tracking.inc.php');
+use OpenKool\koNotifier;
 
 //Redirect to SSL if needed
 ko_check_ssl();

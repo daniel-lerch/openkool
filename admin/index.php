@@ -25,6 +25,7 @@ $ko_menu_akt = "admin";
 
 include($ko_path . "inc/ko.inc.php");
 include("inc/admin.inc.php");
+use OpenKool\koNotifier;
 
 $notifier = koNotifier::Instance();
 

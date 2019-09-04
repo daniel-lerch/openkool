@@ -27,7 +27,7 @@ require($ko_path.'inc/ko.inc.php');
 require($ko_path.'rota/inc/rota.inc.php');
 require($ko_path.'inc/smarty.inc.php');
 require_once('consensus.inc.php');
-
+use OpenKool\koNotifier;
 
 $notifier = koNotifier::Instance();
 

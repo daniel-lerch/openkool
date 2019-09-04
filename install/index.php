@@ -29,7 +29,7 @@ $ko_path = "../";
 $ko_menu_akt = "install";
 
 include($ko_path . "inc/ko.inc.php");
-//include("inc/install.inc");
+use OpenKool\koNotifier;
 
 $notifier = koNotifier::Instance();
 

@@ -25,7 +25,7 @@ $ko_menu_akt = "tools";
 
 include($ko_path.'inc/ko.inc.php');
 include('inc/tools.inc.php');
-include($ko_path.'inc/class.mcrypt.php');
+use OpenKool\koNotifier;
 
 //Redirect to SSL if needed
 ko_check_ssl();
@@ -698,7 +698,7 @@ switch($do_action) {
 		ko_set_setting('typo3_user', format_userinput($_POST['typo3_user'], 'text'));
 
 		//Store password encrypted
-		$crypt = new mcrypt('aes');
+		$crypt = new OpenKool\mcrypt('aes');
 		$crypt->setKey(KOOL_ENCRYPTION_KEY);
 		$pwd_enc = $crypt->encrypt($_POST['typo3_pwd']);
 		ko_set_setting('typo3_pwd', $pwd_enc);
