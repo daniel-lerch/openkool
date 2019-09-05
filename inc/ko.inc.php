@@ -7045,7 +7045,7 @@ function ko_include_kota($tables=array()) {
 	* @param string $_kota_type Specify kota type for a new entry
 	*/
 function ko_multiedit_formular($table, $columns=NULL, $ids=0, $order="", $form_data="", $return_only_group=FALSE, $_kota_type='') {
-	global $smarty, $mysql_connection, $mysql_pass;
+	global $smarty, $db_connection, $mysql_pass;
 	global $KOTA, $js_calendar, $BASE_URL;
 
 	//Columns used in SQL

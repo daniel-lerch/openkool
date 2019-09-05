@@ -475,7 +475,7 @@ function kota_get_form($table, $column) {
 /**
   * Speichert die Änderungen von einem Multiedit-Formular
 	*/
-function kota_submit_multiedit($rights_level='', $log_type="", $lastchange_col="", &$changes) {
+function kota_submit_multiedit($rights_level='', $log_type="", $lastchange_col="", &$changes=array()) {
 	global $KOTA, $db_connection, $mysql_pass;
 	global $access;
 

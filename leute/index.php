@@ -319,19 +319,19 @@ switch($do_action) {
 				if(!in_array($c["Field"], $allowed_cols["view"])) continue;
 			}
 
-			// Remove type details e.g. 'tinyint(4) unsigned' to 'tinyint'
-			$endpos = mb_strpos($c["Type"], "(") ? mb_strpos($c["Type"], "(") : strlen($c["Type"]);
+			// Remove type details e.g. 'tinyint(4) unsigned' becomes 'tinyint'
+			$endpos = mb_strpos($c["Type"], "(") ? mb_strpos($c["Type"], "(") : mb_strlen($c["Type"]);
 			$input_type = mb_substr($c["Type"], 0, $endpos);
+			// Get base type e.g. 'tinyint' becomes 'int'
+			$input_type = preg_replace('/^tiny|small|medium|big|long/', '', $input_type);
 
 			switch($input_type) {
 
-				case "varchar": //Textfeld
-				case "tinyint":
-				case "smallint":
-				case "mediumint":
-				case "blob":
-				case "enum":
-				case "text":
+				case 'int':
+				case 'enum':
+				case 'varchar':
+				case 'blob':
+				case 'text':
 					if(in_array($c["Field"], $LEUTE_TEXTSELECT) && $_POST["input_".$c["Field"]."_2"]) {
 						$data[$c["Field"]] = format_userinput($_POST["input_".$c["Field"]."_2"], "text");
 					}
