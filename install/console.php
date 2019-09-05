@@ -17,3 +17,11 @@
 *
 *******************************************************************************/
 
+require __DIR__ . '/../inc/ko.inc.php';
+
+use OpenKool\Console\MigrateCommand;
+use Symfony\Component\Console\Application;
+
+$app = new Application("OpenKool Console", VERSION);
+$app->add(new MigrateCommand());
+$app->run();

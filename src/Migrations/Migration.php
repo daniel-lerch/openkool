@@ -42,7 +42,8 @@ abstract class Migration {
     public function apply() {
         try {
             $this->apply_internal();
-            $this->query("UPDATE `ko_settings` SET `value` = \'$this->number\' WHERE `key` = \'db_migration\'");
+            $this->query("UPDATE `ko_settings` SET `value` = '$this->number' WHERE `key` = 'db_migration'");
+            echo "\nSuccessfully applied migration $this->number\n";
             return true;
         } catch (Exception $e) {
             echo "An error occured while performing migration $this->number: ({$e->getCode()}) {$e->getMessage()}\n{$e->getTraceAsString()}";
@@ -58,7 +59,7 @@ abstract class Migration {
         if (!$result) {
             throw new Exception($this->db_connection->error, $this->db_connection->errno);
         } else {
-            echo 'OK';
+            echo "OK\n";
         }
     }
 }
