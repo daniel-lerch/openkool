@@ -1,30 +1,25 @@
 <?php
-/***************************************************************
-*  Copyright notice
+/*******************************************************************************
 *
-*  (c) 2003-2015 Renzo Lauper (renzo@churchtool.org)
-*  All rights reserved
+*    OpenKool - Online church organization tool
 *
-*  This script is part of the kOOL project. The kOOL project is
-*  free software; you can redistribute it and/or modify
-*  it under the terms of the GNU General Public License as published by
-*  the Free Software Foundation; either version 2 of the License, or
-*  (at your option) any later version.
+*    Copyright © 2003-2015 Renzo Lauper (renzo@churchtool.org)
+*    Copyright © 2019      Daniel Lerch
 *
-*  The GNU General Public License can be found at
-*  http://www.gnu.org/copyleft/gpl.html.
-*  A copy is found in the textfile GPL.txt and important notices to the license
-*  from the author is found in LICENSE.txt distributed with these scripts.
+*    This program is free software; you can redistribute it and/or modify
+*    it under the terms of the GNU General Public License as published by
+*    the Free Software Foundation; either version 2 of the License, or
+*    (at your option) any later version.
 *
-*  kOOL is distributed in the hope that it will be useful,
-*  but WITHOUT ANY WARRANTY; without even the implied warranty of
-*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-*  GNU General Public License for more details.
+*    This program is distributed in the hope that it will be useful,
+*    but WITHOUT ANY WARRANTY; without even the implied warranty of
+*    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+*    GNU General Public License for more details.
 *
-*  This copyright notice MUST APPEAR in all copies of the script!
-***************************************************************/
+*******************************************************************************/
+
 $LL['fr'] = array(
-'OK' => "OK",
+'kool' => "OpenKool - l'outil pour l'église",
 'aa_double' => "Il existe déjà une personne avec ce nom dans la base de données. Si vous désirez modifier les informations pour cette personne, vous pouvez cliquer sur son nom.",
 'aa_double_choose' => "Il existe déjà plusieurs entrées avec ce nom. Merci de choisir dans la liste celles que vous désirez modifier.",
 'aa_double_new' => "Ou alors cliquez sur «Nouveau» afin de créer une nouvelle entrée avec ce nom.",
@@ -81,6 +76,10 @@ $LL['fr'] = array(
 'center' => "Milieu",
 'children' => "? Et colonne des parents",
 'columns' => "Colonne",
+'copyright_notice' => "Version %s, Copyright © 2003-2015 Renzo Lauper, © 2019 Daniel Lerch et %sautres%s.",
+'copyright_warranty' => "La garantie est fournie par %s.",
+'copyright_no_warranty' => "Il n'y a absolument aucune garantie donnée.",
+'copyright_free_software' => "OpenKool est logiciel libre. Consultez notre %slicence%s pour plus d'informations.",
 'daten_cal_day' => "Calendrier journalier",
 'daten_cal_event' => "Événement",
 'daten_cal_month' => "Calendrier mensuel",
@@ -604,7 +603,6 @@ $LL['fr'] = array(
 'ko_kleingruppen_confirm_delete' => "Vraiment supprimer le GB ?",
 'ko_kleingruppen_delete' => "Supprimer le GB",
 'ko_leute_anrede_family' => "Famille",
-'kool' => "kOOL - l'outil pour l'église",
 'kota_formlegend_ko_eventgruppen' => "Ces champs seront préremplis lors de la création d'un nouveau rendez-vous",
 'kota_ko_event_enddatum' => "Date de fin",
 'kota_ko_event_endzeit' => "Heure de fin",
@@ -1045,6 +1043,7 @@ $LL['fr'] = array(
 'next' => "Plus loin",
 'no' => "Non",
 'not' => "Pas",
+'OK' => 'OK',
 'ok' => "Ok",
 'other' => "Autre",
 'page' => "Page",

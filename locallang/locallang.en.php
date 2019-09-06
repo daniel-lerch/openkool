@@ -1,30 +1,25 @@
 <?php
-/***************************************************************
-*  Copyright notice
+/*******************************************************************************
 *
-*  (c) 2003-2015 Renzo Lauper (renzo@churchtool.org)
-*  All rights reserved
+*    OpenKool - Online church organization tool
 *
-*  This script is part of the kOOL project. The kOOL project is
-*  free software; you can redistribute it and/or modify
-*  it under the terms of the GNU General Public License as published by
-*  the Free Software Foundation; either version 2 of the License, or
-*  (at your option) any later version.
+*    Copyright © 2003-2015 Renzo Lauper (renzo@churchtool.org)
+*    Copyright © 2019      Daniel Lerch
 *
-*  The GNU General Public License can be found at
-*  http://www.gnu.org/copyleft/gpl.html.
-*  A copy is found in the textfile GPL.txt and important notices to the license
-*  from the author is found in LICENSE.txt distributed with these scripts.
+*    This program is free software; you can redistribute it and/or modify
+*    it under the terms of the GNU General Public License as published by
+*    the Free Software Foundation; either version 2 of the License, or
+*    (at your option) any later version.
 *
-*  kOOL is distributed in the hope that it will be useful,
-*  but WITHOUT ANY WARRANTY; without even the implied warranty of
-*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-*  GNU General Public License for more details.
+*    This program is distributed in the hope that it will be useful,
+*    but WITHOUT ANY WARRANTY; without even the implied warranty of
+*    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+*    GNU General Public License for more details.
 *
-*  This copyright notice MUST APPEAR in all copies of the script!
-***************************************************************/
+*******************************************************************************/
+
 $LL["en"] = array(
-'kool' => "kOOL - the church tool",
+'kool' => "OpenKool - the church tool",
 'submenu_daten_neuer_termin' => "Add event",
 'submenu_daten_all_events' => "List all events",
 'submenu_daten_calendar' => "Calendar",
@@ -2749,11 +2744,10 @@ $LL["en"] = array(
 'multiedit_title_forAll' => "Change all to:",
 'error_file_not_found' => "Can not find file",
 'error_not_allowed' => "Action not allowed",
-'copyright_notice' => "Version %s, Copyright © 2003-2015 Renzo Lauper - Plugins are copyright of their respective owners.",
+'copyright_notice' => "Version %s, Copyright © 2003-2015 Renzo Lauper, © 2019 Daniel Lerch and %sothers%s.",
 'copyright_warranty' => "Warranty is supplied by %s.",
-'copyright_no_warranty' => "kOOL comes with ABSOLUTELY NO WARRANTY.",
-'copyright_free_software' => "This is free software, and you are welcome to redistribute it under %scertain conditions%s.",
-'copyright_obstruction' => "Obstructing the appearance of this notice is prohibited by law.",
+'copyright_no_warranty' => "There is absolutely no warranty given.",
+'copyright_free_software' => "OpenKool is free software. Refer to our %slicense%s for further information.",
 'session_timeout' => 'The current kOOL session is about to time out.',
 'session_timedout' => 'The current kOOL session has timed out.',
 'peoplesearch_toomany' => 'Too many hits',

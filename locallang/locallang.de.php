@@ -1,30 +1,25 @@
 <?php
-/***************************************************************
-*  Copyright notice
+/*******************************************************************************
 *
-*  (c) 2003-2015 Renzo Lauper (renzo@churchtool.org)
-*  All rights reserved
+*    OpenKool - Online church organization tool
 *
-*  This script is part of the kOOL project. The kOOL project is
-*  free software; you can redistribute it and/or modify
-*  it under the terms of the GNU General Public License as published by
-*  the Free Software Foundation; either version 2 of the License, or
-*  (at your option) any later version.
+*    Copyright © 2003-2015 Renzo Lauper (renzo@churchtool.org)
+*    Copyright © 2019      Daniel Lerch
 *
-*  The GNU General Public License can be found at
-*  http://www.gnu.org/copyleft/gpl.html.
-*  A copy is found in the textfile GPL.txt and important notices to the license
-*  from the author is found in LICENSE.txt distributed with these scripts.
+*    This program is free software; you can redistribute it and/or modify
+*    it under the terms of the GNU General Public License as published by
+*    the Free Software Foundation; either version 2 of the License, or
+*    (at your option) any later version.
 *
-*  kOOL is distributed in the hope that it will be useful,
-*  but WITHOUT ANY WARRANTY; without even the implied warranty of
-*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-*  GNU General Public License for more details.
+*    This program is distributed in the hope that it will be useful,
+*    but WITHOUT ANY WARRANTY; without even the implied warranty of
+*    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+*    GNU General Public License for more details.
 *
-*  This copyright notice MUST APPEAR in all copies of the script!
-***************************************************************/
+*******************************************************************************/
+
 $LL["de"] = array(
-'kool' => "kOOL - das Kirchen-Tool",
+'kool' => "OpenKool - das Kirchen-Tool",
 'submenu_daten_neuer_termin' => "Neuer Termin",
 'submenu_daten_all_events' => "Liste anzeigen",
 'submenu_daten_calendar' => "Kalender",
@@ -1494,11 +1489,10 @@ $LL["de"] = array(
 'multiedit_title' => "Mehrfache Bearbeitung",
 'error_file_not_found' => "Kann Datei nicht finden",
 'error_not_allowed' => "Keine Berechtigung",
-'copyright_notice' => "Version %s, Copyright © 2003-2015 Renzo Lauper - Plugins are copyright of their respective owners.",
-'copyright_warranty' => "Warranty is supplied by %s.",
-'copyright_no_warranty' => "kOOL comes with ABSOLUTELY NO WARRANTY.",
-'copyright_free_software' => "This is free software, and you are welcome to redistribute it under %scertain conditions%s.",
-'copyright_obstruction' => "Obstructing the appearance of this notice is prohibited by law.",
+'copyright_notice' => "Version %s, Copyright © 2003-2015 Renzo Lauper, © 2019 Daniel Lerch und %sandere%s.",
+'copyright_warranty' => "Die Gewährleistung wird von %s übernommen.",
+'copyright_no_warranty' => "Es wird keinerlei Gewährleistung übernommen.",
+'copyright_free_software' => "OpenKool ist freie Software. Weitere Informationen finden sie in der %sLizenz%s.",
 'submenu_admin_change_password' => "Passwort ändern",
 'error_admin_15' => "Bisheriges Passwort stimmt nicht.",
 'error_admin_16' => "Die neuen Passwörter stimmen nicht überein.",

@@ -347,17 +347,7 @@ if(is_array($fm_right)) {
 <?php
 //--- copyright notice on frontpage:
 //--- Obstructing the appearance of this notice is prohibited by law.
-print '<tr><td colspan="3" class="copyright">';
-print '<a href="http://www.churchtool.org"><b>'.getLL("kool").'</b></a> '.sprintf(getLL("copyright_notice"), VERSION).'<br />';
-if(WARRANTY_GIVER != "") {
-	print sprintf(getLL("copyright_warranty"), '<a href="'.WARRANTY_URL.'">'.WARRANTY_GIVER.'</a>');
-} else {
-	print getLL("copyright_no_warranty")." ";
-}
-print " ".sprintf(getLL("copyright_free_software"), '<a href="http://www.fsf.org/licensing/licenses/gpl.html">', '</a>')."<br />";
-print getLL("copyright_obstruction");
-print '</td></tr>';
-//--- end of copyright notice
+ko_print_long_footer();
 ?>
 </table>
 

@@ -18,7 +18,7 @@
 *
 *******************************************************************************/
 
-define('VERSION', 'R45');
+define('VERSION', '1.0.0-preview.0');
 
 
 //Reservation: Objekt-Bild
@@ -13997,6 +13997,21 @@ function ko_include_js($files, $module='') {
 	return $r;
 }//ko_include_js()
 
+
+
+
+function ko_print_long_footer() {
+	echo '<tr><td colspan="3" class="copyright">';
+	echo '<a href="https://github.com/daniel-lerch/openkool"><b>'.getLL('kool').'</b></a> ';
+	echo sprintf(getLL('copyright_notice'), VERSION, '<a href="https://github.com/daniel-lerch/openkool/graphs/contributors">', '</a>').'<br />';
+	if(WARRANTY_GIVER != "") {
+		echo sprintf(getLL('copyright_warranty'), '<a href="'.WARRANTY_URL.'">'.WARRANTY_GIVER.'</a>');
+	} else {
+		echo getLL('copyright_no_warranty').' ';
+	}
+	print " ".sprintf(getLL('copyright_free_software'), '<a href="https://github.com/daniel-lerch/openkool/blob/master/LICENSE">', '</a>');
+	print '</td></tr>';
+}
 
 
 
