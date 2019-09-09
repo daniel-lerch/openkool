@@ -6164,8 +6164,10 @@ function ko_get_tapes(&$tapes, $z_where = "", $z_limit = "") {
 	}
 
 	$query = "SELECT ko_tapes.*, ko_tapes_groups.name as group_name FROM `ko_tapes`, `ko_tapes_groups` $z_where $sort $z_limit";
-
 	$result = mysqli_query($db_connection, $query);
+
+	if (!is_array($tapes)) $tapes = array();
+
 	while($row = mysqli_fetch_assoc($result)) {
 		//Serie auslesen, falls eine definiert
 		if($row["serie_id"] > 0) {

@@ -162,6 +162,16 @@ function ko_set_submenues($uid="") {
 
 
 
+function ko_submenu_enabled($sm, $module) {
+	global $DISABLE_SM;
+
+	if (empty($sm)) return false;
+	if (empty($_SESSION['show'])) return true;
+	$disabled = $DISABLE_SM[$module][$_SESSION['show']];
+	return empty($disabled) || !in_array($sm, $disabled);
+}
+
+
 
 function ko_check_submenu($sm, $module) {
 	global $MODULES;
@@ -181,7 +191,7 @@ function ko_get_submenu_code($module, $pos) {
 	//Offene Submenüs anzeigen
 	$new = "";
 	foreach(explode(",",$_SESSION["submenu_".$pos]) as $sm) {
-		if (!empty($sm) && (empty($_SESSION['show']) || !in_array($sm, $DISABLE_SM[$module][$_SESSION["show"]]))) {
+		if (ko_submenu_enabled($sm, $module)) {
 			$new .= $sm.",";
 		}
 	}
@@ -194,7 +204,7 @@ function ko_get_submenu_code($module, $pos) {
 	//Geschlossene Submenüs anzeigen
 	$new = "";
 	foreach(explode(",",$_SESSION["submenu_".$pos."_closed"]) as $sm) {
-		if (!empty($sm) && (empty($_SESSION['show']) || !in_array($sm, $DISABLE_SM[$module][$_SESSION["show"]]))) {
+		if (ko_submenu_enabled($sm, $module)) {
 			$new .= $sm.",";
 		}
 	}
@@ -3635,6 +3645,7 @@ function submenu_tracking($namen, $position, $state, $display=1) {
 			//Get all presets
 			$akt_value = trim($_SESSION['tracking_filter']['date1']) . ',' . trim($_SESSION['tracking_filter']['date2']);
 			$itemset = array_merge((array)ko_get_userpref('-1', '', 'tracking_filterpreset', 'ORDER BY `key` ASC'), (array)ko_get_userpref($_SESSION['ses_userid'], '', 'tracking_filterpreset', 'ORDER BY `key` ASC'));
+			$itemselect_values = array();
 			koNotifier::Instance()->addTextDebug(print_r($itemset, True));
 			foreach($itemset as $i) {
 				$value = $i['user_id'] == '-1' ? '@G@'.$i['key'] : $i['key'];

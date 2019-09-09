@@ -456,6 +456,7 @@ function ko_login_formular($mode, $id=0, $type="login") {
 	$admingroups = ko_get_admingroups();
 	$status = ""; $hide_password = FALSE;
 	$logins_values = $logins_output = array();
+	$modules_values = $modules_descs = $modules_avalues = $modules_adescs = array();
 	if($mode == "edit" && $id != 0) {
 		if($type == "admingroup") {
 			//Name
@@ -463,7 +464,6 @@ function ko_login_formular($mode, $id=0, $type="login") {
 
 			//Module-Doubleselect vorbereiten
 			$user_modules = explode(",", $admingroups[$id]["modules"]);
-			$modules_values = $modules_descs = $modules_avalues = $modules_adescs = array();
 			foreach($MODULES as $m_i => $m) {
 				if($m == 'tools') continue;
 
@@ -481,7 +481,6 @@ function ko_login_formular($mode, $id=0, $type="login") {
 			$_POST['txt_mobile'] = $login['mobile'];
 			$user_modules = explode(",", $login["modules"]);
 			//Module-Doubleselect vorbereiten
-			$modules_values = $modules_descs = $modules_avalues = $modules_adescs = array();
 			foreach($MODULES as $m_i => $m) {
 				if($m == 'tools' && $id != ko_get_root_id()) continue;
 
@@ -513,6 +512,7 @@ function ko_login_formular($mode, $id=0, $type="login") {
 		}
 	}
 	else if($mode == "neu") {
+		$user_modules = array();
 		if($type == "admingroup") {
 			//Module-Doubleselect vorbereiten
 			foreach($MODULES as $m_i => $m) {

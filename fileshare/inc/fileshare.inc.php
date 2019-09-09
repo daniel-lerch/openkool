@@ -775,6 +775,7 @@ function ko_fileshare_webfolder_details($id) {
 
 
 function rec_webfolders($root_dir, &$folders) {
+	if (!is_array($folders)) $folders = array();
 	$dir = opendir($root_dir);
 	while ($f = readdir($dir)) {
 		if ($f <> '.' && $f <> '..' && $f <> '.DAV') {

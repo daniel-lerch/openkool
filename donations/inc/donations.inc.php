@@ -858,75 +858,77 @@ function apply_donations_filter(&$z_where, &$z_limit) {
 
 
 	//Apply filters
-	foreach($_SESSION["donations_filter"] as $key => $value) {
-		if(!$value) continue;
-		switch($key) {
-			case "date1":
-				ko_guess_date($_SESSION["donations_filter"][$key], "first");
-				$z_where .= " AND `$date_field` >= '".$_SESSION["donations_filter"][$key]."' ";
-			break;
+	if (!empty($_SESSION['donations_filter'])) {
+		foreach($_SESSION["donations_filter"] as $key => $value) {
+			if(!$value) continue;
+			switch($key) {
+				case "date1":
+					ko_guess_date($_SESSION["donations_filter"][$key], "first");
+					$z_where .= " AND `$date_field` >= '".$_SESSION["donations_filter"][$key]."' ";
+				break;
 
-			case "date2":
-				ko_guess_date($_SESSION["donations_filter"][$key], "last");
-				$z_where .= " AND `$date_field` <= '".$_SESSION["donations_filter"][$key]."' ";
-			break;
+				case "date2":
+					ko_guess_date($_SESSION["donations_filter"][$key], "last");
+					$z_where .= " AND `$date_field` <= '".$_SESSION["donations_filter"][$key]."' ";
+				break;
 
-			case "leute":
-				if(mb_substr($_SESSION['donations_filter'][$key], 0, 3) == '@G@') $filterset = ko_get_userpref('-1', mb_substr($_SESSION['donations_filter'][$key], 3), 'filterset');
-				else $filterset = ko_get_userpref($_SESSION["ses_userid"], $_SESSION["donations_filter"][$key], "filterset");
-				$filter = unserialize($filterset[0]["value"]);
-				if(TRUE === apply_leute_filter($filter, $leute_where)) {
-					$leute = db_select_data("ko_leute", "WHERE 1 ".$leute_where, "id");
-					if(sizeof($leute) == 0) {
+				case "leute":
+					if(mb_substr($_SESSION['donations_filter'][$key], 0, 3) == '@G@') $filterset = ko_get_userpref('-1', mb_substr($_SESSION['donations_filter'][$key], 3), 'filterset');
+					else $filterset = ko_get_userpref($_SESSION["ses_userid"], $_SESSION["donations_filter"][$key], "filterset");
+					$filter = unserialize($filterset[0]["value"]);
+					if(TRUE === apply_leute_filter($filter, $leute_where)) {
+						$leute = db_select_data("ko_leute", "WHERE 1 ".$leute_where, "id");
+						if(sizeof($leute) == 0) {
+							$z_where .= " AND 1=2 ";
+						} else {
+							$z_where .= " AND `person` IN (".implode(",", array_keys($leute)).") ";
+						}
+					}
+				break;
+
+				case "personString":
+					$stringparts = explode(" ",$_SESSION["donations_filter"][$key]);
+
+					$personStringWhere = "";
+					foreach($stringparts as $part) {
+						$personStringWhere .= "OR `nachname` LIKE '%$part%' OR `vorname` LIKE '%$part%' OR `firm` LIKE '%$part%' ";
+					}
+					$personStringWhere = substr_replace( $personStringWhere , 'WHERE (' , 0 , 2 ).")";
+					$personStringWhere .= ko_get_leute_hidden_sql();
+					$personStringWhere .= " AND `deleted` = 0 ";
+					$personString = db_select_data("ko_leute",$personStringWhere, "id");
+					if(sizeof($personString) == 0) {
 						$z_where .= " AND 1=2 ";
 					} else {
-						$z_where .= " AND `person` IN (".implode(",", array_keys($leute)).") ";
+						$z_where .= " AND `person` IN (".implode(",", array_keys($personString)).") ";
 					}
-				}
-			break;
+				break;
 
-			case "personString":
-				$stringparts = explode(" ",$_SESSION["donations_filter"][$key]);
-				
-				$personStringWhere = "";
-				foreach($stringparts as $part) {
-					$personStringWhere .= "OR `nachname` LIKE '%$part%' OR `vorname` LIKE '%$part%' OR `firm` LIKE '%$part%' ";
-				}
-				$personStringWhere = substr_replace( $personStringWhere , 'WHERE (' , 0 , 2 ).")";
-				$personStringWhere .= ko_get_leute_hidden_sql();
-				$personStringWhere .= " AND `deleted` = 0 ";
-				$personString = db_select_data("ko_leute",$personStringWhere, "id");
-				if(sizeof($personString) == 0) {
-					$z_where .= " AND 1=2 ";
-				} else {
-					$z_where .= " AND `person` IN (".implode(",", array_keys($personString)).") ";
-				}
-			break;
+				case "person":
+					$z_where .= " AND `person` = '".$_SESSION["donations_filter"][$key]."' ";
+				break;
 
-			case "person":
-				$z_where .= " AND `person` = '".$_SESSION["donations_filter"][$key]."' ";
-			break;
-
-			case "amount":
-				$v = $_SESSION['donations_filter'][$key];
-				if(in_array(mb_substr($v, 0, 1), array('>', '<', '='))) {
-					$a = intval(mb_substr($v, 1));
-					$o = mb_substr($v, 0, 1);
-					if($o == '<' || $o == '>') $o .= '=';
-					$z_where .= " AND `amount` ".mb_substr($v, 0, 1)." '$a' ";
-				} else if(FALSE !== mb_strpos($v, '-')) {
-					list($a1, $a2) = explode('-', $v);
-					$a1 = intval($a1); $a2 = intval($a2);
-					if($a2 < $a1) {
-						$t = $a1; $a1 = $a2; $a2 = $t;
+				case "amount":
+					$v = $_SESSION['donations_filter'][$key];
+					if(in_array(mb_substr($v, 0, 1), array('>', '<', '='))) {
+						$a = intval(mb_substr($v, 1));
+						$o = mb_substr($v, 0, 1);
+						if($o == '<' || $o == '>') $o .= '=';
+						$z_where .= " AND `amount` ".mb_substr($v, 0, 1)." '$a' ";
+					} else if(FALSE !== mb_strpos($v, '-')) {
+						list($a1, $a2) = explode('-', $v);
+						$a1 = intval($a1); $a2 = intval($a2);
+						if($a2 < $a1) {
+							$t = $a1; $a1 = $a2; $a2 = $t;
+						}
+						$z_where .= " AND `amount` >= '$a1' AND `amount` <= '$a2' ";
+					} else {
+						$z_where .= " AND `amount` LIKE '".str_replace('*', '%', $_SESSION['donations_filter'][$key])."%' ";
 					}
-					$z_where .= " AND `amount` >= '$a1' AND `amount` <= '$a2' ";
-				} else {
-					$z_where .= " AND `amount` LIKE '".str_replace('*', '%', $_SESSION['donations_filter'][$key])."%' ";
-				}
-			break;
-		}//switch(key)
-	}//foreach(SESSION[filter])
+				break;
+			}//switch(key)
+		}//foreach(SESSION[filter])
+	}
 
 	$kota_where = kota_apply_filter('ko_donations');
 	if($kota_where != '') $z_where .= " AND ($kota_where) ";
