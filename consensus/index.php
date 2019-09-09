@@ -23,10 +23,10 @@ $ko_path = '../';
 $ko_menu_akt = "consensus";
 $SMARTY_RENDER_TEMPLATE = null;
 
-require($ko_path.'inc/ko.inc.php');
-require($ko_path.'rota/inc/rota.inc.php');
-require($ko_path.'inc/smarty.inc.php');
-require_once('consensus.inc.php');
+require __DIR__ . '/../inc/ko.inc.php';
+require __DIR__ . '/../rota/inc/rota.inc.php';
+require __DIR__ . '/../inc/smarty.inc.php';
+require_once __DIR__ . '/consensus.inc.php';
 use OpenKool\koNotifier;
 
 $notifier = koNotifier::Instance();
@@ -81,7 +81,7 @@ switch ($do_action) {
 print '<script type="text/javascript" src="' . $ko_path . 'consensus/consensus.js?'.filemtime($ko_path.'consensus/consensus.js').'"></script>';
 print '<script type="text/javascript" src="' . $ko_path . 'inc/jquery/jquery.js?'.filemtime($ko_path.'inc/jquery/jquery.js').'"></script>';
 print '<script type="text/javascript" src="' . $ko_path . 'inc/tooltip.js?'.filemtime($ko_path.'inc/tooltip.js').'"></script>';
-include("js-consensus.inc.php");
+include __DIR__ . '/js-consensus.inc.php';
 print '<link rel="stylesheet" type="text/css" href="'.$ko_path.'consensus/consensus.css?'.filemtime($ko_path.'consensus/consensus.css').'" />';
 ?>
 </head>
@@ -97,7 +97,7 @@ print '<link rel="stylesheet" type="text/css" href="'.$ko_path.'consensus/consen
 			<h1><?= getLL('ko_consensus') ?></h1>
 		</div>
 		<div id="logo">
-			<?php include($BASE_PATH . 'config/header.php') ?>
+			<?php include __DIR__ . '/../config/header.php' ?>
 		</div>
 		<div style="display:none;padding:10px;margin:5px 180px 10px 10px;background-color:#ddd;border:2px solid #3586bd;position:fixed;_position:absolute;right:0;top:0;_top:expression(eval(document.body.scrollTop));z-index:900;width:125px;text-align:center;" name="wait_message" id="wait_message">
 			<img src="<?= $ko_path ?>images/load_anim.gif" />

@@ -23,8 +23,8 @@ ob_start();  //Ausgabe-Pufferung starten
 $ko_path = "../";
 $ko_menu_akt = "admin";
 
-include($ko_path . "inc/ko.inc.php");
-include("inc/admin.inc.php");
+require __DIR__ . '/../inc/ko.inc.php';
+require __DIR__ . '/inc/admin.inc.php';
 use OpenKool\koNotifier;
 
 $notifier = koNotifier::Instance();
@@ -46,7 +46,7 @@ ko_include_kota(array('ko_pdf_layout', 'ko_news', '_ko_sms_log', 'ko_log', 'ko_a
 
 //*** Plugins einlesen:
 $hooks = hook_include_main("admin");
-if(sizeof($hooks) > 0) foreach($hooks as $hook) include_once($hook);
+foreach($hooks as $hook) include_once($hook);
 
 
 //***Action auslesen:
@@ -218,7 +218,7 @@ switch($do_action) {
 		$is_number = check_natel($number);
 		$code = trim(format_userinput($_POST['sms_sender_id_code'], 'alphanum'));
 		if($is_number === TRUE) {
-			require_once($ko_path.'inc/aspsms.php');
+			require_once __DIR__ . '/../inc/aspsms.php';
 			$sms = new SMS($SMS_PARAMETER['user'], $SMS_PARAMETER['pass']);
 			if($code != '') {
 				//Unlock number
@@ -1636,7 +1636,7 @@ switch($do_action) {
 	//Default:
   default:
 	if(!hook_action_handler($do_action))
-    include($ko_path."inc/abuse.inc.php");
+    include __DIR__ . '/../inc/abuse.inc.php';
   break;
 
 
@@ -1677,7 +1677,7 @@ if(!$_SESSION['sort_news_order']) $_SESSION['sort_news_order'] = 'DESC';
 ko_set_submenues();
 
 //Smarty-Templates-Engine laden
-require("$ko_path/inc/smarty.inc.php");
+require __DIR__ . '/../inc/smarty.inc.php';
 ?>
 <!DOCTYPE html 
   PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
@@ -1693,7 +1693,7 @@ $js_files = array($ko_path.'inc/jquery/jquery.js', $ko_path.'inc/kOOL.js');
 if(in_array($_SESSION['show'], array('edit_login', 'edit_admingroup'))) $js_files[] = $ko_path.'inc/selectmenu.js';
 print ko_include_js($js_files);
 
-include($ko_path.'inc/js-sessiontimeout.inc.php');
+include __DIR__ . '/../inc/js-sessiontimeout.inc.php';
 $js_calendar->load_files();
 
 //Prepare group double selects when editing a login
@@ -1705,19 +1705,19 @@ if(in_array($_SESSION['show'], array('edit_login', 'edit_admingroup'))) {
 	ko_save_userpref($_SESSION['ses_userid'], 'show_passed_groups', 1);
 	//View
 	$list_id = 1;
-	include($ko_path.'leute/inc/js-groupmenu.inc.php');
+	include __DIR__ . '/../leute/inc/js-groupmenu.inc.php';
 	$loadcode .= "initList($list_id, document.formular.sel_ds1_sel_groups_rights_view);";
 	//New
 	$list_id = 2;
-	include($ko_path.'leute/inc/js-groupmenu.inc.php');
+	include __DIR__ . '/../leute/inc/js-groupmenu.inc.php';
 	$loadcode .= "initList($list_id, document.formular.sel_ds1_sel_groups_rights_new);";
 	//Edit
 	$list_id = 3;
-	include($ko_path.'leute/inc/js-groupmenu.inc.php');
+	include __DIR__ . '/../leute/inc/js-groupmenu.inc.php';
 	$loadcode .= "initList($list_id, document.formular.sel_ds1_sel_groups_rights_edit);";
 	//Del
 	$list_id = 4;
-	include($ko_path.'leute/inc/js-groupmenu.inc.php');
+	include __DIR__ . '/../leute/inc/js-groupmenu.inc.php';
 	$loadcode .= "initList($list_id, document.formular.sel_ds1_sel_groups_rights_del);";
 	$onload_code = $loadcode.$onload_code;
 	//Reset userpref to original value
@@ -1732,7 +1732,7 @@ if(in_array($_SESSION['show'], array('edit_login', 'edit_admingroup'))) {
 /*
  * Gibt bei erfolgreichem Login das Menü aus, sonst einfach die Loginfelder
  */
-include($ko_path . "menu.php");
+include __DIR__ . '/../menu.php';
 ?>
 
 
@@ -1851,7 +1851,7 @@ print ko_get_submenu_code("admin", "right");
 </td>
 </tr>
 
-<?php include($ko_path . 'config/footer.php'); ?>
+<?php include __DIR__ . '/../config/footer.php' ?>
 
 </table>
 

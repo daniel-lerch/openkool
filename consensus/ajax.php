@@ -21,9 +21,9 @@
 
 $ko_path = '../';
 
-require($ko_path.'inc/ko.inc.php');
-require($ko_path.'rota/inc/rota.inc.php');
-require_once('consensus.inc.php');
+require __DIR__ . '/../inc/ko.inc.php';
+require __DIR__ . '/../rota/inc/rota.inc.php';
+require_once __DIR__ . '/consensus.inc.php';
 
 //Send headers to ensure UTF-8 charset
 header('Content-Type: text/html; charset=UTF-8');

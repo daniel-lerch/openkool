@@ -23,11 +23,11 @@ ob_start();  //Ausgabe-Pufferung einschalten
 $ko_path = "../";
 $ko_menu_akt = "daten";
 
-include($ko_path . "inc/ko.inc.php");
-include($ko_path . 'consensus/consensus.inc.php');
-include("inc/daten.inc.php");
+require __DIR__ . '/../inc/ko.inc.php';
+require __DIR__ . '/../consensus/consensus.inc.php';
+require __DIR__ . '/inc/daten.inc.php';
 if(ko_module_installed("reservation")) 
-	include("../reservation/inc/reservation.inc.php");
+	include __DIR__ . '/../reservation/inc/reservation.inc.php';
 use OpenKool\koNotifier;
 
 $notifier = koNotifier::Instance();
@@ -50,12 +50,12 @@ ko_include_kota(array('ko_event', 'ko_eventgruppen', 'ko_reservation', 'ko_pdf_l
 
 
 //Smarty-Templates-Engine laden
-require("$ko_path/inc/smarty.inc.php");
+require __DIR__ . '/../inc/smarty.inc.php';
 
 
 // Plugins einlesen:
 $hooks = hook_include_main("daten");
-if(sizeof($hooks) > 0) foreach($hooks as $hook) include_once($hook);
+foreach($hooks as $hook) include_once($hook);
 
 
 //***Action auslesen:
@@ -1385,7 +1385,7 @@ switch($do_action) {
 
 	default:
 		if(!hook_action_handler($do_action))
-      include($ko_path."inc/abuse.inc.php");
+			include __DIR__ . '/../inc/abuse.inc.php';
 	break;
 }//switch(do_action)
 
@@ -1499,12 +1499,12 @@ if($_SESSION['show'] == 'calendar') {
 	print '<link rel="stylesheet" type="text/css" href="'.$ko_path.'inc/fullcalendar.css?'.filemtime($ko_path.'inc/fullcalendar.css').'" />';
 }
 print ko_include_css();
-include($ko_path.'inc/js-sessiontimeout.inc.php');
-include("inc/js-daten.inc.php");
+include __DIR__ . '/../inc/js-sessiontimeout.inc.php';
+include __DIR__ . '/inc/js-daten.inc.php';
 
 //Include JS from rota module when editing an event
-if(in_array($_SESSION['show'], array('edit_termin')) && ko_module_installed('rota')) include($ko_path.'rota/inc/js-rota.inc.php');
-if(in_array($_SESSION["show"], array("neuer_termin"))) include("inc/js-seleventgroup.inc.php");
+if(in_array($_SESSION['show'], array('edit_termin')) && ko_module_installed('rota')) include __DIR__ . '/../rota/inc/js-rota.inc.php';
+if(in_array($_SESSION["show"], array("neuer_termin"))) include __DIR__ . 'inc/js-seleventgroup.inc.php';
 $js_calendar->load_files();
 ?>
 </head>
@@ -1515,7 +1515,7 @@ $js_calendar->load_files();
 /*
  * Gibt bei erfolgreichem Login das Menü aus, sonst einfach die Loginfelder
  */
-include($ko_path . "menu.php");
+include __DIR__ . '/../menu.php';
 ?>
 
 
@@ -1685,7 +1685,7 @@ print ko_get_submenu_code("daten", "right");
 </td>
 </tr>
 
-<?php include($ko_path . 'config/footer.php'); ?>
+<?php include __DIR__ . '/../config/footer.php' ?>
 
 </table>
 

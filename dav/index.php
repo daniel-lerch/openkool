@@ -23,7 +23,7 @@ error_reporting(E_ALL ^ E_NOTICE ^ E_WARNING);
 //get kOOL config
 $ko_path = '../';
 $ko_menu_akt = 'carddav';
-require_once($ko_path.'inc/ko.inc.php');
+require_once __DIR__ . '/../inc/ko.inc.php';
 
 
 //Mapping PHP errors to exceptions

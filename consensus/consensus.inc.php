@@ -22,7 +22,7 @@
 function ko_consensus_list_consensus () {
 	global $smarty, $personId, $start, $span, $DATETIME, $BASE_PATH, $SMARTY_RENDER_TEMPLATE;
 
-	require_once($BASE_PATH . 'inc/kotafcn.php');
+	require_once __DIR__ . '/../inc/kotafcn.php';
 
 	$teams = ko_rota_get_teams($personId);
 

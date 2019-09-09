@@ -30,7 +30,7 @@ header('Content-Type: text/html; charset=UTF-8');
 error_reporting(0);
 $ko_menu_akt = 'daten';
 $ko_path = "../../";
-require($ko_path."inc/ko.inc.php");
+require __DIR__ . '/../../inc/ko.inc.php';
 $ko_path = "../";
 
 //Rechte auslesen
@@ -41,12 +41,12 @@ ko_include_kota(array('ko_event', 'ko_eventgruppen'));
 
 // Plugins einlesen:
 $hooks = hook_include_main("daten");
-if(sizeof($hooks) > 0) foreach($hooks as $hook) include_once($hook);
+foreach($hooks as $hook) include_once($hook);
  
 //Smarty-Templates-Engine laden
-require($BASE_PATH."inc/smarty.inc.php");
+require __DIR__ . '/../../inc/smarty.inc.php';
  
-require($BASE_PATH."daten/inc/daten.inc.php");
+require __DIR__ . '/daten.inc.php';
 
 //HOOK: Submenus einlesen
 $hooks = hook_include_sm();
@@ -666,7 +666,7 @@ if(isset($_GET) && isset($_GET["action"])) {
 				$ok = TRUE;
 				$double_error_txt = '';
 				if($event['reservationen'] && sizeof($new_res) > 0) {
-					require_once($BASE_PATH.'reservation/inc/reservation.inc.php');
+					require_once __DIR__ . '/../../reservation/inc/reservation.inc.php';
 					//Loop through all reservations to check for double entries after update
 					foreach($current_res as $res) {
 						//Apply new values for double check

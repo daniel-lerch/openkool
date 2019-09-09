@@ -23,8 +23,8 @@ ob_start();  //Ausgabe-Pufferung starten
 $ko_path = "../";
 $ko_menu_akt = "donations";
 
-include($ko_path . "inc/ko.inc.php");
-include("inc/donations.inc.php");
+require __DIR__ . '/../inc/ko.inc.php';
+require __DIR__ . '/inc/donations.inc.php';
 use OpenKool\koNotifier;
 
 //Redirect to SSL if needed
@@ -47,7 +47,7 @@ ko_get_access('donations');
 
 
 //Smarty-Templates-Engine laden
-require("$ko_path/inc/smarty.inc.php");
+require __DIR__ . '/../inc/smarty.inc.php';
 
 //kOOL Table Array
 ko_include_kota(array('ko_donations', 'ko_donations_accounts'));
@@ -55,7 +55,7 @@ ko_include_kota(array('ko_donations', 'ko_donations_accounts'));
 
 //*** Plugins einlesen:
 $hooks = hook_include_main("donations");
-if(sizeof($hooks) > 0) foreach($hooks as $hook) include_once($hook);
+foreach($hooks as $hook) include_once($hook);
 
 
 //*** Action auslesen:
@@ -647,10 +647,10 @@ switch($do_action) {
 
 
 	//Default:
-  default:
+	default:
 		if(!hook_action_handler($do_action))
-      include($ko_path."inc/abuse.inc.php");
-  break;
+			include __DIR__ . '/../inc/abuse.inc.php';
+	break;
 
 
 }//switch(do_action)
@@ -708,8 +708,8 @@ ko_set_submenues();
 <?php
 print ko_include_css();
 print ko_include_js(array($ko_path.'inc/jquery/jquery.js', $ko_path.'inc/kOOL.js', $ko_path.'inc/ckeditor/ckeditor.js', $ko_path.'inc/ckeditor/adapters/jquery.js'));
-include($ko_path.'inc/js-sessiontimeout.inc.php');
-include('inc/js-donations.inc.php');
+include __DIR__ . '/../inc/js-sessiontimeout.inc.php';
+include __DIR__ . '/inc/js-donations.inc.php';
 $js_calendar->load_files();
 ?>
 </head>
@@ -720,7 +720,7 @@ $js_calendar->load_files();
 /*
  * Gibt bei erfolgreichem Login das Menü aus, sonst einfach die Loginfelder
  */
-include($ko_path . "menu.php");
+include __DIR__ . '/../menu.php';
 ?>
 
 
@@ -829,7 +829,7 @@ print ko_get_submenu_code("donations", "right");
 </td>
 </tr>
 
-<?php include($ko_path . 'config/footer.php'); ?>
+<?php include __DIR__ . '/../config/footer.php' ?>
 
 </table>
 
