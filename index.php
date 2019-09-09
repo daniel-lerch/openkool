@@ -300,12 +300,6 @@ switch($do_action) {
 		$smarty->assign("tpl_fm_title", getLL("fm_aa_title"));
 		if($aa_display) $smarty->display("ko_fm_adressaenderung.tpl");
 	break;
-
-
-	//Default:
-	default:
-		include __DIR__ . '/inc/abuse.inc.php';
-	break;
 }//switch(do_action)
 
 

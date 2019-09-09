@@ -3396,17 +3396,16 @@ switch($do_action) {
 
 
 	//Submenus
-  case "move_sm_left":
-  case "move_sm_right":
-    ko_submenu_actions("leute", $do_action);
-  break;
+	case "move_sm_left":
+	case "move_sm_right":
+		ko_submenu_actions("leute", $do_action);
+	break;
 
 
 
 	//Default:
 	default:
-		if(!hook_action_handler($do_action))
-			include __DIR__ . '/../inc/abuse.inc.php';
+		hook_action_handler($do_action);
 	break;
 
 }//switch(action)

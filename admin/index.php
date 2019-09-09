@@ -1634,10 +1634,9 @@ switch($do_action) {
 
 
 	//Default:
-  default:
-	if(!hook_action_handler($do_action))
-    include __DIR__ . '/../inc/abuse.inc.php';
-  break;
+	default:
+		hook_action_handler($do_action);
+	break;
 
 
 }//switch(do_action)

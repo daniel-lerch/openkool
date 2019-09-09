@@ -243,12 +243,6 @@ switch($do_action) {
 			$cur_state = 4;
 		}
 	break;
-
-
-	//Default:
-  default:
-    include __DIR__ . '/../inc/abuse.inc.php';
-  break;
 }//switch(do_action)
 
 
