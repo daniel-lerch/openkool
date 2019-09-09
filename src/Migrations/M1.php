@@ -66,6 +66,7 @@ class M1 extends Migration {
         $this->query('ALTER TABLE `ko_fileshare_folders` ALTER `comment` SET DEFAULT \'\'');
         $this->query('ALTER TABLE `ko_fileshare_folders` CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci');
         $this->query('ALTER TABLE `ko_fileshare_folders` ENGINE = InnoDB');
+        $this->query('ALTER TABLE `ko_fileshare_sent` DROP KEY `file_id`, ADD KEY `file_id` (`file_id`)');
         $this->query('ALTER TABLE `ko_fileshare_sent` CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci');
         $this->query('ALTER TABLE `ko_fileshare_sent` ENGINE = InnoDB');
         $this->query('ALTER TABLE `ko_filter` CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci');
