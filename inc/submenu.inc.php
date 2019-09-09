@@ -85,11 +85,6 @@ function ko_get_submenus($type) {
 	$sm['tracking']             = array_merge($sm['tracking_left'], $sm['tracking_right']);
 	$sm['tracking_dropdown']    = array('trackings');
 
-	$sm["projects_left"]         = array("projects", "filter", "hosting", 'stats');
-	$sm["projects_right"]        = array();
-	$sm["projects"]              = array_merge($sm["projects_left"], $sm["projects_right"]);
-	$sm["projects_dropdown"]     = array("projects", "hosting");
-
 
 	//HOOK: Include submenus from plugins
 	$hooks = hook_include_sm();
@@ -3931,186 +3926,6 @@ function submenu_tracking($namen, $position, $state, $display=1) {
 
 
 
-function submenu_projects($namen, $position, $state, $display=1) {
-	global $ko_path, $smarty;
-	global $project_stati;
-	global $my_submenu;
-
-	$return = "";
-
-	if(!ko_module_installed("projects")) return FALSE;
-
-	ko_get_access_all('projects');
-
-	$namen = explode(",", $namen);
-
-	$menucounter = 0;
-  foreach($namen as $menu) {
-		$found = FALSE;
-
-    $itemcounter = 0;
-    switch($menu) {
-			
-			case "projects":
-				$found = TRUE;
-				$submenu[$menucounter]["titel"] = getLL("submenu_projects_title_projects");
-				$submenu[$menucounter]["output"][$itemcounter] = ko_menuitem("projects", "new_project");
-				$submenu[$menucounter]["link"][$itemcounter++] = $ko_path."projects/index.php?action=new_project";
-				$submenu[$menucounter]["output"][$itemcounter] = ko_menuitem("projects", "show_projects");
-				$submenu[$menucounter]["link"][$itemcounter++] = $ko_path."projects/index.php?action=show_projects";
-				$submenu[$menucounter]["output"][$itemcounter] = ko_menuitem("projects", "show_todo");
-				$submenu[$menucounter]["link"][$itemcounter++] = $ko_path."projects/index.php?action=show_todo";
-				$submenu[$menucounter]["output"][$itemcounter] = ko_menuitem("projects", "show_settings");
-				$submenu[$menucounter]["link"][$itemcounter++] = $ko_path."projects/index.php?action=show_settings";
-			break;
-
-			case "filter":
-				$found = TRUE;
-
-				$submenu[$menucounter]["titel"] = getLL("submenu_projects_title_filter");
-
-				//State
-				$code = "";
-				foreach($project_stati as $i => $status) {
-					$code .= '<div style="white-space:nowrap;">';
-					$chk = in_array($status, $_SESSION["projects_filter_state"]) ? 'checked="checked"' : '';
-					$code .= '<input type="checkbox" id="chk_projects_filter_'.$i.'" name="chk_projects_filter_'.$i.'" onclick="sendReq(\'../projects/inc/ajax.php\', \'action,filters,sesid\', \'setfilter,\'+projects_get_filters()+\','.session_id().'\', do_element);" '.$chk.' /><label for="chk_projects_filter_'.$i.'">'.getLL("projects_status_".$status)." (".getLL("projects_status_short_".$status).")</label>";
-					$code .= "</div>";
-				}
-
-				$submenu[$menucounter]["output"][$itemcounter] = getLL("projects_listheader_status");
-				$submenu[$menucounter]["html"][$itemcounter++] = $code;
-			break;
-
-
-			case "hosting":
-				$found = TRUE;
-				$submenu[$menucounter]["titel"] = getLL("submenu_projects_title_hosting");
-				$submenu[$menucounter]["output"][$itemcounter] = ko_menuitem("projects", "new_hosting");
-				$submenu[$menucounter]["link"][$itemcounter++] = $ko_path."projects/index.php?action=new_hosting";
-				$submenu[$menucounter]["output"][$itemcounter] = ko_menuitem("projects", "show_hostings");
-				$submenu[$menucounter]["link"][$itemcounter++] = $ko_path."projects/index.php?action=show_hostings";
-
-				$submenu[$menucounter]["output"][$itemcounter] = ko_menuitem("projects", "new_typo3");
-        $submenu[$menucounter]["link"][$itemcounter++] = $ko_path."projects/index.php?action=new_typo3";
-        $submenu[$menucounter]["output"][$itemcounter] = ko_menuitem("projects", "show_typo3");
-        $submenu[$menucounter]["link"][$itemcounter++] = $ko_path."projects/index.php?action=show_typo3";
-
-				$submenu[$menucounter]['output'][$itemcounter] = ko_menuitem('projects', 'new_ssl');
-        $submenu[$menucounter]['link'][$itemcounter++] = $ko_path.'projects/index.php?action=new_ssl';
-        $submenu[$menucounter]['output'][$itemcounter] = ko_menuitem('projects', 'show_ssl');
-        $submenu[$menucounter]['link'][$itemcounter++] = $ko_path.'projects/index.php?action=show_ssl';
-			break;
-
-
-			case 'stats':
-				$found = TRUE;
-				$submenu[$menucounter]['titel'] = getLL('submenu_projects_title_stats');
-
-				//Open amount from projects
-				$amount_projects = 0.0;
-				$details = array();
-				$projects = db_select_data('ko_projects', 'WHERE `status` IN (\'r\', \'p\', \'e\')', '*');
-				foreach($projects as $pid => $project) {
-					$open = $date = array();
-					$logs = db_select_data('ko_projects_logs', 'WHERE `project_id` = \''.$pid.'\' AND `type` IN (\'billed\', \'payment\')', '*', 'ORDER BY `time` ASC');
-					foreach($logs as $log) {
-						if($log['type'] == 'billed') {
-							$split = explode(' ', $log['comment']);
-							$open[] = $split[0];
-							$date[] = add2date($log['time'], 'tag', 30, TRUE);
-						} else {
-							$split = explode(' ', $log['comment']);
-							foreach($open as $oid => $o) {
-								if($o == $split[0]) {
-									unset($open[$oid]);
-									unset($date[$oid]);
-								}
-							}
-						}
-					}
-					foreach($open as $oid => $amount) {
-						if(!$amount) continue;
-						$amount_projects += $amount;
-						(float)$details[mb_substr($date[$oid], 0, 10)] += (float)$amount;
-					}
-				}
-
-				ksort($details);
-				$tooltip = '';
-				foreach($details as $date => $amount) {
-					$tooltip .= $date.': <b>'.$amount.'</b><br />';
-				}
-
-				$submenu[$menucounter]['output'][$itemcounter] = getLL('projects_stats_amount_projects');
-				$submenu[$menucounter]['html'][$itemcounter++] = '<span onmouseover="tooltip.show(\''.$tooltip.'\');" onmouseout="tooltip.hide();">'.$amount_projects.'</span><br />';
-
-
-				//Open amount from hostings
-				$details = array();
-				$hostings = db_select_data('ko_projects_hostings', 'WHERE `billed` > `payed`', '*', 'ORDER BY `billed` ASC');
-				foreach($hostings as $hosting) {
-					$details[$hosting['billed']] += $hosting['price'];
-				}
-				$tooltip = '';
-				$amount_hostings = 0.0;
-				foreach($details as $date => $amount) {
-					$tooltip .= add2date($date, 'tag', 30, TRUE).': <b>'.$amount.'</b><br />';
-					$amount_hostings += $amount;
-				}
-
-				$submenu[$menucounter]['output'][$itemcounter] = getLL('projects_stats_amount_hostings');
-				$submenu[$menucounter]['html'][$itemcounter++] = '<span onmouseover="tooltip.show(\''.$tooltip.'\');" onmouseout="tooltip.hide();">'.$amount_hostings.'</span><br />';
-			break;
-
-
-			default:
-        if($menu) { 
-          $submenu[$menucounter] = submenu($menu, $position, $state, 3, 'projects');
-          $found = (is_array($submenu[$menucounter])); 
-        }
-		}//switch(menu)
-
-		//Plugins erlauben, Menuitems hinzuzufügen
-		hook_submenu("projects", $menu, $submenu, $menucounter, $itemcounter);
-
-    if($found) {
-			$submenu[$menucounter]["key"] = "projects_".$menu;
-			$submenu[$menucounter]["id"] = $menu;
-			$submenu[$menucounter]["mod"] = "projects";
-			$submenu[$menucounter]["sesid"] = session_id();
-      $submenu[$menucounter]["position"] = $position;
-      $submenu[$menucounter]["state"] = $state;
-
-			if($display == 1) {
-				$smarty->assign("sm", $submenu[$menucounter]);
-				$smarty->assign("ko_path", $ko_path);
-				$smarty->assign("help", ko_get_help("projects", "submenu_".$menu));
-				$smarty->display("ko_submenu.tpl");
-			} else if($display == 2) {
-				$smarty->assign("sm", $submenu[$menucounter]);
-				$smarty->assign("ko_path", $ko_path);
-				$return = "sm_projects_".$menu."@@@";
-				$return .= $smarty->fetch("ko_submenu.tpl");
-			}
-
-			$smarty->clear_assign("help");
-			$menucounter++;
-    }
-
-
-	}//foreach(namen as menu)
-
-	if($display == 2) {
-		return $return;
-	} else if($display == 3) {
-		return $submenu;
-	}
-}//submenu_projects()
-
-
-
-
 $DISABLE_SM = array(
 	"admin" => array(
 		"set_allgemein" => array("filter"),
@@ -4250,9 +4065,6 @@ $DISABLE_SM = array(
 		'tracking_settings' => array('export', 'filter', 'itemlist_trackinggroups'),
 		'mod_entries' => array('export', 'filter'),
 	),
-	'projects' => array(
-		'show_todo' => array('filter'),
-    ),
 );
 
 ?>

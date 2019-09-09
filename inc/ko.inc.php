@@ -774,9 +774,6 @@ function ko_get_access($module, $uid='', $force=FALSE, $apply_admingroups=TRUE, 
 		case 'groups':
 		case 'donations':
 		case 'tracking':
-		case 'projects':
-			$col = $module.'_admin';
-		break;
 		case 'reservation':
 			$col = 'res_admin';
 		break;
@@ -1165,7 +1162,6 @@ function ko_save_admin($module, $uid, $string, $type="login") {
 		case 'sms': $col = ''; break;
 		case 'mailing': $col = ''; break;
 		case 'tools': $col = ''; break;
-		case "projects": $col = "projects_admin"; break;
 		case "modules": $col = "modules"; break;
 		case "admingroups": $col = "admingroups"; break;
 		case "login": $col = "login"; break;
@@ -6973,24 +6969,6 @@ function ko_update_group_count($id, $rid='') {
 
 
 
-
-
-
-
-
-/************************************************************************************************************************
- *                                                                                                                      *
- * P R O J E C T S - F U N K T I O N E N                                                                                *
- *                                                                                                                      *
- ************************************************************************************************************************/
-function ko_projects_get_name($project) {
-	if(!is_array($project)) {
-		$project = db_select_data("ko_projects", "WHERE `id` = '$project'", "*", "", "", TRUE);
-	}
-	$name = $project["number"]." ".$project["title"];
-
-	return $name;
-}//ko_projects_get_name()
 
 
 
