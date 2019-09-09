@@ -2333,7 +2333,7 @@ function ko_daten_export_months($num, $month, $year) {
 	global $BASE_PATH;
 
 	//Start pdf
-	define('FPDF_FONTPATH', dirname(dirname(__DIR__)) . '/fpdf/schriften/');
+	define('FPDF_FONTPATH', dirname(__DIR__, 2) . '/fpdf/schriften/');
 	require __DIR__ . '/../../fpdf/fpdf.php';
 	$pdf = new FPDF('L', 'mm', 'A4');
 	$pdf->Open();

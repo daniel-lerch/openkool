@@ -29,7 +29,7 @@ header('Content-Type: text/html; charset=UTF-8');
 error_reporting(0);
 $ko_menu_akt = 'rota';
 $ko_path = '../../';
-require_once($ko_path.'inc/ko.inc.php');
+require_once __DIR__ . '/../../inc/ko.inc.php';
 $ko_path = '../';
 
 //Rechte auslesen
@@ -41,14 +41,14 @@ ko_include_kota(array('ko_rota_teams'));
 
 //Plugins
 $hooks = hook_include_main('rota');
-if(sizeof($hooks) > 0) foreach($hooks as $hook) include_once($hook);
+foreach($hooks as $hook) include_once($hook);
  
-require($BASE_PATH.'inc/smarty.inc.php');
+require __DIR__ . '/../../inc/smarty.inc.php';
 
-require($BASE_PATH.'rota/inc/rota.inc.php');
+require __DIR__ . '/rota.inc.php';
 
 $hooks = hook_include_sm();
-if(sizeof($hooks) > 0) foreach($hooks as $hook) include($hook);
+foreach($hooks as $hook) include($hook);
 
 hook_show_case_pre($_SESSION['show']);
 

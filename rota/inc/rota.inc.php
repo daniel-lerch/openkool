@@ -18,7 +18,7 @@
 *
 *******************************************************************************/
 
-require_once($BASE_PATH."consensus/consensus.inc.php");
+require_once __DIR__ . '/../../consensus/consensus.inc.php';
 use OpenKool\ListView;
 
 $ROTA_TIMESPANS = array('1d', '1w', '2w', '1m', '2m', '3m', '6m', '12m');
@@ -1162,10 +1162,10 @@ function ko_rota_export_landscape_pdf() {
 
 
 	//Start new PDF export
-	define('FPDF_FONTPATH',$BASE_PATH.'fpdf/schriften/');
-	require_once($BASE_PATH.'fpdf/mc_table.php');
+	define('FPDF_FONTPATH', dirname(__DIR__, 2) . '/fpdf/schriften/');
+	require_once __DIR__ . '/../../fpdf/mc_table.php';
 	$pdf=new PDF_MC_Table('L', 'mm', 'A4');
-  $pdf->Open();
+	$pdf->Open();
 	$pdf->SetAutoPageBreak(true, 1);
 	$pdf->AddFont('fontn','','arial.php');
 	$pdf->AddFont('fontb','','arialb.php');
@@ -1378,17 +1378,17 @@ function ko_dp_create_dienste_pdf($dienste_, $monate) {
 	global $ko_path, $BASE_PATH, $DATETIME;
 
 	//PDF starten
-  define('FPDF_FONTPATH',$BASE_PATH.'fpdf/schriften/');
-  require($BASE_PATH.'fpdf/mc_table.php');
-  $pdf=new PDF_MC_Table('P', 'mm', 'A4');
-  $pdf->Open();
-  $pdf->SetAutoPageBreak(true, 1);
-  $pdf->AddFont('arial','','arial.php');
+	define('FPDF_FONTPATH', dirname(__DIR__, 2) . '/fpdf/schriften/');
+	require __DIR__ . '/../../fpdf/mc_table.php';
+	$pdf=new PDF_MC_Table('P', 'mm', 'A4');
+	$pdf->Open();
+	$pdf->SetAutoPageBreak(true, 1);
+	$pdf->AddFont('arial','','arial.php');
 	$pdf->AddFont('arialb','','arialb.php');
-  $pdf->AddPage();
-  $pdf->calculateHeight(TRUE);
-  $pdf->border(TRUE);
-  $pdf->SetMargins(10,5,5);
+	$pdf->AddPage();
+	$pdf->calculateHeight(TRUE);
+	$pdf->border(TRUE);
+	$pdf->SetMargins(10,5,5);
 
 	$PDF_fontsize_header = 12;
 	$PDF_fontsize_event = 11;

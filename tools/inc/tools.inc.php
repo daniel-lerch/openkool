@@ -593,7 +593,7 @@ function ko_tools_ll_overview() {
 	$max = 0;
 	foreach($LIB_LANGS as $l) {
 		$ll[$l]["name"] = $l;
-		include($ko_path."locallang/locallang.$l.php");
+		include __DIR__ . "/../../locallang/locallang.$l.php";
 		$ll[$l]["num"] = sizeof($LL[$l]);
 		unset($LL[$l]);
 		$max = max($max, $ll[$l]["num"]);
@@ -616,8 +616,8 @@ function ko_tools_ll_edit($edit_lang, $edit_mode="all") {
 
 	print '<b>'.$edit_lang.'</b><br /><br />';
 	
-	if($edit_lang != $default_lang) include($ko_path."locallang/locallang.$default_lang.php");
-	include($ko_path."locallang/locallang.$edit_lang.php");
+	if($edit_lang != $default_lang) include __DIR__ . "/../../locallang/locallang.$default_lang.php";
+	include __DIR__ . "/../../locallang/locallang.$edit_lang.php";
 	print '<table border="1">';
 	$found = FALSE;
 	foreach($LL[$default_lang] as $d_i => $d_v) {
@@ -753,9 +753,9 @@ function ko_tools_plugins_list($output=TRUE) {
 	foreach($plugins_available as $plugin) {
 		//Conf-Datei einlesen
 		$hidden = FALSE;
-		$conf_file = $ko_path."plugins/".$plugin."/config.php";
+		$conf_file = dirname(__DIR__, 2) . "/plugins/$plugin/config.php";
 		if(!file_exists($conf_file)) $hidden = TRUE;
-		else include($conf_file);
+		else include $conf_file;
 
 		$p_counter++;
 		$installed = in_array($plugin, $plugins_installed);
@@ -896,7 +896,6 @@ function ko_tools_typo3_connection() {
 		if($field == 'typo3_pwd') {
 			$pwd_enc = ko_get_setting('typo3_pwd');
 			if($pwd_enc != '') {
-				include_once($ko_path.'inc/class.mcrypt.php');
 				$crypt = new mcrypt('aes');
 				$crypt->setKey(KOOL_ENCRYPTION_KEY);
 				$pwd = trim($crypt->decrypt($pwd_enc));

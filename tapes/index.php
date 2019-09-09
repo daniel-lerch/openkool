@@ -23,8 +23,8 @@ ob_start();  //Ausgabe-Pufferung starten
 $ko_path = "../";
 $ko_menu_akt = "tapes";
 
-include($ko_path . "inc/ko.inc.php");
-include("inc/tapes.inc.php");
+require __DIR__ . '/../inc/ko.inc.php';
+require __DIR__ . '/inc/tapes.inc.php';
 use OpenKool\koNotifier;
 
 //Redirect to SSL if needed
@@ -512,8 +512,8 @@ switch($do_action) {
     $PDF_sizey = $layout["page_height"] ? $layout["page_height"] : 297;
 
     //PDF-Datei starten
-    define('FPDF_FONTPATH',$ko_path.'fpdf/schriften/');
-    require($ko_path.'fpdf/fpdf.php');
+    define('FPDF_FONTPATH', dirname(__DIR__) . '/fpdf/schriften/');
+    require __DIR__ . '/../fpdf/fpdf.php';
     $pdf = new FPDF('P', 'mm', array($PDF_sizex, $PDF_sizey));  //Breite und Höhe in Millimeter
 		$pdf->SetMargins(0, 0);
     $pdf->Open();
@@ -571,10 +571,10 @@ switch($do_action) {
 
 
 	//Default:
-  default:
-	if(!hook_action_handler($do_action))
-    include($ko_path."inc/abuse.inc.php");
-  break;
+	default:
+		if(!hook_action_handler($do_action))
+			include __DIR__ . '/../inc/abuse.inc.php';
+	break;
 
 
 }//switch(do_action)
@@ -600,7 +600,7 @@ $_SESSION["show_limit"] = ko_get_userpref($_SESSION["ses_userid"], "show_limit_t
 if(!$_SESSION["show_limit"]) $_SESSION["show_limit"] = ko_get_setting("show_limit_tapes");
 
 //Smarty-Templates-Engine laden
-require("$ko_path/inc/smarty.inc.php");
+require __DIR__ . '/../inc/smarty.inc.php';
 
 //Include submenus
 ko_set_submenues();
@@ -617,8 +617,8 @@ print ko_include_css();
 
 print ko_include_js(array($ko_path.'inc/jquery/jquery.js', $ko_path.'inc/kOOL.js'));
 
-include($ko_path.'inc/js-sessiontimeout.inc.php');
-include("inc/js-tapes.inc.php");
+include __DIR__ . '/../inc/js-sessiontimeout.inc.php';
+include __DIR__ . '/inc/js-tapes.inc.php';
 $js_calendar->load_files();
 ?>
 </head>
@@ -629,7 +629,7 @@ $js_calendar->load_files();
 /*
  * Gibt bei erfolgreichem Login das Menü aus, sonst einfach die Loginfelder
  */
-include($ko_path . "menu.php");
+include __DIR__ . '/../menu.php';
 ?>
 
 
@@ -738,7 +738,7 @@ print ko_get_submenu_code("tapes", "right");
 </td>
 </tr>
 
-<?php include($ko_path . 'config/footer.php'); ?>
+<?php include __DIR__ . '/../config/footer.php' ?>
 
 </table>
 

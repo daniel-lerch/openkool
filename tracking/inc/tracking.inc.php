@@ -1292,8 +1292,8 @@ function ko_tracking_export($mode, $filename, $id, $address_columns='name', $dat
 	//Create PDF file
 	else if($mode == 'pdf') {
 
-		define('FPDF_FONTPATH', $ko_path.'fpdf/schriften/');
-		require_once($ko_path.'fpdf/pdf_tracking.php');
+		define('FPDF_FONTPATH', dirname(__DIR__, 2) . '/fpdf/schriften/');
+		require_once __DIR__ . '/../../fpdf/pdf_tracking.php';
 
 		//Create new PDF-creator object
 		$pdf = new pdf_tracking($layout, 'mm', 'a4');

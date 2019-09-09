@@ -28,23 +28,23 @@ header('Content-Type: text/html; charset=UTF-8');
 error_reporting(0);
 $ko_menu_akt = 'tools';
 $ko_path = '../../';
-require($ko_path.'inc/ko.inc.php');
+require __DIR__ . '/../../inc/ko.inc.php';
 $ko_path = '../';
 
 ko_include_kota(array('ko_scheduler_tasks'));
 
 // Plugins einlesen:
 $hooks = hook_include_main('tools');
-if(sizeof($hooks) > 0) foreach($hooks as $hook) include_once($hook);
+foreach($hooks as $hook) include_once($hook);
  
 //Smarty-Templates-Engine laden
-require($BASE_PATH.'inc/smarty.inc.php');
+require __DIR__ . '/../../inc/smarty.inc.php';
  
-require($BASE_PATH.'tools/inc/tools.inc.php');
+require __DIR__ . '/tools.inc.php';
 
 //HOOK: Submenus einlesen
 $hooks = hook_include_sm();
-if(sizeof($hooks) > 0) foreach($hooks as $hook) include($hook);
+foreach($hooks as $hook) include($hook);
 
 hook_show_case_pre($_SESSION['show']);
 

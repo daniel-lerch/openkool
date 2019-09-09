@@ -28,7 +28,7 @@ header('Content-Type: text/html; charset=UTF-8');
 error_reporting(0);
 $ko_menu_akt = 'tracking';
 $ko_path = '../../';
-require($ko_path.'inc/ko.inc.php');
+require __DIR__ . '/../../inc/ko.inc.php';
 $ko_path = '../';
 
 //Get access rights
@@ -39,16 +39,16 @@ ko_include_kota(array('ko_tracking', 'ko_tracking_entries'));
 
 // Plugins einlesen:
 $hooks = hook_include_main('tracking');
-if(sizeof($hooks) > 0) foreach($hooks as $hook) include_once($hook);
+foreach($hooks as $hook) include_once($hook);
  
 //Smarty-Templates-Engine laden
-require($BASE_PATH.'inc/smarty.inc.php');
+require __DIR__ . '/../../inc/smarty.inc.php';
  
-require($BASE_PATH.'tracking/inc/tracking.inc.php');
+require __DIR__ . '/tracking.inc.php';
 
 //HOOK: Submenus einlesen
 $hooks = hook_include_sm();
-if(sizeof($hooks) > 0) foreach($hooks as $hook) include($hook);
+foreach($hooks as $hook) include($hook);
 
 hook_show_case_pre($_SESSION['show']);
 

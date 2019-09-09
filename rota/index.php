@@ -23,8 +23,8 @@ ob_start();
 $ko_path = '../';
 $ko_menu_akt = 'rota';
 
-include($ko_path . 'inc/ko.inc.php');
-include('inc/rota.inc.php');
+require __DIR__ . '/../inc/ko.inc.php';
+require __DIR__ . '/inc/rota.inc.php';
 use OpenKool\koNotifier;
 
 //Redirect to SSL if needed
@@ -42,14 +42,14 @@ ko_get_access('daten');
 ko_get_access('rota');
 
 //Smarty-Templates-Engine laden
-require($ko_path.'inc/smarty.inc.php');
+require __DIR__ . '/../inc/smarty.inc.php';
 
 //kOOL Table Array (ko_event used for settings to select event fields)
 ko_include_kota(array('ko_rota_teams', 'ko_event'));
 
 
 $hooks = hook_include_main('rota');
-if(sizeof($hooks) > 0) foreach($hooks as $hook) include_once($hook);
+foreach($hooks as $hook) include_once($hook);
 
 
 //Action
@@ -532,7 +532,7 @@ switch($do_action) {
 	//Default:
   default:
 		if(!hook_action_handler($do_action))
-      include($ko_path.'inc/abuse.inc.php');
+			include __DIR__ . '/../inc/abuse.inc.php';
   break;
 
 
@@ -607,15 +607,15 @@ ko_set_submenues();
 print ko_include_js(array($ko_path.'inc/jquery/jquery.js', $ko_path.'inc/jquery/jquery-ui.js', $ko_path.'inc/kOOL.js', $ko_path.'inc/ckeditor/ckeditor.js', $ko_path.'inc/ckeditor/adapters/jquery.js'));
 
 print ko_include_css();
-include($ko_path.'inc/js-sessiontimeout.inc.php');
-include($ko_path.'rota/inc/js-rota.inc.php');
+include __DIR__ . '/../inc/js-sessiontimeout.inc.php';
+include __DIR__ . '/inc/js-rota.inc.php';
 $js_calendar->load_files();
 ?>
 </head>
 
 <body onload="session_time_init();<?php if(isset($onload_code)) print $onload_code; ?>">
 
-<?php include($ko_path . 'menu.php'); ?>
+<?php include __DIR__ . '/../menu.php' ?>
 
 
 <table width="100%">
@@ -693,7 +693,7 @@ print ko_get_submenu_code('rota', 'right');
 </td>
 </tr>
 
-<?php include($ko_path.'config/footer.php'); ?>
+<?php include __DIR__ . '/../config/footer.php' ?>
 
 </table>
 
