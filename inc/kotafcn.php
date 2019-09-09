@@ -752,7 +752,7 @@ function kota_submit_multiedit($rights_level='', $log_type="", $lastchange_col="
 function kota_presave_ko_reservation($ids, $columns, $old, $changes) {
 	global $BASE_PATH;
 
-	require_once($BASE_PATH.'reservation/inc/reservation.inc.php');
+	require_once __DIR__ . '/../reservation/inc/reservation.inc.php';
 
 	if(!is_array($ids)) $ids = explode(',', $ids);
 

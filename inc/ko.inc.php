@@ -309,6 +309,7 @@ $LEUTE_NO_FAMILY = false;
 
 //Kunden-spezifische Konfiguration einlesen (kann oben stehende Werte überschreiben)
 include __DIR__ . '/../config/ko-config.php';
+include __DIR__ . '/../config/leute_formular.inc.php';
 
 //set notification levels
 koNotifier::Instance()->setDisplayLevel($NOTIFIER_LEVEL_DISPLAY);
@@ -336,7 +337,7 @@ $COLS_LEUTE_LATEX_FROM = array('vorname', 'nachname', 'adresse', 'plz', 'ort', '
 $LIB_MODULES = array('daten', 'reservation', 'leute', 'kg', 'groups', 'tracking', 'rota', 'donations', 'tapes', 'fileshare', 'sms', 'admin', 'tools', 'mailing');
 //Allow plugins to add modules
 foreach($PLUGINS as $p) {
-	include_once($ko_path.'plugins/'.$p['name'].'/config.php');
+	include_once __DIR__ . "/../plugins/{$p['name']}/config.php";
 	if(isset($PLUGIN_CONF[$p['name']]['module']) && $PLUGIN_CONF[$p['name']]['module'] != '') {
 		$LIB_MODULES[] = $PLUGIN_CONF[$p['name']]['module'];
 		$MODULES[] = $PLUGIN_CONF[$p['name']]['module'];
@@ -351,7 +352,7 @@ $MODULES_GROUP_ACCESS = array('daten', 'reservation', 'tapes', 'donations', 'tra
 
 
 //Session
-include_once($ko_path."inc/session.inc.php");
+include_once __DIR__ . '/session.inc.php';
 
 //Error reporting
 function ko_error_handler($errno, $errstr, $errfile, $errline) {
@@ -360,7 +361,7 @@ function ko_error_handler($errno, $errstr, $errfile, $errline) {
 		case E_ERROR:
 		case E_USER_ERROR:
 			$backtrace = debug_backtrace();
-			require($ko_path . 'inc/error_handling.inc.php');
+			require __DIR__ . '/error_handling.inc.php';
 			break;
 		case E_WARNING:
 		case E_USER_WARNING:
@@ -377,7 +378,7 @@ set_error_handler('ko_error_handler');
 if(defined('DEBUG') && DEBUG) {
 	//start output with: if(defined('DEBUG') && DEBUG) $profiler->display($DEBUG_db);
 
-	require($ko_path.'pqp/classes/PhpQuickProfiler.php');
+	require __DIR__ . '/../pqp/classes/PhpQuickProfiler.php';
 	$debugMode = TRUE;
 	$profiler = new PhpQuickProfiler(PhpQuickProfiler::getMicroTime(), 'web_test/pqp/');
 
@@ -404,7 +405,7 @@ if($ko_menu_akt == "install" && !$BASE_PATH) {
 if($BASE_PATH != "" && mb_substr($BASE_PATH, -1) != "/") $BASE_PATH .= "/";
 
 //Hooks (Plugins)
-include($BASE_PATH."inc/hooks.inc.php");
+include __DIR__ . '/hooks.inc.php';
 
 
 //Connect to the database
@@ -433,12 +434,13 @@ if($db_connection && !in_array($ko_menu_akt, array('scheduler', 'install', 'get.
 //Available languages (overwrite only with $WEB_LANGS in config/ko-config.php, or through the installation)
 $LIB_LANGS  = array('en', 'de', 'nl', 'fr');
 //Regions available for each language (first one being the default)
-$LIB_LANGS2 = array('en' => array('UK', 'US'),
-										'de' => array('CH', 'DE'),
-										'nl' => array('NL'),
-										'fr' => array('CH'),
-										);
-include($BASE_PATH.'inc/lang.inc.php');
+$LIB_LANGS2 = array(
+	'en' => array('UK', 'US'),
+	'de' => array('CH', 'DE'),
+	'nl' => array('NL'),
+	'fr' => array('CH'),
+);
+include __DIR__ . '/lang.inc.php';
 if(isset($_DATETIME[$_SESSION['lang'].'_'.$_SESSION['lang2']])) {
 	$DATETIME = $_DATETIME[$_SESSION['lang'].'_'.$_SESSION['lang2']];
 } else {
@@ -462,10 +464,10 @@ if(!$db_connection && $ko_menu_akt != "install") {
 
 
 //Submenus (für alle Module)
-include($BASE_PATH."inc/submenu.inc.php");
+include __DIR__ . '/submenu.inc.php';
 
 //Submenu-Behandlung
-include($BASE_PATH."inc/submenu_actions.inc.php");
+include __DIR__ . '/submenu_actions.inc.php';
 
 
 //Namen für die Frontmodule
@@ -480,7 +482,7 @@ $FRONTMODULES = array("daten_cal"       => array("modul" => "daten", "name" => g
 if(ENABLE_FILESHARE) $FRONTMODULES["fileshare"] = array("modul" => "fileshare", "name" => getLL("fm_name_fileshare"));
 
 //Front-Modules
-include($BASE_PATH."inc/front_modules.inc.php");
+include __DIR__ . '/front_modules.inc.php';
 
 //Read in settings etc
 if($ko_menu_akt != 'scheduler') {
@@ -488,7 +490,7 @@ if($ko_menu_akt != 'scheduler') {
 }
 
 //Include calendar for jsdate input fields
-require($ko_path.'inc/calendar/calendar.php');
+require __DIR__ . '/calendar/calendar.php';
 $js_calendar = new DHTML_Calendar($ko_path.'inc/calendar/', $ko_path.'images/', $_SESSION['lang'], 'calendar-system', false);
 
 
@@ -7003,11 +7005,11 @@ function ko_include_kota($tables=array()) {
 	global $BASE_PATH, $KOTA, $ko_menu_akt, $access, $SMALLGROUPS_ROLES, $LOCAL_LANG;
 
 	//Include KOTA function (once)
-	include_once($BASE_PATH.'inc/kotafcn.php');
+	include_once __DIR__ . '/kotafcn.php';
 
 	//Include KOTA table definitions for given tables
 	$KOTA_TABLES = $tables;
-	include($BASE_PATH.'inc/kota.inc.php');
+	include __DIR__ . '/kota.inc.php';
 
 	//Apply access rights --> unset KOTA columns the current user has no access to
 	foreach($tables as $table) {
@@ -8597,8 +8599,8 @@ function ko_export_to_pdf($layout, $data, $filename) {
 	global $ko_path;
 
 	//PDF starten
-	define('FPDF_FONTPATH',$ko_path.'fpdf/schriften/');
-	require($ko_path.'fpdf/pdf_leute.php');
+	define('FPDF_FONTPATH', dirname(__DIR__) . '/fpdf/schriften/');
+	require __DIR__ . '/../fpdf/pdf_leute.php';
 	$pdf = new PDF_leute($layout["page"]["orientation"], 'mm', 'A4');
 	$pdf->Open();
 	$pdf->layout = $layout;
@@ -8910,8 +8912,8 @@ function ko_export_cal_weekly_view($module, $_size='', $_start='', $pages='') {
 	$HourTitleWidth = 4;
 
 	//Prepare PDF file
-	define('FPDF_FONTPATH', $BASE_PATH.'fpdf/schriften/');
-	require_once($BASE_PATH.'fpdf/mc_table.php');
+	define('FPDF_FONTPATH', dirname(__DIR__) . '/fpdf/schriften/');
+	require_once __DIR__ . '/../fpdf/mc_table.php';
 
 	$pdf = new PDF_MC_Table('L', 'mm', 'A4');
 	$pdf->Open();
@@ -9350,8 +9352,8 @@ function ko_export_cal_weekly_view_resource($_size='', $_start='') {
 	$HourTitleWidth = 4;
 
 	//Prepare PDF file
-	define('FPDF_FONTPATH', $BASE_PATH.'fpdf/schriften/');
-	require($BASE_PATH.'fpdf/mc_table.php');
+	define('FPDF_FONTPATH', dirname(__DIR__) . '/fpdf/schriften/');
+	require __DIR__ . '/../fpdf/mc_table.php';
 
 	$pdf = new PDF_MC_Table('L', 'mm', 'A4');
 	$pdf->Open();
@@ -10349,8 +10351,8 @@ function ko_export_cal_pdf_year($module, $_month, $_year, $_months=0) {
 
 
 	//Start PDF file
-	define('FPDF_FONTPATH',$BASE_PATH.'fpdf/schriften/');
-	require($BASE_PATH.'fpdf/fpdf.php');
+	define('FPDF_FONTPATH', dirname(__DIR__) . '/fpdf/schriften/');
+	require __DIR__ . '/../fpdf/fpdf.php';
 
 	$pdf=new FPDF('L', 'mm', 'A4');
 	$pdf->Open();
@@ -11006,8 +11008,8 @@ function ko_export_etiketten($_vorlage, $_start, $_rahmen, $data, $fill_page=0, 
 	}
 
 	//PDF starten
-  define('FPDF_FONTPATH',$BASE_PATH.'fpdf/schriften/');
-  require($BASE_PATH.'fpdf/mc_table.php');
+  define('FPDF_FONTPATH', dirname(__DIR__) . '/fpdf/schriften/');
+  require __DIR__ . '/fpdf/mc_table.php';
   $pdf = new PDF_MC_Table($vorlage['page_orientation'], 'mm', $formats[$vorlage['page_format']]);
   $pdf->Open();
   $pdf->SetAutoPageBreak(false);
@@ -12284,12 +12286,12 @@ function get_cache_sms_balance() {
  * Send SMS message using aspsms.net
  */
 function send_aspsms($recipients, $text, $from, &$num, &$credits) {
-	global $SMS_PARAMETER, $BASE_PATH;
+	global $SMS_PARAMETER;
 
-	require_once($BASE_PATH.'inc/aspsms.php');
+	require_once __DIR__ . '/aspsms.php';
 
 	//Sender ID
-  $originator = 'kOOL';  //Default value
+	$originator = 'kOOL';  //Default value
 	$sender_ids = explode(',', ko_get_setting('sms_sender_ids'));
 	if(sizeof($sender_ids) > 0) {  //Check for sender_ids
 		if(in_array($from, $sender_ids)) $originator = $from;
@@ -12330,33 +12332,33 @@ function send_aspsms($recipients, $text, $from, &$num, &$credits) {
   * Sendet SMS-Mitteilung
 	*/
 function send_sms($recipients, $text, $from, $climsgid, $msg_type, &$success, &$done, &$problems, &$charges, &$error_message) {
-	global $SMS_PARAMETER, $BASE_PATH;
+	global $SMS_PARAMETER;
 
-	require($BASE_PATH."inc/Clickatell.php");
-  set_time_limit(0);
+	require __DIR__ . '/Clickatell.php';
+	set_time_limit(0);
 
 	//Text
-  $sms_message["text"] = $text;
+	$sms_message["text"] = $text;
 
-  //Sender ID
-  $sms_message["from"] = "kOOL";  //Default value
+	//Sender ID
+	$sms_message["from"] = "kOOL";  //Default value
 	$sender_ids = explode(',', ko_get_setting('sms_sender_ids'));
 	if(sizeof($sender_ids) > 0) {  //Check for sender_id
 		if(in_array($from, $sender_ids)) $sms_message['from'] = $from;
 	}
 
-  //Client-Message-ID
-  $sms_message["climsgid"] = $climsgid;
+	//Client-Message-ID
+	$sms_message["climsgid"] = $climsgid;
 
-  //Message-Type
-  $sms_message["msg_type"] = $msg_type;
+	//Message-Type
+	$sms_message["msg_type"] = $msg_type;
 
 
 	$done = $success = $charges = 0;
 	$problems = "";
-  $sms = new SMS_Clickatell;
-  $sms->init($SMS_PARAMETER);
-  $log_message = "";
+	$sms = new SMS_Clickatell;
+	$sms->init($SMS_PARAMETER);
+	$log_message = "";
 
 
   if($sms->auth($error_message)) {
@@ -12390,9 +12392,9 @@ function send_sms($recipients, $text, $from, $climsgid, $msg_type, &$success, &$
     ko_log("sms_sent", $log_message);
 
 		return TRUE;
-  }//if(sms->auth())
-  else {
-    return FALSE;
+	}//if(sms->auth())
+	else {
+		return FALSE;
 	}
 }//send_sms()
 
@@ -12441,7 +12443,6 @@ function ko_get_contrast_color($hexcolor, $dark = '#000000', $light = '#FFFFFF')
 
 
 function ko_scheduler_set_next_call($task) {
-	global $ko_path;
 
 	if(!is_array($task)) {
 		$task = db_select_data('ko_scheduler_tasks', "WHERE `id` = '".intval($task)."'", '*', '', '', TRUE);
@@ -12451,7 +12452,7 @@ function ko_scheduler_set_next_call($task) {
 	if($task['status'] == 0) {
 		db_update_data('ko_scheduler_tasks', "WHERE `id` = '".$task['id']."'", array('next_call' => '0000-00-00 00:00:00'));
 	} else {
-		require_once($ko_path.'inc/cron.php');
+		require_once __DIR__ . '/cron.php';
 		try {
 			$cron = Cron\CronExpression::factory($task['crontime']);
 			$next_call = $cron->getNextRunDate()->format('Y-m-d H:i:s');
@@ -12514,9 +12515,8 @@ function ko_task_delete_old_downloads() {
  * Scheduler task: Import/update events for event groups with iCal import URL
  */
 function ko_task_import_events_ical() {
-	global $ko_path, $BASE_PATH;
 
-	require_once($ko_path.'daten/inc/daten.inc.php');
+	require_once __DIR__ . '/../daten/inc/daten.inc.php';
 
 	//Get event groups to be imported
 	$egs = db_select_data('ko_eventgruppen', "WHERE `type` = '3' AND `ical_url` != ''");
@@ -12862,9 +12862,7 @@ function ko_placeholders_event_array($event, $prefix = 'e_', $tag = '###') {
  * Scheduler task: process mails which were sent to groups ...
  */
 function ko_task_mailing() {
-	global $ko_path;
-
-	require_once($ko_path.'mailing.php');
+	require_once __DIR__ . '/../mailing.php';
 	ko_mailing_main();
 }//ko_task_mailing()
 
@@ -14501,7 +14499,7 @@ function ko_check_ssl() {
 
 
 function ko_check_login() {
-	global $db_connection, $ko_path, $LANGS;
+	global $db_connection, $LANGS;
 
 	$do_guest = TRUE;
 	$reinit = FALSE;
@@ -14537,7 +14535,7 @@ function ko_check_login() {
 			$user_lang = ko_get_userpref($_SESSION["ses_userid"], "lang");
 			if($user_lang != "" && in_array($user_lang, $LANGS)) {
 				$_SESSION["lang"] = $user_lang;
-				include($ko_path."inc/lang.inc.php");
+				include __DIR__ . '/lang.inc.php';
 			}
 
 			//Reread user settings
@@ -14562,7 +14560,7 @@ function ko_check_login() {
 		}
 		session_destroy();
 
-		include("inc/session.inc.php");
+		include __DIR__ . '/session.inc.php';
 		$_SESSION = array();
 		$_SESSION['ses_userid'] = ko_get_guest_id();
 		$_SESSION['ses_username'] = 'ko_guest';
@@ -14610,7 +14608,7 @@ function ko_check_login() {
 		if(!$user_lang) $user_lang = $LANGS[0];
 		if($user_lang != '' && in_array($user_lang, $LANGS)) {
 			$_SESSION['lang'] = $user_lang;
-			include($ko_path.'inc/lang.inc.php');
+			include __DIR__ . '/lang.inc.php';
 		}
 
 		//Redirect to default page (if set)
@@ -14706,7 +14704,7 @@ function ko_update_ko_config($mode, $data) {
 
 	$start = $ignore = $found = FALSE;
 	//Open config file
-	$config_file = $ko_path."config/ko-config.php";
+	$config_file = dirname(__DIR__) . '/config/ko-config.php';
 	$fp = @fopen($config_file, "r");
 	if($fp) {
 		//Go through all the lines

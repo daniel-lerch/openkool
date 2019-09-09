@@ -31,7 +31,7 @@ if(isset($_POST['GLOBALS']) || isset($_GET['GLOBALS'])) die('You cannot set the 
 
 
 $ko_menu_akt = 'scheduler';
-require_once($ko_path.'inc/ko.inc.php');
+require_once __DIR__ . '/inc/ko.inc.php';
 
 //Log in as _scheduler user, fall back to root user to have enough access
 $slogin = db_select_data('ko_admin', "WHERE `login` = '_scheduler'", '*', '', '', TRUE);
@@ -52,7 +52,7 @@ foreach($my_tasks as $mt) {
 //Get tasks from DB
 $tasks = db_select_data('ko_scheduler_tasks', "WHERE `status` = '1' AND `next_call` <= NOW()");
 if(sizeof($tasks) > 0) {
-	require_once($ko_path.'inc/cron.php');
+	require_once __DIR__ . '/inc/cron.php';
 
 	foreach($tasks as $task) {
 		//Call task's function

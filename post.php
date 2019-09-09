@@ -37,8 +37,7 @@ $ko_path = "./";
 $ko_menu_akt = 'post.php';
 
 
-require($ko_path."config/ko-config.php");
-require($ko_path."inc/ko.inc.php");
+require __DIR__ . '/inc/ko.inc.php';
 
 
 

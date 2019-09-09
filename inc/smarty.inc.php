@@ -18,18 +18,13 @@
 *
 *******************************************************************************/
 
-// Smarty Library Dateien laden
-$webroot = empty($BASE_PATH) ? $ko_path : $BASE_PATH;
-if(FALSE === include($webroot."vendor/smarty/smarty/libs/Smarty.class.php")) {
-	ko_die('Could not find Smarty. Please install libraries via Composer and ensure that $BASE_PATH is set correctly.');
-}
-
 //Load smarty template engine
 $smarty = new SmartyBC();
-$smarty->template_dir = $webroot.'templates/';
-$smarty->compile_dir = $webroot.'templates_c/';
-$smarty->cache_dir = $webroot.'cache/'; // Currently not used
-$smarty->config_dir = $webroot.'configs/'; // Currently not used
+$webroot = dirname(__DIR__);
+$smarty->template_dir = "$webroot/templates/";
+$smarty->compile_dir = "$webroot/templates_c/";
+$smarty->cache_dir = "$webroot/cache/"; // Currently not used
+$smarty->config_dir = "$webroot/configs/"; // Currently not used
 
 
 $smarty->assign("ko_path", $ko_path);

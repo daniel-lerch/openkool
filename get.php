@@ -129,7 +129,7 @@ switch($action) {
 		$start = $req['start'][0] ? $req['start'][0] : date('Y-m-d');
 		$limit = $req['limit'][0] ? $req['limit'][0] : 100;
 
-		include($ko_path.'tracking/inc/tracking.inc.php');
+		include __DIR__ . '/tracking/inc/tracking.inc.php';
 		$dates = ko_tracking_get_dates($tracking, $start, $limit, $prev, $next, $prev1, FALSE);
 		$r['TRACKING_DATES'] = $dates;
 	break;
@@ -146,7 +146,7 @@ switch($action) {
 		$filter = $req['filter'][0];
 		if(!$filter) continue;
 
-		include($ko_path.'tracking/inc/tracking.inc.php');
+		include __DIR__ . '/tracking/inc/tracking.inc.php';
 		$people = ko_tracking_get_people($filter, $dates, $tid, FALSE);
 		$r['TRACKING_PEOPLE'] = $people;
 	break;
@@ -157,7 +157,7 @@ switch($action) {
 		$moderated = $req['moderated'][0];
 		$res = json_decode($req['data'][0], TRUE);
 
-		include($ko_path.'reservation/inc/reservation.inc.php');
+		include __DIR__ . '/reservation/inc/reservation.inc.php';
 
 		if($moderated) {
 			ko_res_store_moderation($res, FALSE, $double_error);
@@ -181,7 +181,7 @@ switch($action) {
 			continue;
 		}
 
-		include($ko_path.'reservation/inc/reservation.inc.php');
+		include __DIR__ . '/reservation/inc/reservation.inc.php';
 
 		ko_get_res_by_id($id, $r_); $r = $r_[$id];
 		db_delete_data("ko_reservation", "WHERE `id` = '$id'");
@@ -375,7 +375,7 @@ switch($action) {
 		else if($action == "getPersonPDF") {
 			list($layout_id) = $req["pdf_layout_id"];
 			if(!$layout_id) return FALSE;
-			include($ko_path."leute/inc/leute.inc.php");
+			include __DIR__ . '/leute/inc/leute.inc.php';
 
 			//Get layout
 			$_layout = db_select_data("ko_pdf_layout", "WHERE `id` = '$layout_id'", "*", "", "", TRUE);

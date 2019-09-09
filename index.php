@@ -21,7 +21,7 @@
 $ko_path = "./";
 $ko_menu_akt = "home";
 
-include($ko_path . "inc/ko.inc.php");
+require __DIR__ . '/inc/ko.inc.php';
 use OpenKool\koNotifier;
 
 //Redirect to SSL if needed
@@ -37,7 +37,7 @@ $notifier = koNotifier::Instance();
 
 //*** Plugins einlesen:
 $hooks = hook_include_main("_all");
-if(sizeof($hooks) > 0) foreach($hooks as $hook) include_once($hook);
+foreach($hooks as $hook) include_once($hook);
 
 
 /**
@@ -74,7 +74,7 @@ if(sizeof($hooks) > 0) foreach($hooks as $hook) include($hook);
 <?php
 print ko_include_css();
 print ko_include_js(array($ko_path.'inc/jquery/jquery.js', $ko_path.'inc/kOOL.js'), FALSE);
-include($ko_path.'inc/js-sessiontimeout.inc.php');
+include __DIR__ . '/inc/js-sessiontimeout.inc.php';
 ?>
 </head>
 
@@ -82,12 +82,12 @@ include($ko_path.'inc/js-sessiontimeout.inc.php');
 
 <?php
 //Smarty-Templates-Engine laden
-require("$ko_path/inc/smarty.inc.php");
+require __DIR__ . '/inc/smarty.inc.php';
 
 /*
  * Gibt bei erfolgreichem Login das Menü aus, sonst einfach die Loginfelder
  */
-include($ko_path . "menu.php");
+include __DIR__ . '/menu.php';
 ?>
 
 
@@ -303,9 +303,9 @@ switch($do_action) {
 
 
 	//Default:
-  default:
-    include($ko_path."inc/abuse.inc.php");
-  break;
+	default:
+		include __DIR__ . '/inc/abuse.inc.php';
+	break;
 }//switch(do_action)
 
 

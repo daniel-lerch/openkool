@@ -2475,8 +2475,8 @@ if(in_array('ko_event', $KOTA_TABLES)) {
 
 
 //Include kota.inc.php from web directory (specific to each installation)
-if(file_exists($BASE_PATH."config/kota.inc.php")) {
-	include($BASE_PATH."config/kota.inc.php");
+if(file_exists(__DIR__ . '/../config/kota.inc.php')) {
+	include __DIR__ . '/../config/kota.inc.php';
 }
 
 //Allow plugins to change KOTA

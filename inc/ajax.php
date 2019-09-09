@@ -32,19 +32,19 @@ header('Content-Type: text/html; charset=UTF-8');
 error_reporting(0);
 $ko_menu_akt = 'home';
 $ko_path = "../";
-require($ko_path."inc/ko.inc.php");
+require __DIR__ . '/ko.inc.php';
 use OpenKool\koNotifier;
 
 //Smarty-Templates-Engine laden
-require($BASE_PATH."inc/smarty.inc.php");
+require __DIR__ . '/smarty.inc.php';
 
 //Include plugin code
 $hooks = hook_include_main('_all');
-if(sizeof($hooks) > 0) foreach($hooks as $hook) include_once($hook);
+foreach($hooks as $hook) include_once($hook);
 
 //HOOK: Submenus einlesen
 $hooks = hook_include_sm();
-if(sizeof($hooks) > 0) foreach($hooks as $hook) include($hook);
+foreach($hooks as $hook) include($hook);
 
 hook_show_case_pre($_SESSION['show']);
 
@@ -407,7 +407,7 @@ if(isset($_GET) && isset($_GET["action"])) {
 					print 'main_content@@@';
 					list($module, $file) = explode('|', $KOTA[$table]['_inlineform']['module']);
 					$file = $file != '' ? $file : $module;
-					include_once($ko_path.$module.'/inc/'.$file.'.inc');
+					include_once __DIR__ . "/../$module/inc/$file.inc";
 					eval($KOTA[$table]['_inlineform']['redraw']['fcn']);
 				} else {
 					//Output new value
@@ -628,7 +628,7 @@ if(isset($_GET) && isset($_GET["action"])) {
 				print 'main_content@@@';
 				list($module, $file) = explode('|', $KOTA[$table]['_inlineform']['module']);
 				$file = $file != '' ? $file : $module;
-				include_once($ko_path.$module.'/inc/'.$file.'.inc');
+				include_once __DIR__ . "/../$module/inc/$file.inc";
 				eval($KOTA[$table]['_inlineform']['redraw']['fcn']);
 			}
 			//Just redraw single table cell
@@ -847,7 +847,7 @@ if(isset($_GET) && isset($_GET["action"])) {
 			print 'main_content@@@';
 			list($module, $file) = explode('|', $KOTA[$table]['_inlineform']['module']);
 			$file = $file != '' ? $file : $module;
-			include_once($ko_path.$module.'/inc/'.$file.'.inc');
+			include_once __DIR__ . "/../$module/inc/$file.inc";
 			eval($KOTA[$table]['_inlineform']['redraw']['fcn']);
 		break;
 
@@ -869,7 +869,7 @@ if(isset($_GET) && isset($_GET["action"])) {
 			print 'main_content@@@';
 			list($module, $file) = explode('|', $KOTA[$table]['_inlineform']['module']);
 			$file = $file != '' ? $file : $module;
-			include_once($ko_path.$module.'/inc/'.$file.'.inc');
+			include_once __DIR__ . "/../$module/inc/$file.inc";
 			eval($KOTA[$table]['_inlineform']['redraw']['fcn']);
 		break;
 
@@ -881,7 +881,7 @@ if(isset($_GET) && isset($_GET["action"])) {
 			ko_include_kota(array($table));
 			$module = $KOTA[$table]['_access']['module'];
 			ko_get_access($module);
-			require_once($ko_path.$module.'/inc/'.$module.'.inc');
+			require_once __DIR__ . "/../$module/inc/$module.inc";
 
 			//ID and state of the clicked field
 			$id = format_userinput($_GET['id'], 'js');
@@ -911,7 +911,7 @@ if(isset($_GET) && isset($_GET["action"])) {
 			$table = format_userinput($_GET['table'], 'js');
 			ko_include_kota(array($table));
 			$module = $KOTA[$table]['_access']['module'];
-			require_once($ko_path.$module.'/inc/'.$module.'.inc');
+			require_once __DIR__ . "/../$module/inc/$module.inc";
 
 			//save new value
 			if($_GET['name'] == '') break;
@@ -928,7 +928,7 @@ if(isset($_GET) && isset($_GET["action"])) {
 			$table = format_userinput($_GET['table'], 'js');
 			ko_include_kota(array($table));
 			$module = $KOTA[$table]['_access']['module'];
-			require_once($ko_path.$module.'/inc/'.$module.'.inc');
+			require_once __DIR__ . "/../$module/inc/$module.inc";
 
 			//save new value
 			$name = format_userinput($_GET['name'], 'js', FALSE, 0, array(), '@');
@@ -958,7 +958,7 @@ if(isset($_GET) && isset($_GET["action"])) {
 			$table = format_userinput($_GET['table'], 'js');
 			ko_include_kota(array($table));
 			$module = $KOTA[$table]['_access']['module'];
-			require_once($ko_path.$module.'/inc/'.$module.'.inc');
+			require_once __DIR__ . "/../$module/inc/$module.inc";
 
 			//save new value
 			$name = format_userinput($_GET['name'], 'js', FALSE, 0, array(), '@');
@@ -1258,7 +1258,7 @@ if(isset($_GET) && isset($_GET["action"])) {
 			}
 
 			print 'main_content@@@';
-			require_once($ko_path.$module.'/inc/'.$module.'.inc');
+			require_once __DIR__ . "/../$module/inc/$module.inc";
 			eval($KOTA[$table]['_inlineform']['redraw']['fcn']);
 		break;
 

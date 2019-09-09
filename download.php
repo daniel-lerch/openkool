@@ -23,7 +23,7 @@
 header('Content-Type: text/html; charset=UTF-8');
 
 $ko_path = './';
-include($ko_path.'inc/ko.inc.php');
+require __DIR__ . '/inc/ko.inc.php';
 
 switch($_GET["action"]) {
 	case "file":

@@ -22,8 +22,8 @@
   * Include frontmodule plugins
   */
 $hooks = hook_get_by_type('fm');
-if(sizeof($hooks) > 0) {
-  foreach($hooks as $hook) include_once($ko_path.'plugins/'.$hook.'/'.$hook.'.php');
+foreach ($hooks as $hook) {
+	include_once __DIR__ . "/../plugins/$hook/$hook.php";
 }
 
 
@@ -112,7 +112,7 @@ function ko_fm_daten_cal($uid, $pos) {
 	global $ko_path, $smarty, $access;
 	
 	ko_get_access('daten');
-	include($ko_path . "daten/inc/daten.inc.php");
+	include __DIR__ . '/../daten/inc/daten.inc.php';
 
 	$egs = array();
 	if($access['daten']['ALL'] > 0) {
@@ -307,19 +307,19 @@ function ko_fm_mod($uid) {
 	if($uid == ko_get_guest_id()) return FALSE;
 
 	//Reservations awaiting moderation
-	include($ko_path.'reservation/inc/reservation.inc.php');
+	include __DIR__ . '/../reservation/inc/reservation.inc.php';
 	ko_get_access('reservation', $uid);
 	
-  if($access['reservation']['MAX'] > 4) {  //Moderator for at least one item
+	if($access['reservation']['MAX'] > 4) {  //Moderator for at least one item
 		$show_res_mod = TRUE;
 		$mod_items = array();
 		foreach($access['reservation'] as $k => $v) {
 			if(intval($k) && $v > 4) $mod_items[] = $k;
 		}
-	  ko_get_res_mod($res_mod, $mod_items);
-  } else if($access['reservation']['MAX'] > 1) {
+		ko_get_res_mod($res_mod, $mod_items);
+	} else if($access['reservation']['MAX'] > 1) {
 		$show_res_mod = TRUE;
-	  ko_get_res_mod($res_mod, '', $uid);
+		ko_get_res_mod($res_mod, '', $uid);
 	}
 
 

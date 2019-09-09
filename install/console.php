@@ -17,6 +17,7 @@
 *
 *******************************************************************************/
 
+$ko_path = '../';
 require __DIR__ . '/../inc/ko.inc.php';
 
 use OpenKool\Console\MigrateCommand;

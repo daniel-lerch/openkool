@@ -78,22 +78,23 @@ setlocale(LC_ALL, ($_SESSION["lang"]."_".$_SESSION["lang2"].'.UTF-8'));
 
 //Include locallang-files to the current language
 $LOCAL_LANG = NULL;
-include($ko_path."locallang/locallang.".$_SESSION["lang"].".php");
+include __DIR__ . "/../locallang/locallang.{$_SESSION['lang']}.php";
 //Include locallang file for regional changes according to lang2 if region is not default as set in LIB_LANGS2
 if(mb_strtoupper($_SESSION['lang2']) != mb_strtoupper($LIB_LANGS2[$_SESSION['lang']][0])) {
-	if(file_exists($ko_path.'locallang/locallang.'.$_SESSION['lang'].'_'.$_SESSION['lang2'].'.php')) {
-		include($ko_path.'locallang/locallang.'.$_SESSION['lang'].'_'.$_SESSION['lang2'].'.php');
+	$file = __DIR__ . "/../locallang/locallang.{$_SESSION['lang']}_{$_SESSION['lang2']}.php";
+	if(file_exists($file)) {
+		include $file;
 	}
 }
 
 
 if($_SESSION["lang"] != $LIB_LANGS[0]) {
 	//Include default-language if this is not the used language
-	include($ko_path."locallang/locallang.".$LIB_LANGS[0].".php");
+	include __DIR__ . "/../locallang/locallang.{$LIB_LANGS[0]}.php";
 
 	//HOOK: Include locallang files from the plugins
 	$hooks = hook_include_ll();
-	if(sizeof($hooks) > 0) foreach($hooks as $hook) include($hook);
+	foreach($hooks as $hook) include($hook);
 
 	$LOCAL_LANG[$_SESSION["lang"]] = array_merge($LL[$LIB_LANGS[0]], $LL[$_SESSION["lang"]]);
 
@@ -101,7 +102,7 @@ if($_SESSION["lang"] != $LIB_LANGS[0]) {
 
 	//HOOK: Include locallang files from the plugins
 	$hooks = hook_include_ll();
-	if(sizeof($hooks) > 0) foreach($hooks as $hook) include($hook);
+	foreach($hooks as $hook) include($hook);
 
 	$LOCAL_LANG[$_SESSION["lang"]] = $LL[$_SESSION["lang"]];
 }

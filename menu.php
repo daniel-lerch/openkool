@@ -74,7 +74,7 @@ if(sizeof($LANGS) > 1) {
 
 
 <div id="header">
-<?php include($ko_path.'config/header.php'); ?>
+<?php include __DIR__ . '/config/header.php' ?>
 </div>
 
 <?php

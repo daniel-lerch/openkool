@@ -19,7 +19,7 @@
 *******************************************************************************/
 
 $ko_path = '../';
-include($ko_path.'inc/ko.inc.php');
+require __DIR__ . '/ko.inc.php';
 
 $string = base64_decode($_GET['s']);
 if(!$string) exit;
