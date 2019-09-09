@@ -28,7 +28,7 @@ if(!file_exists(getcwd()."/ENABLE_INSTALL")) {
 $ko_path = "../";
 $ko_menu_akt = "install";
 
-include($ko_path . "inc/ko.inc.php");
+require __DIR__ . '/../ko.inc.php';
 use OpenKool\koNotifier;
 
 $notifier = koNotifier::Instance();
@@ -225,7 +225,7 @@ switch($do_action) {
 			}
 		}//if(pass1 && pass1 == pass2)
 
-		include($ko_path."config/ko-config.php");
+		include __DIR__ . '/../config/ko-config.php';
 
 		//check all the necessary data
 		if(!$BASE_PATH) $notifier->addError(3, $do_action);
@@ -235,7 +235,7 @@ switch($do_action) {
 
 		if(!$notifier->hasErrors()) {
 			//disable install-tool
-			@unlink($BASE_PATH."install/ENABLE_INSTALL");
+			@unlink(__DIR__ . '/ENABLE_INSTALL');
 			//display done-message
 			$cur_state = 5;
 			$_SESSION["show"] = "done";
@@ -247,13 +247,13 @@ switch($do_action) {
 
 	//Default:
   default:
-    include($ko_path."inc/abuse.inc.php");
+    include __DIR__ . '/../inc/abuse.inc.php';
   break;
 }//switch(do_action)
 
 
 //Smarty-Templates-Engine laden
-require("$ko_path/inc/smarty.inc.php");
+require __DIR__ . '/../inc/smarty.inc.php';
 
 
 ?>
@@ -269,7 +269,7 @@ print ko_include_css();
 
 print ko_include_js(array($ko_path.'inc/jquery/jquery.js', $ko_path.'inc/kOOL.js'));
 
-include($ko_path.'inc/js-sessiontimeout.inc.php');
+include __DIR__ . '/../inc/js-sessiontimeout.inc.php';
 ?>
 </head>
 

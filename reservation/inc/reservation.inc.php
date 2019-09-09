@@ -1695,8 +1695,8 @@ function ko_reservation_export_months($num, $month, $year) {
 	global $BASE_PATH;
 
 	//Start pdf
-	define('FPDF_FONTPATH',$BASE_PATH.'fpdf/schriften/');
-	require($BASE_PATH.'fpdf/fpdf.php');
+	define('FPDF_FONTPATH', dirname(dirname(__DIR__)) . '/fpdf/schriften/');
+	require __DIR__ . '/../../fpdf/fpdf.php';
 	$pdf = new FPDF('L', 'mm', 'A4');
 	$pdf->Open();
 	$pdf->SetAutoPageBreak(true, 10);

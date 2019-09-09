@@ -20,8 +20,8 @@
 
 
 //KG-Modul einfügen, damit es nicht manuell eingefügt werden muss
-if(ko_module_installed("kg") && file_exists($ko_path."leute/inc/kg.inc.php"))
-  include($ko_path."leute/inc/kg.inc.php");
+if(ko_module_installed('kg') && file_exists(__DIR__ . '/kg.inc.php'))
+	include __DIR__ . '/kg.inc.php';
 
 
 //Define basic chart types for leute module (may be extended by plugins)

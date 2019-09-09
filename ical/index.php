@@ -21,13 +21,13 @@
 $ko_path = "../";
 $ko_menu_akt = "ical";
 
-include($ko_path."inc/ko.inc.php");
-include($ko_path."daten/inc/daten.inc.php");
+require __DIR__ . '/../inc/ko.inc.php';
+require __DIR__ . '/../daten/inc/daten.inc.php';
 ko_include_kota(array('ko_event'));
 
 //Include plugins
 $hooks = hook_include_main('daten');
-if(sizeof($hooks) > 0) foreach($hooks as $hook) include_once($hook);
+foreach($hooks as $hook) include_once($hook);
 
 
 $mapping = array(';' => '\;', ',' => '\,', "\n" => "\\n\n ", "\r" => '');

@@ -23,8 +23,8 @@ ob_start();  //Ausgabe-Pufferung einschalten
 $ko_path = "../";
 $ko_menu_akt = "fileshare";
 
-include($ko_path . "inc/ko.inc.php");
-include("inc/fileshare.inc.php");
+require __DIR__ . '/../inc/ko.inc.php';
+require __DIR__ . '/inc/fileshare.inc.php';
 
 //Redirect to SSL if needed
 ko_check_ssl();
@@ -681,10 +681,10 @@ switch($do_action) {
 
 
 	//Default:
-  default:
+	default:
 		if(!hook_action_handler($do_action))
-      include($ko_path."inc/abuse.inc.php");
-  break;
+			include __DIR__ . '/../inc/abuse.inc.php';
+	break;
 
 }//switch(action)
 
@@ -719,7 +719,7 @@ if(ENABLE_FILESHARE) {
 
 
 //Smarty-Templates-Engine laden
-require("$ko_path/inc/smarty.inc.php");
+require __DIR__ . '/../inc/smarty.inc.php';
 
 //Include submenus
 ko_set_submenues();
@@ -737,8 +737,8 @@ if(ENABLE_FILESHARE) print '<script language="javascript" type="text/javascript"
 print ko_include_css();
 print ko_include_js(array($ko_path.'inc/jquery/jquery.js', $ko_path.'inc/kOOL.js'));
 
-include($ko_path.'inc/js-sessiontimeout.inc.php');
-include($ko_path."fileshare/inc/js-fileshare.inc.php");
+include __DIR__ . '/../inc/js-sessiontimeout.inc.php';
+include __DIR__ . '/inc/js-fileshare.inc.php';
 ?>
 </head>
 
@@ -748,7 +748,7 @@ include($ko_path."fileshare/inc/js-fileshare.inc.php");
 /*
  * Gibt bei erfolgreichem Login das Menü aus, sonst einfach die Loginfelder
  */
-include($ko_path . "menu.php");
+include __DIR__ . '/../menu.php';
 
 
 if($_SESSION["show"] == "new_share") {
@@ -849,7 +849,7 @@ print ko_get_submenu_code("fileshare", "right");
 </td>
 </tr>
 
-<?php include($ko_path . 'config/footer.php'); ?>
+<?php include __DIR__ . '/../config/footer.php' ?>
 
 </table>
 </form> <!-- //Hauptformular -->

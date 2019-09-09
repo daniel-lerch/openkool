@@ -24,7 +24,7 @@
 
 if(isset($_GET['id']) && (int)$_GET['id'] > 0) {
 	$ko_path = '../../';
-	require($ko_path.'inc/ko.inc.php');
+	require __DIR__ . '/../../inc/ko.inc.php';
 
 	$id = format_userinput($_GET['id'], 'uint');
 	if(!$id) exit;

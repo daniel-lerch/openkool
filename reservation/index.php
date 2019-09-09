@@ -23,8 +23,8 @@ ob_start();  //Ausgabe-Pufferung einschalten
 $ko_path = "../";
 $ko_menu_akt = "reservation";
 
-include($ko_path . "inc/ko.inc.php");
-include("inc/reservation.inc.php");
+require __DIR__ . '/../inc/ko.inc.php';
+require __DIR__ . '/inc/reservation.inc.php';
 use OpenKool\koNotifier;
 
 //get notifier instance
@@ -70,7 +70,7 @@ if($confirm_link) {
 			$user_lang = ko_get_userpref($_SESSION['ses_userid'], 'lang');
 			if($user_lang != '' && in_array($user_lang, $LANGS)) {
 				$_SESSION['lang'] = $user_lang;
-				include($ko_path.'inc/lang.inc.php');
+				include __DIR__ . '/../inc/lang.inc.php';
 			}
 		}
 	}
@@ -88,13 +88,13 @@ ko_include_kota(array('ko_reservation', 'ko_resitem'));
 
 
 //Smarty-Templates-Engine laden
-require("$ko_path/inc/smarty.inc.php");
+require __DIR__ . '/../inc/smarty.inc.php';
 
 
 
 //*** Plugins einlesen:
 $hooks = hook_include_main("reservation");
-if(sizeof($hooks) > 0) foreach($hooks as $hook) include_once($hook);
+foreach($hooks as $hook) include_once($hook);
 
 
 
@@ -1279,10 +1279,10 @@ switch($do_action) {
 
 
 	//Default:
-  default:
+	default:
 		if(!hook_action_handler($do_action))
-      include($ko_path."inc/abuse.inc.php");
-  break;
+			include __DIR__ . '/../inc/abuse.inc.php';
+	break;
 
 }//switch(action)
 
@@ -1404,8 +1404,8 @@ if($_SESSION['show'] == 'calendar') {
 	print ko_get_resitems_css();
 }
 print ko_include_css();
-include($ko_path.'inc/js-sessiontimeout.inc.php');
-include("inc/js-reservation.inc.php");
+include __DIR__ . '/../inc/js-sessiontimeout.inc.php';
+include __DIR__ . '/inc/js-reservation.inc.php';
 $js_calendar->load_files();
 ?>
 </head>
@@ -1416,7 +1416,7 @@ $js_calendar->load_files();
 /*
  * Gibt bei erfolgreichem Login das Menü aus, sonst einfach die Loginfelder
  */
-include($ko_path . "menu.php");
+include __DIR__ . '/../menu.php';
 ?>
 
 
@@ -1558,7 +1558,7 @@ print ko_get_submenu_code("reservation", "right");
 </td>
 </tr>
 
-<?php include($ko_path . 'config/footer.php'); ?>
+<?php include __DIR__ . '/../config/footer.php' ?>
 
 </table>
 

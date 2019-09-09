@@ -23,8 +23,8 @@ ob_start();  //Ausgabe-Pufferung starten
 $ko_path = "../";
 $ko_menu_akt = "groups";
 
-include($ko_path . "inc/ko.inc.php");
-include("inc/groups.inc.php");
+require __DIR__ . '/../inc/ko.inc.php';
+require __DIR__ . '/inc/groups.inc.php';
 use OpenKool\koNotifier;
 
 //Redirect to SSL if needed
@@ -829,7 +829,7 @@ switch($do_action) {
 	//Default:
   default:
 	if(!hook_action_handler($do_action))
-    include($ko_path."inc/abuse.inc.php");
+    include __DIR__ . '/../inc/abuse.inc.php';
   break;
 
 
@@ -861,7 +861,7 @@ if(!$_SESSION["show_limit"]) $_SESSION["show_limit"] = ko_get_setting("show_limi
 if(!isset($_SESSION['groups_show_hidden_datafields'])) $_SESSION['groups_show_hidden_datafields'] = ko_get_userpref($_SESSION['ses_userid'], 'groups_show_hidden_datafields');
 
 //Smarty-Templates-Engine laden
-require("$ko_path/inc/smarty.inc.php");
+require __DIR__ . '/../inc/smarty.inc.php';
 
 //Include submenus
 ko_set_submenues();
@@ -880,8 +880,8 @@ $js_files = array($ko_path.'inc/jquery/jquery.js', $ko_path.'inc/kOOL.js');
 if($_SESSION['show'] == 'edit_login_rights') $js_files[] = $ko_path.'inc/selectmenu.js';
 print ko_include_js($js_files);
 
-include($ko_path.'inc/js-sessiontimeout.inc.php');
-include('inc/js-groups.inc.php');
+include __DIR__ . '/../inc/js-sessiontimeout.inc.php';
+include __DIR__ . '/inc/js-groups.inc.php';
 $js_calendar->load_files();
 
 //Bei der Bearbeitung von Login-Rechten Ajax einbinden und alles für die drei selectmenus
@@ -893,19 +893,19 @@ if($_SESSION['show'] == 'edit_login_rights') {
 	ko_save_userpref($_SESSION['ses_userid'], 'show_passed_groups', 1);
 	//View
 	$list_id = 1;
-	include($ko_path."leute/inc/js-groupmenu.inc.php");
+	include __DIR__ . '/../leute/inc/js-groupmenu.inc.php';
 	$loadcode = "initList($list_id, document.formular.sel_ds1_sel_rights_view);";
 	//New
 	$list_id = 2;
-	include($ko_path."leute/inc/js-groupmenu.inc.php");
+	include __DIR__ . '/../leute/inc/js-groupmenu.inc.php';
 	$loadcode .= "initList($list_id, document.formular.sel_ds1_sel_rights_new);";
 	//Edit
 	$list_id = 3;
-	include($ko_path."leute/inc/js-groupmenu.inc.php");
+	include __DIR__ . '/../leute/inc/js-groupmenu.inc.php';
 	$loadcode .= "initList($list_id, document.formular.sel_ds1_sel_rights_edit);";
 	//Del
 	$list_id = 4;
-	include($ko_path."leute/inc/js-groupmenu.inc.php");
+	include __DIR__ . '/../leute/inc/js-groupmenu.inc.php';
 	$loadcode .= "initList($list_id, document.formular.sel_ds1_sel_rights_del);";
 	$onload_code = $loadcode.$onload_code;
 	//Reset setting to original value
@@ -920,7 +920,7 @@ if($_SESSION['show'] == 'edit_login_rights') {
 /*
  * Gibt bei erfolgreichem Login das Menü aus, sonst einfach die Loginfelder
  */
-include($ko_path . "menu.php");
+include __DIR__ . '/../menu.php';
 ?>
 
 
@@ -1034,7 +1034,7 @@ print ko_get_submenu_code("groups", "right");
 </td>
 </tr>
 
-<?php include($ko_path . 'config/footer.php'); ?>
+<?php include __DIR__ . '/../config/footer.php' ?>
 
 </table>
 

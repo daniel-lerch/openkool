@@ -30,7 +30,7 @@ header('Content-Type: text/html; charset=UTF-8');
 error_reporting(0);
 $ko_menu_akt = 'reservation';
 $ko_path = "../../";
-require($ko_path."inc/ko.inc.php");
+require __DIR__ . '/../../inc/ko.inc.php';
 $ko_path = "../";
 
 ko_get_access('reservation');
@@ -40,16 +40,16 @@ ko_include_kota(array('ko_reservation', 'ko_resitem'));
 
 // Plugins einlesen:
 $hooks = hook_include_main("reservation");
-if(sizeof($hooks) > 0) foreach($hooks as $hook) include_once($hook);
+foreach($hooks as $hook) include_once($hook);
 
-require($BASE_PATH."reservation/inc/reservation.inc.php");
+require __DIR__ . '/reservation.inc.php';
 
 //Smarty-Templates-Engine laden
-require($BASE_PATH."inc/smarty.inc.php");
+require __DIR__ . '/../../inc/smarty.inc.php';
 
 //HOOK: Submenus einlesen
 $hooks = hook_include_sm();
-if(sizeof($hooks) > 0) foreach($hooks as $hook) include($hook);
+foreach($hooks as $hook) include($hook);
 
 hook_show_case_pre($_SESSION['show']);
 

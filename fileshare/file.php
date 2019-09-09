@@ -18,26 +18,25 @@
 *
 *******************************************************************************/
 
-include("../inc/session.inc.php");
 $ko_path = "../";
-require($ko_path."inc/ko.inc.php");
+require __DIR__ . '/../inc/ko.inc.php';
 
 function sanitize($s) {
-  $allowed = "abcdefABCDEF1234567890";  //MD5-Wert ist eine Hex-Zahl
-  $new = "";
-  for($i=0; $i<mb_strlen($s); $i++) {
-    if(FALSE !== strstr($allowed, mb_substr($s, $i, 1))) {
-      $new .= mb_substr($s, $i, 1);
+	$allowed = "abcdefABCDEF1234567890";  //MD5-Wert ist eine Hex-Zahl
+	$new = "";
+	for ($i = 0; $i < mb_strlen($s); $i++) {
+		if (FALSE !== mb_strstr($allowed, mb_substr($s, $i, 1))) {
+			$new .= mb_substr($s, $i, 1);
 		}
-  }
-  return $new;
+	}
+	return $new;
 }
 
 $error = 0;
 $error_txt = array(
-		1 => getLL("error_fileshare_file_1"),
-		2 => getLL("error_fileshare_file_2"),
-		);
+	1 => getLL("error_fileshare_file_1"),
+	2 => getLL("error_fileshare_file_2"),
+);
 
 //GET-Daten auslesen und analysieren
 if(!isset($_GET["di"]) || !isset($_GET["ei"])) $error = 1;

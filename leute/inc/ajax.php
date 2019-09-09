@@ -28,7 +28,7 @@ header('Content-Type: text/html; charset=UTF-8');
 error_reporting(0);
 $ko_menu_akt = 'leute';
 $ko_path = "../../";
-require($ko_path."inc/ko.inc.php");
+require __DIR__ . '/../../inc/ko.inc.php';
 $ko_path = "../";
 
 ko_get_access('leute');
@@ -38,19 +38,19 @@ if(ko_module_installed('kg')) ko_get_access('kg');
 ko_include_kota(array('ko_leute', 'ko_kleingruppen'));
 
 //Smarty-Templates-Engine laden
-require($BASE_PATH."inc/smarty.inc.php");
+require __DIR__ . '/../../inc/smarty.inc.php';
 
-require($BASE_PATH."leute/inc/leute.inc.php");
-if(ko_module_installed("kg")) require($BASE_PATH."leute/inc/kg.inc.php");
+require __DIR__ . '/leute.inc.php';
+if(ko_module_installed("kg")) require __DIR__ . '/kg.inc.php';
 
 // Plugins einlesen:
 $hooks = hook_include_main("leute,kg");
-if(sizeof($hooks) > 0) foreach($hooks as $hook) include_once($hook);
+foreach($hooks as $hook) include_once($hook);
 
 
 //HOOK: Submenus einlesen
 $hooks = hook_include_sm();
-if(sizeof($hooks) > 0) foreach($hooks as $hook) include($hook);
+foreach($hooks as $hook) include($hook);
 
 hook_show_case_pre($_SESSION['show']);
 

@@ -23,8 +23,8 @@ ob_start();  //Ausgabe-Pufferung einschalten
 $ko_path = "../";
 $ko_menu_akt = "leute";
 
-include($ko_path . "inc/ko.inc.php");
-include("inc/leute.inc.php");
+require __DIR__ . '/../inc/ko.inc.php';
+require __DIR__ . '/inc/leute.inc.php';
 use OpenKool\koNotifier;
 
 //get notifier instance
@@ -47,7 +47,7 @@ if(ko_module_installed('groups')) {
 }
 
 //Smarty-Templates-Engine laden
-require("$ko_path/inc/smarty.inc.php");
+require __DIR__ . '/../inc/smarty.inc.php';
 
 
 
@@ -57,7 +57,7 @@ ko_include_kota(array('ko_leute', 'ko_kleingruppen'));
 
 //*** Plugins einlesen:
 $hooks = hook_include_main("leute,kg");
-if(sizeof($hooks) > 0) foreach($hooks as $hook) include_once($hook);
+foreach($hooks as $hook) include_once($hook);
 
 
 
@@ -230,8 +230,8 @@ switch($do_action) {
 		if($access['leute']['MAX'] <= 1 && (ko_get_setting("login_edit_person") == 0 || $leute_id == ko_get_logged_in_id())) break;
 
 		//Funktion (kundenspezifisch) einlesen, die Variablen speziell behandeln lässt
-		if(file_exists($ko_path."leute/inc/my_fcn_leute.inc")) {
-			include($ko_path."leute/inc/my_fcn_leute.inc");
+		if(file_exists(__DIR__ . '/inc/my_fcn_leute.inc')) {
+			include __DIR__ . '/inc/my_fcn_leute.inc';
 		}
 		$log_message = "";
 
@@ -1287,7 +1287,7 @@ switch($do_action) {
 			if(in_array('tracking', $MODULES)) {
 				$tracking = db_select_data('ko_tracking', "WHERE `filter` REGEXP '^g".$gid."[:r0-9]*'", '*', '', 'LIMIT 0,1', TRUE);
 				if(isset($tracking['id'])) {
-					include_once($ko_path.'tracking/inc/tracking.inc.php');
+					include_once __DIR__ . '/../tracking/inc/tracking.inc.php';
 					ko_tracking_set_default($tracking['id'], $lid);
 				}
 			}
@@ -3406,7 +3406,7 @@ switch($do_action) {
 	//Default:
 	default:
 		if(!hook_action_handler($do_action))
-      include($ko_path."inc/abuse.inc.php");
+			include __DIR__ . '/../inc/abuse.inc.php';
 	break;
 
 }//switch(action)
@@ -3527,8 +3527,8 @@ print ko_include_js(array($ko_path.'inc/jquery/jquery.js',
 													),
 										($_SESSION['show'] == 'list_kg' ? 'kg' : $ko_menu_akt));
 
-include($ko_path.'inc/js-sessiontimeout.inc.php');
-include("inc/js-leute.inc.php");
+include __DIR__ . '/../inc/js-sessiontimeout.inc.php';
+include __DIR__ . '/inc/js-leute.inc.php';
 //Load JS files for js_calendar
 $js_calendar->load_files();
 
@@ -3540,7 +3540,7 @@ if($_SESSION["show"] == "neue_person" || $_SESSION["show"] == "edit_person") {
 	//Beim Einteilen die vergangenen Gruppen nie anzeigen
 	$orig_value = ko_get_userpref($_SESSION['ses_userid'], 'show_passed_groups');
 	ko_save_userpref($_SESSION['ses_userid'], 'show_passed_groups', 0);
-	include("inc/js-groupmenu.inc.php");
+	include __DIR__ . '/inc/js-groupmenu.inc.php';
 	ko_save_userpref($_SESSION['ses_userid'], 'show_passed_groups', $orig_value);
 	$loadcode = "initList($list_id, document.formular.sel_ds0_input_groups);";
 	$onload_code = $loadcode.$onload_code;
@@ -3553,7 +3553,7 @@ if($_SESSION["show"] == "neue_person" || $_SESSION["show"] == "edit_person") {
 	//Beim Filter die vergangenen Gruppen gemäss Einstellung zeigen
 	//allerdings auch Platzhalter-Gruppen anzeigen
 	$show_all_types = TRUE;
-	include("inc/js-groupmenu.inc.php");
+	include __DIR__ . '/inc/js-groupmenu.inc.php';
 }
 ?>
 </head>
@@ -3564,7 +3564,7 @@ if($_SESSION["show"] == "neue_person" || $_SESSION["show"] == "edit_person") {
 /*
  * Gibt bei erfolgreichem Login das Menü aus, sonst einfach die Loginfelder
  */
-include($ko_path . "menu.php");
+include __DIR__ . '/../menu.php';
 ?>
 
 
@@ -3771,7 +3771,7 @@ print ko_get_submenu_code("leute", "right");
 </td>
 </tr>
 
-<?php include($ko_path . 'config/footer.php'); ?>
+<?php include __DIR__ . '/../config/footer.php' ?>
 
 </table>
 
