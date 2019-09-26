@@ -25,6 +25,26 @@ function EnsureExists ($Path) {
     }
 }
 
+function GetPhpLocation () {
+    $vsConfigPath = "$env:APPDATA\Code\User\settings.json"
+    if (Test-Path -Path $vsConfigPath -PathType Leaf) {
+        $vsConfig = Get-Content -Path $vsConfigPath | ConvertFrom-Json
+        if ($vsConfig.'php.executablePath') {
+            return $vsConfig.'php.executablePath'
+        }
+    }
+
+    $programFile = "$env:ProgramFiles\PHP\php.exe"
+    if (Test-Path -Path $programFile -PathType Leaf) {
+        return $programFile
+    }
+
+    $programFileX86 = "${env:ProgramFiles(x86)}\PHP\php.exe"
+    if (Test-Path -Path $programFileX86 -PathType Leaf) {
+        return $programFileX86
+    }
+}
+
 function Main {
     Write-Host "OpenKool setup script"
     Write-Host ""
@@ -70,9 +90,24 @@ function Main {
     # TODO: Handle permissions
 
     Write-Host "Preparing PHP runtime components..."
-    Copy-Item -Path ".\default\php-windows.ini" -Destination "..\php.ini" -Force
-    Invoke-WebRequest -Uri "https://getcomposer.org/installer" -UseBasicParsing -OutFile "..\composer-setup.php"
-    Write-Host "You have to adjust the php.ini and call composer-setup.php with PHP"
+    $executablePath = GetPhpLocation
+    if ($executablePath) {
+        $extensionDir = Join-Path -Path (Split-Path -Path $executablePath) -ChildPath "ext"
+        $xdebugDir = [IO.Path]::GetFileName((Resolve-Path -Path (Join-Path $extensionDir "php_xdebug*.dll")))
+        $ini = (Get-Content -Path ".\default\php-windows.ini" -Raw) `
+            -replace "extension_dir = `"`"", "extension_dir = `"$extensionDir`"" `
+            -replace "`"php_xdebug.dll`"", "`"$xdebugDir`""
+        New-Item -Path "..\php.ini" -Value $ini -Force | Out-Null
+    } else {
+        Copy-Item -Path ".\default\php-windows.ini" -Destination "..\php.ini" -Force
+    }
+
+    if (Test-Path -Path "..\composer.phar") {
+        Write-Host "Composer is already installed"
+    } else {
+        Invoke-WebRequest -Uri "https://getcomposer.org/installer" -UseBasicParsing -OutFile "..\composer-setup.php"
+        Write-Host "You have to adjust the php.ini and call composer-setup.php with PHP"
+    }
 }
 
 $oldLocation = Get-Location

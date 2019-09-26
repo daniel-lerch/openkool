@@ -28,7 +28,7 @@ if(!file_exists(getcwd()."/ENABLE_INSTALL")) {
 $ko_path = "../";
 $ko_menu_akt = "install";
 
-require __DIR__ . '/../ko.inc.php';
+require __DIR__ . '/../inc/ko.inc.php';
 use OpenKool\koNotifier;
 
 $notifier = koNotifier::Instance();
