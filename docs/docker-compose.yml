@@ -2,7 +2,7 @@ version: '2'
 
 services:
   app:
-    image: daniel-lerch/openkool:latest
+    image: daniellerch/openkool:latest
     restart: unless-stopped
     volumes:
       - config:/var/www/html/config
