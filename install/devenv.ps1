@@ -19,6 +19,14 @@
 #
 ###############################################################################>
 
+[CmdletBinding()]
+param (
+    [Parameter(Mandatory = $false)]
+    [switch]$Setup,
+    [Parameter(Mandatory = $false)]
+    [switch]$Start
+)
+
 function EnsureExists ($Path) {
     if (!(Test-Path -Path $Path)) {
         New-Item -Path $Path -ItemType Directory -Force | Out-Null
@@ -45,10 +53,9 @@ function GetPhpLocation () {
     }
 }
 
-function Main {
-    Write-Host "OpenKool setup script"
+function SetupEnvironment {
+    Write-Host "Preparing development environment..."
     Write-Host ""
-
     Write-Host "Preparing ~/config..."
     EnsureExists -Path "..\config"
     Copy-Item -Path ".\default\config\address.rtf",".\default\config\footer.php",".\default\config\header.php",`
@@ -107,6 +114,28 @@ function Main {
     } else {
         Invoke-WebRequest -Uri "https://getcomposer.org/installer" -UseBasicParsing -OutFile "..\composer-setup.php"
         Write-Host "You have to adjust the php.ini and call composer-setup.php with PHP"
+    }
+}
+
+function StartServer {
+    Write-Host "Starting development server..."
+    Write-Host ""
+    $executablePath = GetPhpLocation
+    Start-Process -FilePath $executablePath -ArgumentList "-c",".\php.ini","-S","localhost:8080" -WorkingDirectory ".\.."
+    Write-Host $executablePath
+}
+
+function Main {
+    Write-Host "OpenKool Development Environment"
+    Write-Host ""
+    if ($Setup) {
+        SetupEnvironment
+    }
+    if ($Start) {
+        StartServer
+    }
+    if (!($Setup) -and !($Start)) {
+        Write-Host "Please select an action"
     }
 }
 
