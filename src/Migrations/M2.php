@@ -26,6 +26,7 @@ class M2 extends Migration {
     }
 
     protected function apply_internal() {
+        $this->query('ALTER TABLE `ko_event` ALTER `import_id` SET DEFAULT \'\'');
         $this->query('ALTER TABLE `ko_eventgruppen` ALTER `calendar_id` SET DEFAULT \'0\'');
         $this->query('ALTER TABLE `ko_eventgruppen` ALTER `name` SET DEFAULT \'\'');
         $this->query('ALTER TABLE `ko_eventgruppen` ALTER `shortname` SET DEFAULT \'\'');
@@ -40,5 +41,6 @@ class M2 extends Migration {
         $this->query('ALTER TABLE `ko_eventgruppen` ALTER `ical_url` SET DEFAULT \'\'');
         $this->query('ALTER TABLE `ko_eventgruppen` ALTER `update` SET DEFAULT \'0\'');
         $this->query('ALTER TABLE `ko_eventgruppen` ALTER `last_update` SET DEFAULT \'0000-00-00 00:00:00\'');
+        $this->query('ALTER TABLE `ko_reservation` ALTER `comments` SET DEFAULT \'\'');
     }
 }
