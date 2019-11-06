@@ -680,18 +680,20 @@ function ko_formular_termin($mode, $id, $data=array()) {
 	//Wiederholungen (nur bei Neu)
 	if($mode == "neu") {
 		$group[++$gc] = array("titel" => getLL("daten_repeat"), "state" => $repetition_state, "colspan" => 'colspan="2"');
-		$group[$gc]["row"][$rowcounter]["inputs"][0] = array("desc" => getLL("daten_repeat_title1"),
-																 "type" => "radio",
-																 "name" => "rd_wiederholung",
-																 "values" => array("keine", "taeglich", "woechentlich", "monatlich1", "monatlich2"),
-																 "descs" => $repeat_descs,
-																 "separator" => "<br />",
-																 "value" => isset($_POST["rd_wiederholung"]) ? $_POST["rd_wiederholung"] : "keine"
-																 );
-		$group[$gc]["row"][$rowcounter++]["inputs"][1] = array("desc" => getLL("daten_repeat_title2"),
-																 "type" => "html",
-																 "value" => $repeat_stop
-																 );
+		$group[$gc]["row"][$rowcounter]["inputs"][0] = array(
+			"desc" => getLL("daten_repeat_title1"),
+			"type" => "radio",
+			"name" => "rd_wiederholung",
+			"values" => array("keine", "taeglich", "woechentlich", "monatlich1", "monatlich2"),
+			"descs" => $repeat_descs,
+			"separator" => "<br />",
+			"value" => isset($_POST["rd_wiederholung"]) ? $_POST["rd_wiederholung"] : "keine"
+		);
+		$group[$gc]["row"][$rowcounter++]["inputs"][1] = array(
+			"desc" => getLL("daten_repeat_title2"),
+			"type" => "html",
+			"value" => $repeat_stop
+		);
 	}
 
 
@@ -706,13 +708,14 @@ function ko_formular_termin($mode, $id, $data=array()) {
 			$desc2 = '';
 		}
 		$group[++$gc] = array('titel' => getLL('daten_group_subscription'), 'state' => ($e['gs_gid'] ? 'open' : 'closed'), 'colspan' => 'colspan="2"');
-		$group[$gc]['row'][$rowcounter]['inputs'][0] = array('desc' => getLL('daten_group_subscription_gid'),
-																 'type' => 'checkbox',
-																 'name' => 'chk_gs_gid',
-																 'value' => 1,
-																 'params' => $e['gs_gid'] ? 'checked="checked"' : '',
-																 'desc2' => $desc2,
-																 );
+		$group[$gc]['row'][$rowcounter]['inputs'][0] = array(
+			'desc' => getLL('daten_group_subscription_gid'),
+			'type' => 'checkbox',
+			'name' => 'chk_gs_gid',
+			'value' => 1,
+			'params' => $e['gs_gid'] ? 'checked="checked"' : '',
+			'desc2' => $desc2,
+		);
 
 	}
 
@@ -723,11 +726,12 @@ function ko_formular_termin($mode, $id, $data=array()) {
 		$code = '<div name="rota_schedule_'.$id.'">'.ko_rota_get_schedulling_code($id, 'event', $teams).'</div>';
 
 		$group[++$gc] = array('titel' => getLL('daten_form_rota_title'), 'state' => 'closed', 'colspan' => 'colspan="2"');
-		$group[$gc]['row'][$rowcounter++]['inputs'][0] = array('desc' => '',
-																 'type' => 'html',
-																 'value' => $code,
-																 'colspan' => 'colspan="2"',
-																 );
+		$group[$gc]['row'][$rowcounter++]['inputs'][0] = array(
+			'desc' => '',
+			'type' => 'html',
+			'value' => $code,
+			'colspan' => 'colspan="2"',
+		);
 	}
 
 
@@ -744,18 +748,19 @@ function ko_formular_termin($mode, $id, $data=array()) {
 
 		//Add inputs for resitems and res_[start|stop]time
 		$group[++$gc]["row"][$rowcounter++]["inputs"][0] = array("type" => "   ");
-		$group[$gc]["row"][$rowcounter++]["inputs"][0] = array("desc" => getLL("daten_linked_reservations"),
-																 "type" => "doubleselect",
-		  													 "js_func_add" => "resgroup_doubleselect_add",
-																 "name" => "sel_do_res",
-																 "values" => $tpl_res_values,
-																 "descs" => $tpl_res_descs,
-																 "avalues" => $do_res_values,
-																 "avalue" => implode(",", $do_res_values),
-																 "adescs" => $do_res_output,
-																 "params" => 'size="7"',
-																 "colspan" => 'colspan="2"'
-																 );
+		$group[$gc]["row"][$rowcounter++]["inputs"][0] = array(
+			"desc" => getLL("daten_linked_reservations"),
+			"type" => "doubleselect",
+		  	"js_func_add" => "resgroup_doubleselect_add",
+			"name" => "sel_do_res",
+			"values" => $tpl_res_values,
+			"descs" => $tpl_res_descs,
+			"avalues" => $do_res_values,
+			"avalue" => implode(",", $do_res_values),
+			"adescs" => $do_res_output,
+			"params" => 'size="7"',
+			"colspan" => 'colspan="2"'
+		);
 		$t = ko_multiedit_formular('ko_reservation', $EVENTS_SHOW_RES_FIELDS, 0, '', '', TRUE);
 		foreach($t[0]['row'] as $row) {
 			foreach($row['inputs'] as $k => $input) {

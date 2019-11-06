@@ -18,7 +18,7 @@
 *
 *******************************************************************************/
 
-define('VERSION', '1.0.0-preview.0');
+define('VERSION', '1.0.0-preview.1');
 
 
 //Reservation: Objekt-Bild
@@ -27,55 +27,55 @@ $RESITEM_IMAGE_WIDTH = 60;
 define("ITEMLIST_LENGTH_MAX", 35);
 //Default-Werte für Logins
 $DEFAULT_USERPREFS = array(
-		array('key' => 'show_limit_daten',            'value' => '20',                          'type' => ''),
-		array('key' => 'cal_jahr_num',                'value' => '6',                           'type' => ''),
-		array('key' => 'show_limit_leute',            'value' => '20',                          'type' => ''),
-		array('key' => 'show_limit_kg',               'value' => '20',                          'type' => ''),
-		array('key' => 'show_limit_reservation',      'value' => '20',                          'type' => ''),
-		array('key' => 'show_limit_logins',           'value' => '20',                          'type' => ''),
-		array('key' => 'show_limit_fileshare',        'value' => '20',                          'type' => ''),
-		array('key' => 'show_limit_tapes',            'value' => '20',                          'type' => ''),
-		array('key' => 'show_limit_groups',           'value' => '20',                          'type' => ''),
-		array('key' => 'show_limit_donations',        'value' => '20',                          'type' => ''),
-		array('key' => 'show_limit_trackings',        'value' => '20',                          'type' => ''),
-		array('key' => 'tracking_date_limit',         'value' => '7',                           'type' => ''),
-		array('key' => 'default_view_daten',          'value' => 'show_cal_monat',              'type' => ''),
-		array('key' => 'default_view_reservation',    'value' => 'show_cal_monat',              'type' => ''),
-		array('key' => 'front_modules_left',          'value' => 'daten_cal,fastfilter,news',   'type' => ''),
-		array('key' => 'front_modules_center',        'value' => 'today',                       'type' => ''),
-		array('key' => 'front_modules_right',         'value' => 'geburtstage',                 'type' => ''),
-		array('key' => 'do_mod_email_for_edit_res',   'value' => '0',                           'type' => ''),
-		array('key' => 'do_mod_email_for_edit_daten', 'value' => '0',                           'type' => ''),
-		array('key' => 'do_res_email',                'value' => '0',                           'type' => ''),
-		array('key' => 'modules_dropdown',            'value' => 'ja',                          'type' => ''),
-		array('key' => 'daten_monthly_title',         'value' => 'eventgruppen_id',             'type' => ''),
-		array('key' => 'daten_title_length',          'value' => '30',                          'type' => ''),
-		array('key' => 'daten_pdf_show_time',         'value' => '2',                           'type' => ''),
-		array('key' => 'daten_pdf_week_start',        'value' => '1',                           'type' => ''),
-		array('key' => 'daten_pdf_week_length',       'value' => '7',                           'type' => ''),
-		array('key' => 'daten_mark_sunday',           'value' => '0',                           'type' => ''),
-		array('key' => 'daten_ical_deadline',         'value' => '0',                           'type' => ''),
-		array('key' => 'show_dateres_combined',       'value' => '0',                           'type' => ''),
-		array('key' => 'res_pdf_show_time',           'value' => '2',                           'type' => ''),
-		array('key' => 'res_pdf_show_comment',        'value' => '0',                           'type' => ''),
-		array('key' => 'res_pdf_week_start',          'value' => '1',                           'type' => ''),
-		array('key' => 'res_pdf_week_length',         'value' => '7',                           'type' => ''),
-		array('key' => 'res_mark_sunday',             'value' => '0',                           'type' => ''),
-		array('key' => 'res_monthly_title',           'value' => 'item_id',                     'type' => ''),
-		array('key' => 'res_title_length',            'value' => '30',                          'type' => ''),
-		array('key' => 'res_ical_deadline',           'value' => '0',                           'type' => ''),
-		array('key' => 'cal_woche_start',             'value' => '6',                           'type' => ''),
-		array('key' => 'cal_woche_end',               'value' => '22',                          'type' => ''),
-		array('key' => 'geburtstagsliste_deadline_plus', 'value' => '21',                       'type' => ''),
-		array('key' => 'geburtstagsliste_deadline_minus', 'value' => '5',                       'type' => ''),
-		array('key' => 'leute_force_family_firstname','value' => '',                            'type' => ''),
-		array('key' => 'leute_children_columns',      'value' => '_father,_mother,_natel',      'type' => ''),
-		array('key' => 'show_passed_groups',          'value' => '1',                           'type' => ''),
-		array('key' => 'groups_filterlink_add_column','value' => '1',                           'type' => ''),
-		array('key' => 'rota_delimiter',              'value' => ', ',                          'type' => ''),
-		array('key' => 'rota_pdf_fontsize',           'value' => '11',                          'type' => ''),
-		array('key' => 'rota_eventfields',            'value' => 'kommentar,kommentar2',        'type' => ''),
-		array('key' => 'rota_orderby',                'value' => 'vorname',                     'type' => ''),
+	array('key' => 'show_limit_daten',            'value' => '20',                          'type' => ''),
+	array('key' => 'cal_jahr_num',                'value' => '6',                           'type' => ''),
+	array('key' => 'show_limit_leute',            'value' => '20',                          'type' => ''),
+	array('key' => 'show_limit_kg',               'value' => '20',                          'type' => ''),
+	array('key' => 'show_limit_reservation',      'value' => '20',                          'type' => ''),
+	array('key' => 'show_limit_logins',           'value' => '20',                          'type' => ''),
+	array('key' => 'show_limit_fileshare',        'value' => '20',                          'type' => ''),
+	array('key' => 'show_limit_tapes',            'value' => '20',                          'type' => ''),
+	array('key' => 'show_limit_groups',           'value' => '20',                          'type' => ''),
+	array('key' => 'show_limit_donations',        'value' => '20',                          'type' => ''),
+	array('key' => 'show_limit_trackings',        'value' => '20',                          'type' => ''),
+	array('key' => 'tracking_date_limit',         'value' => '7',                           'type' => ''),
+	array('key' => 'default_view_daten',          'value' => 'show_cal_monat',              'type' => ''),
+	array('key' => 'default_view_reservation',    'value' => 'show_cal_monat',              'type' => ''),
+	array('key' => 'front_modules_left',          'value' => 'daten_cal,fastfilter,news',   'type' => ''),
+	array('key' => 'front_modules_center',        'value' => 'today',                       'type' => ''),
+	array('key' => 'front_modules_right',         'value' => 'geburtstage',                 'type' => ''),
+	array('key' => 'do_mod_email_for_edit_res',   'value' => '0',                           'type' => ''),
+	array('key' => 'do_mod_email_for_edit_daten', 'value' => '0',                           'type' => ''),
+	array('key' => 'do_res_email',                'value' => '0',                           'type' => ''),
+	array('key' => 'modules_dropdown',            'value' => 'ja',                          'type' => ''),
+	array('key' => 'daten_monthly_title',         'value' => 'eventgruppen_id',             'type' => ''),
+	array('key' => 'daten_title_length',          'value' => '30',                          'type' => ''),
+	array('key' => 'daten_pdf_show_time',         'value' => '2',                           'type' => ''),
+	array('key' => 'daten_pdf_week_start',        'value' => '1',                           'type' => ''),
+	array('key' => 'daten_pdf_week_length',       'value' => '7',                           'type' => ''),
+	array('key' => 'daten_mark_sunday',           'value' => '0',                           'type' => ''),
+	array('key' => 'daten_ical_deadline',         'value' => '0',                           'type' => ''),
+	array('key' => 'show_dateres_combined',       'value' => '0',                           'type' => ''),
+	array('key' => 'res_pdf_show_time',           'value' => '2',                           'type' => ''),
+	array('key' => 'res_pdf_show_comment',        'value' => '0',                           'type' => ''),
+	array('key' => 'res_pdf_week_start',          'value' => '1',                           'type' => ''),
+	array('key' => 'res_pdf_week_length',         'value' => '7',                           'type' => ''),
+	array('key' => 'res_mark_sunday',             'value' => '0',                           'type' => ''),
+	array('key' => 'res_monthly_title',           'value' => 'item_id',                     'type' => ''),
+	array('key' => 'res_title_length',            'value' => '30',                          'type' => ''),
+	array('key' => 'res_ical_deadline',           'value' => '0',                           'type' => ''),
+	array('key' => 'cal_woche_start',             'value' => '6',                           'type' => ''),
+	array('key' => 'cal_woche_end',               'value' => '22',                          'type' => ''),
+	array('key' => 'geburtstagsliste_deadline_plus', 'value' => '21',                       'type' => ''),
+	array('key' => 'geburtstagsliste_deadline_minus', 'value' => '5',                       'type' => ''),
+	array('key' => 'leute_force_family_firstname','value' => '',                            'type' => ''),
+	array('key' => 'leute_children_columns',      'value' => '_father,_mother,_natel',      'type' => ''),
+	array('key' => 'show_passed_groups',          'value' => '1',                           'type' => ''),
+	array('key' => 'groups_filterlink_add_column','value' => '1',                           'type' => ''),
+	array('key' => 'rota_delimiter',              'value' => ', ',                          'type' => ''),
+	array('key' => 'rota_pdf_fontsize',           'value' => '11',                          'type' => ''),
+	array('key' => 'rota_eventfields',            'value' => 'kommentar,kommentar2',        'type' => ''),
+	array('key' => 'rota_orderby',                'value' => 'vorname',                     'type' => ''),
 );
 
 $LEUTE_WORD_ADDRESSBLOCK = array(
@@ -88,17 +88,17 @@ $LEUTE_WORD_ADDRESSBLOCK = array(
 
 $LEUTE_ADRESSLISTE = array("firm", "department", "anrede", "vorname", "nachname", "adresse", "plz", "ort", "land", "telp", "telg", "natel", "fax", "email", "web");
 $LEUTE_ADRESSLISTE_LAYOUT = array(
-		array("firm", "department"),
-		array("anrede"),
-		array("vorname", "nachname"),
-		array("adresse"),
-		array("plz", "ort"),
-		array("land"),
-		array("@P: ","telp", "@G: ","telg"),
-		array("@Mobil: ","natel", "@Fax: ","fax"),
-		array("email"),
-		array("web")
-		);
+	array("firm", "department"),
+	array("anrede"),
+	array("vorname", "nachname"),
+	array("adresse"),
+	array("plz", "ort"),
+	array("land"),
+	array("@P: ","telp", "@G: ","telg"),
+	array("@Mobil: ","natel", "@Fax: ","fax"),
+	array("email"),
+	array("web")
+);
 
 //mapping table for LDAP-entries
 $LDAP_ATTRIB = array(
@@ -158,32 +158,41 @@ $EVENTS_SHOW_RES_FIELDS = array('startzeit', 'endzeit');
 
 //Set date and time formats (see http://php.net/strftime for help)
 //Can be overwritten in config/ko-config.php if needed
-$_DATETIME['de'] = array('dm' => '%d.%m', 'dM' => '%e. %B',  'db' => '%e. %b',
-												 'mY' => '%m %Y', 'nY' => '%b %Y', 'MY' => '%B %Y',
-												 'dmy' => '%d.%m.%y', 'dmY' => '%d.%m.%Y', 'dMY' => '%e. %B %Y', 'dbY' => '%e. %b %Y',
-												 'DdM' => '%A, %e. %B',
-												 'ddmy' => '%a, %d.%m.%y', 'DdmY' => '%A, %d.%m.%Y', 'DdMY' => '%A, %e. %B %Y');
-$_DATETIME['en'] = array('dm' => '%d/%m', 'dM' => '%e %B', 'db' => '%e %b',
-												 'mY' => '%m/%Y', 'nY' => '%b %Y', 'MY' => '%B %Y',
-												 'dmy' => '%d/%m/%y', 'dmY' => '%d/%m/%Y', 'dMY' => '%e %B %Y', 'dbY' => '%e %b %Y',
-												 'DdM' => '%A, %e %B',
-												 'ddmy' => '%a, %d/%m/%y', 'DdmY' => '%A, %d/%m/%Y', 'DdMY' => '%A, %e %B %Y');
-$_DATETIME['en_US'] = array('dm' => '%m/%d', 'dM' => '%B %e', 'db' => '%b %e',
-												'mY' => '%m/%Y', 'nY' => '%b %Y', 'MY' => '%B %Y',
-												'dmy' => '%m/%d/%y', 'dmY' => '%m/%d/%Y', 'dMY' => '%B %e %Y', 'dbY' => '%b %e %Y',
-												'DdM' => '%A, %e %B',
-												'ddmy' => '%a, %m/%d/%y', 'DdmY' => '%A, %m/%d/%Y', 'DdMY' => '%A, %B %e %Y');
-$_DATETIME['nl'] = array('dm' => '%e %b', 'dM' => '%e %B', 'mY' => "%b '%y",  'db' => '%e %b',
-												 'nY' => '%b %Y', 'MY' => '%B %Y',
-												 'dmy' => '%d-%m-%y', 'dmY' => '%d-%m-%Y', 'dMY' => '%e %B %Y', 'dbY' => '%e %b %Y',
-												 'DdM' => '%A %e %B',
-												 'ddmy' => "%a %e %b '%y", 'DdmY' => '%A %e %b %Y', 'DdMY' => '%A %e %B %Y');
-$_DATETIME['fr'] = array('dm' => '%d.%m', 'dM' => '%e. %B', 'db' => '%e. %b',
-												 'mY' => '%m %Y', 'nY' => '%b %Y', 'MY' => '%B %Y',
-												 'dmy' => '%d.%m.%y', 'dmY' => '%d.%m.%Y', 'dMY' => '%e. %B %Y', 'dbY' => '%e. %b %Y',
-												 'DdM' => '%A, %e. %B',
-												 'ddmy' => '%a, %d.%m.%y', 'DdmY' => '%A, %d.%m.%Y', 'DdMY' => '%A, %e. %B %Y');
-
+$_DATETIME['de'] = array(
+	'dm' => '%d.%m', 'dM' => '%e. %B',  'db' => '%e. %b',
+	'mY' => '%m %Y', 'nY' => '%b %Y', 'MY' => '%B %Y',
+	'dmy' => '%d.%m.%y', 'dmY' => '%d.%m.%Y', 'dMY' => '%e. %B %Y', 'dbY' => '%e. %b %Y',
+	'DdM' => '%A, %e. %B',
+	'ddmy' => '%a, %d.%m.%y', 'DdmY' => '%A, %d.%m.%Y', 'DdMY' => '%A, %e. %B %Y'
+);
+$_DATETIME['en'] = array(
+	'dm' => '%d/%m', 'dM' => '%e %B', 'db' => '%e %b',
+	'mY' => '%m/%Y', 'nY' => '%b %Y', 'MY' => '%B %Y',
+	'dmy' => '%d/%m/%y', 'dmY' => '%d/%m/%Y', 'dMY' => '%e %B %Y', 'dbY' => '%e %b %Y',
+	'DdM' => '%A, %e %B',
+	'ddmy' => '%a, %d/%m/%y', 'DdmY' => '%A, %d/%m/%Y', 'DdMY' => '%A, %e %B %Y'
+);
+$_DATETIME['en_US'] = array(
+	'dm' => '%m/%d', 'dM' => '%B %e', 'db' => '%b %e',
+	'mY' => '%m/%Y', 'nY' => '%b %Y', 'MY' => '%B %Y',
+	'dmy' => '%m/%d/%y', 'dmY' => '%m/%d/%Y', 'dMY' => '%B %e %Y', 'dbY' => '%b %e %Y',
+	'DdM' => '%A, %e %B',
+	'ddmy' => '%a, %m/%d/%y', 'DdmY' => '%A, %m/%d/%Y', 'DdMY' => '%A, %B %e %Y'
+);
+$_DATETIME['nl'] = array(
+	'dm' => '%e %b', 'dM' => '%e %B', 'mY' => "%b '%y",  'db' => '%e %b',
+	'nY' => '%b %Y', 'MY' => '%B %Y',
+	'dmy' => '%d-%m-%y', 'dmY' => '%d-%m-%Y', 'dMY' => '%e %B %Y', 'dbY' => '%e %b %Y',
+	'DdM' => '%A %e %B',
+	'ddmy' => "%a %e %b '%y", 'DdmY' => '%A %e %b %Y', 'DdMY' => '%A %e %B %Y'
+);
+$_DATETIME['fr'] = array(
+	'dm' => '%d.%m', 'dM' => '%e. %B', 'db' => '%e. %b',
+	'mY' => '%m %Y', 'nY' => '%b %Y', 'MY' => '%B %Y',
+	'dmy' => '%d.%m.%y', 'dmY' => '%d.%m.%Y', 'dMY' => '%e. %B %Y', 'dbY' => '%e. %b %Y',
+	'DdM' => '%A, %e. %B',
+	'ddmy' => '%a, %d.%m.%y', 'DdmY' => '%A, %d.%m.%Y', 'DdMY' => '%A, %e. %B %Y'
+);
 
 //If TRUE all access priviliges will be set to maximum (use with caution!)
 //define("ALL_ACCESS", TRUE);
@@ -471,13 +480,14 @@ include __DIR__ . '/submenu_actions.inc.php';
 
 
 //Namen für die Frontmodule
-$FRONTMODULES = array("daten_cal"       => array("modul" => "daten", "name" => getLL("fm_name_daten_cal")),
-											"geburtstage"     => array("modul" => "leute", "name" => getLL("fm_name_geburtstage")),
-											"mod"             => array("modul" => "leute,reservation,daten", "name" => getLL("fm_name_mod")),
-											'fastfilter'      => array('modul' => 'leute', 'name' => getLL('fm_name_fastfilter')),
-											"news"            => array("modul" => "", "name" => getLL("fm_name_news")),
-											"adressaenderung" => array("modul" => "", "name" => getLL("fm_name_adressaenderung")),
-											"today"           => array("modul" => "leute,daten,rota,reservation", "name" => getLL("fm_name_today")),
+$FRONTMODULES = array(
+	"daten_cal"	      => array("modul" => "daten", "name" => getLL("fm_name_daten_cal")),
+	"geburtstage"     => array("modul" => "leute", "name" => getLL("fm_name_geburtstage")),
+	"mod"             => array("modul" => "leute,reservation,daten", "name" => getLL("fm_name_mod")),
+	'fastfilter'      => array('modul' => 'leute', 'name' => getLL('fm_name_fastfilter')),
+	"news"            => array("modul" => "", "name" => getLL("fm_name_news")),
+	"adressaenderung" => array("modul" => "", "name" => getLL("fm_name_adressaenderung")),
+	"today"           => array("modul" => "leute,daten,rota,reservation", "name" => getLL("fm_name_today")),
 );
 if(ENABLE_FILESHARE) $FRONTMODULES["fileshare"] = array("modul" => "fileshare", "name" => getLL("fm_name_fileshare"));
 
@@ -14837,7 +14847,4 @@ function ko_get_time_diff($format, $date1, $date2) {
 	}
 	return $result;
 }
-
-
-
 ?>
