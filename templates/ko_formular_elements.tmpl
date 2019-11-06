@@ -46,7 +46,7 @@
 	</div>
 
 {elseif $input.type == "radio"}
-	{html_radios name=$input.name values=$input.values output=$input.descs selected=$input.value separator=$input.separator}
+	{html_radios name=$input.name values=$input.values output=$input.descs selected=$input.value separator=$input.separator escape=false}
 
 {elseif $input.type == "select"}
 	<table border="0" cellspacing="0" cellpadding="0"><tr><td>
