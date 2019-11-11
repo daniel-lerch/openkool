@@ -12,6 +12,8 @@ RUN set -x \
     && docker-php-ext-install imap \
     && docker-php-ext-configure gd --with-jpeg-dir=/usr/include \
     && docker-php-ext-install gd \
+# Configure environment
+    && a2enmod rewrite \
 # Remove temporary packages
     && apt-get purge -y --autoremove libc-client-dev libkrb5-dev
     # libpng-dev and libjpeg-dev contain shared files and must not be removed
