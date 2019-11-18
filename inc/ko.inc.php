@@ -13928,14 +13928,7 @@ function ko_include_css() {
 
 	//Basic CSS files
 	$r = '<link rel="stylesheet" type="text/css" href="'.$ko_path.'kOOL.css?'.filemtime($ko_path.'kOOL.css').'" />
-<link rel="stylesheet" type="text/css" media="print" href="'.$ko_path.'print.css?'.filemtime($ko_path.'print.css').'" />
-
-<!--[if lte IE 6]>
-<link rel="stylesheet" type="text/css" href="'.$ko_path.'ie6.css?'.filemtime($ko_path.'ie6.css').'" />
-<![endif]-->
-<!--[if IE 7]>
-<link rel="stylesheet" type="text/css" href="'.$ko_path.'ie7.css?'.filemtime($ko_path.'ie7.css').'" />
-<![endif]-->'."\n";
+<link rel="stylesheet" type="text/css" media="print" href="'.$ko_path.'print.css?'.filemtime($ko_path.'print.css').'" />'."\n";
 	if(file_exists($ko_path.'ko.css')) {
 		$r .= '<link rel="stylesheet" type="text/css" href="'.$ko_path.'ko.css?'.filemtime($ko_path.'ko.css').'" />'."\n";
 	}
