@@ -217,6 +217,7 @@ function ko_formular_leute($mode, $id=0, $show_save_as_new=true) {
 						$smarty->assign("allow_assign", $allow_assign);
 						//Bestehende Werte einfüllen
 						$do_datafields = null;
+						$sort_assigned_groups = array();
 						foreach(explode(",", $person["groups"]) as $group) {
 							if($group) {
 								$group_id = ko_groups_decode($group, "group_id");
@@ -238,7 +239,9 @@ function ko_formular_leute($mode, $id=0, $show_save_as_new=true) {
 							$inputs[$col_counter]["adescs"][] = $assigned_groups[$group];
 						}
 
-						$inputs[$col_counter]["avalue"] = implode(",", $inputs[$col_counter]["avalues"]);
+						if (!empty($inputs[$col_counter]['avalues'])) {
+							$inputs[$col_counter]["avalue"] = implode(",", $inputs[$col_counter]["avalues"]);
+						}
 						if(sizeof($valid_ids) == 0) {
 							$inputs[$col_counter]["params"] = 'disabled="disabled"';
 						} else {
@@ -260,6 +263,7 @@ function ko_formular_leute($mode, $id=0, $show_save_as_new=true) {
 
 						//Groups-History
 						$col_counter = 0;
+						$history_groups_sort = array();
 						$add_inputs[$add_counter][$col_counter]["desc"] = getLL("leute_group_bisher");
 						$add_inputs[$add_counter][$col_counter]["type"] = "html";
 						$add_inputs[$add_counter][$col_counter+1]["desc"] = "";

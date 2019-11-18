@@ -64,7 +64,7 @@ if(sizeof($LANGS2[$_SESSION['lang']]) == 0) $LANGS2[$_SESSION['lang']] = $LIB_LA
 
 //Set lang2, the region part as US in en_US
 if(!$_SESSION['lang2']) {
-	if($new_lang2 != '' && in_array(mb_strtoupper($new_lang2), $LANGS2[$_SESSION['lang']])) {
+	if(!empty($new_lang2) && in_array(mb_strtoupper($new_lang2), $LANGS2[$_SESSION['lang']])) {
 		//Set region as given by Browser
 		$_SESSION['lang2'] = mb_strtoupper($new_lang2);
 	} else {

@@ -379,19 +379,21 @@ function apply_kg_filter(&$z_where, &$z_limit) {
 	}
 
 	//SQL where
-	foreach($_SESSION['kg_filter'] as $field => $value) {
-		if(!$value) continue;
-		switch($field) {
-			case 'name':
-				$z_where .= ' AND `'.$field.'` REGEXP \'.*'.$value.'.*\' ';
-			break;
-			case 'geschlecht':
-			case 'wochentag':
-			case 'treffen':
-			case 'type':
-			case 'region':
-				$z_where .= ' AND `'.$field.'` = \''.$value.'\' ';
-			break;
+	if (!empty($_SESSION['kg_filter'])) {
+		foreach($_SESSION['kg_filter'] as $field => $value) {
+			if(!$value) continue;
+			switch($field) {
+				case 'name':
+					$z_where .= ' AND `'.$field.'` REGEXP \'.*'.$value.'.*\' ';
+				break;
+				case 'geschlecht':
+				case 'wochentag':
+				case 'treffen':
+				case 'type':
+				case 'region':
+					$z_where .= ' AND `'.$field.'` = \''.$value.'\' ';
+				break;
+			}
 		}
 	}
 

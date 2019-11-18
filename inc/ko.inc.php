@@ -2628,6 +2628,7 @@ function ko_get_familien(&$fam) {
 	}
 
 	//Add family ID
+	$sort = array();
 	foreach($fam as $i => $f) {
 		ko_add_fam_id($fam[$i], $members[$f["famid"]]);
 		$sort[$fam[$i]["id"]] = $fam[$i]["famid"];
@@ -2635,7 +2636,7 @@ function ko_get_familien(&$fam) {
 
 	//sort them by famid which is constructed by all the lastnames
 	ksort($sort, SORT_LOCALE_STRING);
-	$return = NULL;
+	$return = array();
 	foreach($sort as $famid) {
 		$return[$famid] = $fam[$famid];
 	}
@@ -6716,7 +6717,7 @@ function ko_groups_render_group_datafields($groups, $id, $values=FALSE, $_option
 		}
 	}
 
-	$html = NULL; $df = 0;
+	$html = array(); $df = 0;
 	foreach($groups as $group) {
 		if(!$group["datafields"]) continue;
 
