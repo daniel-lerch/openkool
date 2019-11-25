@@ -614,7 +614,7 @@ $js_calendar->load_files();
 
 <body onload="session_time_init();<?php if(isset($onload_code)) print $onload_code; ?>">
 
-<?php include __DIR__ . '/../menu.php' ?>
+<?php require __DIR__ . '/../inc/menu.inc.php' ?>
 
 
 <table width="100%">

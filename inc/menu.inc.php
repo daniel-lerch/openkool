@@ -75,7 +75,7 @@ if(sizeof($languages) > 1) {
 
 
 <div id="header">
-<?php include __DIR__ . '/config/header.php' ?>
+<?php include __DIR__ . '/../config/header.php' ?>
 </div>
 
 <?php

@@ -827,7 +827,7 @@ include($ko_path.'inc/js-sessiontimeout.inc.php');
 /*
  * Gibt bei erfolgreichem Login das Menü aus, sonst einfach die Loginfelder
  */
-include($ko_path . "menu.php");
+require __DIR__ . '/../inc/menu.inc.php';
 ?>
 
 

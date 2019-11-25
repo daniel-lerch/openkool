@@ -719,7 +719,7 @@ $js_calendar->load_files();
 /*
  * Gibt bei erfolgreichem Login das Menü aus, sonst einfach die Loginfelder
  */
-include __DIR__ . '/../menu.php';
+require __DIR__ . '/../inc/menu.inc.php';
 ?>
 
 
