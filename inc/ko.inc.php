@@ -303,6 +303,7 @@ spl_autoload_register(function($class) {
 
 //Set default notification levels
 use OpenKool\koNotifier;
+use OpenKool\Localizer;
 $NOTIFIER_LEVEL_DISPLAY = koNotifier::ERRS | koNotifier::INFO | koNotifier::WARNING;
 $NOTIFIER_LEVEL_LOG_TO_DB = koNotifier::ALL ^ koNotifier::DEBUG ^ koNotifier::INFO;
 $NOTIFIER_LEVEL_LOG_TO_FILE = koNotifier::DEBUG;
@@ -449,7 +450,7 @@ $LIB_LANGS2 = array(
 	'nl' => array('NL'),
 	'fr' => array('CH'),
 );
-include __DIR__ . '/lang.inc.php';
+Localizer::init();
 if(isset($_DATETIME[$_SESSION['lang'].'_'.$_SESSION['lang2']])) {
 	$DATETIME = $_DATETIME[$_SESSION['lang'].'_'.$_SESSION['lang2']];
 } else {
@@ -14026,43 +14027,11 @@ function ko_list_set_sorting($table, $sortCol) {
 
 
 /**
-  * Liefert ein Array aller im Browser eingestellten Sprachen in der Reihenfolge der Prioritäten
-	*/
-function getBrowserLanguages() {
-	$languages = array();
-	$strAcceptedLanguage = explode(',',$_SERVER['HTTP_ACCEPT_LANGUAGE']);
-  foreach ($strAcceptedLanguage as $languageLine) {
-    list ($languageCode, $quality) = explode (';',$languageLine);
-	  $arrAcceptedLanguages[$languageCode] = $quality ? substr ($quality,2) : 1;
-  }
-
-  // Now sort the accepted languages by their quality and create an array containing only the language codes in the correct order.
-  if (is_array ($arrAcceptedLanguages)) {
-    arsort ($arrAcceptedLanguages);
-    $languageCodes = array_keys ($arrAcceptedLanguages);
-    if (is_array($languageCodes)) {
-      reset ($languageCodes);
-      while (list ($languageCode,$quality) = each ($languageCodes)){
-        $quality = substr ($quality,0,5);
-        $languages[$languageCode] = str_replace("-", "_", $quality);
-      }
-    }
-  }
-	return $languages;
-}//getBrowserLanguages()
-
-
-
-/**
 	* Returns a localized string for the given key in the current language
 	*/
 function getLL($string) {
-	global $LOCAL_LANG;
-
-	if(!$string) return '';
-	return $LOCAL_LANG[$_SESSION['lang']][$string];
-}//getLL()
-
+	return Localizer::get($string);
+}
 
 
 
@@ -14483,7 +14452,7 @@ function ko_check_ssl() {
 
 
 function ko_check_login() {
-	global $db_connection, $LANGS;
+	global $db_connection;
 
 	$do_guest = TRUE;
 	$reinit = FALSE;
@@ -14514,13 +14483,7 @@ function ko_check_login() {
 			$_SESSION["last_login"] = ko_get_last_login($_SESSION["ses_userid"]);
 			db_update_data("ko_admin", "WHERE `id` = '".$_SESSION["ses_userid"]."'", array("last_login" => date("Y-m-d H:i:s")));
 
-			//select language from userpref, if set
-			//Use language from userprefs
-			$user_lang = ko_get_userpref($_SESSION["ses_userid"], "lang");
-			if($user_lang != "" && in_array($user_lang, $LANGS)) {
-				$_SESSION["lang"] = $user_lang;
-				include __DIR__ . '/lang.inc.php';
-			}
+			Localizer::init();
 
 			//Reread user settings
 			ko_init();
@@ -14587,13 +14550,7 @@ function ko_check_login() {
 		unset($GLOBALS['kOOL']);
 		ko_init();
 
-		//Select language from userpref, if set
-		$user_lang = ko_get_userpref($_SESSION['ses_userid'], 'lang');
-		if(!$user_lang) $user_lang = $LANGS[0];
-		if($user_lang != '' && in_array($user_lang, $LANGS)) {
-			$_SESSION['lang'] = $user_lang;
-			include __DIR__ . '/lang.inc.php';
-		}
+		Localizer::init();
 
 		//Redirect to default page (if set)
 		ko_redirect_after_login();

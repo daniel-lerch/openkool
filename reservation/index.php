@@ -26,6 +26,7 @@ $ko_menu_akt = "reservation";
 require __DIR__ . '/../inc/ko.inc.php';
 require __DIR__ . '/inc/reservation.inc.php';
 use OpenKool\koNotifier;
+use OpenKool\Localizer;
 
 //get notifier instance
 $notifier = koNotifier::Instance();
@@ -66,12 +67,7 @@ if($confirm_link) {
 			$_SESSION['last_login'] = ko_get_last_login($_SESSION['ses_userid']);
 			db_update_data('ko_admin', "WHERE `id` = '".$_SESSION['ses_userid']."'", array('last_login' => date('Y-m-d H:i:s')));
 
-			//Use language from userprefs
-			$user_lang = ko_get_userpref($_SESSION['ses_userid'], 'lang');
-			if($user_lang != '' && in_array($user_lang, $LANGS)) {
-				$_SESSION['lang'] = $user_lang;
-				include __DIR__ . '/../inc/lang.inc.php';
-			}
+			Localizer::init();
 		}
 	}
 }//if(confirm_link)

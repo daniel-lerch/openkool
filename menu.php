@@ -31,15 +31,15 @@
 //Show login fields if not logged in yet
 if(!$_SESSION["ses_username"] || $_SESSION["ses_username"] == "ko_guest") {
 	print '<form method="post" action="'.$ko_path.'index.php"><div style="white-space:nowrap;">';
-  print '<div>'.getLL("login_username").'<br /><input type="text" name="username" size="10" /></div>';
-  print '<div>'.getLL("login_password").'<br /><input type="password" name="password" size="10" /></div>';
-  print '<div><br /><input type="submit" value="'.getLL("login").'" name="Login" /></div>';
-  print '</div></form>';
+	print '<div>'.getLL("login_username").'<br /><input type="text" name="username" size="10" /></div>';
+	print '<div>'.getLL("login_password").'<br /><input type="password" name="password" size="10" /></div>';
+	print '<div><br /><input type="submit" value="'.getLL("login").'" name="Login" /></div>';
+	print '</div></form>';
 }
 //Otherwise show logout link
 else {
-  print '<b>[ ' . $_SESSION['ses_username'] . ' ]</b>';
-  print '&nbsp;&nbsp;<a href="'.$ko_path.'index.php?action=logout">';
+	print '<b>[ ' . $_SESSION['ses_username'] . ' ]</b>';
+	print '&nbsp;&nbsp;<a href="'.$ko_path.'index.php?action=logout">';
 	print '<i>'.getLL('login_logout').'</i></a>';
 	$do_guest = FALSE;
 }
@@ -58,9 +58,10 @@ else {
 <table cellpadding="0" cellspacing="0" style="padding: 0px; margin: 0px;" border="0"><tr><td height="50px" style="vertical-align:bottom;">
 <?php
 //Lang-Selection
-if(sizeof($LANGS) > 1) {
+$languages = OpenKool\Localizer::getLanguages();
+if(sizeof($languages) > 1) {
 	$lang_code =  '[&nbsp;';
-	foreach($LANGS as $lang) {
+	foreach($languages as $lang) {
 		$pre  = ($lang == $_SESSION["lang"]) ? '<b>' : '';
 		$post = ($lang == $_SESSION["lang"]) ? '</b>' : '';
 		$lang_code .= '<a href="index.php?set_lang='.$lang.'">'.$pre.mb_strtoupper($lang).$post.'</a>&nbsp;';
