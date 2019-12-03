@@ -113,13 +113,14 @@ function ko_rota_schedule($output=TRUE) {
 
 
 	//Set some stats for navigation etc
-	$smarty->assign('stats', array('start' => 1,
-																 'end' => sizeof($events),
-																 'oftotal' => getLL('list_oftotal'),
-																 'total' => sizeof($events),
-																 'prevts' => $ROTA_TIMESPANS[max(0, $current_timespan-1)],
-																 'nextts' => $ROTA_TIMESPANS[min(sizeof($ROTA_TIMESPANS), $current_timespan+1)],
-																 ));
+	$smarty->assign('stats', array(
+		'start' => 1,
+		'end' => sizeof($events),
+		'oftotal' => getLL('list_oftotal'),
+		'total' => sizeof($events),
+		'prevts' => $ROTA_TIMESPANS[max(0, $current_timespan-1)],
+		'nextts' => $ROTA_TIMESPANS[min(sizeof($ROTA_TIMESPANS), $current_timespan+1)],
+	));
 	$smarty->assign('timespans', array('values' => $ROTA_TIMESPANS, 'output' => $ts_labels, 'selected' => $_SESSION['rota_timespan']));
 
 
