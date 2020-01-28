@@ -216,7 +216,7 @@ function ko_formular_leute($mode, $id=0, $show_save_as_new=true) {
 						}
 						$smarty->assign("allow_assign", $allow_assign);
 						//Bestehende Werte einfüllen
-						$do_datafields = null;
+						$do_datafields = array();
 						$sort_assigned_groups = array();
 						foreach(explode(",", $person["groups"]) as $group) {
 							if($group) {

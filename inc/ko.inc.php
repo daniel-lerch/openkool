@@ -7106,7 +7106,9 @@ function ko_multiedit_formular($table, $columns=NULL, $ids=0, $order="", $form_d
 		$new_entry = TRUE;
 		$sel_ids = 0;
 		$row = array("id" => 0);
-		foreach($kota_cols as $kota_col) $row[$kota_col] = "";
+		if (!empty($kota_cols)) {
+			foreach($kota_cols as $kota_col) $row[$kota_col] = "";
+		}
 	} else {  //multiedit, so ids to be edited must be given
 		$new_entry = FALSE;
 		$sel_ids = "";
