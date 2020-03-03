@@ -4,7 +4,7 @@
 *    OpenKool - Online church organization tool
 *
 *    Copyright © 2003-2015 Renzo Lauper (renzo@churchtool.org)
-*    Copyright © 2019      Daniel Lerch
+*    Copyright © 2019-2020 Daniel Lerch
 *
 *    This program is free software; you can redistribute it and/or modify
 *    it under the terms of the GNU General Public License as published by
@@ -1040,8 +1040,8 @@ $LL["de"] = array(
 'tools_plugins_install' => "Plugin installieren",
 'tools_plugins_delete' => "Plugin deinstallieren",
 'tools_plugins_delete_confirm' => "Plugin wirklich deinstallieren?",
-'install_welcome' => "Willkommen zur ersten Installation von kOOL - dem Kirchen-Tool!",
-'install_title' => "kOOL Installation",
+'install_welcome' => "Willkommen beim Setup von OpenKool",
+'install_title' => "OpenKool Installation",
 'install_lang_header' => "Bitte wählen Sie die Sprache für die Installation:",
 'install_langname_en' => "Englisch",
 'install_langname_en_UK' => "Englisch (England)",
@@ -1087,10 +1087,10 @@ $LL["de"] = array(
 'install_settings_warranty_giver' => "Garantie: Sie oder Ihre Firma, die für kOOL garantiert:",
 'install_settings_warranty_url' => "Garantie: Ihre URL:",
 'install_settings_use_webfolders' => "Webordner verwenden",
-'install_done_header' => "Herzliche Gratulation zur erfolgreichen Installation von kOOL!",
+'install_done_header' => "Gratulation zur erfolgreichen Installation von OpenKool!",
 'install_done_warning' => "Hinweis: Für spätere Änderungen an dieser Installation müssen Sie erst wieder die Datei %sENABLE_INSTALL anlegen.",
-'install_done_text' => "Sie können sich nun mit dem erstellten root-account anmelden und Ihre Arbeit mit kOOL - dem Kirchen-Tool aufnehmen.",
-'install_done_link' => "&#8594; Zur Startseite von kOOL",
+'install_done_text' => "Sie können sich jetzt als root anmelden und Ihre Arbeit mit OpenKool - dem Kirchen-Tool aufnehmen.",
+'install_done_link' => "&#8594; Zur Startseite von OpenKool",
 'form_textplus' => "Oder neu (falls noch nicht in Liste)",
 'form_text_mylist_import' => "Aus Meine Liste importieren",
 'form_color_choose' => "Farbe wählen",

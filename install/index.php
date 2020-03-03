@@ -4,7 +4,7 @@
 *    OpenKool - Online church organization tool
 *
 *    Copyright © 2003-2015 Renzo Lauper (renzo@churchtool.org)
-*    Copyright © 2019      Daniel Lerch
+*    Copyright © 2019-2020 Daniel Lerch
 *
 *    This program is free software; you can redistribute it and/or modify
 *    it under the terms of the GNU General Public License as published by
@@ -322,7 +322,7 @@ switch($_SESSION["show"]) {
 			$lang_code = "";
 			foreach($LIB_LANGS as $lang) {
 				print '<div class="install_select_lang">';
-				print '<a href="index.php?action=set_lang&amp;set_lang='.$lang.'">';
+				print '<a href="'.$ko_path.'install/index.php?action=set_lang&amp;set_lang='.$lang.'">';
 				print '<img src="'.$ko_path.'images/flag_'.$lang.'.png" border="0"><br /><br />'.getLL("install_langname_$lang");
 				print '</a></div>';
 			}
@@ -334,12 +334,13 @@ switch($_SESSION["show"]) {
 		print '<h1>'.getLL("install_checks_header").'</h1>';
 
 		//Check for filesystem permissions
-		$check_files = array("config/ko-config.php", "config/leute_formular.inc.php",
-												 "download/excel", "download/pdf",
-												 "my_images",
-												 "templates_c",
-												 "webfolders", ".webfolders"
-												 );
+		$check_files = array(
+			"config/ko-config.php", "config/leute_formular.inc.php",
+			"download/excel", "download/pdf",
+			"my_images",
+			"templates_c",
+			"webfolders", ".webfolders"
+		);
 		foreach($check_files as $file) {
 			print '<div>'.getLL("install_checks_files_writable").": <b>".$file.'</b></div>';
 			if(is_writable($ko_path.$file)) {
@@ -396,33 +397,37 @@ switch($_SESSION["show"]) {
 		//Formular anzeigen
 		$rowcounter = 0;
 		$gc = 0;
-		$frmgroup[$gc]["row"][$rowcounter]["inputs"][0] = array("desc" => getLL("install_db_user"),
-																 "type" => "text",
-																 "name" => "txt_user",
-																 "value" => (isset($_POST["txt_user"]) ? ko_html($_POST["txt_user"]) : $mysql_user),
-																 "params" => 'size="40"',
-																 );
-		$frmgroup[$gc]["row"][$rowcounter++]["inputs"][1] = array("desc" => getLL("install_db_password"),
-																 "type" => "password",
-																 "name" => "txt_pass",
-																 "value" => (isset($_POST["txt_pass"]) ? ko_html($_POST["txt_pass"]) : $mysql_pass),
-																 "params" => 'size="40"',
-																 );
-		$frmgroup[$gc]["row"][$rowcounter]["inputs"][0] = array("desc" => getLL("install_db_server"),
-																 "type" => "text",
-																 "name" => "txt_server",
-																 "value" => (isset($_POST["txt_server"]) ? ko_html($_POST["txt_server"]) : $mysql_server),
-																 "params" => 'size="40"',
-																 );
+		$frmgroup[$gc]["row"][$rowcounter]["inputs"][0] = array(
+			"desc" => getLL("install_db_user"),
+			"type" => "text",
+			"name" => "txt_user",
+			"value" => (isset($_POST["txt_user"]) ? ko_html($_POST["txt_user"]) : $mysql_user),
+			"params" => 'size="40" autocomplete="off"',
+		);
+		$frmgroup[$gc]["row"][$rowcounter++]["inputs"][1] = array(
+			"desc" => getLL("install_db_password"),
+			"type" => "password",
+			"name" => "txt_pass",
+			"value" => (isset($_POST["txt_pass"]) ? ko_html($_POST["txt_pass"]) : $mysql_pass),
+			"params" => 'size="40" autocomplete="off"',
+		);
+		$frmgroup[$gc]["row"][$rowcounter]["inputs"][0] = array(
+			"desc" => getLL("install_db_server"),
+			"type" => "text",
+			"name" => "txt_server",
+			"value" => (isset($_POST["txt_server"]) ? ko_html($_POST["txt_server"]) : $mysql_server),
+			"params" => 'size="40" autocomplete="off"',
+		);
 		if($link) {
-			$frmgroup[$gc]["row"][$rowcounter++]["inputs"][1] = array("desc" => getLL("install_db_db"),
-																	 "type" => "select",
-																	 "name" => "sel_db",
-																	 "values" => $databases,
-																	 "descs" => $databases,
-																	 "value" => (isset($_POST["sel_db"]) ? ko_html($_POST["sel_db"]) : $mysql_db),
-																	 "params" => 'size="0"',
-																	 );
+			$frmgroup[$gc]["row"][$rowcounter++]["inputs"][1] = array(
+				"desc" => getLL("install_db_db"),
+				"type" => "select",
+				"name" => "sel_db",
+				"values" => $databases,
+				"descs" => $databases,
+				"value" => (isset($_POST["sel_db"]) ? ko_html($_POST["sel_db"]) : $mysql_db),
+				"params" => 'size="0"',
+			);
 		}
 		//Display Button to continue if db connection can be established
 		if(!$notifier->hasErrors() && $mysql_db) {
@@ -432,11 +437,12 @@ switch($_SESSION["show"]) {
 			$ok .= '<br /><br /><input type="submit" value="'.getLL("install_db_import_button").'" name="submit_db_import" onclick="set_action(\'submit_db_import\');this.submit;" style="font-weight: 900;" />';
 			$ok .= '&nbsp;&nbsp;&nbsp;<input type="submit" value="'.getLL("install_db_import_button_2").'" name="submit_db_import_skip" onclick="set_action(\'submit_db_import_skip\');this.submit;" />';
 			$frmgroup[$gc]["row"][$rowcounter++]["inputs"][0] = array("type" => "   ");
-			$frmgroup[$gc]["row"][$rowcounter]["inputs"][0] = array("desc" => getLL("install_db_ok_header"),
-																	 "type" => "html",
-																	 "value" => $ok,
-																	 "colspan" => 'colspan="2"',
-																	 );
+			$frmgroup[$gc]["row"][$rowcounter]["inputs"][0] = array(
+				"desc" => getLL("install_db_ok_header"),
+				"type" => "html",
+				"value" => $ok,
+				"colspan" => 'colspan="2"',
+			);
 		}
 
 		$smarty->assign("tpl_titel", getLL("install_db_form_title"));

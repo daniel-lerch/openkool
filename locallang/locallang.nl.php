@@ -4,7 +4,7 @@
 *    OpenKool - Online church organization tool
 *
 *    Copyright © 2003-2015 Renzo Lauper (renzo@churchtool.org)
-*    Copyright © 2019      Daniel Lerch
+*    Copyright © 2019-2020 Daniel Lerch
 *
 *    This program is free software; you can redistribute it and/or modify
 *    it under the terms of the GNU General Public License as published by
@@ -1096,8 +1096,8 @@ $LL["nl"] = array(
 'tools_plugins_install' => "plugin installeren",
 'tools_plugins_delete' => "plugin deïnstalleren",
 'tools_plugins_delete_confirm' => "Weet u zeker dat u de plugin wilt verwijderen?",
-'install_welcome' => "Welkom bij de eerste installatie van kOOL - the church tool!",
-'install_title' => "Installatie van kOOL",
+'install_welcome' => "Welkom bij de eerste installatie van OpenKool",
+'install_title' => "Installatie van OpenKool",
 'install_lang_header' => "Kies a.u.b. de taal voor de installatie:",
 'install_langname_de' => "Duits",
 'install_langname_en' => "Engels",
@@ -1138,11 +1138,11 @@ $LL["nl"] = array(
 'install_settings_warranty_giver' => "Garantie: De naam van het bedrijf dat u garantie geeft voor kOOL:",
 'install_settings_warranty_url' => "Garantie: Uw URL:",
 'install_settings_use_webfolders' => "Webfolders inschakelen",
-'install_done_header' => "Gefeliciteerd! U heeft kOOL succesvol geïnstalleerd.",
+'install_done_header' => "Gefeliciteerd! U heeft OpenKool succesvol geïnstalleerd.",
 'tools_people_form_not_found' => "Kon het volgende niet vinden:",
 'install_done_warning' => "Tip: Om later aanpassingen te doen aan deze installatie-instellingen, moet u weer een bestandje met de naam %sENABLE_INSTALL aanmaken.",
 'install_done_text' => "U kunt nu verdergaan en aanmelden als root.",
-'install_done_link' => "&#8594; Naar de kOOL voorpagina",
+'install_done_link' => "&#8594; Naar de OpenKool voorpagina",
 'form_text_mylist_import' => "importeren uit Mijn Lijst",
 'form_color_choose' => "kies een kleur",
 'form_doubleselect_remove' => "geselecteerd item verwijderen",

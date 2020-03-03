@@ -4,7 +4,7 @@
 *    OpenKool - Online church organization tool
 *
 *    Copyright © 2003-2015 Renzo Lauper (renzo@churchtool.org)
-*    Copyright © 2019      Daniel Lerch
+*    Copyright © 2019-2020 Daniel Lerch
 *
 *    This program is free software; you can redistribute it and/or modify
 *    it under the terms of the GNU General Public License as published by
@@ -1995,8 +1995,8 @@ $LL["en"] = array(
 'tools_testmail_text' => "Text",
 'form_scheduler_title_new_task' => "Add task",
 'form_scheduler_title_edit_task' => "Edit task",
-'install_welcome' => "Welcome to the first time installation of kOOL - the church tool!",
-'install_title' => "Installation of kOOL",
+'install_welcome' => "Welcome to the setup of OpenKool",
+'install_title' => "Installation of OpenKool",
 'install_lang_header' => "Please choose your language for the installation:",
 'install_langname_de' => "German",
 'install_langname_de_CH' => "German (Switzerland)",
@@ -2047,10 +2047,10 @@ $LL["en"] = array(
 'install_settings_warranty_url' => "Warranty: Your url:",
 'install_settings_warranty_email' => "Warranty: Your email address: (Used for error and bug reports)",
 'install_settings_use_webfolders' => "Enable webfolders",
-'install_done_header' => "Congratulations! You have successfully installed kOOL.",
+'install_done_header' => "Congratulations! You have successfully installed OpenKool.",
 'install_done_warning' => "Hint: For later changes to these installation settings you will have to touch the file %sENABLE_INSTALL again.",
 'install_done_text' => "You can go ahead and login as root now.",
-'install_done_link' => "&#8594; To kOOL's front page",
+'install_done_link' => "&#8594; To OpenKool's front page",
 'form_textplus' => "or new (if not listed yet)",
 'form_text_mylist_import' => "import from my list",
 'form_color_choose' => "choose colour",
