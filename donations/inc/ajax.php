@@ -2,7 +2,7 @@
 /***************************************************************
 *  Copyright notice
 *
-*  (c) 2003-2017 Renzo Lauper (renzo@churchtool.org)
+*  (c) 2003-2020 Renzo Lauper (renzo@churchtool.org)
 *  All rights reserved
 *
 *  This script is part of the kOOL project. The kOOL project is
@@ -41,7 +41,7 @@ array_walk_recursive($_GET,'utf8_decode_array');
 
 ko_get_access('donations');
 if($access['donations']['MAX'] < 1) exit;
-ko_include_kota(array('ko_donations', 'ko_donations_accounts'));
+ko_include_kota(array('ko_donations', 'ko_donations_accounts', 'ko_donations_accountgroups'));
 
 // Plugins einlesen:
 $hooks = hook_include_main("donations");
@@ -101,7 +101,7 @@ if(isset($_GET) && isset($_GET["action"])) {
 		case "itemlistgroup":
 
 			$globalMinRights = 4;
-			$groupColumn = 'account_group';
+			$groupColumn = 'accountgroup_id';
 			$table = 'ko_donations_accounts';
 			$tableOrdering = "ORDER BY `number` ASC, name ASC";
 			$sessionShowKey = 'show_donations_accounts';
@@ -147,6 +147,7 @@ if(isset($_GET) && isset($_GET["action"])) {
 			$allElements = db_select_data($table, "WHERE 1=1", "id, {$groupColumn}", '', '', FALSE, TRUE);
 			$allElementIds = ko_array_column($allElements, 'id');
 			foreach($_SESSION[$sessionShowKey] as $k => $eid) {
+				if($access['donations']['ALL'] < 1 && $access['donations'][$eid] < 1) unset($_SESSION[$sessionShowKey][$k]);
 				if(!in_array($eid, $allElementIds)) {
 					unset($_SESSION[$sessionShowKey][$k]);
 				}
@@ -188,7 +189,7 @@ if(isset($_GET) && isset($_GET["action"])) {
 		case "itemlistsave":
 
 			//save new value
-			if($_GET["name"] == "") continue;
+			if($_GET["name"] == "") break;
 			$new_value = implode(",", $_SESSION["show_donations_accounts"]);
 			$user_id = ($access['donations']['MAX'] > 3 && $_GET['global'] == 'true') ? '-1' : $_SESSION['ses_userid'];
 			$name = format_userinput($_GET["name"], "js", FALSE, 0, array("allquotes"));
@@ -226,7 +227,7 @@ if(isset($_GET) && isset($_GET["action"])) {
 
 			//save new value
 			$name = format_userinput($_GET['name'], 'js', FALSE, 0, array(), '@');
-			if($name == "") continue;
+			if($name == "") break;
 
 			if($name == '_all_') {
 				$accounts = db_select_data('ko_donations_accounts', '');
@@ -238,6 +239,11 @@ if(isset($_GET) && isset($_GET["action"])) {
 				else $value = ko_get_userpref($_SESSION['ses_userid'], $name, "accounts_itemset");
 				$_SESSION["show_donations_accounts"] = explode(",", $value[0]["value"]);
 			}
+			//Access check
+			foreach($_SESSION['show_donations_accounts'] as $k => $v) {
+				if($access['donations']['ALL'] < 1 && $access['donations'][$v] < 1) unset($_SESSION['show_donations_accounts'][$k]);
+			}
+
 			ko_save_userpref($_SESSION['ses_userid'], 'show_donations_accounts', implode(',', $_SESSION['show_donations_accounts']));
 
 			print "main_content@@@";
@@ -261,7 +267,7 @@ if(isset($_GET) && isset($_GET["action"])) {
 
 			//save new value
 			$name = format_userinput($_GET['name'], 'js', FALSE, 0, array(), '@');
-			if($name == "") continue;
+			if($name == "") break;
 
 			if(substr($name, 0, 3) == '@G@') {
 				if($kg_edit) ko_delete_userpref('-1', substr($name, 3), "accounts_itemset");

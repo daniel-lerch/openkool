@@ -2,7 +2,7 @@
 /***************************************************************
 *  Copyright notice
 *
-*  (c) 2003-2017 Renzo Lauper (renzo@churchtool.org)
+*  (c) 2003-2020 Renzo Lauper (renzo@churchtool.org)
 *  All rights reserved
 *
 *  This script is part of the kOOL project. The kOOL project is
@@ -90,6 +90,7 @@ function ko_subscription_form_list() {
 	$list->setSort(TRUE, 'setsort', $_SESSION['sort_forms'], $_SESSION['sort_forms_order']);
 	$list->disableMultiedit();
 	$list->setStats($rows);
+	$list->setWarning(kota_filter_get_warntext('ko_subscription_forms'));
 
 	$list->render($es);
 }
@@ -150,17 +151,18 @@ function ko_subscription_form_group_list() {
 	//Add KOTA filter
 	$where = kota_apply_filter('ko_subscription_form_groups');
 
-	if($where != '') $where = 'WHERE '.$where;
+	if($where != '') {
+		$count_where = 'AND '.$where;
+		$where = 'WHERE '.$where;
+	}
 
-	$rows = db_get_count('ko_subscription_form_groups', 'id', $where);
+	$rows = db_get_count('ko_subscription_form_groups', 'id', $count_where);
 
-	$z_limit = '';
 	$_SESSION['show_start'] = 1;
 
 	$es = db_select_data('ko_subscription_form_groups', $where, '*', 'ORDER BY `name` ASC');
 
 	$list = new kOOL_listview();
-
 	$list->init('subscription', 'ko_subscription_form_groups', array('log', 'edit', 'delete'), $_SESSION["show_start"], $_SESSION["show_limit"]);
 	$list->setTitle(getLL("subscription_form_groups_list_title"));
 	$list->setActions(array('edit' => array('action' => 'edit_form_group'),
@@ -169,6 +171,7 @@ function ko_subscription_form_group_list() {
 	if ($access['subscription']['ALL'] > 1) $list->setActionNew('new_form_group');
 	$list->setStats($rows);
 	$list->disableMultiedit();
+	$list->setWarning(kota_filter_get_warntext('ko_subscription_form_groups'));
 
 	$list->render($es);
 }
@@ -293,7 +296,7 @@ function ko_subscription_send_edit_link($email,$groupId,$form,$ttl) {
 		}
 	}
 	ko_send_mail(
-		ko_mail_get_from(),
+		ko_subscription_get_sender(),
 		$email,
 		getLL('ko_subscription_send_link_subject'),
 		$message."\n\n".getLL('ko_subscription_send_link_abuse_hint')
@@ -424,7 +427,7 @@ function ko_subscription_store_edit($data,$leuteId) {
 	}
 	if(empty($leuteRow['geschlecht']) && empty($data['geschlecht']) && !empty($data['anrede'])) {
 		if($data['anrede'] == 'Herr') $data['geschlecht'] = 'm';
-		if($data['anrede'] == 'Frau') $data['geschlecht'] = 'f';
+		if($data['anrede'] == 'Frau') $data['geschlecht'] = 'w';
 	}
 
 	$groups = ko_subscription_validate_group_data($data);
@@ -554,7 +557,7 @@ function ko_subscription_store_subscription($data,$moderated,$overflow) {
 	}
 	if(empty($data['geschlecht']) && !empty($data['anrede'])) {
 		if($data['anrede'] == 'Herr') $data['geschlecht'] = 'm';
-		if($data['anrede'] == 'Frau') $data['geschlecht'] = 'f';
+		if($data['anrede'] == 'Frau') $data['geschlecht'] = 'w';
 	}
 
 	$groups = ko_subscription_validate_group_data($data);
@@ -622,6 +625,9 @@ function ko_subscription_store_subscription($data,$moderated,$overflow) {
 		$leuteId = db_insert_data('ko_leute', $insert);
 		ko_log_diff('new_person',array_merge(['id' => $leuteId],$insert));
 
+		//Store group history
+		ko_create_groups_snapshot($leuteId);
+
 		// update group count
 		foreach($updateGroupCount as $group) {
 			ko_update_group_count($group['groupId'],isset($group['roleId']) ? $group['roleId'] : '');
@@ -676,7 +682,7 @@ function ko_subscription_send_mails($form,$data,$rawData,$leuteId,$mode) {
 		}
 
 		ko_send_html_mail(
-			ko_mail_get_from($visitorName),
+			ko_subscription_get_sender(),
 			array_filter(preg_split('#[,;/\s]+#',$form['notification_to'])),
 			$form['notification_subject'] ?: getLL('subscription_default_notification_subject'),
 			$notification,
@@ -711,7 +717,7 @@ function ko_subscription_send_mails($form,$data,$rawData,$leuteId,$mode) {
 		$response .= $summary;
 
 		ko_send_html_mail(
-			ko_mail_get_from(),
+			ko_subscription_get_sender(),
 			$visitorName ? [$data['email']['value'] => $visitorName] : $data['email']['value'],
 			$form['response_subject_'.$mode] ?: getLL('subscription_default_'.$mode.'_response_subject'),
 			$response,
@@ -743,7 +749,7 @@ function ko_subscription_send_double_opt_in_mail($form,$data,$rawData) {
 
 	$visitorName = trim($data['vorname']['value'].' '.$data['nachname']['value']);
 	ko_send_html_mail(
-		ko_mail_get_from(),
+		ko_subscription_get_sender(),
 		$visitorName ? [$data['email']['value'] => $visitorName] : $data['email']['value'],
 		getLL('ko_subscription_double_opt_in_subject'),
 		$msg,
@@ -766,14 +772,14 @@ function ko_subscription_generate_salutation($rawData,$type,$leuteId = null) {
 	}
 	if(!$gender && !empty($rawData['anrede'])) {
 		if($rawData['anrede'] == 'Herr') $gender = 'm';
-		if($rawData['anrede'] == 'Frau') $gender = 'f';
+		if($rawData['anrede'] == 'Frau') $gender = 'w';
 	}
 	if(!$gender && !empty($row['geschlecht'])) {
 		$gender = $row['geschlecht'];
 	}
 	if(!$gender && !empty($row['anrede'])) {
 		if($row['anrede'] == 'Herr') $gender = 'm';
-		if($row['anrede'] == 'Frau') $gender = 'f';
+		if($row['anrede'] == 'Frau') $gender = 'w';
 	}
 	$firstname = !empty($rawData['vorname']) ? $rawData['vorname'] : (!empty($row['vorname']) ? $row['vorname'] : '');
 	$lastname = !empty($rawData['nachname']) ? $rawData['nachname'] : (!empty($row['nachname']) ? $row['nachname'] : '');
@@ -902,6 +908,19 @@ function ko_subscription_settings() {
 		$frmgroup[$gc]['titel'] = getLL('settings_title_global');
 		$frmgroup[$gc]['tab'] = true;
 
+		$value = ko_html(ko_get_setting('subscription_sender_email'));
+		$frmgroup[$gc]['row'][$rowcounter]['inputs'][0] = array('desc' => getLL('subscription_settings_sender_email'),
+			'type' => 'text',
+			'name' => 'txt_sender_email',
+			'value' => $value,
+		);
+		$value = ko_html(ko_get_setting('subscription_sender_name'));
+		$frmgroup[$gc]['row'][$rowcounter++]['inputs'][1] = array('desc' => getLL('subscription_settings_sender_name'),
+			'type' => 'text',
+			'name' => 'txt_sender_name',
+			'value' => $value,
+		);
+
 		$value = ko_html(ko_get_setting('subscription_text_header'));
 		$frmgroup[$gc]['row'][$rowcounter]['inputs'][0] = array('desc' => getLL('subscription_settings_text_header'),
 			'type' => 'richtexteditor',
@@ -933,3 +952,16 @@ function ko_subscription_settings() {
 
 	$smarty->display('ko_formular.tpl');
 }//ko_subscription_settings()
+
+
+
+
+function ko_subscription_get_sender() {
+	$email = ko_get_setting('subscription_sender_email');
+	$name = ko_get_setting('subscription_sender_name');
+
+	if(!check_email($email)) return '';
+	if(!$name) $name = ko_get_setting('info_name');
+
+	return array($email => $name);
+}

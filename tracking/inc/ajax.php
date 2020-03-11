@@ -2,7 +2,7 @@
 /***************************************************************
 *  Copyright notice
 *
-*  (c) 2003-2017 Renzo Lauper (renzo@churchtool.org)
+*  (c) 2003-2020 Renzo Lauper (renzo@churchtool.org)
 *  All rights reserved
 *
 *  This script is part of the kOOL project. The kOOL project is
@@ -77,7 +77,8 @@ if(isset($_GET) && isset($_GET['action'])) {
 	    }
 
 			print 'main_content@@@';
-			ko_list_trackings();
+			if($_SESSION['show'] == 'list_trackings') ko_list_trackings();
+			else if($_SESSION['show'] == 'list_tracking_entries') ko_list_tracking_entries();
 		break;
 
 
@@ -97,7 +98,8 @@ if(isset($_GET) && isset($_GET['action'])) {
 			$_SESSION['sort_trackings_order'] = format_userinput($_GET['sort_order'], 'alpha', TRUE, 4);
 
 			print 'main_content@@@';
-			ko_list_trackings();
+			if($_SESSION['show'] == 'list_trackings') ko_list_trackings();
+			else if($_SESSION['show'] == 'list_tracking_entries') ko_list_tracking_entries();
 		break;
 
 
@@ -107,6 +109,15 @@ if(isset($_GET) && isset($_GET['action'])) {
 
 			print 'main_content@@@';
 			ko_list_tracking_mod_entries();
+		break;
+
+
+		case 'setsortentries':
+			$_SESSION['sort_tracking_entries'] = format_userinput($_GET['sort'], 'alphanum+', TRUE, 30);
+			$_SESSION['sort_tracking_entries_order'] = format_userinput($_GET['sort_order'], 'alpha', TRUE, 4);
+
+			print 'main_content@@@';
+			ko_list_tracking_entries();
 		break;
 
 
@@ -563,11 +574,9 @@ if(isset($_GET) && isset($_GET['action'])) {
 
 			print submenu_tracking('filter', 'open', 2);
 			print '@@@main_content@@@';
-			if($_SESSION['show'] == 'enter_tracking') {
-				ko_tracking_enter_form();
-			} else {
-				ko_list_trackings();
-			}
+			if($_SESSION['show'] == 'list_trackings') ko_list_trackings();
+			else if($_SESSION['show'] == 'enter_tracking') ko_tracking_enter_form();
+			else if($_SESSION['show'] == 'list_tracking_entries') ko_list_tracking_entries();
 		break;
 
 		case 'filterpresetdelete':

@@ -2,7 +2,7 @@
 /***************************************************************
 *  Copyright notice
 *
-*  (c) 2003-2017 Renzo Lauper (renzo@churchtool.org)
+*  (c) 2003-2020 Renzo Lauper (renzo@churchtool.org)
 *  All rights reserved
 *
 *  This script is part of the kOOL project. The kOOL project is
@@ -67,6 +67,9 @@ function ko_front_module($uid, $module, $pos = 0, $news_id = 0, $state='open') {
 		case "adressaenderung":
 			$result = ko_fm_adresse($uid);
 		break;
+		case "rota":
+			$result = ko_fm_rota($uid);
+		break;
 		case "today":
 			$result = ko_fm_today($uid, $pos);
 		break;
@@ -83,6 +86,17 @@ function ko_front_module($uid, $module, $pos = 0, $news_id = 0, $state='open') {
 				$result.= $smarty->fetch('ko_fm_footer.tpl');
 			}
 		break;
+		case 'absence':
+			try {
+				$result = ko_fm_absence($uid, $pos);
+			} catch(exception $e) {
+				$smarty->assign('tpl_fm_title', getLL('fm_absence_title'));
+				$result = $smarty->fetch('ko_fm_header.tpl');
+				$result.= $e->getMessage();
+				$result.= $smarty->fetch('ko_fm_footer.tpl');
+			}
+		break;
+
 
 
 		//Frontmodule from a plugin
@@ -218,7 +232,7 @@ function ko_fm_absence($uid, $pos) {
 					throw new Exception(getLL("ko_event_absence_error_wrong_id"));
 				}
 			} else if ($_POST['action'] == "submit_absence") {
-				list($_table, $_columns, $id) = explode("@", $_POST["id"]);
+				[$_table, $_columns, $id] = explode("@", $_POST["id"]);
 
 				if ($id > 0) {
 					$absence = ko_daten_get_absence_by_id($id);
@@ -457,8 +471,8 @@ function ko_fm_daten_cal($uid, $pos) {
 	$date = date_find_last_monday($date);
 
 	//Table header
-	$r  = '<table width="100%" cellspacing="0" border="1">';
-	$r .= '<tr><td kalender_header>&nbsp;</td>';
+	$r  = '<table class="fm_kalender">';
+	$r .= '<tr><td>&nbsp;</td>';
 	$tempdate = $date;
 	for($i=0; $i<7; $i++) {
 		$r .= '<td class="kalender_header">'.substr(strftime('%a', strtotime($tempdate)), 0, 1).'</td>';
@@ -521,7 +535,8 @@ function ko_fm_geburtstage($uid, $pos) {
 	$columns = ko_get_leute_admin_spalten($uid, 'all');
 	if(is_array($columns['view']) && !in_array('geburtsdatum', $columns['view'])) return FALSE;
 
-	$all_rights = ko_get_access_all('leute_admin', $uid);
+	$all_rights = ko_get_access_all('leute_admin', $uid, $max_rights);
+	if($max_rights < 1) return FALSE;
 	if($all_rights > 0) {  //No access restrictions if all rights 1 or more
 		$z_where = " AND `deleted` = '0' AND `hidden` = '0' ";
 	} else {  //Else apply admin filter for the query
@@ -540,7 +555,7 @@ function ko_fm_geburtstage($uid, $pos) {
 	for($inc = -1*$deadline_minus; $inc <= $deadline_plus; $inc++) {
 		$d = add2date($today, 'day', $inc, TRUE);
 		$dates[substr($d, 5)] = $inc;
-		list($month, $day) = explode('-', substr($d, 5));
+		[$month, $day] = explode('-', substr($d, 5));
 		$where .= " OR (MONTH(`geburtsdatum`) = '$month' AND DAY(`geburtsdatum`) = '$day') ";
 	}
 	$where = " AND (".substr($where, 3).") ".ko_get_birthday_filter();
@@ -707,58 +722,19 @@ function ko_fm_mod($uid) {
 }//ko_fm_mod_res()
 
 
-
-
-
 /**
-  * Today
-	*/
+ * Block "Today" on frontpage
+ * Display events, reservations, leute changes
+ *
+ *
+ */
 function ko_fm_today($uid, $pos) {
 	global $ko_path, $smarty, $access;
 
 
 	//*** DATEN ***
 	ko_get_access('daten');
-	if($access['daten']['MAX'] > 0) {
-
-		//Datum heute:
-		$smarty->assign("datum_heute", strftime($GLOBALS["DATETIME"]["dmy"], time()));
-
-		//Termine von heute
-		$smarty->assign("title_event_today", getLL("fm_today_events_today"));
-		ko_get_events_by_date(date("d"), date("m"), date("Y"), $events_heute);
-		foreach($events_heute as $h_i => $h) {
-			if($access['daten']['ALL'] < 1 && $access['daten'][$h['eventgruppen_id']] < 1) {
-				unset($events_heute[$h_i]);
-				continue;
-			}
-
-			$events_heute[$h_i]["raum"] = ko_html($h["room"]);
-			$events_heute[$h_i]["eventgruppe"] = ko_html($h["eventgruppen_name"]);
-			$events_heute[$h_i]['kommentar'] = $h['kommentar'];
-			$events_heute[$h_i]['title'] = ko_html($h['title']);
-
-			if($h["startzeit"] == "00:00:00" && $h["endzeit"] == "00:00:00") {
-				$events_heute[$h_i]["startzeit"] = getLL("time_all_day");
-				$events_heute[$h_i]["endzeit"] = "";
-			} else {
-				$events_heute[$h_i]["startzeit"] = sql_zeit($h["startzeit"]);
-				$events_heute[$h_i]["endzeit"] = sql_zeit($h["endzeit"]);
-			}
-		}
-		if(sizeof($events_heute) > 0) {
-			$smarty->assign("today_daten_heute", $events_heute);
-			$smarty->assign("show_daten_heute", TRUE);
-		} else {
-			$smarty->assign("show_daten_heute", FALSE);
-		}
-
-
-		//Termine diese Woche
-		$smarty->assign("title_event_week", getLL("fm_today_events_week"));
-		$heute = date("d.m.Y");
-		$events_woche = array();
-
+	if ($access['daten']['MAX'] > 0) {
 		// apply filter from userpref
 		$filterPresetName = ko_get_userpref($_SESSION['ses_userid'], 'daten_fm_filter');
 		$zWhere = '';
@@ -774,27 +750,73 @@ function ko_fm_today($uid, $pos) {
 
 			$allowedGroups = ko_array_filter_empty(explode(',', end($filterPreset)['value']));
 			if (sizeof($allowedGroups) > 0) {
-				$zWhere = " AND `eventgruppen_id` IN (".implode(',', $allowedGroups).")";
+				$zWhere = " AND `eventgruppen_id` IN (" . implode(',', $allowedGroups) . ")";
 			}
 		}
 
-		for($i = 1; $i <= 7; $i++) {
+		//Datum heute:
+		$smarty->assign("datum_heute", strftime($GLOBALS["DATETIME"]["dmy"], time()));
+
+		//Termine von heute
+		$smarty->assign("title_event_today", getLL("fm_today_events_today"));
+		ko_get_events_by_date(date("d"), date("m"), date("Y"), $events_heute, $zWhere);
+		foreach ($events_heute as $h_i => $h) {
+			if ($access['daten']['ALL'] < 1 && $access['daten'][$h['eventgruppen_id']] < 1) {
+				unset($events_heute[$h_i]);
+				continue;
+			}
+
+			$mapping = ['room' => $h["room"]];
+			ko_include_kota(["ko_event"]);
+			kota_process_data("ko_event", $mapping, "list");
+			$events_heute[$h_i]["raum"] = ko_html($mapping['room']);
+
+			$events_heute[$h_i]["eventgruppe"] = ko_html($h["eventgruppen_name"]);
+			$events_heute[$h_i]['kommentar'] = $h['kommentar'];
+			$events_heute[$h_i]['title'] = ko_html($h['title']);
+
+			if ($h["startzeit"] == "00:00:00" && $h["endzeit"] == "00:00:00") {
+				$events_heute[$h_i]["startzeit"] = getLL("time_all_day");
+				$events_heute[$h_i]["endzeit"] = "";
+			} else {
+				$events_heute[$h_i]["startzeit"] = sql_zeit($h["startzeit"]);
+				$events_heute[$h_i]["endzeit"] = sql_zeit($h["endzeit"]);
+			}
+		}
+		if (sizeof($events_heute) > 0) {
+			$smarty->assign("today_daten_heute", $events_heute);
+			$smarty->assign("show_daten_heute", TRUE);
+		} else {
+			$smarty->assign("show_daten_heute", FALSE);
+		}
+
+
+		//Termine diese Woche
+		$smarty->assign("title_event_week", getLL("fm_today_events_week"));
+		$heute = date("d.m.Y");
+		$events_woche = [];
+
+		for ($i = 1; $i <= 7; $i++) {
 			$tag = add2date($heute, "tag", $i);
 			unset($temp);
 			ko_get_events_by_date($tag[0], $tag[1], $tag[2], $temp, $zWhere);
-			if(sizeof($temp) > 0) $events_woche = array_merge($events_woche, $temp);
+			if (sizeof($temp) > 0) $events_woche = array_merge($events_woche, $temp);
 		}
 
-		$done = array();
-		foreach($events_woche as $w_i => $w) {
+		$done = [];
+		foreach ($events_woche as $w_i => $w) {
 			//Termine nicht doppelt anzeigen - würde bei mehrtägigen passieren
-			if(($access['daten']['ALL'] < 1 && $access['daten'][$w['eventgruppen_id']] < 1) || in_array($w["id"], $done)) {
+			if (($access['daten']['ALL'] < 1 && $access['daten'][$w['eventgruppen_id']] < 1) || in_array($w["id"], $done)) {
 				unset($events_woche[$w_i]);
 				continue;
 			}
 			$done[] = $w["id"];
 
-			$events_woche[$w_i]["raum"] = ko_html($w["room"]);
+			$mapping = ['room' => $w["room"]];
+			ko_include_kota(["ko_event"]);
+			kota_process_data("ko_event", $mapping, "list");
+			$events_woche[$w_i]["raum"] = ko_html($mapping['room']);
+
 			$events_woche[$w_i]["eventgruppe"] = ko_html($w["eventgruppen_name"]);
 			$events_woche[$w_i]['kommentar'] = $w['kommentar'];
 			$events_woche[$w_i]['title'] = ko_html($w['title']);
@@ -802,11 +824,11 @@ function ko_fm_today($uid, $pos) {
 			$tag = explode("-", $w["startdatum"]);
 			$events_woche[$w_i]["wochentag"] = strftime("%A", mktime(1, 1, 1, $tag[1], $tag[2], $tag[0]));
 
-			if($w["startdatum"] == $w["enddatum"]) $events_woche[$w_i]["enddatum"] = "";
+			if ($w["startdatum"] == $w["enddatum"]) $events_woche[$w_i]["enddatum"] = "";
 			else $events_woche[$w_i]["enddatum"] = sql2datum($w["enddatum"]);
 			$events_woche[$w_i]["startdatum"] = sql2datum($w["startdatum"]);
 
-			if($w["startzeit"] == "00:00:00" && $w["endzeit"] == "00:00:00") {
+			if ($w["startzeit"] == "00:00:00" && $w["endzeit"] == "00:00:00") {
 				$events_woche[$w_i]["startzeit"] = getLL("time_all_day");
 				$events_woche[$w_i]["endzeit"] = "";
 			} else {
@@ -814,7 +836,7 @@ function ko_fm_today($uid, $pos) {
 				$events_woche[$w_i]["endzeit"] = sql_zeit($w["endzeit"]);
 			}
 		}
-		if(sizeof($events_woche) > 0) {
+		if (sizeof($events_woche) > 0) {
 			$smarty->assign("today_daten_woche", $events_woche);
 			$smarty->assign("show_daten_woche", TRUE);
 		} else {
@@ -827,29 +849,25 @@ function ko_fm_today($uid, $pos) {
 	}
 
 
-
-
 	//*** RESERVATIONEN ***
 	//(Eigene oder bei Mod, die gemachten)
 	ko_get_access('reservation');
-	if($access['reservation']['MAX'] > 1 && $_SESSION["ses_userid"] != ko_get_guest_id()) {
-		//Reservationen diese Woche
-		$smarty->assign("title_res_week", getLL("fm_today_res_week"));
-		$smarty->assign("show_res", TRUE);
-	}//if(sizeof(res))
-
-
+//	if ($access['reservation']['MAX'] > 1 && $_SESSION["ses_userid"] != ko_get_guest_id()) {
+//		//Reservationen diese Woche
+//		$smarty->assign("title_res_week", getLL("fm_today_res_week"));
+//		$smarty->assign("show_res", TRUE);
+//	}//if(sizeof(res))
 
 
 	//Bei Moderatoren die neuen/geänderten seit letztem Login anzeigen
-	if($access['reservation']['MAX'] > 4 && $_SESSION["ses_userid"] != ko_get_guest_id()) {
+	if ($access['reservation']['MAX'] > 4 && $_SESSION["ses_userid"] != ko_get_guest_id()) {
 		//Alle geänderten aus DB holen
 		$smarty->assign("title_res_new", getLL("fm_today_res_new"));
-		$z_where = "AND `last_change` > '".$_SESSION["last_login"]."'";
-		ko_get_reservationen($res, $z_where, 'LIMIT 0,50', 'ORDER BY `last_change` DESC');
+		$z_where = "AND `last_change` > '" . $_SESSION["last_login"] . "'";
+		ko_get_reservationen($res, $z_where, 'LIMIT 0,50', "res",'ORDER BY `last_change` DESC');
 
-		foreach($res as $w_i => $w) {
-			if($access['reservation']['ALL'] > 4 || $access['reservation'][$w['item_id']] > 4) {
+		foreach ($res as $w_i => $w) {
+			if ($access['reservation']['ALL'] > 4 || $access['reservation'][$w['item_id']] > 4) {
 				$res_woche_mod[$w_i]["item"] = ko_html($w["item_name"]);
 				$res_woche_mod[$w_i]["zweck"] = ko_html($w["zweck"]);
 				$res_woche_mod[$w_i]["name"] = ko_html($w["name"]);
@@ -859,11 +877,11 @@ function ko_fm_today($uid, $pos) {
 				$tag = explode("-", $w["startdatum"]);
 				$res_woche_mod[$w_i]["wochentag"] = strftime("%A", mktime(1, 1, 1, $tag[1], $tag[2], $tag[0]));
 
-				if($w["startdatum"] == $w["enddatum"]) $res_woche_mod[$w_i]["enddatum"] = "";
+				if ($w["startdatum"] == $w["enddatum"]) $res_woche_mod[$w_i]["enddatum"] = "";
 				else $res_woche_mod[$w_i]["enddatum"] = sql2datum($w["enddatum"]);
 				$res_woche_mod[$w_i]["startdatum"] = sql2datum($w["startdatum"]);
 
-				if($w["startzeit"] == "00:00:00" && $w["endzeit"] == "00:00:00") {
+				if ($w["startzeit"] == "00:00:00" && $w["endzeit"] == "00:00:00") {
 					$res_woche_mod[$w_i]["startzeit"] = getLL("time_all_day");
 					$res_woche_mod[$w_i]["endzeit"] = "";
 				} else {
@@ -873,7 +891,7 @@ function ko_fm_today($uid, $pos) {
 			}
 		}//foreach(res as w)
 
-		if(sizeof($res_woche_mod) > 0) {
+		if (sizeof($res_woche_mod) > 0) {
 			$smarty->assign("show_res_mod", TRUE);
 			$smarty->assign("today_res_mod", $res_woche_mod);
 		} else {
@@ -882,33 +900,32 @@ function ko_fm_today($uid, $pos) {
 	}//if(sizeof(res))
 
 
-
 	/* Letzte Leute-Änderungen */
 	$found = FALSE;
 	$smarty->assign("title_people_new", getLL("fm_today_people_new"));
 	ko_get_access('leute');
-	if($access['leute']['MAX'] >= 1) {
-		$logs = db_select_data('ko_log', "WHERE `type` = 'edit_person' AND `date` >= '".$_SESSION['last_login']."' ".$where_add, '*', 'ORDER BY `date` DESC', 'LIMIT 0,30');
-		if(sizeof($logs) > 0) {
+	if ($access['leute']['MAX'] >= 1) {
+		$logs = db_select_data('ko_log', "WHERE `type` = 'edit_person' AND `date` >= '" . $_SESSION['last_login'] . "' " . $where_add, '*', 'ORDER BY `date` DESC', 'LIMIT 0,30');
+		if (sizeof($logs) > 0) {
 			$p_counter = 0;
 			$found = TRUE;
 			ko_get_logins($logins);
-			$lids = array();
-			foreach($logs as $logid => $log) {
+			$lids = [];
+			foreach ($logs as $logid => $log) {
 				$logs[$logid]['_leute_id'] = $lids[] = (int)substr($log['comment'], 0, strpos($log['comment'], ' '));
 			}
-			ko_get_leute($people, " AND `id` IN ('".implode("','", $lids)."')");
+			ko_get_leute($people, " AND `id` IN ('" . implode("','", $lids) . "')");
 
 			$allowed_columns = ko_get_leute_admin_spalten($_SESSION['ses_userid'], "login");
-			for($i=0;$i<count($allowed_columns['view']);$i++) {
+			for ($i = 0; $i < count($allowed_columns['view']); $i++) {
 				$allowed_columns['view'][$i] = strtolower(getLL("kota_ko_leute_" . $allowed_columns['view'][$i]));
 			}
 
-			foreach($logs as $log) {
+			foreach ($logs as $log) {
 				// Do access check
 				if ($access['leute']['ALL'] == 0 && $access['leute'][$log['_leute_id']] == 0) continue;
 
-				if(is_array($allowed_columns['view'])) {  //Only check for individual columns if column restriction is set
+				if (is_array($allowed_columns['view'])) {  //Only check for individual columns if column restriction is set
 					preg_match_all(
 						"/\s?([\w\s.\-@,:\/]+):\s\\\\\'([\w\s.\-@,:\/]*)\\\\\'\s-->\s\\\\\'([\w\s.\-@,:\/]*)\\\\\'[,]?/im",
 						substr($log['comment'], strpos($log['comment'], '): ') + 3),
@@ -918,33 +935,33 @@ function ko_fm_today($uid, $pos) {
 					);
 
 					$foundChanges = FALSE;
-					foreach($comments AS $key => $comment) {
-						if ($allowed_columns['view'] === null ||
+					foreach ($comments AS $key => $comment) {
+						if ($allowed_columns['view'] === NULL ||
 							in_array(strtolower($comment[1]), $allowed_columns['view'])
 						) {
-							$tpl_person[$p_counter]['log'].= "<br />" . $comment[1].": \"". $comment[2] ."\" => \"" . $comment[3] ."\"";
+							$tpl_person[$p_counter]['log'] .= "<br />" . $comment[1] . ": \"" . $comment[2] . "\" => \"" . $comment[3] . "\"";
 							$foundChanges = TRUE;
 						}
 					}
-					if(!$foundChanges) continue;
+					if (!$foundChanges) continue;
 				} else {  //..else show all changes
-					$tpl_person[$p_counter]['log'] = '<br />'.ko_html(substr($log['comment'], strpos($log['comment'], ':')+2));
+					$tpl_person[$p_counter]['log'] = '<br />' . ko_html(substr($log['comment'], strpos($log['comment'], ':') + 2));
 				}
 
 				$tpl_person[$p_counter]['user'] = $logins[$log['user_id']]['login'];
 
 				//Name of the edited person
 				$person = $people[$log['_leute_id']];
-				if(isset($person['firm']) && $person['firm']) {
-					$tpl_person[$p_counter]['name']  = $person['firm'].' '.$person['department'];
-					$tpl_person[$p_counter]['link'] = 'leute/index.php?action=set_idfilter&amp;id='.$person['id'];
-					if($person['nachname']) {
-						$tpl_person[$p_counter]['name'] .= ': '.$person['vorname'].' '.$person['nachname'];
-						$tpl_person[$p_counter]['link'] .= '&amp;ln='.urlencode($person['nachname']).'&amp;fn='.urlencode($person['vorname']);
+				if (isset($person['firm']) && $person['firm']) {
+					$tpl_person[$p_counter]['name'] = $person['firm'] . ' ' . $person['department'];
+					$tpl_person[$p_counter]['link'] = 'leute/index.php?action=set_idfilter&amp;id=' . $person['id'];
+					if ($person['nachname']) {
+						$tpl_person[$p_counter]['name'] .= ': ' . $person['vorname'] . ' ' . $person['nachname'];
+						$tpl_person[$p_counter]['link'] .= '&amp;ln=' . urlencode($person['nachname']) . '&amp;fn=' . urlencode($person['vorname']);
 					}
 				} else {
-					$tpl_person[$p_counter]['name'] = $person['vorname'].' '.$person['nachname'];
-					$tpl_person[$p_counter]['link'] = 'leute/index.php?action=set_idfilter&amp;id='.$person['id'];
+					$tpl_person[$p_counter]['name'] = $person['vorname'] . ' ' . $person['nachname'];
+					$tpl_person[$p_counter]['link'] = 'leute/index.php?action=set_idfilter&amp;id=' . $person['id'];
 				}
 				$p_counter++;
 			}
@@ -953,23 +970,54 @@ function ko_fm_today($uid, $pos) {
 	}//if(l_edit)
 	$smarty->assign('show_leute_change', $found);
 
-
-
-
-
-
-
-
-	//TODO: Rota: Show own scheduling and maybe open schedulings for team leaders
-
-
-
 	$smarty->assign("tpl_fm_pos", $pos);
-	$smarty->assign("tpl_fm_title", getLL("fm_name_today") );
+	$smarty->assign("tpl_fm_title", getLL("fm_name_today"));
 	return $smarty->fetch("ko_fm_today.tpl");
 
 }//ko_fm_today()
 
+
+function ko_fm_rota($uid) {
+	global $BASE_URL, $smarty;
+
+	$person = ko_get_logged_in_person($uid);
+
+	if(!$person['id']) return FALSE;
+
+	/* get schedulling */
+	$data = ["id" => $person['id']];
+	kota_pre_ko_leute_info_rota_2($rota_html, $data);
+	$smarty->assign("label_link", getLL("fm_news_link"));
+	$smarty->assign("tpl_fm_title", getLL("module_rota"));
+	$smarty->assign("tpl_rota", $rota_html);
+
+	/* get ical */
+	if(defined('KOOL_ENCRYPTION_KEY') && trim(KOOL_ENCRYPTION_KEY) !== '') {
+		$link = $BASE_URL . 'rotaical/index.php?person=' . $person['id'] . 'x' . strtolower(substr(md5($person['id'] . KOOL_ENCRYPTION_KEY . 'rotaIcal' . KOOL_ENCRYPTION_KEY . 'rotaIcal' . KOOL_ENCRYPTION_KEY . $person['id']), 0, 10));
+		$label =  getLL('fm_name_rota_ical');
+		$rota_ical = ko_get_ical_link($link, $label);
+		$rota_ical.= " <a href='https://kool.help/module/dienstplan#ical-abo' target='_new'><span class=\"glyphicon glyphicon-info-sign\"></span></a>";
+		$smarty->assign("tpl_ical", $rota_ical);
+	}
+
+	/* get consensus */
+	if(ko_get_setting("consensus_ongoing_cal")) {
+		$consensus_link = $BASE_URL;
+		if(substr($BASE_URL, -1) != '/') $consensus_link .= '/';
+		$timestart = date("Y-m-d", time());
+		$consensus_link.= 'consensus/?x=' . $person['id'] . 'x' . str_replace("-","", $timestart) . 'x1wx' .
+			substr(md5($person['id'] . $timestart . '1w' . KOOL_ENCRYPTION_KEY), 0, 6);
+
+		$teams = ko_rota_get_teams($person['id']);
+		foreach($teams AS $team) {
+			if($team['allow_consensus'] == 1) {
+				$smarty->assign("tpl_consensus", $consensus_link);
+			}
+		}
+	}
+
+	return $smarty->fetch("ko_fm_rota.tpl");
+}
 
 
 
@@ -992,23 +1040,37 @@ function ko_fm_news($uid, $pos, $id) {
 		$news_ = db_select_data('ko_news', 'WHERE 1=1 '.$z_where, '*', 'ORDER BY cdate DESC');
 	}//if..else(id>0)
 
+	//Get status from userpref - to mark news as read/new for current user
+	$newsStatus = json_decode(ko_get_userpref($_SESSION['ses_userid'], 'news_status'), TRUE);
+
+	$categories = array();
 	foreach($news_ as $n_i => $n) {
 		$news[$n_i]["text"] = $n["text"];
 		$news[$n_i]["subtitle"] = nl2br(ko_html($n["subtitle"]));
 		$news[$n_i]["title"] = nl2br(ko_html($n["title"]));
-		$link = ko_html($n["link"]);
-		if (substr($link, 0, 7) == 'http://') {
-			$link = substr($link, 7);
-		}
-		$news[$n_i]["link"] = $link;
+		$news[$n_i]["link"] = ko_html($n['link']);
 		$news[$n_i]["author"] = ko_html($n["author"]);
 		if($n['cdate'] != '0000-00-00') $news[$n_i]['cdate'] = sql2datum($n['cdate']);
 		$news[$n_i]["id"] = $n["id"];
+		
+		$news[$n_i]['category'] = ko_html($n['category']);
+		if($n['category']) $categories[] = $n['category'];
+
+		if($uid == ko_get_guest_id()) {
+			$news[$n_i]['statusRead'] = 0;
+		} else {
+			$news[$n_i]['statusRead'] = $newsStatus[$n['id']] == 1 ? 1 : 0;
+		}
 	}
+	$categories = array_unique($categories);
+	asort($categories);
+
 	$smarty->assign("label_link", getLL("fm_news_link"));
 	$smarty->assign("tpl_fm_title", "News");
 	$smarty->assign("tpl_news", $news);
 	$smarty->assign("tpl_fm_pos", $pos);
+	$smarty->assign("is_guest", $uid == ko_get_guest_id());
+	$smarty->assign('categories', $categories);
 
 	return $smarty->fetch("ko_fm_news.tpl");
 }//ko_fm_news()

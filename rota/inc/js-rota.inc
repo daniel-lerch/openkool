@@ -14,10 +14,7 @@ function eg_doubleselect_add(text, value, name, hid_name) {
 }//eg_doubleselect_add()
 
 
-
-
 $(document).ready(function() {
-
 	//Schedule after selecting an entry in select
 	$("body").on("changed.bs.select", '.rota-select', function(event, clickedIndex, newValue, oldValue) {
 		t = this.id.split("_");
@@ -36,6 +33,31 @@ $(document).ready(function() {
 		team_id = t[3];
 		schedule = t.slice(4).join('_');
 		sendReq("../rota/inc/ajax.php", "action,eventid,teamid,schedule,module,sesid", "delschedule,"+event_id+","+team_id+","+schedule+","+kOOL.module+",<?php print session_id(); ?>", do_element);
+	});
+
+	$('body').on("change", ".rota-schedule input[name=\"rota_entry_daysrange\"]", function() {
+
+		var schedule = $(this).val();
+		schedule = schedule.replace(/,/g,"-");
+
+		var id = this.id.split("_");
+		var event_id = id[2];
+		var team_id = id[3];
+		var person_id = id[4];
+
+		if(person_id === "freetexttemplate") {
+			var freetext = prompt("Namen eingeben");
+			if(freetext === null || freetext === "") return false;
+
+			if (freetext.search(/[^a-zA-Z] +/) !== -1) {
+				alert("<?=getLL("rota_schedule_only_characters_allowed"); ?>");
+				return false;
+			}
+
+			person_id = freetext;
+		}
+
+		sendReq("../rota/inc/ajax.php", "action,eventid,teamid,personid,schedule,module,sesid", "schedule,"+event_id+","+team_id+","+person_id+","+schedule+",rota,<?php print session_id(); ?>", do_element);
 	});
 
 	//Delete link for schedulling entries
@@ -145,7 +167,11 @@ $(document).ready(function() {
 			$(this).tooltip('destroy');
 		});
 	});
-
+	$(document).on('show.bs.tooltip','.daysrange .rota-tooltip',function() {
+		$(this).on('remove',function() {
+			$(this).tooltip('destroy');
+		});
+	});
 
 	$('body').on('click', '#planning_list .team_name', function() {
 		var team_id = $(this).parent().data('team');

@@ -1,7 +1,7 @@
 /***************************************************************
 *  Copyright notice
 *
-*  (c) 2003-2017 Renzo Lauper (renzo@churchtool.org)
+*  (c) 2003-2020 Renzo Lauper (renzo@churchtool.org)
 *  All rights reserved
 *
 *  This script is part of the kOOL project. The kOOL project is
@@ -49,14 +49,15 @@ ul {
     overflow:hidden;
 }
 h1 {
-    font-size:25pt;
+    font-size:25px;
     margin:13px 10px 10px 16px;
 }
 h3 {
-    font-size:13px;
+    font-size:16px;
     font-weight: bold;
     padding:0px;
-    margin:0px;
+    margin: 20px 0 0 0;
+		text-align: center;
 }
 
 
@@ -135,7 +136,7 @@ table#consensus_descriptions tr {
                                                   Consensus Entries
  **********************************************************************************************************************/
 #consensus_entries {
-    margin:30px auto;
+    margin: 30px auto;
 
     tr {
         border-bottom: 1px solid #444;
@@ -152,7 +153,7 @@ table#consensus_descriptions tr {
         max-width: 280px;
         margin-left: -4px;
         padding: 3px;
-        z-index:1;
+        z-index: 1;
         font-size: 1.1em;
     }
 
@@ -177,7 +178,7 @@ table#consensus_descriptions tr {
                 vertical-align: top;
             }
             > td.right_cell {
-                width:25px;
+                width: 25px;
                 vertical-align: top;
             }
 
@@ -185,12 +186,101 @@ table#consensus_descriptions tr {
                 vertical-align: top;
             }
         }
+
+      .status_absent {
+        color: red;
+      }
+    }
+
+}
+
+#consensus_entries_amtstage {
+    margin:30px auto;
+
+    tr.header th {
+        padding-top: 14px;
+
+        ol.daysrange {
+            position: relative;
+            display: inline-block;
+            vertical-align: middle;
+
+            .btn-default {
+                background-color: #f0f0f0;
+            }
+
+            .btn:hover {
+                cursor: inherit;
+            }
+        }
+
+
+    }
+
+    .week_label {
+        vertical-align: middle;
+        padding-right: 4px;
+    }
+
+    .header_team {
+        padding-top: 3px;
+        vertical-align: top;
+        border-top: 1px solid grey;
+    }
+
+    .consensus_range_wrapper {
+        ol.consensus_range {
+            li.btn {
+                font-size: 10px;
+                overflow: hidden;
+
+                &.btn-xs {
+                    line-height: 1.8;
+                }
+            }
+
+            &.consensus_type_yes li.ui-selected,
+            &.consensus_type_yes li.ui-selecting {
+                background-color: #7cdf4b !important;;
+            }
+            &.consensus_type_maybe li.ui-selected,
+            &.consensus_type_maybe li.ui-selecting {
+                background-color: #dfad64 !important;
+
+            }
+            &.consensus_type_no li.ui-selected,
+            &.consensus_type_no li.ui-selecting {
+                background-color: #df4b32 !important;;
+                color: #fff;
+            }
+
+            &.consensus_type_yes li.btn {
+                &.scheduled {
+                    background-color: #337ab7 !important;
+                    color: #fff;
+                    cursor: default;
+                }
+            }
+
+            &.consensus_type_maybe li.btn,
+            &.consensus_type_no li.btn
+            {
+                &.scheduled {
+                    background-color: #fff !important;
+                    color: #333;
+                    cursor: default;
+                }
+            }
+        }
     }
 
     .status_absent {
         color: red;
     }
+
 }
+
+
 #consensus_entries_wrapper {
     overflow-x: scroll;
     width:100%;
@@ -360,7 +450,9 @@ p.team_members {
 .notification_info {
     background-color: #d1f3d1;
 }
-.notification_warning {
+.notification_warning_no_result,
+.notification_warning_not_allowed
+{
     background-color: #ffeea6;
 }
 
@@ -436,4 +528,41 @@ p.team_members {
 }
 #tt div.event_res {
     font-size: 90%;
+}
+
+#filter-popover {
+    float:right;
+    display: inline;
+}
+
+#consensus_filter {
+    display: none;
+}
+
+#ongoing_calendar {
+    display: block;
+    margin-top: 5px;
+    text-align: center;
+    clear:both;
+
+
+    #consensus_dateselect-input {
+        visibility:hidden;
+    }
+
+    #consensus_dateselect-button {
+        position: absolute;
+        top: 0;
+        left: 0;
+    }
+}
+
+@media screen and (max-width: 768px) {
+    #filter-popover {
+        display: none;
+    }
+
+    #consensus_filter {
+        display: block;
+    }
 }

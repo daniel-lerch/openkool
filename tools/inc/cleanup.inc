@@ -25,6 +25,49 @@
  ***************************************************************/
 
 
+
+
+/**
+ * Hook for ko_tools_misc()
+ * Correct all reservations' linked_items: Overwrite with linked_items field from ko_resitem
+ *
+ * @return string HTML
+ */
+function ko_tools_cleanup_resitem_linked_items() {
+	$items = db_select_data('ko_resitem', "WHERE 1", 'id,linked_items');
+	if(sizeof($items) == 0) return 'no resitems';
+
+	foreach($items as $item) {
+		db_update_data('ko_reservation', "WHERE `item_id` = '".$item['id']."'", array('linked_items' => $item['linked_items']));
+		db_update_data('ko_reservation_mod', "WHERE `item_id` = '".$item['id']."'", array('linked_items' => $item['linked_items']));
+	}
+}//resitem_linked_items()
+
+
+
+/**
+ * Hook for ko_tools_misc()
+ * Find duplicate entries in ko_groups_datafields_data. Deletes all entries except for the newest one (with the highest ID)
+ *
+ * @return string HTML
+ */
+function ko_tools_cleanup_gdf_duplicates() {
+	$duplicates = db_select_data('ko_groups_datafields_data', "WHERE 1", 'id,group_id,datafield_id,person_id,value, count(*) as numDup', 'GROUP BY group_id,datafield_id,person_id having numDup > 1');
+
+	if(sizeof($duplicates) == 0) {
+		return 'No duplicates found.';
+	}
+
+	foreach($duplicates as $dup) {
+		$lastEntry = db_select_data('ko_groups_datafields_data', "WHERE `group_id` = '".$dup['group_id']."' AND `datafield_id` = '".$dup['datafield_id']."' AND `person_id` = '".$dup['person_id']."'", '*', "ORDER BY `id` DESC", "LIMIT 0,1", TRUE);
+
+		db_delete_data('ko_groups_datafields_data', "WHERE `group_id` = '".$dup['group_id']."' AND `datafield_id` = '".$dup['datafield_id']."' AND `person_id` = '".$dup['person_id']."' AND `id` != '".$lastEntry['id']."'");
+	}
+}//gdf_duplicates()
+
+
+
+
 /**
  * Hook for ko_tools_misc()
  * Update group_assignment_history startdate according to specified datafield for selected group
@@ -126,25 +169,25 @@ function ko_tools_cleanup_group_entry() {
 function ko_tools_cleanup_update_userprefs() {
     global $ko_path, $notifier;
 
-    if ($_POST['sel_userpref_key']) {
-		$key = format_userinput($_POST['sel_userpref_key'], 'text');
-		$value = format_userinput($_POST['txt_userpref_value'], 'text');
-		ko_get_logins($logins);
-		foreach($logins as $lid => $login) {
-            ko_save_userpref($lid, $key, $value);
-        }
+		if ($_POST['sel_userpref_key']) {
+			$key = format_userinput($_POST['sel_userpref_key'], 'text');
+			$value = format_userinput($_POST['txt_userpref_value'], 'text');
+			ko_get_logins($logins);
+			foreach($logins as $lid => $login) {
+				ko_save_userpref($lid, $key, $value);
+			}
 
-        $notifier->addTextInfo('Userpref for all logins updated');
-    }
+			$notifier->addTextInfo('Userpref for all logins updated');
+		}
 
-    $c = '<form action="'.$ko_path.'tools/index.php" method="POST">	<div class="row"><div class="col-md-5">
-        <input type="hidden" name="call" value="ko_tools_cleanup_update_userprefs">
-        Key: <select name="sel_userpref_key" class="input-sm form-control" size="0"><option value=""></option>';
+		$c = '<form action="'.$ko_path.'tools/index.php" method="POST">	<div class="row"><div class="col-md-5">
+			<input type="hidden" name="call" value="ko_tools_cleanup_update_userprefs">
+			Key: <select name="sel_userpref_key" class="input-sm form-control" size="0"><option value=""></option>';
 
-    $keys = db_select_distinct('ko_userprefs', '`key`', 'ORDER BY `key` ASC', 'WHERE `type` = \'\'');
-    foreach($keys as $key) {
-        $c .= '<option value="'.$key.'">'.$key.'</option>';
-    }
+		$keys = db_select_distinct('ko_userprefs', '`key`', 'ORDER BY `key` ASC', 'WHERE `type` = \'\'');
+		foreach($keys as $key) {
+			$c .= '<option value="'.$key.'">'.$key.'</option>';
+		}
 
     $c .= '</select></div><div class="col-md-5">
         Value: <input type="text" class="input-sm form-control col-md-6" name="txt_userpref_value" /></div><div class="col-md-2">

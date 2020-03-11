@@ -2,7 +2,7 @@
 /***************************************************************
  *  Copyright notice
  *
- *  (c) 2003-2017 Renzo Lauper (renzo@churchtool.org)
+ *  (c) 2003-2020 Renzo Lauper (renzo@churchtool.org)
  *  All rights reserved
  *
  *  This script is part of the kOOL project. The kOOL project is
@@ -69,7 +69,7 @@ if(isset($_GET) && isset($_GET['action'])) {
 			$status = $_GET['status'];
 			$field = $_GET['field'];
 			$state = $_GET['state'];
-			if(!in_array($field, array('project_status'))) continue;
+			if(!in_array($field, array('project_status'))) break;
 
 			switch($field) {
 				case 'project_status':
@@ -216,7 +216,7 @@ if(isset($_GET) && isset($_GET['action'])) {
 
 		case 'itemlistsave':
 			//save new value
-			if($_GET['name'] == '') continue;
+			if($_GET['name'] == '') break;
 			$new_value = implode(',', $_SESSION['show_crm_projects']);
 			$user_id = $access['crm']['MAX'] > 3 && $_GET['global'] == 'true' ? '-1' : $_SESSION['ses_userid'];
 			$name = format_userinput($_GET['name'], 'js', FALSE, 0, array('allquotes'));
@@ -250,7 +250,7 @@ if(isset($_GET) && isset($_GET['action'])) {
 		case 'itemlistopen':
 			//save new value
 			$name = format_userinput($_GET['name'], 'js', FALSE, 0, array(), '@');
-			if($name == '') continue;
+			if($name == '') break;
 
 			if($name == '_all_') {
 				ko_get_crm_projects($projects);
@@ -273,7 +273,7 @@ if(isset($_GET) && isset($_GET['action'])) {
 		case 'itemlistdelete':
 			//Get name
 			$name = format_userinput($_GET['name'], 'js', FALSE, 0, array(), '@');
-			if($name == '') continue;
+			if($name == '') break;
 
 			if(substr($name, 0, 3) == '@G@') {
 				if($access['crm']['MAX'] > 3) ko_delete_userpref('-1', substr($name, 3), 'crm_itemset');

@@ -2,7 +2,7 @@
 /***************************************************************
 *  Copyright notice
 *
-*  (c) 2003-2017 Renzo Lauper (renzo@churchtool.org)
+*  (c) 2003-2020 Renzo Lauper (renzo@churchtool.org)
 *  All rights reserved
 *
 *  This script is part of the kOOL project. The kOOL project is
@@ -24,8 +24,8 @@
 *  This copyright notice MUST APPEAR in all copies of the script!
 ***************************************************************/
 
+global $BASE_PATH;
 require_once($BASE_PATH."inc/class.kOOL_listview.php");
-
 
 /**
  * @param String &$z_where filter for sql
@@ -173,16 +173,18 @@ function apply_daten_filter_for_teams(&$z_where) {
 /**
  * Shows list of events
  * Using the data from KOTA
+ *
  * @param        $method
  * @param string $mode
  * @param bool   $dontApplyLimit
  * @param bool   $showForeignRows only applies for $mode=='xls'
- * @param array	 $filter_ids only display IDs from array
+ * @param array  $filter_ids only display IDs from array
  * @return null|boolean
+ * @throws Exception
  */
 function ko_list_events($method, $mode='html', $dontApplyLimit=FALSE, $showForeignRows=FALSE, $filter_ids = []) {
 	global $ko_path, $smarty, $KOTA;
-	global $access;
+	global $access, $LOCAL_LANG;
 
 	if($method == "mod") {
 		ko_list_mod_events("new");
@@ -190,7 +192,7 @@ function ko_list_events($method, $mode='html', $dontApplyLimit=FALSE, $showForei
 		ko_list_mod_events("edit");
 		ko_list_open_new_form();
 		ko_list_mod_events("delete");
-		return;
+		return "";
 	}
 
 	if($access['daten']['MAX'] < 1) return FALSE;
@@ -517,14 +519,91 @@ function ko_formular_reminder($mode, $id='') {
 
 	ko_multiedit_formular('ko_reminder', '', $id, '', $form_data, FALSE, 1);
 
-}//ko_formular_tool()
+}//ko_formular_reminder()
 
 
+/***
+ * @param $mode -- either 'edit' or 'add'
+ * @param string $id -- if mode == 'edit', id of the id of the room has to be supplied here
+ * @return bool
+ */
+function ko_formular_room($mode, $id='') {
+	if($mode == 'new') {
+		$id = 0;
+	} else if($mode == 'edit') {
+		if(!$id) return FALSE;
+	} else {
+		return FALSE;
+	}
+
+	$form_data['title'] =  $mode == 'new' ? getLL('ko_event_rooms_form_title_new') : getLL('ko_event_rooms_form_title_edit');
+	$form_data['submit_value'] = getLL('save');
+	$form_data['action'] = $mode == 'new' ? 'submit_new_event_room' : 'submit_edit_event_room';
+	$form_data['cancel'] = 'list_rooms';
+	ko_multiedit_formular('ko_event_rooms', '', $id, '', $form_data, FALSE, 1);
+	return TRUE;
+}
 
 
+/**
+ * Get all rooms, apply kota_filter and return in kOOL_listview
+ */
+function ko_list_rooms() {
+	global $access;
 
-function ko_list_groups($method) {
-	global $ko_path;
+	if($access['daten']['MAX'] < 1) return;
+
+	$kota_where = kota_apply_filter('ko_event_rooms');
+	$z_where = "";
+	if($kota_where) $z_where .= " AND ($kota_where) ";
+
+	$rows = db_get_count("ko_event_rooms", "id", $z_where);
+	if($_SESSION['show_start'] > $rows) {
+		$_SESSION['show_start'] = 1;
+	}
+	$z_limit = 'LIMIT '.($_SESSION['show_start']-1).', '.$_SESSION['show_limit'];
+	$rooms = ko_get_event_rooms("", "WHERE 1=1 " . $z_where, $z_limit);
+
+
+	$row = 0;
+	foreach($rooms AS $room) {
+		$tpl_list_data[$row++]["rowclass"] = $room["hidden"] ? "row-inactive" : "";
+	}
+
+	$list = new kOOL_listview();
+	$list->init("daten", "ko_event_rooms", array("chk", "edit", "delete"), $_SESSION["show_start"], $_SESSION["show_limit"]);
+	$list->setTitle(getLL("daten_rooms_list_title"));
+	$list->setAccessRights(array('edit' => '2', 'delete' => 'ALL3'), $access['daten']);
+	$list->setActions(array(
+			"edit" => array("action" => "edit_room"),
+			"delete" => array("action" => "delete_room", "confirm" => TRUE)
+		)
+	);
+
+	if ($access['daten']['MAX'] > 1) $list->setActionNew('new_room');
+	$list->setStats($rows);
+	$list->setSortable();
+	$list->setSort(TRUE, 'setsortrooms', $_SESSION['sort_rooms'], $_SESSION['sort_rooms_order']);
+	$list->setRowClass("row-inactive", 'return ("HIDDEN") == 1;');
+
+	$list->render($rooms);
+}
+
+
+function ko_delete_event_room($id) {
+	$room = ko_get_event_rooms($id);
+	if(!empty($room['id'])) {
+		$where = "WHERE `id` = '$id'";
+		db_delete_data("ko_event_rooms", $where);
+		ko_log_diff('delete_event_room', $id, $room);
+		return TRUE;
+	}
+
+	return FALSE;
+}
+
+
+function ko_list_groups() {
 	global $access;
 
 	if($access['daten']['MAX'] < 3) return;
@@ -570,6 +649,7 @@ function ko_list_groups($method) {
 	if ($access['daten']['ALL'] > 2) $list->setActionNew('neue_gruppe');
 	$list->setStats($rows);
 	$list->setSort(TRUE, "setsorteventgroups", $_SESSION["sort_tg"], $_SESSION["sort_tg_order"]);
+	$list->setWarning(kota_filter_get_warntext('ko_eventgruppen'));
 
 	$list->render($es);
 }//ko_list_groups()
@@ -589,19 +669,6 @@ function ko_formular_termin($mode, $id, $data=array()) {
 		//Get event data to be edited
 		ko_get_event_by_id($id, $e);
 		if($access['daten'][$e['eventgruppen_id']] < 2) return;
-
-		//Infos about this event
-		if($access['daten']['MAX'] > 1 && $_SESSION['ses_userid'] != ko_get_guest_id()) {
-			ko_get_login($e['user_id'], $event_login);
-			$event_info = getLL('res_info_cdate').': <b>'.sqldatetime2datum($e['cdate']).'</b>';
-			$event_info .= '<br />'.getLL('res_info_user').': <b>'.$event_login['login'].' ('.$e['user_id'].')</b>';
-			$event_info .= '<br />'.getLL('res_info_mdate').': <b>'.sqldatetime2datum($e['last_change']).'</b>';
-
-			if ($e['lastchange_user'] > 0) {
-				ko_get_login($e['lastchange_user'],$lastchange_user);
-				$event_info .= '<br />'.getLL('res_info_muser').': <b>'.$lastchange_user['login'] .' ('. $e['lastchange_user'] .')</b>';
-			}
-		}
 
 		if(ko_module_installed("reservation")) {
 			//Set res times to event times if none are given for even group
@@ -714,7 +781,7 @@ function ko_formular_termin($mode, $id, $data=array()) {
 	}//if(mode == "neu")
 	else return;
 
-	
+
 	//Wiederholungs-Auswahl wieder setzen
 	$true = 0;
 	switch($_POST["rd_wiederholung"]) {
@@ -772,17 +839,19 @@ function ko_formular_termin($mode, $id, $data=array()) {
 		'type' => 'multidateselect',
 		'name' => 'sel_repeat_dates',
 		'avalue' => $_POST['sel_repeat_dates'],
+		'params' => 'size="8"',
 	);
+
 	$localSmarty->assign('input', $sel_code_dates_input);
 	$sel_code_dates = $localSmarty->fetch('ko_formular_elements.tmpl');
 
-	$repeat_descs[] = getLL("daten_repeat_none");
-	$repeat_descs[] = sprintf(getLL("daten_repeat_daily"), ' </label><input class="res-conflict-field" type="text" name="txt_repeat_tag" value="'.$txt_repeat_tag.'" size="2" /> ', '<label>');
-	$repeat_descs[] = sprintf(getLL("daten_repeat_weekly"), ' </label><input class="res-conflict-field" type="text" name="txt_repeat_woche" value="'.$txt_repeat_woche.'" size="2" /> ', '<label>');
-	$repeat_descs[] = sprintf(getLL("daten_repeat_monthly1"), ' </label><select class="res-conflict-field" name="sel_monat1_nr" size="0">'.$sel1_code.'</select><select class="res-conflict-field" name="sel_monat1_tag" size="0">'.$sel2_code.'</select><label>');
-	$repeat_descs[] = sprintf(getLL("daten_repeat_monthly2"), ' </label><input class="res-conflict-field" type="text" name="txt_repeat_monat2" value="'.$txt_repeat_monat2.'" size="2" /> ', '<label>');
-	$repeat_descs[] = sprintf(getLL("daten_repeat_holidays"), ' </label><select class="res-conflict-field" name="sel_repeat_holidays">'.$sel_code_holidays.'</select><select class="res-conflict-field" name="sel_repeat_holidays_offset">'.$sel_code_holidays_offset.'</select>'.getLL('days').' <label>');
-	$repeat_descs[] = sprintf(getLL("daten_repeat_dates"), ' </label>'.$sel_code_dates.'<label>');
+	$repeat_descs[] = " " . getLL("daten_repeat_none");
+	$repeat_descs[] = " " . sprintf(getLL("daten_repeat_daily"), ' </label><input class="res-conflict-field" type="text" name="txt_repeat_tag" value="'.$txt_repeat_tag.'" size="2" /> ', '<label>');
+	$repeat_descs[] = " " . sprintf(getLL("daten_repeat_weekly"), ' </label><input class="res-conflict-field" type="text" name="txt_repeat_woche" value="'.$txt_repeat_woche.'" size="2" /> ', '<label>');
+	$repeat_descs[] = " " . sprintf(getLL("daten_repeat_monthly1"), ' </label><select class="res-conflict-field" name="sel_monat1_nr" size="0">'.$sel1_code.'</select><select class="res-conflict-field" name="sel_monat1_tag" size="0">'.$sel2_code.'</select><label>');
+	$repeat_descs[] = " " . sprintf(getLL("daten_repeat_monthly2"), ' </label><input class="res-conflict-field" type="text" name="txt_repeat_monat2" value="'.$txt_repeat_monat2.'" size="2" /> ', '<label>');
+	$repeat_descs[] = " " . sprintf(getLL("daten_repeat_holidays"), ' </label><select class="res-conflict-field" name="sel_repeat_holidays">'.$sel_code_holidays.'</select><select class="res-conflict-field" name="sel_repeat_holidays_offset">'.$sel_code_holidays_offset.'</select>'.getLL('days').' <label>');
+	$repeat_descs[] = " " . sprintf(getLL("daten_repeat_dates"), ' </label>'.$sel_code_dates.'<label>');
 
 	//Repeat-Stop
 	$values = array(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31);
@@ -816,7 +885,7 @@ function ko_formular_termin($mode, $id, $data=array()) {
 	}
 
 	//Eventgroup select to exclude holidays
-	$holiday_code = '<select class="res-conflict-field" name="sel_repeat_eg" size="0"><option value=""></option>';
+	$holiday_code = '<select class="form-control res-conflict-field" name="sel_repeat_eg" size="0"><option value=""></option>';
 	$value = $_POST['sel_repeat_eg'] ? format_userinput($_POST['sel_repeat_eg'], 'uint') : '';
 	foreach(ko_get_eventgruppen_for_select() as $entry) {
 		$sel = $value == $entry['value'] && !$entry['disabled'] ? ' selected="selected"' : '';
@@ -827,10 +896,13 @@ function ko_formular_termin($mode, $id, $data=array()) {
 	}
 	$holiday_code .= '</select>';
 
-	$repeat_stop  = '<select class="res-conflict-field" name="sel_bis_tag" size="0">'.$sel_day_code.'</select>&nbsp;&nbsp;';
-	$repeat_stop .= '<select class="res-conflict-field" name="sel_bis_monat" size="0">'.$sel_month_code.'</select>&nbsp;&nbsp;';
-	$repeat_stop .= '<select class="res-conflict-field" name="sel_bis_jahr" size="0">'.$sel_year_code.'</select>';
-	$repeat_stop .= '<br />'.getLL("daten_repeat_or").'<br /><input class="res-conflict-field" type="text" name="txt_num_repeats" size="4" maxlength="3" value="'.($_POST['txt_num_repeats'] ? $_POST['txt_num_repeats'] : '').'" onkeyup="repeat_disable(this.value);" />&nbsp;'.getLL("daten_repeat_iterations").' <a href="#" onclick="return false;" '.ko_get_tooltip_code(getLL('res_repeat_iterations_help')).'><i class="fa fa-question-circle"></i></a>';
+	$repeat_stop  = '
+<div class="input-group">
+<select class="form-control res-conflict-field" name="sel_bis_tag" style="width:50px;" size="0">'.$sel_day_code.'</select>&nbsp;&nbsp;';
+	$repeat_stop .= '<select class="form-control res-conflict-field" name="sel_bis_monat" style="width:130px;" size="0">'.$sel_month_code.'</select>&nbsp;&nbsp;';
+	$repeat_stop .= '<select class="form-control res-conflict-field" name="sel_bis_jahr" style="width:80px;" size="0">'.$sel_year_code.'</select></div>';
+	$repeat_stop .= '<br />'.getLL("daten_repeat_or").'<br />
+<input class="res-conflict-field" type="text" name="txt_num_repeats" size="4" maxlength="3" value="'.($_POST['txt_num_repeats'] ? $_POST['txt_num_repeats'] : '').'" onkeyup="repeat_disable(this.value);" />&nbsp;'.getLL("daten_repeat_iterations").' <a href="#" onclick="return false;" '.ko_get_tooltip_code(getLL('res_repeat_iterations_help')).'><i class="fa fa-question-circle"></i></a>';
 	$repeat_stop .= '<script>repeat_disable($(\'[name="txt_num_repeats"]\')[0].value);</script>';
 	$repeat_stop .= '<br /><br />'.getLL('daten_repeat_eg').'<br />'.$holiday_code;
 
@@ -844,11 +916,13 @@ function ko_formular_termin($mode, $id, $data=array()) {
 	//Spezielle Formular-Einstellungen vornehmen
 	$KOTA[$table]["eventgruppen_id"]["form"]["js_func_before_change"] .= 'seleventgroup_before_change';
 
-	//Get values for room-select from ko_event and ko_eventgruppen
-	$values = array_unique(array_merge(db_select_distinct("ko_event", "room", "", $KOTA['ko_event']['room']['form']['where'], TRUE), db_select_distinct("ko_eventgruppen", "room", "", $KOTA['ko_eventgruppen']['room']['form']['where'], TRUE)));
-	$KOTA[$table]["room"]["form"]["values"] = $values;
-	$KOTA[$table]["room"]["form"]["descs"] = $values;
-	
+	$hidden_rooms = ko_get_event_rooms("", "WHERE hidden = 1");
+	foreach($KOTA[$table]["room"]["form"]["values"] AS $key => $room_in_select) {
+		if (in_array($room_in_select, array_column($hidden_rooms, "id")) && $room_in_select != $e['room']) {
+			unset($KOTA[$table]["room"]["form"]["values"][$key]);
+			unset($KOTA[$table]["room"]["form"]["descs"][$key]);
+		}
+	}
 
 	//get first part of form from kota
 	$group = ko_multiedit_formular($table, "", $id, "", "", TRUE, '', TRUE, 'formular', '2');
@@ -882,6 +956,7 @@ function ko_formular_termin($mode, $id, $data=array()) {
 
 
 	//Group subscriptions
+	if(!isset($access['groups'])) ko_get_access('groups');
 	if(ko_get_setting('daten_gs_pid') && ko_module_installed('groups') && ($access['groups']['ALL'] > 2 || $access['groups'][ko_get_setting('daten_gs_pid')] > 2)) {
 		if($e['gs_gid']) {
 			if(!is_array($all_groups)) ko_get_groups($all_groups);
@@ -1030,16 +1105,6 @@ function ko_formular_termin($mode, $id, $data=array()) {
 	}
 
 
-	if($access['daten']['MAX'] > 1 && $mode == 'edit' && $_SESSION['ses_userid'] != ko_get_guest_id()) {
-		$group[0]['groups'][++$gc]['rows'][$rowcounter++]['inputs'][0] = array('type' => '   ');
-		$group[0]['groups'][$gc]['rows'][$rowcounter++]['inputs'][0] = array('desc' => getLL('daten_info_title'),
-			'type' => 'html',
-			'value' => $event_info,
-			'colspan' => 'colspan="2"',
-		);
-	}
-
-
 	$smarty->assign("tpl_titel", ( ($mode == "neu") ? getLL("daten_new_event") : getLL("daten_edit_event")) );
 	$smarty->assign("tpl_submit_value", getLL("save"));
 	$smarty->assign('submit_class', 'daten_'.($mode == 'neu' ? 'neuer_termin' : 'edit_termin'));
@@ -1090,11 +1155,15 @@ function ko_formular_termingruppe($mode, $id=0) {
 	}//if(mode == "neu")
 	else return;
 
-	//Get values for room-select from ko_event and ko_eventgruppen
-	$values = array_unique(array_merge(db_select_distinct('ko_event', 'room', '', "WHERE `import_id` = ''", TRUE), db_select_distinct('ko_eventgruppen', 'room', '', '', TRUE)));
-	$KOTA["ko_eventgruppen"]["room"]["form"]["values"] = $values;
-	$KOTA["ko_eventgruppen"]["room"]["form"]["descs"] = $values;
-	
+	$KOTA["ko_eventgruppen"]["room"]["form"]["values"] = [""];
+	$KOTA["ko_eventgruppen"]["room"]["form"]["descs"] = [""];
+
+	$rooms = db_select_data("ko_event_rooms","WHERE 1=1", "id,title", "ORDER BY title ASC");
+	foreach($rooms as $room) {
+		$KOTA["ko_eventgruppen"]["room"]["form"]["values"][] = $room['id'];
+		$KOTA["ko_eventgruppen"]["room"]["form"]["descs"][] = $room['title'];
+	}
+
 	$form_data["title"] = $mode == "neu" ? getLL("daten_new_eventgroup") : getLL("daten_edit_eventgroup");
 	$form_data["submit_value"] = getLL("save");
 	$form_data["action"] = $mode == "neu" ? "submit_neue_gruppe" : "submit_edit_gruppe";
@@ -1211,23 +1280,17 @@ function ko_daten_settings() {
 	if(ko_module_installed('reservation')) {
 		$value = ko_get_userpref($_SESSION['ses_userid'], 'daten_show_res_in_tooltip');
 		$frmgroup[$gc]['row'][$rowcounter]['inputs'][1] = array('desc' => getLL('daten_settings_show_res_in_tooltip'),
-				'type' => 'switch',
+				'type' => 'select',
 				'name' => 'sel_show_res_in_tooltip',
-				'label_0' => getLL('no'),
-				'label_1' => getLL('yes'),
+				'values' => [0, 1, 2],
+				'descs' => [
+					getLL('daten_res_tooltip_no'),
+					getLL('daten_res_tooltip_yes_1'),
+					getLL('daten_res_tooltip_yes_2'),
+				],
 				'value' => $value == '' ? 0 : $value,
 				);
 	}
-	$rowcounter++;
-
-	$value = ko_get_userpref($_SESSION['ses_userid'], 'daten_rooms_only_future');
-	$frmgroup[$gc]['row'][$rowcounter]['inputs'][0] = array('desc' => getLL('daten_settings_rooms_only_future'),
-			'type' => 'switch',
-			'name' => 'chk_daten_rooms_only_future',
-			'label_0' => getLL('no'),
-			'label_1' => getLL('yes'),
-			'value' => $value == '' ? 0 : $value,
-			);
 	$rowcounter++;
 
 	$frmgroup[$gc]['row'][$rowcounter++]['inputs'][0] = array('type' => '   ');
@@ -1324,6 +1387,11 @@ function ko_daten_settings() {
 	}
 
 	list($values, $descs) = ko_daten_get_user_assignable_cols();
+
+	//Add taxonomy terms
+	$values[] = 'terms';
+	$descs[] = getLL('kota_ko_event_terms');
+
 	//Add rota teams
 	if(ko_module_installed('rota')) {
 		$rota_teams = db_select_data('ko_rota_teams', "WHERE 1", '*', 'ORDER BY name ASC');
@@ -1388,6 +1456,25 @@ function ko_daten_settings() {
 		'value' => $value
 	);
 
+	if($access['daten']['ABSENCE'] > 0) {
+		$help = ko_get_help("daten", "ical_links_absence");
+		$label = "<strong>" . getLL('daten_settings_absence_ical_url') . "</strong>&nbsp;<span class=\"help-icon\">".$help['link']."</span>";
+		if(ko_get_logged_in_person()) {
+			$frmgroup[$gc]['row'][$rowcounter++]['inputs'][1] = [
+				'desc' => $label,
+				'type' => 'text',
+				'params' => 'size="10"',
+				'name' => 'txt_absence_ical_url',
+				'value' => ko_html(ko_get_userpref($_SESSION['ses_userid'], 'absence_ical_url'))
+			];
+		} else {
+			$frmgroup[$gc]['row'][$rowcounter++]['inputs'][1] = [
+				'type' => 'label',
+				'desc' => $label,
+				'value' => getLL("daten_settings_absence_ical_url_no_leute_id")
+			];
+		}
+	}
 
 	//Global settings
 	if($access['daten']['MAX'] > 3) {
@@ -1401,7 +1488,7 @@ function ko_daten_settings() {
 		if(in_array('groups', $MODULES)) {
 			$gs_values = $gs_descs = array('');
 			$groups = ko_groups_get_recursive(ko_get_groups_zwhere(), TRUE);
-			if(!is_array($all_groups)) ko_get_groups($all_groups);
+			if(!isset($all_groups) || !is_array($all_groups)) ko_get_groups($all_groups);
 			ko_get_access('groups');
 			foreach($groups as $grp) {
 				if($access['groups']['ALL'] < 1 && $access['groups'][$grp['id']] < 1) continue;
@@ -1465,6 +1552,14 @@ function ko_daten_settings() {
 				'params' => 'size="7"',
 				'show_moves' => TRUE,
 			);
+
+			$frmgroup[$gc]['row'][$rowcounter++]['inputs'][1] = [
+				'desc' => getLL('daten_settings_absence_color'),
+				'name' => 'absence_color',
+				'type' => 'color',
+				'value' => ko_get_setting('absence_color'),
+			];
+
 		}
 
 		// mandatory fields
@@ -1747,23 +1842,45 @@ function ko_daten_settings() {
 	$smarty->assign("tpl_groups", $frmgroup);
 	$smarty->assign("help", ko_get_help("daten", "daten_settings"));
 
-	$smarty->display('ko_formular.tpl');
-}//ko_daten_settings()
 
 
+	//Guest userprefs
+	if(!isset($access['admin'])) ko_get_access('admin');
+	if($access['admin']['ALL'] > 2) {
+		$gc++;
+		$rowcounter = 0;
+		$frmgroup[$gc]['titel'] = getLL('settings_title_guest');
+		$frmgroup[$gc]['tab'] = True;
 
+		$uid = ko_get_guest_id();
 
+		$frmgroup[$gc]['row'][$rowcounter]['inputs'][0] = array('desc' => getLL('daten_settings_default_view'),
+				'type' => 'select',
+				'name' => 'guest_sel_daten',
+				'values' => array('all_events', 'show_cal_monat', 'show_cal_woche'),
+				'descs' => array(getLL('submenu_daten_all_events'), getLL('submenu_daten_cal_monat'), getLL('submenu_daten_cal_week')),
+				'value' => ko_html(ko_get_userpref($uid, 'default_view_daten'))
+				);
+		$frmgroup[$gc]['row'][$rowcounter++]['inputs'][1] = array('desc' => getLL('admin_settings_limits_numberof_events'),
+				'type' => 'text',
+				'params' => 'size="10"',
+				'name' => 'guest_txt_limit_daten',
+				'value' => ko_html(ko_get_userpref($uid, 'show_limit_daten'))
+				);
 
 function check_daten_entries(&$data) {
 	global $KOTA;
 
-	$notifier = koNotifier::Instance();
+		$frmgroup[$gc]['row'][$rowcounter++]['inputs'][0] = array('type' => '   ');
 
-	ko_get_eventgruppe_by_id($data["eventgruppen_id"], $eventgroup);
-	if(!$eventgroup["name"]) {
-		$notifier->addError(8);
-		return TRUE;
-	}
+		$value = ko_get_userpref($uid, 'daten_monthly_title');
+		$frmgroup[$gc]["row"][$rowcounter]["inputs"][0] = array("desc" => getLL("daten_settings_monthly_title"),
+			"type" => "select",
+			"name" => "guest_sel_monthly_title",
+			'values' => array('eventgruppen_id', 'title', 'kommentar', 'both', 'eventgruppen_id_kommentar', 'eventgruppen_id_kommentar2', 'title_kommentar', 'title_kommentar2'),
+			'descs' => array(getLL('kota_ko_event_eventgruppen_id'), getLL('kota_ko_event_title'), getLL('kota_ko_event_kommentar'), getLL('kota_ko_event_eventgruppen_id').'+'.getLL('kota_ko_event_title'), getLL('kota_ko_event_eventgruppen_id').'+'.getLL('kota_ko_event_kommentar'), getLL('kota_ko_event_eventgruppen_id').'+'.getLL('kota_ko_event_kommentar2'), getLL('kota_ko_event_title').'+'.getLL('kota_ko_event_kommentar'), getLL('kota_ko_event_title').'+'.getLL('kota_ko_event_kommentar2')),
+			"value" => $value,
+		);
 
 	//Check date
 	if(!check_datum($data["startdatum"])) {
@@ -1834,7 +1951,7 @@ function ko_daten_calendar() {
 	$code .= '<div id="ko_calendar">';
 	$code .= '<div class="fc-mwselect">';
 	$code .= '<div name="mwselect" id="mwselect">';
-	$code .= ko_calendar_mwselect($_SESSION['cal_view']);
+	$code .= ko_calendar_mwselect();
 	$code .= '</div>';
 	$code .= '</div>';
 	$code .= '</div>';
@@ -1984,6 +2101,7 @@ function ko_daten_store_moderation($data, $forceNoEmail=FALSE) {
 	}
 
 	//Get email of currently logged in user to use it as sender for the mails to the moderators
+	$reply_to = '';
 	if($_SESSION["ses_userid"] != ko_get_guest_id()) {
 		$p = ko_get_logged_in_person();
 		if($p['email']) {
@@ -1992,11 +2110,7 @@ function ko_daten_store_moderation($data, $forceNoEmail=FALSE) {
 			} else {
 				$reply_to = array($p['email'] => $_SESSION['ses_username']);
 			}
-		} else {
-			$reply_to = ko_get_setting('info_email');
 		}
-	} else {
-		$reply_to = ko_get_setting('info_email');
 	}
 
 	$from_name = $p['vorname'] || $p['nachname'] ? $p['vorname'].' '.$p['nachname'] : $p['firm'];
@@ -2012,7 +2126,7 @@ function ko_daten_store_moderation($data, $forceNoEmail=FALSE) {
 			if(!$mod['email'] || in_array($mod['email'], $done)) continue;
 
 			ko_send_mail(
-				$from,
+				'',
 				$mod['email'],
 				getLL('email_subject_prefix') . $subject,
 				ko_emailtext($mailtext),
@@ -2026,15 +2140,20 @@ function ko_daten_store_moderation($data, $forceNoEmail=FALSE) {
 }//ko_daten_store_moderation()
 
 
-
-
-function ko_daten_update_event($id, &$data, $forceIgnoreRes=FALSE) {
+/**
+ * @param int $id
+ * @param array $data event item
+ * @param bool $forceIgnoreRes
+ * @return bool
+ */
+function ko_daten_update_event($id, &$data, $forceIgnoreRes = FALSE) {
 	global $access, $EVENTS_SHOW_RES_FIELDS;
 
 	$error = FALSE;
 	$ok = TRUE;
 
 	$userid = $data["_user_id"] ? $data["_user_id"] : $_SESSION["ses_userid"];
+	$resp_for_res = $data['responsible_for_res'] ? $data['responsible_for_res'] : $userid;
 
 	if ($data['responsible_for_res']) $resp_for_res = $data['responsible_for_res'];
 	else $resp_for_res = $userid;
@@ -2044,126 +2163,167 @@ function ko_daten_update_event($id, &$data, $forceIgnoreRes=FALSE) {
 	$event["startzeit"] = sql_zeit($event["startzeit"]);
 	$event["endzeit"] = sql_zeit($event["endzeit"]);
 
-	$current_res = db_select_data("ko_reservation", "WHERE `id` IN ('".implode("','", explode(",", $event["reservationen"]))."')", "*");
-	if(ko_module_installed('reservation') && (sizeof($current_res) > 0 || $data["resitems"] != "") && !$forceIgnoreRes) {
+	$current_reservations = db_select_data("ko_reservation", "WHERE `id` IN ('" . implode("','", explode(",", $event["reservationen"])) . "')", "*");
+	if (ko_module_installed('reservation') && (sizeof($current_reservations) > 0 || $data["resitems"] != "") && !$forceIgnoreRes) {
 		//Get access rights for reservations
 		ko_get_access('reservation');
 
 		//Check for changes which force an update for the reservations for this event
-		$update_res = array();
-		foreach(explode(",", $event["reservationen"]) as $iid) {
-			if(!$iid) continue;
-			$r = db_select_data('ko_reservation', 'where id = ' . $iid, '*', '', '', TRUE, TRUE);
-			if($r["startdatum"] != $data['res_startdatum']) $update_res["startdatum"] = $data['res_startdatum'];
-			if($r["enddatum"] != $data['res_enddatum']) $update_res["enddatum"] = $data['res_enddatum'];
-			if($r['user_id'] != $resp_for_res) $update_res['user_id'] = $resp_for_res;
-		}
-		if($event["eventgruppen_id"] != $data["eventgruppen_id"] || $event["title"] != $data["title"]) {
-			$update_res['zweck'] = ko_daten_get_zweck_for_res($data);
-		}
-		foreach($EVENTS_SHOW_RES_FIELDS as $f) {
-			if($data['res_'.$f]) $update_res[$f] = $data['res_'.$f];
+		$update_res = [];
+		foreach (explode(",", $event["reservationen"]) as $res_id) {
+			if (!$res_id) continue;
+			$r = db_select_data('ko_reservation', 'where id = ' . $res_id, '*', '', '', TRUE, TRUE);
+			if ($r["startdatum"] != $data['res_startdatum']) $update_res["startdatum"] = $data['res_startdatum'];
+			if ($r["enddatum"] != $data['res_enddatum']) $update_res["enddatum"] = $data['res_enddatum'];
+			if ($r['user_id'] != $resp_for_res) $update_res['user_id'] = $resp_for_res;
 		}
 
-		$store_res = $store_mod = $upd_res = array();
-		$event_res = array();
-		foreach(explode(",", $data["resitems"]) as $iid) {
+		if ($event["eventgruppen_id"] != $data["eventgruppen_id"] || $event["title"] != $data["title"]) {
+			$update_res['zweck'] = ko_daten_get_zweck_for_res($data);
+		}
+		foreach ($EVENTS_SHOW_RES_FIELDS as $f) {
+			if ($data['res_' . $f]) $update_res[$f] = $data['res_' . $f];
+		}
+
+		$store_reservations = $store_mod_reservations = $update_reservations = [];
+		$event_res_ids = [];
+		foreach (explode(",", $data["resitems"]) as $resitem_id) {
 			$found = FALSE;
-			foreach($current_res as $cid => $cr) {
-				if($cr["item_id"] == $iid) {
+			foreach ($current_reservations as $res_id => $current_reservation) {
+				if ($current_reservation["item_id"] == $resitem_id) {
 					$found = TRUE;
-					$event_res[] = $cid;
+					$event_res_ids[] = $res_id;
 					//Overlapping check (Don't move event if reservations can not be stored)
-					if(FALSE === ko_res_check_double($iid, $data['res_startdatum'], $data['res_enddatum'], $data['res_startzeit'], $data['res_endzeit'], $double_error_txt, $cid)) {
+					if (FALSE === ko_res_check_double($resitem_id, $data['res_startdatum'], $data['res_enddatum'], $data['res_startzeit'], $data['res_endzeit'], $double_error_txt, $res_id)) {
 						$ok = FALSE;
-						koNotifier::Instance()->addError(4, '', array($double_error_txt), 'reservation');
+						koNotifier::Instance()->addError(4, '', [$double_error_txt], 'reservation');
 						$error = TRUE;
 					}
-					$upd_res[$cid] = $update_res;
-					unset($current_res[$cid]);
+					$update_reservations[$res_id] = $update_res;
+					unset($current_reservations[$res_id]);
 				}
 			}
-			if(!$found) {
-				if($access['reservation'][$iid] < 2) continue;
+
+			// when the resitem is moderated, the reservation might need to be saved as mod
+			ko_get_resitems($all_resitems);
+			foreach ($update_reservations AS $res_id => $update_reservation) {
+				$current_reservation = db_select_data("ko_reservation", "WHERE id = '" . $res_id . "'", "*", "", "LIMIT 1", TRUE, TRUE);
+				$current_resitem = $all_resitems[$current_reservation['item_id']];
+				if ($current_resitem['moderation'] > 0) {
+					if($access['reservation'][$resitem_id] >= 4) {
+						// don't save as mod reservation
+						continue;
+					}
+
+					unset($current_reservation['id']);
+					$current_reservation["_event_id"] = $event['id'];
+					$current_reservation['zweck'] = ko_daten_get_zweck_for_res($data);
+
+					$needs_update = FALSE;
+					foreach ($EVENTS_SHOW_RES_FIELDS as $field) {
+						if (substr($field,-4) == "zeit" && strlen($data["res_" . $field]) == 5) $data["res_" . $field] .= ":00";
+						if ($data["res_" . $field] != $current_reservation[$field]) $needs_update = TRUE;
+						if ($data['res_' . $field]) $current_reservation[$field] = $data['res_' . $field];
+					}
+
+					if ($needs_update == FALSE) continue;
+
+					$store_mod_reservations[] = $current_reservation;
+					db_delete_data("ko_reservation", "WHERE id = '" . $res_id . "'");
+					unset($update_reservations[$res_id]);
+				}
+			}
+
+			if (!$found) {
+				if ($access['reservation'][$resitem_id] < 2) continue;
 				//Add new reservation
 				$p = ko_get_logged_in_person();
-				$res_data = array("item_id" => $iid,
-						"startdatum" => $data['res_startdatum'],
-						"enddatum" => $data['res_enddatum'],
-						'zweck' => ko_daten_get_zweck_for_res($data),
-						"name" => $p["vorname"]." ".$p["nachname"],
-						"email" => $p["email"],
-						"telefon" => $p["telp"],
-						"user_id" => $resp_for_res);
-				foreach($EVENTS_SHOW_RES_FIELDS as $f) {
-					if($data['res_'.$f]) $res_data[$f] = $data['res_'.$f];
+
+				$phonetype = ko_get_userpref($_SESSION['ses_userid'], 'res_prefill_tel');
+				if (!$phonetype) $phonetype = ($p['telp']?'telp': ($p['telg']?'telg':'natel'));
+
+				$res_data = [
+					"item_id" => $resitem_id,
+					"startdatum" => $data['res_startdatum'],
+					"enddatum" => $data['res_enddatum'],
+					'zweck' => ko_daten_get_zweck_for_res($data),
+					"name" => $p["vorname"] . " " . $p["nachname"],
+					"email" => $p["email"],
+					"telefon" => $p[$phonetype],
+					"user_id" => $resp_for_res,
+					];
+
+				foreach ($EVENTS_SHOW_RES_FIELDS as $f) {
+					if ($data['res_' . $f]) $res_data[$f] = $data['res_' . $f];
 				}
-				$resitem = db_select_data("ko_resitem", "WHERE `id` = '$iid'", "*", "", "", TRUE);
+
+				$resitem = db_select_data("ko_resitem", "WHERE `id` = '$resitem_id'", "*", "", "", TRUE);
 				//Check for res colision
-				ko_res_check_double($iid, $res_data["startdatum"], $res_data["enddatum"], $res_data["startzeit"], $res_data["endzeit"], $double_error_txt);
-				if($double_error_txt) {
-					koNotifier::Instance()->addError(4, '', array($double_error_txt), 'reservation');
+				ko_res_check_double($resitem_id, $res_data["startdatum"], $res_data["enddatum"], $res_data["startzeit"], $res_data["endzeit"], $double_error_txt);
+				if ($double_error_txt) {
+					koNotifier::Instance()->addError(4, '', [$double_error_txt], 'reservation');
 					$error = TRUE;
 				} else {
 					//Check for moderation
-					if($resitem["moderation"] > 0 && $access['reservation'][$iid] < 4) {
+					if ($resitem["moderation"] > 0 && $access['reservation'][$resitem_id] < 4) {
 						$res_data["_event_id"] = $id;
-						$store_mod[] = $res_data;
+						$store_mod_reservations[] = $res_data;
 					} else {
 						unset($res_data["_event_id"]);
-						$store_res[] = $res_data;
+						$store_reservations[] = $res_data;
 					}
 				}
 			}//if(!found)
 		}//foreach(resitems)
 
 		//Store new reservations
-		if($ok) {
-			if(sizeof($store_res) > 0) {
+		if ($ok) {
+			if (sizeof($store_reservations) > 0) {
 				$send_user_email = ko_get_userpref($userid, 'do_res_email') != 0;
-				$new_ids = ko_res_store_reservation($store_res, $send_user_email);
-				$event_res = array_merge($event_res, $new_ids);
+				$new_ids = ko_res_store_reservation($store_reservations, $send_user_email);
+				$event_res_ids = array_merge($event_res_ids, $new_ids);
 			}
-			if(sizeof($store_mod) > 0) {
-				ko_res_store_moderation($store_mod);
+			if (sizeof($store_mod_reservations) > 0) {
+				ko_res_store_moderation($store_mod_reservations);
 			}
-			if(sizeof($upd_res) > 0) {
-				foreach($upd_res as $cid => $update_res) {
+			if (sizeof($update_reservations) > 0) {
+				foreach ($update_reservations as $res_id => $update_res) {
 					//Log-Meldung erstellen
 					$update_res['last_change'] = date('Y-m-d H:i:s');
-					ko_log_diff("edit_res", $update_res, db_select_data('ko_reservation', "WHERE `id` = '{$cid}'", '*', '', '', TRUE));
+					ko_log_diff("edit_res", $update_res, db_select_data('ko_reservation', "WHERE `id` = '{$res_id}'", '*', '', '', TRUE));
 
-					db_update_data('ko_reservation', "WHERE `id` = '$cid'", $update_res);
+					db_update_data('ko_reservation', "WHERE `id` = '$res_id'", $update_res);
 				}
 			}
 			//Delete reservations not selected anymore
-			if(sizeof($current_res) > 0) {
-				foreach($current_res as $cr) db_delete_data("ko_reservation", "WHERE `id` = '".$cr["id"]."'");
+			if (sizeof($current_reservations) > 0) {
+				foreach ($current_reservations as $current_reservation) db_delete_data("ko_reservation", "WHERE `id` = '" . $current_reservation["id"] . "'");
 			}
 
-			$data["reservationen"] = implode(",", $event_res);
+			$data["reservationen"] = implode(",", $event_res_ids);
 		}
 	}//if(handle_res)
 
 	//Update event itself
-	if($ok) {
-		unset($data['resitems']); unset($data['id']);
-		foreach($data as $key => $value) {
-			if(substr($key, 0, 1) == '_') unset($data[$key]);
+	if ($ok) {
+		unset($data['resitems']);
+		unset($data['id']);
+		foreach ($data as $key => $value) {
+			if (substr($key, 0, 1) == '_') unset($data[$key]);
 		}
-		foreach($EVENTS_SHOW_RES_FIELDS as $f) {
-			unset($data['res_'.$f]);
+		foreach ($EVENTS_SHOW_RES_FIELDS as $f) {
+			unset($data['res_' . $f]);
 		}
 		unset($data['responsible_for_res']);
 
 		//Group subscription
-		if(isset($data['gs_gid']) && ko_get_setting('daten_gs_pid')) {
-			if($data['gs_gid'] == 1 && $event['gs_gid'] == '') {  //Newly selected
+		if (isset($data['gs_gid']) && ko_get_setting('daten_gs_pid')) {
+			if ($data['gs_gid'] == 1 && $event['gs_gid'] == '') {  //Newly selected
 				$data['gs_gid'] = ko_daten_gs_get_gid_for_event($event);
-			} else if($event['gs_gid'] != '' && $data['gs_gid'] == 0) {  //Deselected
+			} else if ($event['gs_gid'] != '' && $data['gs_gid'] == 0) {  //Deselected
 				$data['gs_gid'] = '';
 				ko_daten_gs_delete_group($event);
-			} else if($data['gs_gid'] == 1 && $event['gs_gid'] != '') {  //Still selected with no change
+			} else if ($data['gs_gid'] == 1 && $event['gs_gid'] != '') {  //Still selected with no change
 				unset($data['gs_gid']);  //Unset gs_gid so it won't be updated and set to '1'
 			}
 		}
@@ -2176,7 +2336,7 @@ function ko_daten_update_event($id, &$data, $forceIgnoreRes=FALSE) {
 		if (isset($data['res_startdatum'])) unset($data['res_startdatum']);
 		if (isset($data['res_enddatum'])) unset($data['res_enddatum']);
 
-		if(ko_module_installed("taxonomy")) {
+		if (ko_module_installed("taxonomy")) {
 			$taxonomy_terms = explode(",", format_userinput($data["terms"], "intlist"));
 			ko_taxonomy_clear_terms_on_node("ko_event", $id);
 			ko_taxonomy_attach_terms_to_node($taxonomy_terms, "ko_event", $id);
@@ -2188,13 +2348,13 @@ function ko_daten_update_event($id, &$data, $forceIgnoreRes=FALSE) {
 		unset($data['lastchange_user']);
 
 		//Call KOTA post
-		$ids = array($id);
+		$ids = [$id];
 		$columns = array_keys($data);
 		$do_save = 1;
-		if(function_exists('kota_post_ko_event')) {
+		if (function_exists('kota_post_ko_event')) {
 			eval("kota_post_ko_event(\$ids, \$columns, \$event, \$do_save);");
 		}
-		hook_kota_post('ko_event', array('table' => 'ko_event', 'ids' => $ids, 'columns' => $columns, 'old' => $event, 'do_save' => $do_save));
+		hook_kota_post('ko_event', ['table' => 'ko_event', 'ids' => $ids, 'columns' => $columns, 'old' => $event, 'do_save' => $do_save]);
 
 		//Send notification
 		ko_daten_send_notification($data, 'update', $event);
@@ -2206,6 +2366,207 @@ function ko_daten_update_event($id, &$data, $forceIgnoreRes=FALSE) {
 	return $error;
 }//ko_daten_update_event()
 
+
+function ko_daten_import($state) {
+	global $ko_path, $smarty;
+	global $all_groups;
+	global $access;
+	global $BOOTSTRAP_COLS_PER_ROW;
+
+	switch($state) {
+		case 1:
+			$ses = $_SESSION['import_daten_csv_1'];
+
+			$rowcounter = 0;
+			$gc = 0;
+
+			// Create Field for event group
+			$eg = array_merge(
+				array(
+					"desc" => getLL("kota_ko_event_eventgruppen_id"),
+					"type" => "select",
+					"js_func_add" => "event_cal_select_add",
+					"params" => 'size="5"',
+					'new_row' => true,
+					'name' => 'eventgroup_id',
+				),
+				kota_get_form("ko_event", "eventgruppen_id")
+			);
+
+			$eg["multiple"] = true;
+			$values = $eg["values"];
+			$descs = $eg["descs"];
+			unset($eg["values"]);
+			unset($eg["descs"]);
+			if($ses['eventgroup_id']) {  //Current value given
+				$eg["avalues"] = $eg["adescs"] = array();
+				$eg["avalue"] = $ses['eventgroup_id'];
+				//If current value is not found on top level then go through all lower levels to find it and display this level
+				if(!in_array($ses['eventgroup_id'], array_keys($values))) {
+					foreach($values as $vid => $value) {
+						if(substr($vid, 0, 1) != "i") continue;
+						if(in_array($ses['eventgroup_id'], $value)) {
+							$values = array("i-" => "i-");
+							//Add all values from this level
+							foreach($value as $v) $values[$v] = $v;
+							//Add link to go back up to the index
+							$descs["i-"] = getLL("form_peopleselect_up");
+							break;
+						}
+					}
+				}//if(!in_array(row[col], values))
+			}//if(row[col])
+			//Build top level of select
+			foreach($values as $vid => $value) {
+				$eg["values"][] = $vid;
+				$suffix = is_array($value) ? "-->" : "";
+				$eg["descs"][] = $descs[$vid].$suffix;
+			}
+
+			$frmgroup[$gc]["row"][$rowcounter]["inputs"][0] = $eg;
+
+			// CSV file
+			$frmgroup[$gc]["row"][$rowcounter++]["inputs"][1] = array("desc" => getLL("leute_import_state1_csv"),
+				"type" => "file",
+				"name" => "csv",
+			);
+			$frmgroup[$gc]["row"][$rowcounter]["inputs"][0] = array("desc" => getLL("leute_import_state1_csv_separator"),
+				"type" => "text",
+				"name" => "txt_separator",
+				"params" => 'size="6"',
+				"value" => $ses['separator'] ? $ses['separator'] : ',',
+			);
+			$frmgroup[$gc]["row"][$rowcounter++]["inputs"][1] = array("desc" => getLL("leute_import_state1_csv_content_separator"),
+				"type" => "text",
+				"name" => "txt_content_separator",
+				"params" => 'size="6"',
+				"value" => isset($ses['content_separator']) ? $ses['content_separator'] : '&quot;',
+			);
+			$frmgroup[$gc]['row'][$rowcounter]['inputs'][0] = array('desc' => getLL('leute_import_state1_csv_first_line'),
+				'type' => 'switch',
+				'name' => 'chk_first_line',
+				'value' => $ses['first_line'] == 1 ? '1' : '0',
+			);
+			$frmgroup[$gc]['row'][$rowcounter++]['inputs'][1] = array('desc' => getLL('leute_import_state1_csv_file_encoding'),
+				'type' => 'select',
+				'name' => 'sel_file_encoding',
+				'params' => 'size="0"',
+				'values' => array('utf-8', 'latin1', 'macintosh'),
+				'descs' => array('Unicode (UTF-8)', 'Latin1 (iso-8859-1)', 'Mac Roman'),
+				'value' => $ses['file_encoding'],
+			);
+
+			$mandatoryFields = kota_get_mandatory_fields_choices_for_sel('ko_event');
+			$mandatory_avalues = $mandatoryFields['avalues'];
+			$mandatory_adescs = $mandatoryFields['adescs'];
+			if (sizeof($mandatory_adescs) > 0) {
+				$mandatoryFieldsString = implode(', ', $mandatory_adescs);
+			} else {
+				$mandatoryFieldsString = getLL('none');
+			}
+			$frmgroup[$gc]['row'][$rowcounter++]['inputs'][0] = array('desc' => getLL('daten_settings_mandatory'),
+				'type' => 'html',
+				'name' => 'mandatory_fields',
+				'value' => $mandatoryFieldsString,
+			);
+
+			$smarty->assign("tpl_titel", getLL("daten_import_state_1"));
+			$smarty->assign("tpl_hide_cancel", true);
+			$smarty->assign("tpl_submit_value", getLL("next"));
+			$smarty->assign("tpl_action", "importtwo");
+			$smarty->assign("tpl_groups", $frmgroup);
+			$smarty->display('ko_formular.tpl');
+		break;  //1
+
+		case 2:
+			$ses1 = $_SESSION['import_daten_csv_1'];
+			$ses2 = $_SESSION['import_daten_csv_2'];
+			$data = $_SESSION["import_daten_data"];
+
+			$rowcounter = 0;
+			$gc = 0;
+
+			if ($ses1['first_line']) {
+				$labels = $data[0];
+				$example = $data[1];
+			} else {
+				$labels = array();
+				for ($i = 0; $i < sizeof($data[0]); $i++) {
+					$labels[] = 'col_' . ($i + 1);
+				}
+				$example = $data[0];
+			}
+
+			list($values, $descs) = ko_daten_get_user_assignable_cols();
+			array_unshift($values, '');
+			array_unshift($descs, '');
+			$html = '<table id="daten-import-mapping"><tbody>';
+
+			$html .= '<tr>';
+			$html .= '<td><label>'.getLL('daten_import_label_col').'</label></td>';
+			$html .= '<td><label>'.getLL('daten_import_label_assign_field').'</label></td>';
+			$html .= '<td><label>'.getLL('daten_import_label_value').'</label></td>';
+			$html .= '</tr>';
+
+			foreach ($example as $k => $line) {
+				$label = $labels[$k];
+				$html .= '<tr>';
+				$html .= '<td>'.$label.'</td>';
+				$html .= '<td>';
+				$html .= '<select class="input-sm form-control" name="assign_field['.$k.']">';
+				$active = $ses2['assign_field['.$k.']'];
+				if (!$active) {
+					if (in_array($label, $values)) {
+						$active = $label;
+					} else if (in_array($label, $descs)) {
+						$key = array_search($label, $descs);
+						$active = $values[$key];
+					}
+				}
+				foreach ($values as $kk => $value) {
+					$desc = $descs[$kk];
+					$html .= '<option value="'.$value.'"'.($value == $active ? ' selected="selected"' : '').'>'.$desc.'</option>';
+				}
+				$html .= '</select>';
+				$html .= '</td>';
+				$html .= '<td>'.$line.'</td>';
+				$html .= '</tr>';
+				$rowcounter++;
+			}
+
+			$html .= '</tbody></table>';
+
+			$frmgroup[$gc]['row'][$rowcounter++]['inputs'][0] = array('desc' => '',
+				'type' => 'html',
+				'name' => 'data_table',
+				'value' => $html,
+				'columnWidth' => $BOOTSTRAP_COLS_PER_ROW,
+			);
+
+			$mandatoryFields = kota_get_mandatory_fields_choices_for_sel('ko_event');
+			$mandatory_avalues = $mandatoryFields['avalues'];
+			$mandatory_adescs = $mandatoryFields['adescs'];
+			if (sizeof($mandatory_adescs) > 0) {
+				$mandatoryFieldsString = implode(', ', $mandatory_adescs);
+			} else {
+				$mandatoryFieldsString = getLL('none');
+			}
+			$frmgroup[$gc]['row'][$rowcounter++]['inputs'][0] = array('desc' => getLL('daten_settings_mandatory'),
+				'type' => 'html',
+				'name' => 'mandatory_fields',
+				'value' => $mandatoryFieldsString,
+			);
+
+			$smarty->assign("tpl_titel", getLL("daten_import_state_2"));
+			$smarty->assign("tpl_hide_cancel", true);
+			$smarty->assign("tpl_submit_value", getLL("next"));
+			$smarty->assign("tpl_action", "importthree");
+			$smarty->assign("tpl_groups", $frmgroup);
+			$smarty->display('ko_formular.tpl');
+
+		break;  //2
+	}
+}//ko_daten_import()
 
 
 
@@ -2613,6 +2974,7 @@ function ko_daten_store_event(&$data, $modResForConflicts=FALSE) {
 
 	//Mail for moderator, if user with access level 3 has made a reservation of a moderated object
 	if(sizeof($txt3) > 0) {
+		$reply_to = '';
 
 		if($_SESSION['ses_userid'] != ko_get_guest_id()) {
 			$p = ko_get_logged_in_person();
@@ -2622,11 +2984,7 @@ function ko_daten_store_event(&$data, $modResForConflicts=FALSE) {
 				} else {
 					$reply_to = array($p['email'] => $_SESSION['ses_username']);
 				}
-			} else {
-				$reply_to = ko_get_setting('info_email');
 			}
-		} else {
-			$reply_to = ko_get_setting('info_email');
 		}
 
 
@@ -2637,7 +2995,7 @@ function ko_daten_store_event(&$data, $modResForConflicts=FALSE) {
 				//Check user_pref for this moderator
 				if(ko_get_userpref($mod["id"], "do_mod_email_for_edit_daten") == 1) {
 					ko_send_mail(
-						ko_mail_get_from(),
+						'',
 						$mod['email'],
 						getLL('email_subject_prefix') . getLL('daten_email_mod3_subject'),
 						ko_emailtext($mailtext),
@@ -2665,7 +3023,7 @@ function ko_daten_store_event(&$data, $modResForConflicts=FALSE) {
 	* @param array old: old event data. Used for mode==update to show differences
 	*/
 function ko_daten_send_notification($data, $mode, $old='') {
-	global $DATETIME, $MAIL_TRANSPORT;
+	global $DATETIME, $MAIL_TRANSPORT, $KOTA;
 
 	//Get event if only id is given (used after multiediting)
 	if(!is_array($data)) {
@@ -2724,6 +3082,10 @@ function ko_daten_send_notification($data, $mode, $old='') {
 			$message .= '</table>';
 		}
 	}
+	//Only keep fields from _listview_default so email doesn't show ALL information about event
+	foreach($data as $k => $v) {
+		if(!in_array($k, $KOTA['ko_event']['_listview_default'])) unset($data[$k]);
+	}
 	$list = kota_get_list($data, "ko_event", FALSE);
 	$message .= '<h3>'.getLL('daten_notify_title_event').'</h3>';
 	$message .= '<table style="width: 100%;" cellpadding="3" cellspacing="3">';
@@ -2739,6 +3101,7 @@ function ko_daten_send_notification($data, $mode, $old='') {
 	}
 	$message .= '</table>';
 
+	$reply_to = '';
 	if($_SESSION['ses_userid'] != ko_get_guest_id()) {
 		$p = ko_get_logged_in_person();
 		if($p['email']) {
@@ -2747,15 +3110,11 @@ function ko_daten_send_notification($data, $mode, $old='') {
 			} else {
 				$reply_to = array($p['email'] => $_SESSION['ses_username']);
 			}
-		} else {
-			$reply_to = ko_get_setting('info_email');
 		}
-	} else {
-		$reply_to = ko_get_setting('info_email');
 	}
 
 	foreach($to as $recipient) {
-		ko_send_html_mail(ko_mail_get_from(), $recipient, $subject, $message, array(), array(), array(), $reply_to);
+		ko_send_html_mail('', $recipient, $subject, $message, array(), array(), array(), $reply_to);
 	}
 }//ko_daten_send_notification()
 
@@ -2867,6 +3226,19 @@ function ko_daten_ical_links() {
 				$content .= ko_get_ical_link($base_link.'&term='.$structuredTerm['data']['id'], $structuredTerm['data']['name']).'<br />';
 			}
 		}
+	}
+
+	if (ko_module_installed("rota") && $access['rota']['ALL'] >= 1) {
+		$content .= '<h4>' . ($help2['show'] == 1 ? $help2['link'].'&nbsp;' : '') . getLL('rota_ical_links_title_teams') . '</h4>';
+		$content .= '<div>';
+		$teams = ko_rota_get_all_teams();
+		foreach ($teams AS $team) {
+			if($team['rotatype'] != "day") continue;
+			$link = $BASE_URL . 'rotaical/index.php?team=' . $team['id'] . 'x' . strtolower(substr(md5($team['id'] . KOOL_ENCRYPTION_KEY . 'rotaIcal' . KOOL_ENCRYPTION_KEY . 'rotaIcal' . KOOL_ENCRYPTION_KEY . $team['id']), 0, 10));
+			$content .= ko_get_ical_link($link, $team['name'], "") . "<br/>";
+		}
+
+		$content .= "</div>";
 	}
 
 	$content .= '</div>';
@@ -3049,13 +3421,26 @@ function ko_daten_export_months($num, $month, $year) {
 		$z_where .= ' AND `enddatum` >= \''.strftime('%Y-%m-%d', $startstamp).'\' AND `startdatum` <= \''.strftime('%Y-%m-%d', $endstamp).'\'';
 		ko_get_events($events, $z_where);
 
+		$absence_color = substr(ko_get_setting('absence_color'), 1);
+
 		//Absence
 		if(!empty($_SESSION['show_absences'])) {
 			$absenceEvents = ko_get_absences_for_calendar(date('Y-m-d', $startstamp), date('Y-m-d', $endstamp), 'ko_event');
 			if(sizeof($absenceEvents) > 0) {
-				$egs['absence'] = array('id' => 'absence', 'farbe' => $EVENT_ABSENCE_COLOR, 'name' => getLL('absence_eventgroup'), 'shortname' => getLL('absence_eventgroup_short'));
+				$egs['absence'] = [
+					'id' => 'absence',
+					'farbe' => $absence_color,
+					'name' => getLL('absence_eventgroup'),
+					'shortname' => getLL('absence_eventgroup_short')
+				];
 				$events = array_merge($events, $absenceEvents);
 			}
+		}
+
+		list($amtstageEvents, $amtstageEgs) = ko_get_amtstageevents_for_calendar($startstamp, $endstamp, TRUE);
+		if(!empty($amtstageEvents)) {
+			$events = array_merge($amtstageEvents, $events);
+			$egs = array_merge($amtstageEgs, $egs);
 		}
 
 		//Calendar weeks
@@ -3084,14 +3469,22 @@ function ko_daten_export_months($num, $month, $year) {
 						$mode = 'last';
 					}
 					if(substr($date, 5, 2) == $month) {
-						$content['zeit'] = ko_get_time_as_string($event, $show_time, $mode);
+						if(substr($event['id'],0,1) == "d") {
+							$content["zeit"] = "";
+						} else {
+							$content['zeit'] = ko_get_time_as_string($event, $show_time, $mode);
+						}
 						$data[(int)substr($date, -2)]['inhalt'][] = $content;
 					}
 					$date = add2date($date, 'tag', 1, TRUE);
 				}
 			} else {
 				//Time
-				$content['zeit'] = ko_get_time_as_string($event, $show_time, 'default');
+				if(substr($event['id'],0,1) == "d") {
+					$content["zeit"] = "";
+				} else {
+					$content['zeit'] = ko_get_time_as_string($event, $show_time, 'default', TRUE, FALSE);
+				}
 				$data[(int)substr($event['startdatum'], -2)]['inhalt'][] = $content;
 			}
 
@@ -3511,7 +3904,89 @@ function ko_daten_import_ical($eg) {
 
 
 
+function ko_daten_import_absences() {
+	global $ko_path;
+	require_once($ko_path.'inc/ICalReader/ICalReader.php');
 
+	$where = "WHERE `key` = 'absence_ical_url' AND value != ''";
+	$ical_urls = db_select_data("ko_userprefs", $where);
+
+	foreach ($ical_urls AS $ical_url) {
+		$leute_id = ko_get_logged_in_id($ical_url['user_id']);
+		if(empty($leute_id)) continue;
+
+		$icalData = ko_fetch_url($ical_url['value']);
+		if(!$icalData) continue;
+
+		$icalReader = new kOOL\ICalReader();
+
+		try {
+			$absences = $icalReader->getAbsences($icalData);
+
+			foreach($absences AS $absence) {
+				$absence['leute_id'] = $leute_id;
+				$absence['cruser'] = $_SESSION['ses_userid'];
+
+				$where = "WHERE ical_id = '" . $absence['ical_id'] . "' AND to_date >= '".date("Y-m-d", time())."'";
+				if(empty(db_select_data("ko_event_absence", $where))) {
+					db_insert_data("ko_event_absence", $absence);
+				} else {
+					db_update_data("ko_event_absence", $where, $absence);
+				}
+			}
+
+			$ical_ids = array_column($absences, "ical_id");
+			$where = "WHERE ical_id != '' AND ical_id NOT IN ('" . implode("','", $ical_ids) . "') AND to_date >= '".date("Y-m-d", time())."'";
+			db_delete_data("ko_event_absence", $where);
+		} catch (Exception $e) {
+			ko_log("absence_ical_import", $e->getMessage());
+		}
+	}
+}
+
+/**
+ * Return the type for an absence
+ *
+ * @param $input string to search through
+ * @return string
+ */
+function ko_daten_absence_map_type($input) {
+	$ABSENCE_TYPES = [
+		"ferien" => "vacation",
+		"urlaub" => "vacation",
+		"weiterbildung" => "training",
+		"ausbildung" => "training",
+		"kurs" => "training",
+		"frei" => "free",
+		"kompensation" => "compensation",
+		"kompensiere" => "compensation",
+		"militär" => "army",
+		"armee" => "army",
+		"rekrut" => "army",
+		"wk" => "army",
+		"zivildienst" => "civilservice",
+		"krank" => "sick",
+		"unfall" => "sick",
+		"arzt" => "sick",
+		"spital" => "sick",
+		];
+
+	global $PLUGINS;
+
+	foreach($PLUGINS as $plugin) {
+		if(function_exists('my_absence_map_type_'.$plugin['name'])) {
+			call_user_func_array('my_absence_map_type'.$plugin['name'], [&$ABSENCE_TYPES]);
+		}
+	}
+
+	foreach($ABSENCE_TYPES AS $search_for => $type) {
+		if(stristr($input, $search_for)) {
+			return $type;
+		}
+	}
+
+	return "other";
+}
 
 
 //TODO: Select an EG preset (ALL, userprefs, or currently visible (default))
@@ -3924,12 +4399,16 @@ function daten_get_eg_color_css() {
  * @return array An array containing the column names and ll-descs of all user assignable cols
  */
 function ko_daten_get_user_assignable_cols() {
-	global $DATEN_EXCLUDE_DBFIELDS;
+	global $DATEN_EXCLUDE_DBFIELDS, $access;
+
+	if(isset($access['reservation']['MAX'])) $resMax = $access['reservation']['MAX'];
+	else ko_get_access_all('reservation', '', $resMax);
 
 	$values = $descs = array();
 	$_dbfields = db_get_columns('ko_event');
 	foreach($_dbfields as $f) {
 		if(in_array($f['Field'], $DATEN_EXCLUDE_DBFIELDS)) continue;
+		if($f['Field'] == 'reservationen' && (!ko_module_installed('reservation') || $resMax < 1)) continue;
 		$values[] = $f['Field'];
 		$descs[] = getLL('kota_ko_event_'.$f['Field']) ? getLL('kota_ko_event_'.$f['Field']) : $f['Field'];
 	}
@@ -4073,21 +4552,27 @@ function ko_daten_insert_new_event($do_action, $ep) {
 }
 
 
-
 /**
  * Shows list of absences
  *
  * @param string $mode html or xls export
  * @return bool
+ * @throws Exception
  */
 function ko_daten_list_absence($mode = "html") {
-	global $access;
+	global $access, $notifier;
 	$_SESSION['kota_show_cols_ko_event_absence'] = ['leute_id', 'from_date', 'to_date', 'type', 'description', ];
 
-	if($access['daten']['MAX'] < 1 ||
-		$access['daten']['ABSENCE'] < 1 ||
-		(($leute_id = ko_get_logged_in_id()) == 0 && $access['daten']['ABSENCE'] < 2)
-	) return FALSE;
+	if($access['daten']['ABSENCE'] < 1) return FALSE;
+	$leute_id = ko_get_logged_in_id();
+
+	if($leute_id == 0 && $access['daten']['ABSENCE'] <= 2) {
+		$notifier->addTextError(getLL("absence_error_no_person"));
+		$notifier->notify();
+	} else if($leute_id == 0) {
+		$notifier->addTextWarning(getLL("absence_warning_no_person"));
+		$notifier->notify();
+	}
 
 	$list = new kOOL_listview();
 	$filter = kota_apply_filter("ko_event_absence");
@@ -4120,7 +4605,7 @@ function ko_daten_list_absence($mode = "html") {
 
 	$fake_access = [];
 	foreach($absence_rows as $l_i => $l) {
-		if($l['leute_id'] == $leute_id || $access['daten']['ABSENCE'] > 2) {
+		if(($l['leute_id'] == $leute_id || $access['daten']['ABSENCE'] > 2) && $l['ical_id'] == '') {
 			$fake_access[$l_i] = 3;
 		} else {
 			$fake_access[$l_i] = 0;
@@ -4136,7 +4621,9 @@ function ko_daten_list_absence($mode = "html") {
 		"delete" => ["action" => "delete_absence", "confirm" => TRUE]
 	]);
 
-	$list->setActionNew('add_absence');
+	if(($leute_id != 0 && $access['daten']['ABSENCE'] >= 1) || ($access['daten']['ABSENCE'] >= 3)) {
+		$list->setActionNew('add_absence');
+	}
 
 	$list->setWarning(kota_filter_get_warntext('ko_event_absence'));
 
@@ -4144,8 +4631,35 @@ function ko_daten_list_absence($mode = "html") {
 			'label' => getLL('ko_event_absence_export_label'),
 			'button' => '
 				<a type="button" class="btn btn-primary" href="/daten/index.php?action=list_absence&mode=xls">' . getLL("ko_event_absence_export_button") . '</a>',
-
 	];
+
+
+	$help = ko_get_help("daten", "ical_links_absence");
+	$label = "<strong>" . getLL('daten_settings_absence_ical_url') . "</strong>&nbsp;<span class=\"help-icon\">".$help['link']."</span>";
+	if(ko_get_logged_in_person()) {
+		$absence_ical_url = ko_get_userpref($_SESSION['ses_userid'], 'absence_ical_url');
+		$list_footer[] = [
+			'label' => $label,
+			'button' => '
+			<div class="row">
+				<div class="col-lg-5 col-sm-6">
+					<div class="input-group">
+					<form>
+						<input type="text" name="absence_ical_url" class="form-control" value="' . $absence_ical_url . '"/>
+						<span class="input-group-btn">
+							<button class="btn btn-primary" type="button" onclick="set_action(\'set_absence_ical_url\');this.form.submit();">' . getLL("save") . '</button>
+						</span>
+					</form>
+					</div>
+				</div>
+			</div>',
+		];
+	} else {
+		$list_footer[] = [
+			'label' => $label,
+			'button' => "<br>" . getLL("daten_settings_absence_ical_url_no_leute_id"),
+		];
+	}
 
 	$list->setFooter($list_footer);
 
@@ -4259,18 +4773,23 @@ function ko_daten_get_absence_by_leute_id($leute_id, $within_date = NULL, $only_
  *
  * @param string $from_date well formated sql date
  * @param string $to_date well formated sql date
+ * @param int $leute_id optional filter for specific person
  * @return array|null absence entries
  */
-function ko_daten_get_absence_by_date($from_date, $to_date = NULL) {
+function ko_daten_get_absence_by_date($from_date, $to_date = NULL, $leute_id = NULL) {
 	if (empty($to_date) || $to_date == '0000-00-00') {
 		$to_date = $from_date;
 	}
 
 	$where = "WHERE 
-		(from_date BETWEEN '" . $from_date . "' AND '" . $to_date . "') OR 
+		((from_date BETWEEN '" . $from_date . "' AND '" . $to_date . "') OR 
 		(to_date BETWEEN '" . $from_date . "' AND '" . $to_date . "') OR
 		('" . $from_date . "' BETWEEN from_date AND to_date) OR 
-		('" . $to_date . "' BETWEEN from_date AND to_date)";
+		('" . $to_date . "' BETWEEN from_date AND to_date))";
+
+	if($leute_id != NULL) {
+		$where.= " AND ko_event_absence.leute_id = '" . (int)$leute_id ."'";
+	}
 
 	$order = "ORDER BY from_date ASC";
 	$join = " LEFT JOIN ko_leute ON ko_leute.id = ko_event_absence.leute_id";
@@ -4290,7 +4809,7 @@ function ko_daten_get_absence_by_date($from_date, $to_date = NULL) {
  * @throws Exception
  */
 function ko_get_absences_for_calendar($startDate, $endDate, $dbFormat=FALSE) {
-	global $access, $EVENT_ABSENCE_COLOR;
+	global $access;
 
 	$absences = ko_daten_get_absence_by_date(format_userinput($startDate, 'date'), format_userinput($endDate, 'date'));
 	$loggedin_person = ko_get_logged_in_person($_SESSION['ses_userid']);
@@ -4332,6 +4851,8 @@ function ko_get_absences_for_calendar($startDate, $endDate, $dbFormat=FALSE) {
 			}
 		}
 
+		$absence_color = substr(ko_get_setting('absence_color'), 1);
+
 		//Return db format, similar to a db_select_data(ko_event, ...)
 		if($dbFormat == "ko_event") {
 			$datetime1 = new DateTime($absence['from_date']);
@@ -4347,7 +4868,7 @@ function ko_get_absences_for_calendar($startDate, $endDate, $dbFormat=FALSE) {
 				'title' => getLL('kota_ko_event_absence_type_' . $absence['type']) . " " . $absence['name'],
 				'kommentar' => $absence['description'],
 				'duration' => ($difference->d + 1),
-				'eventgruppen_farbe' => $EVENT_ABSENCE_COLOR,
+				'eventgruppen_farbe' => $absence_color,
 			];
 		} else if ($dbFormat == 'ko_reservation') {
 			$datetime1 = new DateTime($absence['from_date']);
@@ -4363,7 +4884,7 @@ function ko_get_absences_for_calendar($startDate, $endDate, $dbFormat=FALSE) {
 				'zweck' => getLL('kota_ko_event_absence_type_' . $absence['type']) . " " . $absence['name'],
 				'comments' => $absence['description'],
 				'duration' => ($difference->d + 1),
-				'item_farbe' => $EVENT_ABSENCE_COLOR,
+				'item_farbe' => $absence_color,
 			];
 		}
 		//Called from ajax.php jsongetevents. So fullCalendar data array is returned
@@ -4386,8 +4907,8 @@ function ko_get_absences_for_calendar($startDate, $endDate, $dbFormat=FALSE) {
 				'allDay' => TRUE,
 				'editable' => FALSE,
 				'className' => 'fc-absence' . ($readonly == TRUE ? ' fc-absence-readonly' : ''),
-				'color' => '#'.$EVENT_ABSENCE_COLOR,
-				'textColor' => '#'.ko_get_contrast_color($EVENT_ABSENCE_COLOR, '000000', 'ffffff'),
+				'color' => '#'.$absence_color,
+				'textColor' => '#'.ko_get_contrast_color($absence_color, '000000', 'ffffff'),
 				'kOOL_tooltip' => utf8_encode($tooltip),
 				'resourceId' => 'absences',
 			];

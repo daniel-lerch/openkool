@@ -26,6 +26,7 @@
 			selectedPeople: [],
 			avalues: [],
 			adescs: [],
+			astatus: [],
 			atitles: [],
 			removalWarning: 'Wollen Sie diese Zuweisung wirklich entfernen?',
 			showRemovalWarning: true,
@@ -41,6 +42,7 @@
 			multiple: this.$element.data("multiple"),
 			avalues: typeof this.$element.data("avalues") !== 'undefined' ? this.$element.data("avalues").toString().split(';;') : [],
 			adescs: typeof this.$element.data("adescs") !== 'undefined' ? this.$element.data("adescs").toString().split(';;') : [],
+			astatus: typeof this.$element.data("astatus") !== 'undefined' ? this.$element.data("astatus").toString().split(';;') : [],
 			atitles: typeof this.$element.data("atitles") !== 'undefined' ? this.$element.data("atitles").toString().split(';;') : [],
 			removalWarning: this.$element.data("removal-warning"),
 			showRemovalWarning: this.$element.data("show-removal-warning"),
@@ -54,6 +56,7 @@
 		this.selectedPeople = this.options.selectedPeople || this.selectedPeople;
 		this.avalues = this.options.avalues || this.avalues;
 		this.adescs = this.options.adescs || this.adescs;
+		this.astatus = this.options.astatus || this.astatus;
 		this.atitles = this.options.atitles || this.atitles;
 		this.removalWarning = this.options.removalWarning || this.removalWarning;
 		this.showRemovalWarning = this.options.showRemovalWarning || this.showRemovalWarning;
@@ -70,10 +73,11 @@
 				var value = this.avalues[i];
 				if (value == null) continue;
 				var desc = this.adescs[i];
+				var astatus = this.astatus[i];
 				var title = '';
 				if (this.atitles[i]) title = this.atitles[i];
 				else title = desc;
-				this.selectedPeople.push({id: value, name: desc, title: title});
+				this.selectedPeople.push({id: value, name: desc, title: title, status: astatus});
 			}
 		} else {
 			for (var i = 0; i < this.selectedPeople.length; i++) {
@@ -146,9 +150,9 @@
 				for (var id_ in this.selectedPeople) {
 					var person = this.selectedPeople[id_];
 					if (this.disabled) {
-						this.$buttonsWrapper.append('<div class="col-sm-6"><button type="button" style="width:100%" class="btn btn-default btn-sm" title="'+person.title+'" data-id="'+person.id+'" disabled>'+person.name+'</button></div>');
+						this.$buttonsWrapper.append('<div class="col-sm-6"><button type="button" style="width:100%" class="btn btn-default btn-sm peoplesearch__status__'+person.status+'" title="'+person.title+'" data-id="'+person.id+'" disabled>'+person.name+'</button></div>');
 					} else {
-						this.$buttonsWrapper.append('<div class="col-sm-6"><button type="button" style="width:100%" class="peoplesearch-button btn btn-default btn-sm" title="'+person.title+'" data-id="'+person.id+'"><span class="pull-left">'+person.name+'</span><i class="text-danger pull-right fa fa-remove icon-line-height"></i></button></div>');
+						this.$buttonsWrapper.append('<div class="col-sm-6"><button type="button" style="width:100%" class="peoplesearch-button btn btn-default btn-sm peoplesearch__status__'+person.status+'" title="'+person.title+'" data-id="'+person.id+'"><span class="pull-left">'+person.name+'</span><i class="text-danger pull-right fa fa-remove icon-line-height"></i></button></div>');
 					}
 				}
 			} else {
@@ -159,7 +163,8 @@
 					this.$button
 						.show()
 						.html('<span class="pul-left">'+this.selectedPeople[0].name+'</span>'+removeButtonHtml)
-						.attr('title', this.selectedPeople[0].title);
+						.attr('title', this.selectedPeople[0].title)
+						.addClass("peoplesearch__status__"+this.selectedPeople[0].status);
 				}
 				else {
 					this.$button.hide();

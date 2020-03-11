@@ -164,7 +164,11 @@ class PDF_MC_Table extends FPDF {
 				}
 			}
 			//Print the text
-			$this->MultiCell($text_w,$this->zeilenhoehe,$data[$i],$this->cellBorders,$a);
+			if(is_array($this->fillColors[$i])) {
+				$this->MultiCell($text_w, $this->zeilenhoehe, $data[$i], $this->cellBorders, $a, $this->fillColors[$i]);
+			} else {
+				$this->MultiCell($text_w, $this->zeilenhoehe, $data[$i], $this->cellBorders, $a);
+			}
 			//Put the position to the right of the cell
 			$this->SetXY($x+$w,$y);
 		}

@@ -31,6 +31,28 @@
     }
 }
 
+.panel {
+    &.module {
+        .panel-heading {
+            cursor: pointer;
+
+            .panel-title {
+                input[type="checkbox"] {
+                    width: 20px;
+                    height: 20px;
+                    position: absolute;
+                    margin-top: -3px;
+                    margin-left: -5px;
+                    margin-bottom: -5px;
+                }
+            }
+        }
+    }
+}
+
+.collapse_group {
+    padding: 5px;
+}
 
 // button column for doubleselect, peoplesearch etc.
 .btn-column {

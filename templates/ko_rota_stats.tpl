@@ -9,20 +9,22 @@
 	<div class="pagestats rota-header pull-right">
 		<div class="btn-toolbar">
 
-			<div class="input-group input-group-sm">
-				<select name="sel_open_consensus_for" class="input-sm">
-					<option value="">{ll key="rota_open_consensus_for"}</option>
-					{foreach from=$consensus_links item=v key=k}
-						<option value="{$k}">{$v}</option>
-					{/foreach}
-				</select>
-				<script>
-					$('select[name="sel_open_consensus_for"]').change(function () {ldelim}
-						if (!$(this).val()) return;
-						window.open($(this).val(), '_blank');
-						{rdelim});
-				</script>
-			</div>
+			{if $access_send}
+				<div class="input-group input-group-sm">
+					<select name="sel_open_consensus_for" class="input-sm">
+						<option value="">{ll key="rota_open_consensus_for"}</option>
+						{foreach from=$consensus_links item=v key=k}
+							<option value="{$k}">{$v}</option>
+						{/foreach}
+					</select>
+					<script>
+						$('select[name="sel_open_consensus_for"]').change(function () {ldelim}
+							if (!$(this).val()) return;
+							window.open($(this).val(), '_blank');
+							{rdelim});
+					</script>
+				</div>
+			{/if}
 
 			{if $access_send}
 				<div class="btn-group btn-group-sm">

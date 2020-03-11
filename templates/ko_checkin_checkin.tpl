@@ -53,11 +53,15 @@
 		<div class="col-md-8 col-md-offset-2">
 			<div id="notifications" name="notifications"></div>
 			<div id="search-result-container" name="search-result-container">
-				<div class="panel panel-default">
-					<div class="panel-body">
-						{ll key="checkin_label_enter_query"}
+				{if $results != ''}
+					{$results}
+				{else}
+					<div class="panel panel-default">
+						<div class="panel-body">
+							{ll key="checkin_label_enter_query"}
+						</div>
 					</div>
-				</div>
+				{/if}
 			</div>
 		</div>
 	</div>

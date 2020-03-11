@@ -36,6 +36,7 @@ switch ($do_action) {
 		$trackingId = format_userinput($_GET['t'], 'uint');
 		$googlePrinterId = format_userinput($_GET['p'], 'alphanum+');
 		$qzPrinterName = format_userinput($_GET['qzp'], 'dir');
+		$mode = format_userinput($_GET['m'], 'uint');
 		if (!$trackingId) $trackingId = $_SESSION['checkin_tracking_id'];
 		if (!$trackingId) {
 			$notifier->addError(2);
@@ -108,6 +109,7 @@ switch ($do_action) {
 		if (!$notifier->hasErrors()) {
 			$_SESSION['checkin_tracking_id'] = $trackingId;
 			$_SESSION['checkin_printer'] = $printer;
+			$_SESSION['checkin_mode'] = $mode;
 
 			$_SESSION['ses_userid'] = $checkinUser['id'];
 			$_SESSION['show'] = 'login';

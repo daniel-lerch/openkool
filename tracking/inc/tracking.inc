@@ -2,7 +2,7 @@
 /***************************************************************
 *  Copyright notice
 *
-*  (c) 2003-2017 Renzo Lauper (renzo@churchtool.org)
+*  (c) 2003-2020 Renzo Lauper (renzo@churchtool.org)
 *  All rights reserved
 *
 *  This script is part of the kOOL project. The kOOL project is
@@ -65,13 +65,86 @@ function ko_list_trackings() {
 	if ($access['tracking']['MAX'] > 3) $list->setActionNew('new_tracking');
 	$list->setSort(TRUE, 'setsort', $_SESSION['sort_trackings'], $_SESSION['sort_trackings_order']);
 	$list->setStats($rows);
-	$list->setColumnLink('name', 'index.php?action=enter_tracking&amp;id=ID');
+	$list->setColumnLink('name', 'index.php?action=select_tracking&amp;id=ID');
 	$list->setRowClass("ko_list_hidden", 'return HIDDEN == 1;');
 	$list->showColItemlist();
-
+	$list->setWarning(kota_filter_get_warntext('ko_tracking'));
 	//Output the list
 	$list->render($es);
 }//ko_list_trackings()
+
+
+
+
+/**
+ * This function is called after global ajax actions (defined in KOTA)
+ * Depending on the current SESSION[show] it will display list of mod entries or normal ones
+ * Necessary as both list show entries from same DB table and KOTA allows only one redraw function per DB table
+ */
+function ko_tracking_list_wrapper() {
+	if($_SESSION['show'] == 'list_tracking_entries') {
+		ko_list_tracking_entries();
+	} else if($_SESSION['show'] == 'mod_entries') {
+		ko_list_tracking_mod_entries();
+	}
+}
+
+
+
+
+/**
+ * List tracking entries as normal list view instead of form table
+ */
+function ko_list_tracking_entries() {
+	global $smarty, $access;
+
+	if($access['tracking']['MAX'] < 1) return;
+
+	if(!$_SESSION['tracking_id'] || $access['tracking'][$_SESSION['tracking_id']] < 1) {
+		print 'Select Tracking';
+		return;
+	}
+	$tracking = db_select_data('ko_tracking', "WHERE `id` = '".$_SESSION['tracking_id']."'", '*', '', '', TRUE);
+
+	apply_tracking_dates_filter($d_where, $z_limit, 'ko_tracking_entries');
+	$z_where = " AND `tid` = '".intval($_SESSION['tracking_id'])."' ".$d_where;
+
+	$kota_where = kota_apply_filter('ko_tracking_entries');
+	if($kota_where != '') $z_where .= " AND ($kota_where) ";
+
+
+	$order = 'ORDER BY '.$_SESSION['sort_tracking_entries'].' '.$_SESSION['sort_tracking_entries_order'];
+
+	$rows = db_get_count('ko_tracking_entries', 'id', $z_where." AND `status` = '0'");
+	if($_SESSION['show_start'] > $rows) {
+		$_SESSION['show_start'] = 1;
+		$z_limit = 'LIMIT '.($_SESSION['show_start']-1).', '.$_SESSION['show_limit'];
+	}
+	$es = db_select_data('ko_tracking_entries', "WHERE `status` = '0' $z_where", '*', $order, $z_limit);
+
+	$list = new kOOL_listview();
+
+	$list->init('tracking', 'ko_tracking_entries', array('chk', 'edit', 'delete'), $_SESSION['show_start'], $_SESSION['show_limit']);
+	$list->setTitle(getLL('tracking_entries_list_title').' '.$tracking['name']);
+	$subtitle = '<i class="fa fa-list" title="'.getLL('tracking_list_subtitle_list').'"></i>&nbsp;&nbsp;<a href="/tracking/?action=enter_tracking&id='.$_SESSION['tracking_id'].'"><i class="fa fa-table" title="'.getLL('tracking_list_subtitle_table').'"></i></a>';
+	$list->setSubTitle($subtitle);
+	if($access['tracking'][$_SESSION['tracking_id']] > 1) $list->setActionNew('new_tracking_entry');
+	$list->setAccessRights(array('edit' => 2, 'delete' => 2), $access['tracking']);
+	$list->setActions(array(
+		'edit' => array('action' => 'edit_tracking_entry'),
+		'delete' => array('action' => 'delete_tracking_entry', 'confirm' => TRUE),
+	));
+	$list->setSort(TRUE, 'setsortentries', $_SESSION['sort_tracking_entries'], $_SESSION['sort_tracking_entries_order']);
+	$list->setStats($rows);
+
+	$list->setWarning(kota_filter_get_warntext('ko_tracking_entries'));
+
+
+	//Output the list
+	$list->render($es);
+}//ko_list_tracking_entries()
+
+
 
 
 
@@ -175,6 +248,54 @@ function ko_formular_tracking_entry_mod($id) {
 
 
 
+function ko_formular_tracking_entry($mode, $id='') {
+	global $KOTA, $access;
+
+	if($mode == 'new') {
+		$id = 0;
+		if($_SESSION['tracking_id']) {
+			//Set default values for tracking_id and date
+			kota_assign_values('ko_tracking_entries', array('tid' => $_SESSION['tracking_id'], 'date' => date('d.m.Y')));
+			//Set available types for the selected tracking
+			$tracking = db_select_data('ko_tracking', "WHERE `id` = '".$_SESSION['tracking_id']."'", '*', '', '', TRUE);
+		}
+	} else if($mode == 'edit') {
+		if(!$id) return FALSE;
+
+		$te = db_select_data('ko_tracking_entries', "WHERE `id` = {$id}", '*', '', '', TRUE);
+		$tracking = db_select_data('ko_tracking', "WHERE `id` = {$te['tid']}", '*', '', '', TRUE);
+
+		$KOTA['ko_tracking_entries']['type']['form']['value'] = $te['type'];
+	} else {
+		return FALSE;
+	}
+
+	//Set available types from tracking (for edit and new)
+	$values = array('');
+	foreach (explode("\n", $tracking['types']) as $type) {
+		$type = trim($type);
+		if (!$type) continue;
+		$values[] = $type;
+	}
+	$KOTA['ko_tracking_entries']['type']['form']['values'] = $values;
+	$KOTA['ko_tracking_entries']['type']['form']['descs'] = $values;
+
+
+	$form_data['title'] =  $mode == 'new' ? getLL('tracking_entry_form_title_new') : getLL('tracking_entry_form_title_edit');
+	$form_data['submit_value'] = getLL('save');
+	$form_data['action'] = $mode == 'new' ? 'submit_new_tracking_entry' : 'submit_edit_tracking_entry';
+	if($mode == 'edit' && ($access['tracking']['ALL'] > 1 || $access['tracking'][$id] > 1)) {
+		$form_data['action_as_new'] = 'submit_as_new_tracking_entry';
+		$form_data['label_as_new'] = getLL('tracking_entry_form_submit_as_new');
+	}
+	$form_data['cancel'] = 'list_tracking_entries';
+
+	ko_multiedit_formular('ko_tracking_entries', '', $id, '', $form_data);
+}//ko_formular_tracking_entry()
+
+
+
+
 
 /**
  * Show form to enter and edit trackings. Uses fields as defined in KOTA
@@ -190,7 +311,7 @@ function ko_formular_tracking($mode, $id='') {
 		return FALSE;
 	}
 
-	$form_data['title'] =  $mode == 'new' ? getLL('tracking_form_title_new') : getLL('tracking_form_title_edit');
+	$form_data['title'] =  $mode == 'new' ? getLL('tracking_entry_form_title_new') : getLL('tracking_entry_form_title_edit');
 	$form_data['submit_value'] = getLL('save');
 	$form_data['action'] = $mode == 'new' ? 'submit_new_tracking' : 'submit_edit_tracking';
 	if($mode == 'edit' && ($access['tracking']['ALL'] > 3 || $access['tracking'][$id] > 3)) {
@@ -494,6 +615,9 @@ function ko_tracking_enter_form() {
 	//Help link
 	$smarty->assign('help', ko_get_help('tracking', 'enter_tracking'));
 
+	$subtitle = '<a href="/tracking/?action=list_tracking_entries&id='.$_SESSION['tracking_id'].'"><i class="fa fa-list" title="'.getLL('tracking_list_subtitle_list').'"></i></a>&nbsp;&nbsp;<i class="fa fa-table" title="'.getLL('tracking_list_subtitle_table').'"></i>';
+	$smarty->assign('subtitle', $subtitle);
+
 	//Date limit
 	$limit = ko_get_userpref($_SESSION['ses_userid'], 'tracking_date_limit');
 	$smarty->assign('limitM', max(1, $limit-1));
@@ -534,12 +658,12 @@ function ko_tracking_enter_form() {
 /**
  * Does the date calculations for the different date methods
  *
- * @param array tracking: Tracking to get dates for
- * @param date start: If set this date will be used as first date, otherwise _SESSION[date_start] will be used
+ * @param array $tracking: Tracking to get dates for
+ * @param string $_start: If set this date will be used as first date, otherwise _SESSION[date_start] will be used (date)
  * @param int limit: Set a maximum number of dates to return. If not set, _SESSION[date_limit] will be used
- * @param date &prev: Value for backwards date navigation
- * @param date &next: Value for forward date navigation
- * @param date &prev1: Value to navigation back one day
+ * @param string &$prev: Value for backwards date navigation (date)
+ * @param string &$next: Value for forward date navigation (date)
+ * @param string &$prev1: Value to navigation back one day (date)
  * @param boolean apply_filter: Defines if filters from session should be applied or not, default to TRUE
  * @return array dates: Returns an array of dates fulfilling the given parameters
  */
@@ -935,6 +1059,17 @@ function ko_tracking_settings() {
 				'value' => $value,
 		);
 	}
+
+	$rowcounter++;
+	$value = ko_get_userpref($_SESSION['ses_userid'], 'tracking_default_show');
+	$values = $descs = array();
+	$frmgroup[$gc]['row'][$rowcounter]['inputs'][0] = array('desc' => getLL('tracking_settings_default_show'),
+			'type' => 'select',
+			'name' => 'sel_default_show',
+			'values' => array('enter_tracking', 'list_tracking_entries'),
+			'descs' => array(getLL('submenu_tracking_enter_tracking'), getLL('submenu_tracking_list_tracking_entries')),
+			'value' => $value,
+	);
 	$rowcounter++;
 
 
@@ -1813,7 +1948,7 @@ function apply_tracking_entries_filter(&$z_where) {
 
 /**
  * Gets the name of a given filter
- * @param filter mixed: groupID, smallgroupID or serialized filter preset
+ * @param string $filter: groupID, smallgroupID or serialized filter preset
  * @returns string Name of the group, smallgroup of filter preset
  */
 function ko_tracking_get_filter_name($filter, $returnTitle=FALSE) {

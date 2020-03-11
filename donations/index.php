@@ -2,7 +2,7 @@
 /***************************************************************
 *  Copyright notice
 *
-*  (c) 2003-2017 Renzo Lauper (renzo@churchtool.org)
+*  (c) 2003-2020 Renzo Lauper (renzo@churchtool.org)
 *  All rights reserved
 *
 *  This script is part of the kOOL project. The kOOL project is
@@ -31,8 +31,8 @@ ob_start();  //Ausgabe-Pufferung starten
 $ko_path = "../";
 $ko_menu_akt = "donations";
 
-include($ko_path . "inc/ko.inc");
-include("inc/donations.inc");
+include_once($ko_path . "inc/ko.inc");
+include_once("inc/donations.inc");
 
 //Redirect to SSL if needed
 ko_check_ssl();
@@ -53,7 +53,7 @@ $notifier = koNotifier::Instance();
 ko_get_access('donations');
 
 //kOOL Table Array
-ko_include_kota(array('ko_donations', 'ko_donations_accounts'));
+ko_include_kota(array('ko_donations', 'ko_donations_accounts', 'ko_donations_accountgroups'));
 
 //*** Plugins einlesen:
 $hooks = hook_include_main("donations");
@@ -90,9 +90,21 @@ switch($do_action) {
 		$_SESSION['show'] = 'list_accounts';
 	break;
 
-	case "list_reoccuring_donations":
+	case 'list_accountgroups':
+		if($access['donations']['MAX'] < 4) break;
+		if($_SESSION['show'] == 'list_accountgroups') $_SESSION['show_start'] = 1;
+		$_SESSION['show'] = 'list_accountgroups';
+	break;
+
+	case 'list_reoccuring_donations':
 		if($access['donations']['MAX'] < 1) break;
-		$_SESSION["show"] = "list_reoccuring_donations";
+		$_SESSION['show'] = 'list_reoccuring_donations';
+		$_SESSION['show_start'] = 1;
+	break;
+
+	case "list_donations_mod":
+		if($access['donations']['MAX'] < 1) break;
+		$_SESSION["show"] = "list_donations_mod";
 		$_SESSION["show_start"] = 1;
 	break;
 
@@ -225,6 +237,55 @@ switch($do_action) {
 			$_SESSION["show"] = "list_accounts";
 			$_SESSION["show_donations_accounts"][] = $new_id;
 		}
+	break;
+
+
+
+
+
+
+	case 'new_accountgroup':
+		if($access['donations']['ALL'] < 4) break;
+
+		$_SESSION['show'] = 'new_accountgroup';
+		$onload_code = 'form_set_first_input();'.$onload_code;
+	break;
+	case 'edit_accountgroup':
+		if($access['donations']['ALL'] < 4) break;
+
+		$id = format_userinput($_POST['id'], 'uint');
+		$_SESSION['show'] = 'edit_accountgroup';
+		$onload_code = 'form_set_first_input();'.$onload_code;
+	break;
+
+
+	case 'submit_new_accountgroup':
+	case 'submit_edit_accountgroup':
+		if($access['donations']['ALL'] < 4) break;
+
+		$mode = $do_action == 'submit_edit_accountgroup' ? 'edit' : 'new';
+
+		list($table, $cols, $id, $hash) = explode('@', $_POST['id']);
+		if($mode == 'edit' && !$id) {
+			$notifier->addError(1, $do_action);
+		} else {
+			$new_id = kota_submit_multiedit('', ($mode == 'edit' ? 'edit_accountgroup' : 'new_accountgroup'));
+
+			$_SESSION['show'] = 'list_accountgroups';
+		}
+	break;
+
+
+	case 'delete_accountgroup':
+		if($access['donations']['ALL'] < 4) break;
+
+		$id = format_userinput($_POST['id'], 'uint');
+		if(!$id) break;
+
+		$old = db_select_data('ko_donations_accountgroups', "WHERE `id` = '$id'", '*', '', '', TRUE);
+
+		db_delete_data('ko_donations_accountgroups', "WHERE `id` = '$id'");
+		ko_log_diff('del_donation_accountgroup', $old);
 	break;
 
 
@@ -821,6 +882,7 @@ switch($do_action) {
 				ko_set_setting('ps_filter_sel_ds1_koi[ko_donations][person]', $filter[0]['value']);
 			}
 			ko_set_setting('donations_use_promise', format_userinput($_POST['chk_use_promise'], 'uint'));
+			ko_set_setting('donations_use_repetition', format_userinput($_POST['chk_use_repetition'], 'uint'));
 			ko_set_setting('donations_show_export_page', format_userinput($_POST['chk_show_export_page'], 'uint'));
 		}
 
@@ -849,6 +911,11 @@ if(in_array($do_action, array('delete_account', 'submit_new_account'))) {
 }
 
 
+// If we are handling a request that was redirected by /inc/form.php, then exit here
+if ($asyncFormSubmit == 1) {
+	throw new Exception('async-form-submit-dummy-exception');
+}
+
 
 //*** Default-Werte auslesen
 if(!isset($_SESSION["show_donations_accounts"]) || $_SESSION["show_donations_accounts"] == "") {
@@ -859,6 +926,9 @@ if(!isset($_SESSION["show_donations_accounts"]) || $_SESSION["show_donations_acc
 		$accounts = db_select_data("ko_donations_accounts", "", "*");
     $_SESSION["show_donations_accounts"] = array_keys($accounts);
   }
+}
+foreach($_SESSION['show_donations_accounts'] as $k => $v) {
+	if($access['donations']['ALL'] < 1 && $access['donations'][$v] < 1) unset($_SESSION['show_donations_accounts'][$k]);
 }
 $_SESSION["show_limit"] = ko_get_userpref($_SESSION["ses_userid"], "show_limit_donations");
 if(!$_SESSION["show_limit"]) $_SESSION["show_limit"] = ko_get_setting("show_limit_donations");
@@ -943,6 +1013,10 @@ switch($_SESSION["show"]) {
 		ko_list_accounts();
 	break;
 
+	case 'list_accountgroups':
+		ko_list_accountgroups();
+	break;
+
 	case "list_reoccuring_donations":
 		ko_list_reoccuring_donations();
 	break;
@@ -969,6 +1043,14 @@ switch($_SESSION["show"]) {
 
 	case "edit_account":
 		ko_formular_account("edit", $id);
+	break;
+
+	case 'new_accountgroup':
+		ko_formular_accountgroup('new');
+	break;
+
+	case 'edit_accountgroup':
+		ko_formular_accountgroup('edit', $id);
 	break;
 
 	case "show_stats":

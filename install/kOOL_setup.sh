@@ -3,7 +3,7 @@
 ##################################################################################
 #  Copyright notice
 #
-#  (c) 2003-2017 Renzo Lauper (renzo@churchtool.org)
+#  (c) 2003-2020 Renzo Lauper (renzo@churchtool.org)
 #  All rights reserved
 #
 #  This script is part of the kOOL project. The kOOL project is
@@ -123,6 +123,15 @@ touch index.html
 
 
 
+# Webhook directory
+echo -n "webhook, "
+cd ..
+if [ ! -d ./webhook ]; then mkdir webhook ; fi
+cd webhook
+if [ ! -L ./telegram.php ]; then rm -f telegram.php && ln -s ../kOOL_lib/webhook/telegram.php ./telegram.php ; fi
+if [ ! -L ./postfinancecheckout.php ]; then rm -f postfinancecheckout.php && ln -s ../kOOL_lib/webhook/postfinancecheckout.php ; fi
+
+
 # Include directory
 echo -n "inc, "
 cd ..
@@ -135,12 +144,12 @@ done
 if [ ! -L ./mt940 ]; then rm -rf mt940 && ln -s ../kOOL_lib/inc/mt940 ./mt940 ; fi
 if [ ! -L ./googleCloudPrint ]; then rm -rf googleCloudPrint && ln -s ../kOOL_lib/inc/googleCloudPrint ./googleCloudPrint ; fi
 if [ ! -L ./CashManagement ]; then rm -rf CashManagement && ln -s ../kOOL_lib/inc/CashManagement ./CashManagement ; fi
+if [ ! -L ./TelegramBot ]; then rm -rf TelegramBot && ln -s ../kOOL_lib/inc/TelegramBot ./TelegramBot ; fi
 if [ ! -L ./tcpdf ]; then rm -rf tcpdf && ln -s ../kOOL_lib/inc/tcpdf ./tcpdf ; fi
 if [ ! -L ./fullcalendar ]; then rm -rf fullcalendar && ln -s ../kOOL_lib/inc/fullcalendar ./fullcalendar ; fi
 if [ ! -L ./calendar ]; then rm -rf calendar && ln -s ../kOOL_lib/inc/calendar ./calendar ; fi
 if [ ! -L ./jquery ]; then rm -rf jquery && ln -s ../kOOL_lib/inc/jquery ./jquery ; fi
 if [ ! -L ./phpexcel ]; then rm -rf phpexcel && ln -s ../kOOL_lib/inc/phpexcel ./phpexcel ; fi
-if [ ! -L ./phpword ]; then rm -rf phpword && ln -s ../kOOL_lib/inc/phpword ./phpword ; fi
 if [ ! -L ./bootstrap ]; then rm -rf bootstrap && ln -s ../kOOL_lib/inc/bootstrap ./bootstrap ; fi
 if [ ! -L ./qrcode ]; then rm -rf qrcode && ln -s ../kOOL_lib/inc/qrcode ./qrcode ; fi
 if [ ! -L ./swiftmailer ]; then rm -rf swiftmailer && ln -s ../kOOL_lib/inc/swiftmailer ./swiftmailer ; fi
@@ -155,6 +164,7 @@ if [ ! -L ./qz-tray ]; then rm -rf qz-tray && ln -s ../kOOL_lib/inc/qz-tray ./qz
 if [ ! -L ./tablesaw ]; then rm -rf tablesaw && ln -s ../kOOL_lib/inc/tablesaw ./tablesaw ; fi
 if [ ! -L ./jquery-dragtable ]; then rm -rf jquery-dragtable && ln -s ../kOOL_lib/inc/jquery-dragtable ./jquery-dragtable ; fi
 if [ ! -L ./CalendarHeatmap ]; then rm -rf CalendarHeatmap && ln -s ../kOOL_lib/inc/CalendarHeatmap ./CalendarHeatmap ; fi
+if [ ! -L ./Payment ]; then rm -rf Payment && ln -s ../kOOL_lib/inc/Payment ./Payment ; fi
 
 # Delete old links
 if [ -L ./js-kOOL.inc ]; then rm -f js-kOOL.inc ; fi
@@ -170,6 +180,7 @@ if [ -L ./ZeroClipboard.min.js ]; then rm -f ZeroClipboard.min.js ; fi
 if [ -L ./ZeroClipboard.min.map ]; then rm -f ZeroClipboard.min.map ; fi
 if [ -L ./submenu_actions.inc ]; then rm -f ./submenu_actions.inc ; fi
 if [ -L ./class.iCalReader.php ]; then rm -f class.iCalReader.php ; fi
+if [ -L ./phpword ]; then rm -f phpword ; fi
 cd ..
 
 # vendor
@@ -221,6 +232,7 @@ if [ ! -L ./index.php ]; then rm -f index.php && ln -s ../kOOL_lib/install/index
 if [ ! -L ./update.phpsh ]; then rm -f update.phpsh && ln -s ../kOOL_lib/install/update.phpsh ./update.phpsh ; fi
 if [ ! -L ./kOOL_db.sql ]; then rm -f kOOL_db.sql && ln -s ../kOOL_lib/install/kOOL_db.sql ./kOOL_db.sql ; fi
 if [ ! -L ./db_de.sql ]; then rm -f db_de.sql && ln -s ../kOOL_lib/install/db_de.sql ./db_de.sql ; fi
+if [ ! -L ./updates ]; then rm -f updates && ln -s ../kOOL_lib/install/updates ./updates ; fi
 cd ..
 
 

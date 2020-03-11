@@ -8,9 +8,10 @@ Feature: Leute Module
   Scenario: Add new person and search for it
     Given I am on "/leute/index.php"
     And I hover over "#ko_menu > ul > li.dropdown.active > a"
-    And I follow "Person hinzufügen"
+    And I follow "Adresse hinzufügen"
     Then I should see "Adresse"
     And I fill in "koi[ko_leute][firm][0]" with "Lauper Computing"
+    And I click on "Speichern"
 
   Scenario: View and download general statistics of addresses
     Given I am on "/leute/index.php?action=leute_chart"

@@ -2,7 +2,7 @@
 /***************************************************************
 *  Copyright notice
 *
-*  (c) 2003-2017 Renzo Lauper (renzo@churchtool.org)
+*  (c) 2003-2020 Renzo Lauper (renzo@churchtool.org)
 *  All rights reserved
 *
 *  This script is part of the kOOL project. The kOOL project is
@@ -49,10 +49,10 @@ if($no_enc) {
 //Use encryption
 else {
 	if((isset($_POST['ssl']) && $_POST['ssl']) || (isset($_GET['ssl']) && $_GET['ssl'])) {
-		require($ko_path."inc/class.openssl.php");
+		require_once($ko_path."inc/class.openssl.php");
 		$crypt = new openssl('AES-256-CBC');
 	} else {
-		require($ko_path."inc/class.mcrypt.php");
+		require_once($ko_path."inc/class.mcrypt.php");
 		$crypt = new mcrypt("aes");
 	}
 	$crypt->setKey(KOOL_ENCRYPTION_KEY);
@@ -151,6 +151,15 @@ switch($action) {
 	break;
 
 
+
+	//Call ko_create_groups_snapshot() after ko_leute.groups has been changed directly (e.g. lpc_wahlkurse)
+	case 'saveGroupsSnapshot':
+		$id = format_userinput($req['id'], 'uint');
+		if(!$id) break;
+		ko_create_groups_snapshot($id);
+	break;
+
+
 	//Update group count for given group ids: ids => array(id1, id2, ...)
 	case 'updateGroupCount':
 		foreach(explode(',', $req['ids'][0]) as $id) {
@@ -169,9 +178,36 @@ switch($action) {
 		$recipients = explode(',', $req['recipients'][0]);
 		$text = utf8_decode($req['smstext'][0]);
 		$from = $req['from'][0];
-		send_aspsms($recipients, $text, $from);
+		send_aspsms($recipients, $text, $from, $num, $credits, $log_id);
 	break;
 
+	case 'sendTelegram':
+		if(!in_array('telegram', $MODULES)) continue;
+
+		$textTelegram = utf8_decode($req['telegramtext'][0]);
+		$textSMS = utf8_decode($req['smstext'][0]);
+		$from = $req['from'][0];
+
+		$telegramRecipients = [];
+		foreach(($recipients = explode(',', $req['recipients'][0])) AS $recipient_id) {
+			ko_get_person_by_id($recipient_id, $person);
+
+			ko_get_leute_mobile($person, $mobile);
+			$natel = $mobile[0];
+
+			if ($person['telegram_id'] > 0) {
+				$telegramRecipients[] = $person;
+			} else if (check_natel($natel)) {
+				send_aspsms(array($natel), $textSMS, $from, $num, $credits, $log_id);
+			} else {
+				ko_log('error', 'No telegram ID and no valid mobile number found for get.php:sendTelegram, RecipientID: '.$recipient_id);
+			}
+		}
+
+		if(!empty($telegramRecipients)) {
+			send_telegram_message($telegramRecipients, $textTelegram);
+		}
+	break;
 
 	case 'trackingDates':
 		if(!in_array('tracking', $MODULES)) continue;
@@ -222,7 +258,7 @@ switch($action) {
 		include($ko_path.'reservation/inc/reservation.inc');
 
 		if($moderated) {
-			ko_res_store_moderation($res, FALSE, $double_error);
+			ko_res_store_moderation($res, FALSE);
 		} else {
 			ko_res_store_reservation($res, FALSE, $double_error);
 		}

@@ -55,9 +55,9 @@ class IcalContext implements Context {
 		);
 
 		if($module == "events") {
-			$this->commonContext->download_url = "http://127.0.0.1/ical/?user=" . $hash;
+			$this->commonContext->download_url = "http://kool.local/ical/?user=" . $hash;
 		} else {
-			$this->commonContext->download_url = "http://127.0.0.1/resical/?user=" . $hash;
+			$this->commonContext->download_url = "http://kool.local/resical/?user=" . $hash;
 		}
 	}
 

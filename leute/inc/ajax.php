@@ -2,7 +2,7 @@
 /***************************************************************
 *  Copyright notice
 *
-*  (c) 2003-2017 Renzo Lauper (renzo@churchtool.org)
+*  (c) 2003-2020 Renzo Lauper (renzo@churchtool.org)
 *  All rights reserved
 *
 *  This script is part of the kOOL project. The kOOL project is
@@ -149,12 +149,12 @@ if((isset($_GET) && isset($_GET["action"])) || (isset($_POST) && isset($_POST["a
 			//Set list start
 			if(isset($_GET['set_start'])) {
 				$_SESSION['show_start'] = max(1, format_userinput($_GET['set_start'], 'uint'));
-	    }
+		    }
 			//Set list limit
 			if(isset($_GET['set_limit'])) {
 				$_SESSION['show_limit'] = max(1, format_userinput($_GET['set_limit'], 'uint'));
 				ko_save_userpref($_SESSION['ses_userid'], 'show_limit_leute', $_SESSION['show_limit']);
-	    }
+		    }
 
 			//Neuen HTML-Code für SM ausgeben
 			print "main_content@@@";
@@ -397,7 +397,13 @@ if((isset($_GET) && isset($_GET["action"])) || (isset($_POST) && isset($_POST["a
 			if($akt_filter["sql1"] == "groups REGEXP '[VAR1][g:0-9]*[VAR2]'") print "@@@POST@@@filter_group";
 		break;
 
-
+		case "informationlockfilter":
+			if($_GET['value'] == "false") {
+				ko_save_userpref($_SESSION['ses_userid'], "leute_apply_informationlock", FALSE);
+			} else {
+				ko_save_userpref($_SESSION['ses_userid'], "leute_apply_informationlock", TRUE);
+			}
+		break;
 		case "setsortleute":
 			if($access['leute']['MAX'] < 1) break;
 
@@ -496,7 +502,11 @@ if((isset($_GET) && isset($_GET["action"])) || (isset($_POST) && isset($_POST["a
 						$insert_after = array_search($previous_column, $_SESSION["show_leute_cols"])+1;
 						array_splice($_SESSION["show_leute_cols"], $insert_after, 0, $id);
 					} else {
-						array_unshift($_SESSION["show_leute_cols"], $id);
+						if(substr($id, 0, 13) == "MODULEparent_") {
+							$_SESSION["show_leute_cols"][] = $id;
+						} else {
+							array_unshift($_SESSION["show_leute_cols"], $id);
+						}
 					}
 
 					//group column to show all datafields as well
@@ -998,14 +1008,8 @@ if((isset($_GET) && isset($_GET["action"])) || (isset($_POST) && isset($_POST["a
 				ko_include_kota(array($table));
 			}
 
-			if($KOTA[$table][$field]['form']['include_hidden']) {
-				$include_hidden = TRUE;
-			} else {
-				$include_hidden = FALSE;
-			}
-
 			$filter = unserialize(ko_get_setting('ps_filter_'.$name));
-			apply_leute_filter($filter, $base_where, ($access['leute']['ALL'] < 1 && !$accessAll), '', '', FALSE, $include_hidden);
+			apply_leute_filter($filter, $base_where, ($access['leute']['ALL'] < 1 && !$accessAll), '', '', FALSE, FALSE);
 
 			//Apply filters set in KOTA
 			if($KOTA[$table][$field]['form']['additional_where']) {
@@ -1858,6 +1862,91 @@ if((isset($_GET) && isset($_GET["action"])) || (isset($_POST) && isset($_POST["a
 			print $input;
 		break;
 
+		case 'sendtelegramlink':
+			$mode = format_userinput($_GET['mode'], 'text');
+			$user_id = format_userinput($_GET['id'], 'uint');
+			$telegram_link = ko_create_telegram_link($user_id);
+			ko_get_person_by_id($user_id, $person);
+			kota_listview_salutation_formal($message, array('dataset' => $person));
+
+			if ($mode == "email") {
+				$subject = sprintf(getLL('telegram_send_registration_email_subject'), ko_get_setting('info_name'));
+				$message.= sprintf(getLL('telegram_send_registration_email'), $telegram_link);
+				$message.= ko_email_signature();
+
+				ko_get_leute_email($user_id, $recipient);
+				ko_send_html_mail('', $recipient[0], $subject, $message);
+				print "INFO@@@" . getLL('telegram_send_registration_link_sent');
+			} else if ($mode == "sms") {
+				ko_get_leute_mobile($user_id, $mobilenr);
+				$from = ko_get_setting('info_name');
+				$message.= ". " . sprintf(getLL('telegram_send_registration_sms'),$telegram_link) . " " . $from;
+
+				if ($SMS_PARAMETER['provider'] == 'aspsms') {
+					$ret = send_aspsms($mobilenr, $message, $from, $num, $charges, $log_id);
+				} else {
+					$climsgid = time() . "_" . $p["id"];
+					$msg_type = "SMS_TEXT";
+					$ret = send_sms($mobilenr, $message, $from, $climsgid, $msg_type, $success, $done, $problems, $charges, $error_message, $log_id);
+				}
+
+				if ($ret) {
+					print "INFO@@@" . getLL('telegram_send_registration_link_sent');
+				} else {
+					print "ERROR@@@SMS could not be sent";
+				}
+			}
+
+		break;
+
+
+		case 'mylistpresetnew':
+			$name = format_userinput($_GET['name'], 'text');
+			ko_save_userpref($_SESSION['ses_userid'], $name, implode(',', $_SESSION['my_list']), 'leute_my_list');
+
+			print submenu_leute('meine_liste', 'open', 2);
+		break;
+
+		case 'mylistpresetdelete':
+			$id = format_userinput($_GET['id'], 'uint');
+			if(!$id) break;
+
+			db_delete_data('ko_userprefs', "WHERE `user_id` = '".$_SESSION['ses_userid']."' AND `type` = 'leute_my_list' AND `id` = '$id'");
+			print submenu_leute('meine_liste', 'open', 2);
+		break;
+
+		case 'mylistpresetopen':
+			$id = format_userinput($_GET['id'], 'uint');
+			if(!$id) break;
+			$userpref = db_select_data('ko_userprefs', "WHERE `user_id` = '".$_SESSION['ses_userid']."' AND `type` = 'leute_my_list' AND `id` = '$id'", '*', '', '', TRUE);
+			if(!$userpref['id']) break;
+
+			$_SESSION['my_list'] = array();
+			foreach(explode(',', $userpref['value']) as $pid) {
+				$_SESSION['my_list'][$pid] = $pid;
+			}
+    	ko_save_userpref($_SESSION['ses_userid'], 'leute_my_list', serialize($_SESSION['my_list']));
+			$_SESSION['show'] = 'show_my_list';
+
+			print 'main_content@@@';
+			ko_list_personen('my_list');
+			print '@@@';
+			print submenu_leute('meine_liste', 'open', 2);
+		break;
+
+
+		case "exportsmstomylist":
+		case "exportaddsmstomylist":
+			if($_GET["hidrecipientsinvalidids"]) {
+				if($do_action == "exportsmstomylist") $_SESSION["my_list"] = array();
+				foreach(explode(",", format_userinput($_GET["hidrecipientsinvalidids"], "intlist")) as $c) {
+					if($c) $_SESSION["my_list"][$c] = $c;
+				}
+				ko_save_userpref($_SESSION["ses_userid"], "leute_my_list", serialize($_SESSION["my_list"]));
+			}
+
+			print "INFO@@@" . getLL('leute_sms_my_export_added');
+		break;
 	}//switch(action);
 
 	hook_ajax_post($ko_menu_akt, $action);

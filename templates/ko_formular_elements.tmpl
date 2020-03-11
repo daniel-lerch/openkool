@@ -25,7 +25,7 @@
 {elseif $input.type == "file"}
 	<input type="file" name="{$input.name}" class="{$input.add_class}" {$input.params}>
 	{if $input.special_value}<br />{$input.special_value}{/if}
-	{if $input.value != '' && $input.value != ' '}<br /><a href="/{$input.value}" target="_blank">{$input.value}</a>{/if}
+	{if $input.value != '' && $input.value != ' '}<br /><a href="/{$input.value}?m={$input.mtime}" target="_blank">{$input.value}</a>{/if}
 	{if $input.value2}<br /><input type="checkbox" name="{$input.name2}" value="1" class="{$input.add_class}">{$input.value2}{/if}
 
 
@@ -35,6 +35,61 @@
 	<script>
       $('input[name="{$input.name}"]').minicolors({ldelim}theme: 'bootstrap'{rdelim});
     </script>
+
+{elseif $input.type == "days_range"}
+	{if !$input.html_id}
+		{uid loc="id"}
+	{else}
+		{assign var="id" value=$input.html_id}
+	{/if}
+
+	{assign var="avalues" value=","|explode:$input.avalues}
+
+	<input type="hidden" name="{$input.name}" id="{$id}" value="{","|implode:$avalues}">
+	<ol class="btn-group daysrange" id="{$id}_list" data-toggle="buttons">
+		{foreach from=$input.descs item=descs key=key}
+			<li
+			id="{$id}_{$key}"
+			class="ui-widget-content btn btn-default {if !in_array($key, $input.activated_days)}disabled{/if} {if in_array($key, $avalues)} btn-primary{/if} rota-tooltip {if $input.absences[$key]}absence{/if} {if $input.css_highlight[$key]}{$input.css_highlight[$key]}{/if}"
+			{if $input.tooltips[$key]} data-tooltip-code="{$input.tooltips[$key]}"{/if}"
+			{if !in_array($key, $input.activated_days) || $input.status == "disabled"} disabled {/if}
+			data-status="{if in_array($key, $avalues)}scheduled{else}open{/if}"
+			data-day="{$key}">
+				{$descs}
+			</li>
+		{/foreach}
+	</ol>
+	{if $input.status != "disabled"}
+	<script>
+		$("#{$id}_list").selectable({ldelim}
+			stop: function(event, ui){ldelim}
+				var selected = [];
+				$(".ui-selected", this).each(function() {ldelim} selected.push($(this).data("day")); {rdelim});
+
+				$(selected).each(function() {ldelim}
+					if($("#{$id}_" + this.toString()).hasClass('disabled')) return true;
+					var status = $("#{$id}_" + this.toString()).data("status");
+					if(status === "scheduled") {ldelim}
+						$("#{$id}_" + this.toString()).data("status", "open");
+					{rdelim} else if (status === "open") {ldelim}
+						$("#{$id}_" + this.toString()).data("status", "scheduled");
+					{rdelim}
+
+					$("#{$id}_" + this.toString()).toggleClass("btn-primary").removeClass("ui-selected").removeClass("ui-selectee");
+				{rdelim});
+
+				var selected_days = [];
+				$("#{$id}_list li").each(function() {ldelim}
+					if($(this).data("status") === "scheduled") {ldelim}
+						selected_days.push($(this).data("day"));
+					{rdelim}
+				{rdelim});
+
+				$('input[id="{$id}"]').val(selected_days.join(",")).trigger('change');
+			{rdelim},
+    	{rdelim});
+	</script>
+	{/if}
 
 
 {elseif $input.type == "datepicker" || $input.type == "jsdate"}
@@ -115,6 +170,64 @@
 {elseif $input.type == "radio"}
 	{html_radios name=$input.name values=$input.values output=$input.descs selected=$input.value separator=$input.separator class="`$input.add_class`"}
 
+{elseif $input.type == "select_slider"}
+	{if !$input.html_id} {uid loc="id"} {else} {assign var="id" value=$input.html_id} {/if}
+
+	<div class="access_slider">
+		{if $input.label}
+		<div class="col-md-4 col-sm-4">
+			<label for="{$id}">
+				{$input.label}
+			</label>
+		</div>
+		{/if}
+		<div class="col-md-8 col-sm-8">
+			<input id="{$id}" type="text"/>
+		</div>
+	</div>
+
+	<input type="hidden" id="sel_recht_{$id}" name="{$input.name}" value="{$input.value}" />
+	<script>
+		$(function() {ldelim}
+			$('#{$id}').bootstrapSlider({ldelim}
+			id: 'slider{$id}',
+			min: 0,
+			max: {$input.maxLevel},
+			step: 1,
+			focus: true,
+			value: '{$input.value}',
+			ticks: [{', '|implode:$input.values}],
+			ticks_labels: [{', '|implode:$input.values}],
+				{rdelim}
+			)
+				.on('slideStop', function(element) {ldelim}
+					{if $input.name|substr:-2 == "_0"}
+						$("#sel_recht_{$id}").val(element.value).trigger('change');
+					{else}
+						var all_field = $(this).closest(".module").find('.panel-body').find("input[name^='sel_rechte'][name$='_0']");
+						if (all_field.length === 0) {ldelim}
+							$("#sel_recht_{$id}").val(element.value).trigger('change');
+							return false;
+						{rdelim}
+
+						var all_slider = $(all_field).attr("id");
+						all_slider = "#slider" + all_slider.substring(10);
+
+						if(element.value < all_field.val()) {ldelim}
+							$(all_slider).addClass("level_error").delay(3000).queue(function(next){ldelim}
+								$(this).removeClass("level_error");
+								next();
+							{rdelim});
+							$(this).bootstrapSlider("setValue", all_field.val());
+						{rdelim} else {ldelim}
+							$("#sel_recht_{$id}").val(element.value).trigger('change');
+						{rdelim}
+					{/if}
+				{rdelim});
+			{rdelim});
+	</script>
+
+
 
 {elseif $input.type == "select"}
 	{if !$input.html_id}
@@ -168,21 +281,57 @@
 	   	</script>
 	{/if}
 
+{elseif $input.type == "selectplus"}
+	<div class="textplus-wrapper">
+		{if !$input.html_id}
+			{uid loc="id"}
+		{else}
+			{assign var="id" value=$input.html_id}
+		{/if}
+		{assign var="valueKey" value=-1}
+		<div class="input-group input-group-sm">
+				<select id="{$id}" name="{$input.name}{if $input.overwrite}_original{/if}"
+				class="input-sm form-control {$input.add_class}" {$input.params}
+				{if $input.js_func_add}onclick="{$input.js_func_add}(this.options[parseInt(this.selectedIndex)].text, this.options[parseInt(this.selectedIndex)].value, this.name);"{/if}
+					{if $input.overwrite_value} disabled='disabled' {/if} >
+					{foreach from=$input.values item=v key=k}
+						<option value="{$v}" {if $v == $input.value}selected="selected"{/if} {if $v === '_DISABLED_'}disabled{/if}>
+							{$input.descs.$k}
+						</option>
+					{/foreach}
+				</select>
+			{if $input.async_form.tag}
+				<div class="input-group-btn">
+					<button type="button" title="{ll key="kota_async_form_label_ko_leute_add"}" class="btn btn-success btn-sm" id="{$id}-async-form-1-btn" data-target="#{$id}-async-form-1" data-af-entry-id="0" data-af-table="{$input.async_form.table}" data-af-mode="new">
+						<i class="fa fa-plus" style="line-height:1.5;"></i>
+					</button>
+					<script>
+						$("#{$id}-async-form-1-btn").asyncform({ldelim}tag: '{$input.async_form.tag}'{rdelim});
+						$("#{$id}-async-form-1-btn").on('asyncform.response', function(event, r) {ldelim}
+							var node = r.actions.{$input.async_form.table}.insert.entries[r.actions.{$input.async_form.table}.insert.ids[0]];
+							$('#{$id}').append('<option value="'+node.id+'">'+node.title+'</option>');
+							$('#{$id}').val(node.id);
+						{rdelim});
+					</script>
+				</div>
+			{/if}
+		</div>
+	</div>
+
 {elseif $input.type == "multidateselect"}
 	{if !$input.html_id}
 		{uid loc="id"}
 	{else}
 		{assign var="id" value=$input.html_id}
 	{/if}
-	<table class="ko-select-wrapper">
+	<table class="ko-select-wrapper multidateselect">
 		<tr>
 			<td valign="top">
 				<input type="hidden" name="{$input.name}" value="{$input.avalue}">
 				<input type="hidden" name="old_{$input.name}" value="{$input.avalue}">
 				<div style="font-size:x-small;">{$label_form_ds_objects}:</div>
-				<div id="{$id}-input-group" style="position:relative;width:38px;">
-					<input type="text" name="fake_input_{$input.name}" id="fake_input_{$id}" class="input-sm form-control {$input.add_class}" value="{$input.avalue}" style="visibility:hidden;width:1px;padding:0px;margin:0px;">
-					<button type="button" class="btn btn-default" id="{$id}-btn" style="position:absolute;top:0px;left:0px;"><i class="fa fa-calendar"></i></button>
+				<div id="{$id}-input-group" style="position:relative;width:180px;">
+					<input type="text" name="fake_input_{$input.name}" id="fake_input_{$id}" class="input-sm form-control {$input.add_class}" value="{$input.avalue}" style="visibility:hidden; display: none;width:1px;padding:0px;margin:0px;">
 				</div>
 			</td>
 			<td valign="top">
@@ -203,8 +352,9 @@
 		$('#fake_input_{$id}').datetimepicker({ldelim}
 			locale: kOOL.language,
 			format: 'YYYY-MM-DD',
-			showTodayButton: true,
-			useCurrent: false
+			showTodayButton: false,
+			useCurrent: false,
+			inline: true,
 		{rdelim});
 		$('#{$id}-btn').click(function() {ldelim}
 			$('#fake_input_{$id}').data('DateTimePicker').toggle();
@@ -222,14 +372,17 @@
 	{else}
 		{assign var="id" value=$input.html_id}
 	{/if}
-	<table class="ko-select-wrapper">
+	<table class="ko-select-wrapper doubleselect_container">
 		<tr>
 			{if !$input.disabled}
 			<td class="v-align-t" style="width:50%;">
 				<input type="hidden" class="{$input.add_class}" name="{$input.name}" value="{$input.avalue}">
 				<input type="hidden" name="old_{$input.name}" value="{$input.avalue}">
 				<div style="font-size:x-small;">{$label_form_ds_objects}:</div>
-				<div class="doubleselect doubleselect-left" id="sel_ds1_{$input.name}" name="sel_ds1_{$input.name}" data-js-func-add="{$input.js_func_add}" data-target-name="sel_ds2_{$input.name}" data-hidden-name="{$input.name}" {$input.params}>
+                {if $input.show_filter}
+					<input type="text" class="form-control doubleselect_filter_field" data-parent="sel_ds1_{$input.name}" placeholder="{ll key='general_search_placeholder'}"/>
+                {/if}
+				<div class="doubleselect doubleselect-left" id="sel_ds1_{$input.name}" name="sel_ds1_{$input.name}" data-js-func-add="{$input.js_func_add}" data-target-name="sel_ds2_{$input.name}" data-hidden-name="{$input.name}" {$input.params} {if $input.show_filter && $input.size.for_filter}size="{$input.size.for_filter}"{/if}>
 					{foreach from=$input.values item=v key=k}
 						<div class="select-item" data-value="{$v}" title="{if $input.titles.$k}{$input.titles.$k}{else}{$input.descs.$k}{/if}">{$input.descs.$k}</div>
 					{/foreach}
@@ -264,7 +417,7 @@
 			{/if}
 			<td class="v-align-t" style="width:50%;">
 				<div style="font-size:x-small;">{$label_form_ds_assigned}:</div>
-				<div class="doubleselect doubleselect-right" id="{$id}" name="sel_ds2_{$input.name}" {$input.params}{if $input.disabled} disabled{/if}>
+				<div class="doubleselect doubleselect-right" id="{$id}" name="sel_ds2_{$input.name}" {$input.params}{if $input.disabled} disabled{/if}  {if $input.size.normal}size="{$input.size.normal}"{/if}>
 					{foreach from=$input.avalues item=v key=k}
 						<div class="select-item" data-value="{$v}" title="{$input.adescs.$k}">{$input.adescs.$k}</div>
 					{/foreach}
@@ -283,7 +436,7 @@
 	<table class="ko-select-wrapper">
 		<tr>
 			<td class="v-align-t" style="width:35%;">
-				<input type="hidden" name="{$input.name}" value="{$input.avalue}" />
+				<input type="hidden" class="groupselectvalues" name="{$input.name}" value="{$input.avalue}" />
 				<input type="hidden" name="old_{$input.name}" value="{$input.avalue}" />
 				<div style="font-size:x-small;">{ll key="groups_group"}:</div>
 				<div class="groupselect groupselect-left" name="sel_ds0_{$input.name}" {$input.params} size="10" data-js-func-add="fill_grouproles_select" style="border-top-right-radius:0px;border-bottom-right-radius:0px;border-right:0px;"></div>
@@ -313,6 +466,7 @@
 {elseif $input.type == "checkboxes"}
 	{assign var="height" value=$input.size*22+2}
 	<div class="koi-checkboxes-container" {$input.params} style="height: {$height}px;">
+		<input type="hidden" class="koi-checkboxes-separator" value="{if $input.separator}{$input.separator}{else},{/if}">
 		<input type="hidden" class="koi-checkboxes-value {$input.add_class}" name="{$input.name}" value="{$input.avalue}">
 		<input type="hidden" name="old_{$input.name}" value="{$input.avalue}">
 		{foreach from=$input.values item=v key=k}
@@ -502,6 +656,7 @@
 			multiple: {if $input.single}false{else}true{/if}{if $input.data},
 			selectedPeople: {$input.data}{elseif $input.avalues},
 			avalues: {$input.avalues|@json_encode},
+			astatus: {$input.astatus|@json_encode},
 			adescs: {utf8_encode_array arr=$input.adescs var="encArray"}{$encArray|@json_encode}{/if}{if $input.exclude},
 			exclude: '{$input.exclude}'{/if}{if $input.exclude_sql},
 			excludeSql: '{$input.exclude_sql}'{/if}{if $input.disabled},

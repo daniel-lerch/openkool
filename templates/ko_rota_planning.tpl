@@ -89,7 +89,10 @@
 				{foreach from=$events item=event}
 					<div class="member_event_info col col-{$event.id} {$team.edit_class}
 {if $team.events[$event.id].status != "active" || $member.consensus[$event.id].status != "active"} consensus-disabled{/if}
- consensus_{$member.consensus[$event.id].answer} rota-tooltip" data-event="{$event.id}" data-member="{$member.id}" data-team="{$team.id}" data-consensus-status="{$member.consensus[$event.id].answer}" data-consensus-scheduled="{$member.consensus[$event.id].scheduled}" data-tooltip-code="{if isset($member.consensus[$event.id].absence)}{$member.consensus[$event.id].absence}{/if}{if $member.consensus[$event.id].status != "active"} {ll key='rota_consensus_team_disabled'}{/if}" name="rota_schedule_{$event.id}_{$team.id}_{$member.id}" {if $team.events[$event.id].status != "disabled" && $member.consensus[$event.id].status != "disabled"}title="{$event.startdatum|date_format:"%a, %e. %B %Y"} {$event.startzeit|substr:0:-3} Uhr<br />{$event.eventgruppen_name}: {$event.title}<br />{$member.vorname} {$member.nachname}"{/if}>
+ consensus_{$member.consensus[$event.id].answer} rota-tooltip{if $team.events[$event.id].status == "active" && $member.consensus[$event.id].status == "active" && isset($member.consensus[$event.id].absence)} member_absent{/if}" data-event="{$event.id}" data-member="{$member.id}" data-team="{$team.id}" data-consensus-status="{$member.consensus[$event.id].answer}" data-consensus-scheduled="{$member.consensus[$event.id].scheduled}" name="rota_schedule_{$event.id}_{$team.id}_{$member.id}"
+
+{if $team.events[$event.id].status != "disabled" && $member.consensus[$event.id].status != "disabled"} title="{$event.startdatum|date_format:"%a, %e. %B %Y"} {$event.startzeit|substr:0:-3} Uhr<br />{$event.eventgruppen_name}: {$event.title}<br />{$member.vorname} {$member.nachname}{if isset($member.consensus[$event.id].absence)}<br />{$member.consensus[$event.id].absence}{/if}"
+{elseif $member.consensus[$event.id].status != "active"} title="{ll key='rota_consensus_team_disabled'}"{/if}>
 						<i class="fa"></i>
 					</div>
 				{/foreach}
@@ -111,7 +114,8 @@
 				{foreach from=$events item=event}
 					<div class="member_event_info col col-{$event.id} rota-tooltip {$team.edit_class}
 {if $team.events[$event.id].status != "active"} consensus-disabled{/if}
-" data-event="{$event.id}" data-member="{$member.name|escape:"quotes"}" data-team="{$team.id}" data-consensus-status="{$member.consensus[$event.id].answer}" data-consensus-scheduled="{$member.consensus[$event.id].scheduled}" name="rota_schedule_{$event.id}_{$team.id}_free_{$free_text_id}">
+" data-event="{$event.id}" data-member="{$member.name|escape:"quotes"}" data-team="{$team.id}" data-consensus-status="{$member.consensus[$event.id].answer}" data-consensus-scheduled="{$member.consensus[$event.id].scheduled}" name="rota_schedule_{$event.id}_{$team.id}_free_{$free_text_id}"
+					title="{$event.startdatum|date_format:"%a, %e. %B %Y"} {$event.startzeit|substr:0:-3} Uhr<br />{$event.eventgruppen_name}: {$event.title}<br />{$member.name}" >
 						<i class="fa"></i>
 					</div>
 				{/foreach}

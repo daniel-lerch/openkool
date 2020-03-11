@@ -19,10 +19,17 @@ $(function() {
 
 	$('body').on('click', '.checkin-search-result', function() {
 		if ($(this).hasClass('checked-in')) {
+			//Checkout
 			if($('body').hasClass('admin') && confirm($(this).data('checkout-confirm'))) {
 				sendReq('../checkin/inc/ajax.php', ['action', 'id'], ['checkout',$(this).data('person-id')], do_element);
 			} else {
 				return false;
+			}
+
+		} else {
+			//Checkin
+			if($('.checkin-selected-btn').length == 0) {
+				sendReq('../checkin/inc/ajax.php', ['action', 'ids'], ['checkin', $(this).data('person-id')], do_element);
 			}
 		}
 
@@ -32,6 +39,7 @@ $(function() {
 		} else {
 			$(this).addClass('active').find('.checked-indicator').removeClass('fa-square-o').addClass('fa-check-square-o');
 		}
+
 
 		if ($('.checkin-search-result.active').length == 0) {
 			$('.checkin-selected-btn').prop('disabled', true);

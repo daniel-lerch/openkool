@@ -1,7 +1,7 @@
 /***************************************************************
 *  Copyright notice
 *
-*  (c) 2003-2017 Renzo Lauper (renzo@churchtool.org)
+*  (c) 2003-2020 Renzo Lauper (renzo@churchtool.org)
 *  All rights reserved
 *
 *  This script is part of the kOOL project. The kOOL project is
@@ -46,14 +46,15 @@ ul {
   overflow: hidden;
 }
 h1 {
-  font-size: 25pt;
+  font-size: 25px;
   margin: 13px 10px 10px 16px;
 }
 h3 {
-  font-size: 13px;
+  font-size: 16px;
   font-weight: bold;
   padding: 0px;
-  margin: 0px;
+  margin: 20px 0 0 0;
+  text-align: center;
 }
 /**********************************************************************************************************************
                                                         Header
@@ -166,7 +167,69 @@ table#consensus_descriptions tr {
 #consensus_entries > tfoot > tr > th {
   vertical-align: top;
 }
-#consensus_entries .status_absent {
+#consensus_entries > thead .status_absent,
+#consensus_entries > tbody .status_absent,
+#consensus_entries > tfoot .status_absent {
+  color: red;
+}
+#consensus_entries_amtstage {
+  margin: 30px auto;
+}
+#consensus_entries_amtstage tr.header th {
+  padding-top: 14px;
+}
+#consensus_entries_amtstage tr.header th ol.daysrange {
+  position: relative;
+  display: inline-block;
+  vertical-align: middle;
+}
+#consensus_entries_amtstage tr.header th ol.daysrange .btn-default {
+  background-color: #f0f0f0;
+}
+#consensus_entries_amtstage tr.header th ol.daysrange .btn:hover {
+  cursor: inherit;
+}
+#consensus_entries_amtstage .week_label {
+  vertical-align: middle;
+  padding-right: 4px;
+}
+#consensus_entries_amtstage .header_team {
+  padding-top: 3px;
+  vertical-align: top;
+  border-top: 1px solid grey;
+}
+#consensus_entries_amtstage .consensus_range_wrapper ol.consensus_range li.btn {
+  font-size: 10px;
+  overflow: hidden;
+}
+#consensus_entries_amtstage .consensus_range_wrapper ol.consensus_range li.btn.btn-xs {
+  line-height: 1.8;
+}
+#consensus_entries_amtstage .consensus_range_wrapper ol.consensus_range.consensus_type_yes li.ui-selected,
+#consensus_entries_amtstage .consensus_range_wrapper ol.consensus_range.consensus_type_yes li.ui-selecting {
+  background-color: #7cdf4b !important;
+}
+#consensus_entries_amtstage .consensus_range_wrapper ol.consensus_range.consensus_type_maybe li.ui-selected,
+#consensus_entries_amtstage .consensus_range_wrapper ol.consensus_range.consensus_type_maybe li.ui-selecting {
+  background-color: #dfad64 !important;
+}
+#consensus_entries_amtstage .consensus_range_wrapper ol.consensus_range.consensus_type_no li.ui-selected,
+#consensus_entries_amtstage .consensus_range_wrapper ol.consensus_range.consensus_type_no li.ui-selecting {
+  background-color: #df4b32 !important;
+  color: #fff;
+}
+#consensus_entries_amtstage .consensus_range_wrapper ol.consensus_range.consensus_type_yes li.btn.scheduled {
+  background-color: #337ab7 !important;
+  color: #fff;
+  cursor: default;
+}
+#consensus_entries_amtstage .consensus_range_wrapper ol.consensus_range.consensus_type_maybe li.btn.scheduled,
+#consensus_entries_amtstage .consensus_range_wrapper ol.consensus_range.consensus_type_no li.btn.scheduled {
+  background-color: #fff !important;
+  color: #333;
+  cursor: default;
+}
+#consensus_entries_amtstage .status_absent {
   color: red;
 }
 #consensus_entries_wrapper {
@@ -243,13 +306,17 @@ ul.team {
   margin: 0px;
   text-align: center;
 }
+#consensus_entries button.btn {
+	height: 31px;
+}
 ul.team li {
-  padding: 0;
-  margin: 4px 0;
+  padding: 6px 12px;
+  margin: 3px auto;
+	height: 31px;
 }
 p.team_members {
-  margin: 5px 8px 10px 0;
-  padding: 3px;
+  margin: 0;
+  padding: 0;
   color: gray;
 }
 .button.not-editable {
@@ -321,7 +388,8 @@ p.team_members {
 .notification_info {
   background-color: #d1f3d1;
 }
-.notification_warning {
+.notification_warning_no_result,
+.notification_warning_not_allowed {
   background-color: #ffeea6;
 }
 /**********************************************************************************************************************
@@ -396,15 +464,34 @@ p.team_members {
 #tt div.event_res {
   font-size: 90%;
 }
-
-
 #filter-popover {
-  float:right;
-    display: inline;
+  float: right;
+  display: inline;
 }
-
 #consensus_filter {
+  display: none;
+}
+#ongoing_calendar {
+  display: block;
+  margin-top: 5px;
+  text-align: center;
+  clear: both;
+}
+#ongoing_calendar #consensus_dateselect-input {
+  visibility: hidden;
+}
+#ongoing_calendar #consensus_dateselect-button {
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+@media screen and (max-width: 768px) {
+  #filter-popover {
     display: none;
+  }
+  #consensus_filter {
+    display: block;
+  }
 }
 
 @media screen and (max-width: 768px) {

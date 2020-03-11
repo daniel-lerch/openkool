@@ -2,7 +2,7 @@
 /***************************************************************
 *  Copyright notice
 *
-*  (c) 2003-2017 Renzo Lauper (renzo@churchtool.org)
+*  (c) 2003-2020 Renzo Lauper (renzo@churchtool.org)
 *  All rights reserved
 *
 *  This script is part of the kOOL project. The kOOL project is
@@ -159,9 +159,6 @@ if(isset($_GET) && isset($_GET["action"])) {
 
 		case "adddatafield":
 			if($access['groups']['MAX'] < 2) break;
-
-			//JS encodeURIComponent() always encodes in UTF-8
-			$description = format_userinput(utf8_decode(rawurldecode($_GET['descr'])), 'text', FALSE, 0, array('allquotes'));
 
 			$type = format_userinput(urldecode($_GET['type']), 'alpha');
 			$reusable = format_userinput($_GET['reusable'], 'uint');

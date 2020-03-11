@@ -11,6 +11,9 @@ function ko_checkin_show_checkin() {
 	global $smarty;
 
 	$smarty->assign('user', $_SESSION['checkin_user']);
+	if($_SESSION['checkin_mode'] == 1) {
+		$smarty->assign('results', ko_checkin_show_results($_SESSION['checkin_tracking_id'], '_all'));
+	}
 	$smarty->display('ko_checkin_checkin.tpl');
 }
 
@@ -38,25 +41,27 @@ function ko_checkin_show_results($trackingId, $query, $date=NULL) {
 			$where = "WHERE `deleted` = 0 AND `hidden` = 0 AND `id` IN ('" . implode("','", $ids) . "')";
 
 			$wheres = array();
-			$queryParts = explode(' ', utf8_decode($query));
-			foreach ($queryParts as $p) {
-				$p = trim($p);
-				if (!$p) continue;
-				$subWhereParts = array();
-				foreach (array('vorname', 'nachname') as $f) {
-					$subWhereParts[] = "`{$f}` LIKE '%{$p}%'";
+			if($query != '_all') {
+				$queryParts = explode(' ', utf8_decode($query));
+				foreach ($queryParts as $p) {
+					$p = trim($p);
+					if (!$p) continue;
+					$subWhereParts = array();
+					foreach (array('vorname', 'nachname') as $f) {
+						$subWhereParts[] = "`{$f}` LIKE '%{$p}%'";
+					}
+					$wheres[] = implode(' OR ', $subWhereParts);
 				}
-				$wheres[] = implode(' OR ', $subWhereParts);
+				$where .= ' AND (' . implode(') AND (', $wheres) . ')';
 			}
-			$where .= ' AND (' . implode(') AND (', $wheres) . ')';
 
-			$persons = db_select_data('ko_leute', $where);
+			$persons = db_select_data('ko_leute', $where, '*', 'ORDER BY `vorname` ASC, `nachname` ASC');
 			ko_checkin_filter_search_result($trackingId, $persons, $date);
 			$tooManyResults = sizeof($persons) > intval(ko_get_setting('checkin_max_results'));
 
 			$showFields = ko_array_filter_empty(explode(',', ko_get_setting('checkin_display_leute_fields')));
 			$fieldsLayout = array(
-				array('vorname', 'nachname'/*, 'geburtsdatum'*/),
+				array('vorname', 'nachname', 'geburtsdatum'),
 				array('adresse'),
 				array('ort', 'plz'),
 			);
@@ -98,7 +103,7 @@ function ko_checkin_show_results($trackingId, $query, $date=NULL) {
 				if($p['_info']['checked_in']) {
 					$p['_info']['checkout_confirm'] = sprintf(getLL('checkin_checkout_confirm'),strip_tags($p['desc']));
 				}
-				if($p['famid']) {
+				if($p['famid'] && $_SESSION['checkin_mode'] != 1) {
 					$personsByFamid[$p['famid']]['persons'][] = $p;
 				} else {
 					$personsWithoutFamid[] = [
@@ -122,9 +127,20 @@ function ko_checkin_show_results($trackingId, $query, $date=NULL) {
 		}
 	}
 
-	$smarty->assign('data', array_merge($personsByFamid,$personsWithoutFamid));
 	$smarty->assign('tooManyResults', $tooManyResults);
-	$smarty->display('ko_checkin_results.tpl');
+
+	if($query == '_all') {
+		$data = array();
+		foreach($personsWithoutFamid as $person) {
+			$data[] = $person['persons'][0];
+		}
+		$smarty->assign('data', $data);
+
+		return $smarty->fetch('ko_checkin_results_open.tpl');
+	} else {
+		$smarty->assign('data', array_merge($personsByFamid,$personsWithoutFamid));
+		$smarty->display('ko_checkin_results.tpl');
+	}
 }
 
 

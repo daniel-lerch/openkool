@@ -2,7 +2,7 @@
 /***************************************************************
 *  Copyright notice
 *
-*  (c) 2003-2017 Renzo Lauper (renzo@churchtool.org)
+*  (c) 2003-2020 Renzo Lauper (renzo@churchtool.org)
 *  All rights reserved
 *
 *  This script is part of the kOOL project. The kOOL project is
@@ -132,6 +132,56 @@ switch($do_action) {
 
 
 
+	//Neu:
+	case 'new_tracking_entry':
+		if($access['tracking']['MAX'] < 2) break;
+
+		$_SESSION['show'] = 'new_tracking_entry';
+		$onload_code = 'form_set_first_input();'.$onload_code;
+	break;
+
+	case 'submit_new_tracking_entry':
+	case 'submit_as_new_tracking_entry':
+		if($access['tracking']['MAX'] < 2) break;
+
+		//Access check for given trackingID
+		$ok = TRUE;
+		if($access['tracking']['ALL'] < 2) {
+			$tid = intval($_POST['koi']['ko_tracking_entries']['tid'][0]);
+			if($access['tracking'][$tid] < 2) $ok = FALSE;
+		}
+
+		if($do_action == 'submit_as_new_tracking_entry') {
+			list($table, $columns, $ids, $hash) = explode('@', $_POST['id']);
+			//Fake POST[id] for kota_submit_multiedit() to remove the id from the id. Otherwise this entry will be edited
+			$new_hash = md5(md5($mysql_pass.$table.implode(':', explode(',', $columns)).'0'));
+			$_POST['id'] = $table.'@'.$columns.'@0@'.$new_hash;
+		}
+
+		if($ok) kota_submit_multiedit('', 'enter_tracking');
+		$_SESSION['show'] = 'list_trackings_entries';
+	break;
+
+
+
+	//Bearbeiten
+	case 'edit_tracking_entry':
+		$_SESSION['show'] = 'edit_tracking_entry';
+		$edit_id = format_userinput($_POST['id'], 'uint');
+		$onload_code = 'form_set_first_input();'.$onload_code;
+	break;
+
+	case 'submit_edit_tracking_entry':
+		if($access['tracking']['MAX'] < 3) break;
+
+		kota_submit_multiedit('', 'edit_tracking_entry');
+		if(!$notifier->hasErrors()) {
+			$_SESSION['show'] = 'list_tracking_entries';
+		}
+	break;
+
+
+
 
 
 	//Entering
@@ -157,6 +207,34 @@ switch($do_action) {
 		if(strtotime($newdate) > 0) {
 			$_SESSION['date_start'] = $newdate;
 		}
+	break;
+
+
+	case 'select_tracking':
+		if($access['tracking']['MAX'] < 1) break;
+
+		//Get tracking id from GET
+		if(isset($_GET['id']) && (int)$_GET['id'] == $_GET['id'] && ($access['tracking']['ALL'] > 0 || $access['tracking'][$_GET['id']] > 0)) {
+			//Unset filter if switching trackings (might be for a group not in the current tracking, which gives empty list of persons)
+			if($_GET['id'] != $_SESSION['tracking_id']) {
+				unset($_SESSION['tracking_filter']['filter']);
+			}
+			$_SESSION['tracking_id'] = $_GET['id'];
+
+			if(!in_array($_SESSION['show'], array('enter_tracking', 'list_tracking_entries'))) {
+				$show = ko_get_userpref($_SESSION['ses_userid'], 'tracking_default_show');
+				if(!$show) $show = 'enter_tracking';
+				$_SESSION['show'] = $show;
+			}
+		}
+	break;
+
+
+
+	case 'list_tracking_entries':
+		if($access['tracking']['MAX'] < 1) break;
+
+		$_SESSION['show'] = 'list_tracking_entries';
 	break;
 
 
@@ -204,7 +282,7 @@ switch($do_action) {
 		if(!$id) break;
 
 		$tentry = db_select_data('ko_tracking_entries', "WHERE `id` = '$id'", '*', '', '', TRUE);
-		if(!$tentry['id'] || $tentry['id'] != $id || $tentry['status'] == 0) break;
+		if(!$tentry['id'] || $tentry['id'] != $id) break;
 		if($access['tracking']['ALL'] < 2 && $access['tracking'][$tentry['tid']] < 2) break;
 
 		db_delete_data('ko_tracking_entries', "WHERE `id` = '$id'");
@@ -352,13 +430,13 @@ switch($do_action) {
 		ko_save_userpref($_SESSION['ses_userid'], 'tracking_show_inactive', format_userinput($_POST['sel_show_inactive'], 'uint'));
 
 		ko_save_userpref($_SESSION['ses_userid'], 'tracking_dateformat', format_userinput($_POST['sel_dateformat'], 'alpha'));
+		ko_save_userpref($_SESSION['ses_userid'], 'tracking_default_show', format_userinput($_POST['sel_default_show'], 'alpha+'));
 		if(ko_module_installed('leute')) {
 			ko_save_userpref($_SESSION['ses_userid'], 'tracking_show_cols', format_userinput($_POST['sel_show_cols'], 'js', FALSE, 0, array('allquotes'), '@'));
 		}
 
 		if($access['tracking']['MAX'] > 3) {
 			ko_set_setting('tracking_add_roles', format_userinput($_POST['sel_add_roles'], 'uint'));
-			ko_set_setting('checkin_display_leute_fields', format_userinput($_POST['sel_checkin_display_leute_fields'], 'alphanumlist'));
 			ko_set_setting('checkin_display_leute_fields', format_userinput($_POST['sel_checkin_display_leute_fields'], 'alphanumlist'));
 			ko_set_setting('checkin_max_results', format_userinput($_POST['txt_checkin_max_results'], 'int'));
 
@@ -542,6 +620,10 @@ if($_SESSION['sort_modtrackings'] == '') {
 	$_SESSION['sort_modtrackings']= 'crdate';
 	$_SESSION['sort_modtrackings_order'] = 'DESC';
 }
+if($_SESSION['sort_tracking_entries'] == '') {
+	$_SESSION['sort_tracking_entries']= 'date';
+	$_SESSION['sort_tracking_entries_order'] = 'DESC';
+}
 if(!isset($_SESSION['show_tracking_groups'])) {
 	$_SESSION['show_tracking_groups'] = explode(',', ko_get_userpref($_SESSION['ses_userid'], 'show_tracking_groups'));
 	if(sizeof($_SESSION['show_tracking_groups']) == 0) {
@@ -631,6 +713,18 @@ switch($_SESSION['show']) {
 
 	case 'tracking_settings':
 		ko_tracking_settings();
+	break;
+
+	case 'list_tracking_entries':
+		ko_list_tracking_entries();
+	break;
+
+	case 'new_tracking_entry':
+		ko_formular_tracking_entry('new');
+	break;
+
+	case 'edit_tracking_entry':
+		ko_formular_tracking_entry('edit', $edit_id);
 	break;
 
 	case 'mod_entries':

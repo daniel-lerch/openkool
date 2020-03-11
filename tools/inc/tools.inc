@@ -2,7 +2,7 @@
 /***************************************************************
 *  Copyright notice
 *
-*  (c) 2003-2017 Renzo Lauper (renzo@churchtool.org)
+*  (c) 2003-2020 Renzo Lauper (renzo@churchtool.org)
 *  All rights reserved
 *
 *  This script is part of the kOOL project. The kOOL project is
@@ -76,7 +76,8 @@ function ko_show_testmail () {
 	$params = $MAIL_TRANSPORT;
 	$subject = 'Testmail from kOOL';
 	$text = 'This mail was sent to test the outgoing mail settings on ' . $BASE_URL;
-	$html = '<table style="align: center">';
+	$html = '<h2>Mail settings</h2>';
+	$html .= '<table style="align: center">';
 
 	foreach ($params as $k => $v) {
 		$html .= '<tr><td>'.$k.'</td><td><input type="text" size="50" name="mail_transport['.$k.']" value="' . ($k == 'ssl' || $k == 'tls' ? ($v ? 1 : 0) : $v) . '" /></td></tr>';
@@ -97,6 +98,31 @@ function ko_show_testmail () {
 
 	$html .= '<input type="hidden" name="testmail[subject]" value="' . $subject . '" />';
 	$html .= '<input type="hidden" name="testmail[text]" value="' . $text . '" />';
+
+
+
+	$html .= '<h2>SPF cache</h2>';
+
+	$html .= '<b>Blacklisted domains: SPF immer FALSE für diese Domains. Nie als From-Adressen verwendet (Kommaliste)</b><div>';
+	$html .= '<input type="text" size="200" name="spf_blacklisted_domains" value="'.ko_get_setting('spf_blacklisted_domains').'" />';
+	$html .= '<input type="submit" class="btn btn-sm btn-default" onclick="set_action(\'submit_spf_blacklisted_domains\');" value="Speichern" /></div><br />';
+
+
+	$html .= '<table class="table table-bordered table-alternating"><tr><th>Domain</th><th>Status</th><th>lastUpdate</th><th>&nbsp;</th></tr>';
+	$cached = json_decode(ko_get_setting('spf_domains'), TRUE);
+	ksort($cached);
+	foreach($cached as $domain => $vals) {
+		$class = ($vals['status'] == 1 ? 'row-success' : 'row-danger');
+		$html .= '<tr class="'.$class.'">';
+		$html .= '<th>'.$domain.'</th>';
+		$html .= '<td>'.($vals['status'] == 1 ? 'OK' : '-').'</td>';
+		$html .= '<td>'.$vals['lastUpdate'].'</td>';
+		$html .= '<td><input type="submit" class="btn btn-sm btn-default" onclick="set_hidden_value(\'id\', \''.$domain.'\');set_action(\'clear_spf_domain\');" value="Clear" /></td>';
+		$html .= '</tr>';
+	}
+	$html .= '</table>';
+
+
 	print $html;
 }
 
@@ -104,7 +130,7 @@ function ko_show_testmail () {
 /**
   * Formatiert Telefonnummern
 	* Removes all "'", " ", "/", ".", "-" from numbers
-	* @param Array fields to be beautyfied
+	* @param array fields to be beautyfied
 	* @param Bool Do 01 --> 044 Transform (default: FALSE)
 	* @param Bool Add Spaces for Numbers of length 10: XXXXXXXXXX --> XXX XXX XX XX (default: FALSE)
 	* @param Int Number of Entry to fetch at a time (default: 100)
@@ -349,7 +375,7 @@ function ko_tools_get_leute_filter_settings_code($fieldName=NULL, $filter=NULL, 
 /**
  * Create a select-box with the groups (categories) as options
  *
- * @param Array $filter entry from ko_filter
+ * @param array $filter entry from ko_filter
  * @param null $old_filter select option from old setting
  * @return string HTML select-box
  */
@@ -598,7 +624,7 @@ function ko_tools_write_ll_file($LL, $l) {
 	fputs($fp, '/***************************************************************
 *  Copyright notice
 *
-*  (c) 2003-2017 Renzo Lauper (renzo@churchtool.org)
+*  (c) 2003-2020 Renzo Lauper (renzo@churchtool.org)
 *  All rights reserved
 *
 *  This script is part of the kOOL project. The kOOL project is
@@ -710,9 +736,22 @@ function ko_tools_plugins_list() {
 			$sqlDiffsHtml = '';
 		}
 
+		//Find update scripts
+		$updates = db_select_data('ko_updates', "WHERE `plugin` = '$plugin' AND `status` = '0'");
+		if(sizeof($updates) > 0) {
+			$desc = '<h4>UPDATES:</h4>';
+			foreach($updates as $update) {
+				$desc .= '<p><b>'.$update['name'].'</b>: '.$update['description'].'</p>';
+			}
+			$updatesHtml = "<a href=\"?action=plugins_show_updates&plugin={$plugin}\" ".ko_get_tooltip_code($desc)."><i class=\"fa fa-wrench\"></i></a>";
+		} else {
+			$updatesHtml = '';
+		}
+
 		$es[$plugin] = array(
 			'id' => $plugin,
 			'sql_diffs' => $sqlDiffsHtml,
+			'updates' => $updatesHtml,
 			'key' => $link1.$pre.ko_html($plugin).$post.$link2,
 			'title' => ko_html($PLUGIN_CONF[$plugin]["title"]),
 			'description' => ko_html($PLUGIN_CONF[$plugin]["description"]),
@@ -728,8 +767,9 @@ function ko_tools_plugins_list() {
 
 	$list = new kOOL_listview();
 
-	$list->init('tools', 'ko_plugins', array('chk', 'add', 'remove'), 1, sizeof($es));
+	$list->init('tools', 'ko_plugins', array('add', 'remove'), 1, sizeof($es));
 	$list->setTitle(getLL("tools_plugins"));
+	$list->disableMultiedit();
 	$list->setManualAccess('add', $manual_access['add']);
 	$list->setManualAccess('remove', $manual_access['remove']);
 	$list->setActions(
@@ -775,10 +815,53 @@ function ko_tools_list_sql_diffs($plugin) {
 
 
 
-function ko_list_tasks() {
-	global $smarty;
-	global $access;
+function ko_tools_list_updates_for_plugin($plugin) {
+	$updates = db_select_data('ko_updates', "WHERE `plugin` = '$plugin' AND `status` = '0'");
 
+	$html = "<h3>Updates for Plugin {$plugin}</h3>";
+	$html .= "<table class=\"table table-condensed\"><tbody>";
+	$html .= '<table><tr><td style="vertical-align:top;text-align:right; padding-right: 10px; padding-bottom: 8px;"><a href="#" onclick="$(\'input[type=&quot;checkbox&quot;]\').each(function(){$(this).prop(\'checked\', !$(this).prop(\'checked\'));});return false;"><i class="fa fa-check-square-o"></i></a></td><td></td></tr>';
+	foreach($updates as $update) {
+		$html .= '<tr>';
+		$html .= '<td style="vertical-align:top;text-align:right; padding-right: 10px;"><input type="checkbox" checked="checked" name="'.$update['name'].'"></td>';
+		$html .= '<td style="vertical-align:top;text-align:left"><b>'.$update['name'].'</b><br />'.$update['description'].'</td>';
+		$html .= '</tr>';
+	}
+	$html .= '</tbody></table>';
+	$html .= '<div class="btn-field"><button class="btn btn-primary" type="submit" onclick="$(\'input[name=&quot;id&quot;]\').val(\''.$plugin.'\');set_action(\'submit_plugins_updates\', this);">OK&nbsp;<i class="fa fa-check"></i></button>';
+
+	print $html;
+}//ko_tools_list_updates_for_plugin()
+
+
+
+function ko_list_updates() {
+	$rows = db_get_count('ko_updates', 'id');
+	$es = db_select_data('ko_updates', '', '*', 'ORDER BY `status` ASC, `crdate` DESC');
+
+	$list = new kOOL_listview();
+
+	$list->init('tools', 'ko_updates', array('chk', 'check'), 1, sizeof($es));
+	$list->setTitle(getLL('tools_updates_list_title'));
+	$list->setAccessRights(FALSE);
+	$list->setActions(
+		array(
+			'check' => array('action' => 'call_update', 'confirm' => TRUE),
+		)
+	);
+	$list->disableMultiedit();
+	$list->setStats($rows, '', '', '', TRUE);
+	$list->setSort(FALSE);
+	$list->setRowClass("row-success", 'return STATUS == 0;');
+
+	//Output the list
+	$list->render($es);
+}//ko_list_updates()
+
+
+
+
+function ko_list_tasks() {
 	$rows = db_get_count('ko_scheduler_tasks', 'id');
 	$es = db_select_data('ko_scheduler_tasks', '', '*', 'ORDER BY name ASC');
 
@@ -790,6 +873,7 @@ function ko_list_tasks() {
 	$list->setActions(array('edit' => array('action' => 'edit_task'),
 			'delete' => array('action' => 'delete_task', 'confirm' => TRUE))
 	);
+	$list->disableMultiedit();
 	$list->setStats($rows, '', '', '', TRUE);
 	$list->setSort(TRUE, 'setsort', $_SESSION['sort_tasks'], $_SESSION['sort_tasks_order']);
 	$list->setRowClass("ko_list_hidden", 'return STATUS == 0;');
@@ -826,7 +910,7 @@ function ko_formular_task($mode, $id='') {
 
 
 function ko_tools_typo3_connection() {
-	global $smarty, $ko_path;
+	global $smarty, $ko_path, $BASE_PATH;
 
 	$gc = $rowcounter = $colCounter = 0;
 
@@ -842,8 +926,8 @@ function ko_tools_typo3_connection() {
 		if($field == 'typo3_pwd') {
 			$pwd_enc = ko_get_setting('typo3_pwd');
 			if($pwd_enc != '') {
-				include_once($ko_path.'inc/class.mcrypt.php');
-				$crypt = new mcrypt('aes');
+				require_once($BASE_PATH.'inc/class.openssl.php');
+				$crypt = new openssl('AES-256-CBC');
 				$crypt->setKey(KOOL_ENCRYPTION_KEY);
 				$pwd = trim($crypt->decrypt($pwd_enc));
 			} else {

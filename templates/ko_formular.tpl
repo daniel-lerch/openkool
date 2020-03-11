@@ -77,9 +77,13 @@
 				<div class="panel panel-{$panelType}" name="group_{$groupName}" id="group_{$groupName}">
 					<div class="panel-heading" role="tab" id="group_{$groupName}_heading">
 						<h4 class="panel-title">
-							<a style="display:block;" data-toggle="collapse" href="#group_{$groupName}_content" tabindex="-1">
-								{if $group.state == "closed"}<i class="fa fa-plus"></i>{/if}&nbsp;{$group.titel}
-							</a>
+							{if $group.install_checkbox}
+								<input type="checkbox" name="module_install_status[{$groupName}]"{if $group.module_installed} checked{/if} />&nbsp; &nbsp; &nbsp;{$group.titel}
+							{else}
+								<a style="display:block;" data-toggle="collapse" href="#group_{$groupName}_content" tabindex="-1">
+									{if $group.state == "closed"}<i class="fa fa-plus"></i>{/if}&nbsp;{$group.titel}
+								</a>
+							{/if}
 						</h4>
 					</div>
 					<div id="group_{$groupName}_content" class="panel-collapse collapse group-collapse{if $group.state != "closed"} in{/if}" role="tabpanel">
@@ -87,74 +91,53 @@
 			{/if}
 		{/if}
 		{assign var="rowCounter" value=0}
-		{foreach name=rows item=row from=$group.row}
-			<div class="row">
-				{assign var="input" value=$row.inputs.0}
-				{assign var="columnWidthComp" value=0}
-				{if !$input.columnWidth}
-					{assign var="elemsInRow" value=$row.inputs|@sizeof }
-					{if $elemsInRow > 2}
-						{assign var="columnWidthComp" value=$bootstrap_cols_per_row/$elemsInRow}
-					{else}
-						{assign var="columnWidthComp" value=$bootstrap_cols_per_row/2}
-					{/if}
-				{/if}
-				{foreach name=inputs item=input from=$row.inputs}
-					{if $columnWidthComp == 0}
-						{assign var="columnWidth" value=$input.columnWidth}
-					{else}
-						{assign var="columnWidth" value=$columnWidthComp}
-					{/if}
-					<div class="formular-cell col-md-{$columnWidth} col-sm-{math equation="x / 2" x=$bootstrap_cols_per_row}">
-						<div class="formular_header{if $input.headerclass} {$input.headerclass}{/if}">
-							{if $input.descicon}
-								{if $input.descicon.icon}
-									{assign var="desciconContext" value=""}
-									{if $input.descicon.context}
-										{assign var="desciconContext" value=" text-`$input.descicon.context`"}
-									{/if}
-									<i class="fa fa-{$input.descicon.icon}{$desciconContext}"></i>
-								{else}
-									<i class="fa fa-{$input.descicon}"></i>
-								{/if}
-								&nbsp;
-							{/if}
-							{if $input.descimg}<img src="{$ko_path}images/{$input.descimg}" border="0" />{/if}
-							{if $input.title_pre_html}{$input.title_pre_html}{/if}
-							<label for="{$input.name}">{$input.desc}{if $input.is_mandatory} *{/if}</label>{if $input.help}&nbsp;{$input.help}{/if}
+		{foreach name=maingroups item=maingroup from=$group.row}
+			{if $maingroup.subgroup}
+				<div class="row">
+				{if $group.display_accesslist}
+
+					<div class="panel panel-secondary" id="accessrights_{$groupName}_panel">
+						<div class="panel-heading" role="tab" id="accessrights_{$groupName}_panel_heading">
+							<div class="input-group">
+								<label for="accessrights_{$groupName}">{ll key="admin_button_access_rights"}: &nbsp;</label>
+								<input type="checkbox" class=" collapse_button switch" data-toggle="collapse" data-target="#accessrights_{$groupName}" aria-controls="accessrights_{$groupName}" name="accessrights_{$groupName}" data-size="small" data-off-text="nein" data-on-text="ja" value="1"{if $group.display_accesslist == "open"} checked{/if}>
+							</div>
+							<script>
+								$('input[name="accessrights_{$groupName}"]').bootstrapSwitch({ldelim}
+									onSwitchChange: function(e) {ldelim}
+										$("#accessrights_{$groupName}").toggleClass('in');
+										var sliders = $(this).closest(".module").find("div[id^='accessrights_']").find(".slider");
+										$(sliders).each(function() {ldelim}
+											var id = $(this).prop("id").substring(6);
+											$("#" + id).bootstrapSlider("refresh");
+										{rdelim});
+
+										{*if($("#accessrights_{$groupName}").hasClass("in")) {ldelim}*}
+											var module = $(this).closest(".module").find("input[name^='sel_rechte'][name$='_0']");
+											update_all_slider(module, true);
+{*										{rdelim}*}
+									{rdelim}
+								{rdelim});
+							</script>
 						</div>
-						<div class="formular_content{if $input.contentclass} {$input.contentclass}{/if}">
-						{if $input.type == "_save"}
-							<p align="center">
-								{if $tpl_special_submit}
-									{$tpl_special_submit}
-								{else}
-									<button type="submit" class="btn btn-primary" name="submit" class="ko_form_submit {$submit_class}" value="{$tpl_submit_value}" onclick="{$tpl_onclick_action}set_action('{$tpl_action}', this)">
-										{$tpl_submit_value} <i class="fa fa-save"></i>
-									</button>
-								{/if}
-								{if !$tpl_hide_cancel}
-									&nbsp;&nbsp;&nbsp;
-									<button type="submit" class="btn btn-danger" name="cancel" value="{$label_cancel}" onclick="set_action('{$tpl_cancel}', this);">
-										{$label_cancel} <i class="fa fa-remove"></i>
-									</button>
-								{/if}
-								{if $tpl_submit_as_new && !$force_hide_submit_as_new}
-									<br />
-									<button type="submit" class="btn btn-success" name="submit_as_new" value="{$tpl_submit_as_new}" onclick="set_action('{$tpl_action_as_new}', this);">
-										{$tpl_submit_as_new} <i class="fa fa-plus"></i>
-									</button>
-								{/if}
-							</p>
-						{elseif $input.type == "_sep"}
-							<p></p>
-						{else}
-							{include file="$ko_path/templates/ko_formular_elements.tmpl"}
-						{/if}
-						</div>
+						<div id="accessrights_{$groupName}" class="panel-collapse collapse group-collapse{if $group.display_accesslist == "open"} in{/if}" role="tabpanel">
+							<div class="panel-body">
+								<div class="card card-body container-fluid">
+									{foreach name=rows item=row from=$maingroup.subgroup.rows}
+										{include file="$ko_path/templates/ko_formular_sub_row.tpl"}
+									{/foreach}
+								</div>
+							</div>
 					</div>
-				{/foreach}
-			</div>
+				</div>
+                {/if}
+				</div>
+
+
+            {else}
+				{assign var="row" value=$maingroup}
+				{include file="$ko_path/templates/ko_formular_sub_row.tpl"}
+			{/if}
 		{/foreach}
 		{if $group.show_save || $group.forAll}
 			<div class="btn-field">
@@ -171,6 +154,7 @@
 					</button>
 				{/if}
 			</div>
+			<p>
 				{if $tpl_submit_as_new && !$force_hide_submit_as_new}
 					<br />
 					<button type="submit" class="btn btn-success" name="submit_as_new" value="{$tpl_submit_as_new}" onclick="set_action('{$tpl_action_as_new}', this);">

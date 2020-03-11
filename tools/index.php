@@ -2,7 +2,7 @@
 /***************************************************************
 *  Copyright notice
 *
-*  (c) 2003-2017 Renzo Lauper (renzo@churchtool.org)
+*  (c) 2003-2020 Renzo Lauper (renzo@churchtool.org)
 *  All rights reserved
 *
 *  This script is part of the kOOL project. The kOOL project is
@@ -33,7 +33,6 @@ $ko_menu_akt = "tools";
 
 include($ko_path.'inc/ko.inc');
 include('inc/tools.inc');
-include($ko_path.'inc/class.mcrypt.php');
 
 //Redirect to SSL if needed
 ko_check_ssl();
@@ -50,7 +49,7 @@ $default_lang = $LIB_LANGS[0];
 ko_get_access('tools');
 
 //kOOL Table Array
-ko_include_kota(array('ko_scheduler_tasks', 'ko_plugins', 'ko_mailing_mails'));
+ko_include_kota(array('ko_scheduler_tasks', 'ko_plugins', 'ko_mailing_mails', 'ko_updates'));
 
 
 //*** Plugins einlesen:
@@ -147,7 +146,7 @@ switch($do_action) {
 			$notifier->addError(9);
 		}
 		else {
-			$success = ko_send_mail(ko_mail_get_from(), $_POST['testmail']['receiver'], $_POST['testmail']['subject'], $_POST['testmail']['text']);
+			$success = ko_send_mail('', $_POST['testmail']['receiver'], $_POST['testmail']['subject'], $_POST['testmail']['text']);
 			if (!$notifier->hasNotifications(koNotifier::DEBUG | koNotifier::ERROR) && $success) {
 				$notifier->addInfo(6, '', array($_POST['testmail']['receiver']));
 			}
@@ -217,6 +216,9 @@ switch($do_action) {
 
 
 	case "plugins_list":
+		//Find all update scripts (also from plugins)
+		ko_updates_find_update_files();
+
 		$_SESSION["show"] = "plugins_list";
 	break;
 
@@ -264,6 +266,11 @@ switch($do_action) {
 			}
 			$data .= ');'."\n";
 			ko_update_ko_config("plugins", $data);
+
+			//Find all update scripts (also from plugins)
+			ko_updates_find_update_files();
+			//Mark all of plugin's updates as done
+			db_update_data('ko_updates', "WHERE `plugin` = '$new_plugin'", array('status' => 2, 'done_date' => date('Y-m-d H:i:s')));
 		}
 	break;
 
@@ -317,6 +324,49 @@ switch($do_action) {
 	break;
 
 
+
+
+	case 'call_update':
+		$updateID = intval($_POST['id']);
+		if(!$updateID) break;
+
+		$update = db_select_data('ko_updates', "WHERE `id` = '$updateID'", '*', '', '', TRUE);
+		if(!$update['id'] || $update['id'] != $updateID) break;
+
+		$ret = ko_updates_call_update($update['name']);
+		if($ret === 0) {
+			$notifier->addTextInfo('Successfully executed the update <b>'.$update['name'].'</b><br />');
+		} else {
+			$notifier->addTextError('Got an error when executing the update <b>'.$update['name'].'</b>: '.$ret.'<br />');
+		}
+	break;
+
+
+
+
+	case 'submit_plugins_updates':
+		$plugin = $_POST['id'];
+		if (!$plugin) break;
+
+		$plugins_available = ko_tools_plugins_get_available();
+		$plugins_installed = ko_tools_plugins_get_installed($plugins_available);
+		if(!in_array($plugin, $plugins_installed)) break;
+
+		$postKeys = array_keys($_POST);
+		$updates = db_select_data('ko_updates', "WHERE `plugin` = '$plugin' AND `status` = '0'");
+		foreach($updates as $update) {
+			if(!in_array($update['name'], $postKeys)) continue;
+			$ret = ko_updates_call_update($update['name']);
+			if($ret === 0) {
+				$notifier->addTextInfo('Successfully executed the update <b>'.$update['name'].'</b><br />');
+			} else {
+				$notifier->addTextError('Got an error when executing the update <b>'.$update['name'].'</b>: '.$ret.'<br />');
+			}
+		}
+		$_SESSION['show'] = 'plugins_list';
+	break;
+
+
 	case 'submit_plugins_sql_diffs':
 
 		$plugin = $_POST['id'];
@@ -366,6 +416,34 @@ switch($do_action) {
 
 		$_SESSION['show'] = 'plugins_list';
 	break;
+
+
+
+
+	case 'plugins_show_updates':
+		$plugin_id = $_GET['plugin'];
+		if (!$plugin_id) break;
+
+		$plugins_available = ko_tools_plugins_get_available();
+		$plugins_installed = ko_tools_plugins_get_installed($plugins_available);
+
+		if (!in_array($plugin_id, $plugins_installed)) break;
+
+		$_SESSION['show_back'] = $_SESSION['show'];
+		$_SESSION['show'] = 'plugins_show_updates';
+	break;
+
+
+
+	case 'list_updates':
+		//Find all update scripts (also from plugins)
+		ko_updates_find_update_files();
+
+		$_SESSION['show'] = 'list_updates';
+	break;
+
+
+
 
 
 	case "list_ldap_logins":
@@ -798,7 +876,8 @@ switch($do_action) {
 		ko_set_setting('typo3_user', format_userinput($_POST['typo3_user'], 'text'));
 
 		//Store password encrypted
-		$crypt = new mcrypt('aes');
+		require_once($BASE_PATH.'inc/class.openssl.php');
+		$crypt = new openssl('AES-256-CBC');
 		$crypt->setKey(KOOL_ENCRYPTION_KEY);
 		$pwd_enc = $crypt->encrypt($_POST['typo3_pwd']);
 		ko_set_setting('typo3_pwd', $pwd_enc);
@@ -838,6 +917,23 @@ switch($do_action) {
 		}
 
 		$onload_code = 'form_set_first_input();'.$onload_code;
+	break;
+
+
+
+	case 'clear_spf_domain':
+		$delDomain = format_userinput($_POST['id'], "text");
+		if(!$delDomain) break;
+
+		$domains = json_decode(ko_get_setting('spf_domains'), TRUE);
+		unset($domains[$delDomain]);
+		ko_set_setting('spf_domains', json_encode($domains));
+	break;
+
+
+	case 'submit_spf_blacklisted_domains';
+		$domains = $_POST['spf_blacklisted_domains'];
+		ko_set_setting('spf_blacklisted_domains', $domains);
 	break;
 
 
@@ -977,12 +1073,21 @@ switch($_SESSION["show"]) {
 		ko_tools_list_sql_diffs($plugin_id);
 	break;
 
+	case "plugins_show_updates":
+		if (!$plugin_id) break;
+		ko_tools_list_updates_for_plugin($plugin_id);
+	break;
+
 	case 'scheduler_add':
 		ko_formular_task('new');
 	break;
 
 	case 'scheduler_list':
 		ko_list_tasks();
+	break;
+
+	case 'list_updates':
+		ko_list_updates();
 	break;
 
 	case 'edit_task':

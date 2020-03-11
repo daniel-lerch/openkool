@@ -2,7 +2,7 @@
 /***************************************************************
  *  Copyright notice
  *
- *  (c) 2003-2017 Renzo Lauper (renzo@churchtool.org)
+ *  (c) 2003-2020 Renzo Lauper (renzo@churchtool.org)
  *  All rights reserved
  *
  *  This script is part of the kOOL project. The kOOL project is
@@ -57,7 +57,7 @@ $user_menu = array_merge($user_menu_, array_diff($MODULES, $user_menu_));
 $menu_counter = 0;
 foreach($user_menu as $m) {
 	if(!in_array($m, $MODULES)) continue;
-	if(in_array($m, array('sms', 'kg', 'mailing', 'vesr')) || trim($m) == '') continue;
+	if(in_array($m, array('telegram', 'sms', 'kg', 'mailing', 'vesr')) || trim($m) == '') continue;
 	if(substr($m, 0, 3) == 'my_') continue;  //Don't show menus from plugins in main navigation (yet)
 	if($m == 'tools' && $_SESSION['ses_userid'] != ko_get_root_id()) continue;
 	if($_SESSION['ses_userid'] == ko_get_checkin_user_id()) continue;

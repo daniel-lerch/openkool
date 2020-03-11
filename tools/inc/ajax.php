@@ -2,7 +2,7 @@
 /***************************************************************
 *  Copyright notice
 *
-*  (c) 2003-2017 Renzo Lauper (renzo@churchtool.org)
+*  (c) 2003-2020 Renzo Lauper (renzo@churchtool.org)
 *  All rights reserved
 *
 *  This script is part of the kOOL project. The kOOL project is
@@ -111,10 +111,10 @@ if(isset($_GET) && isset($_GET['action'])) {
 			foreach($table_cols as $c) {
 				if($c["Field"] == $id) $col = $c;
 			}
-			if (!$col) continue;
+			if (!$col) break;
 
 			$special_filters = array("age", "year", "role"); // this array is also defined in tools/inc/tools.inc
-			if (in_array($col['Field'], $special_filters)) continue;
+			if (in_array($col['Field'], $special_filters)) break;
 
 			if ($delete_filter) db_delete_data("ko_filter", "WHERE id = '" . $fid ."'");
 
@@ -168,7 +168,7 @@ if(isset($_GET) && isset($_GET['action'])) {
 			}
 
 			$filter = db_select_data('ko_filter', "WHERE `id` = '$fid'", '*', '', '', TRUE);
-			if(!$filter['id'] || $filter['id'] != $fid) continue;
+			if(!$filter['id'] || $filter['id'] != $fid) break;
 
 			$able = $filter['allow_fastfilter'] ? 0 : 1;
 			db_update_data('ko_filter', "WHERE `id` = '$fid'", array('allow_fastfilter' => $able));

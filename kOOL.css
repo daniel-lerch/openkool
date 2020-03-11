@@ -222,6 +222,13 @@ div.list-help {
 
 
 
+table.fm_kalender {
+	width: 100%;
+	padding: 0;
+	border: 1px solid #999999;
+	text-align: center;
+}
+
 td.kalender_tag {
 	border-right: 1px solid #999999;
 	border-bottom: 1px solid #999999;

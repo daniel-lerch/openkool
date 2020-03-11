@@ -63,6 +63,9 @@ The first time
 	 and unpack it
    # unzip kOOL_<version>.zip
 
+3. Install composer packages
+   # composer install --no-dev
+
 4. Create the web directory for your kOOL installation
    # mkdir web
 

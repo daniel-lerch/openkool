@@ -229,7 +229,7 @@ class Form
 					// check group count
 					$option = new Tag('option');
 					$option->setAttribute('value',$combinedId);
-					$option->setContent($groupAndRole['group']['name']);
+					$option->setText($groupAndRole['group']['name']);
 					if(isset($groupAndRole['role'])) {
 						$option->addContent(': '.$groupAndRole['role']['name']);
 					}
@@ -265,7 +265,7 @@ class Form
 				switch($definition['datafield']['type']) {
 					case 'textarea':
 						$tag->setTagName('textarea');
-						$tag->setContent($this->getInputValue($field));
+						$tag->setText($this->getInputValue($field));
 						$tag->setSelfClosing(false);
 						break;
 					case 'checkbox':
@@ -284,17 +284,15 @@ class Form
 						}
 						foreach(array_diff($inputValues,$options) as $inputValue) {
 							$option = new Tag('option');
-							$escaped = htmlspecialchars($inputValue,ENT_COMPAT|ENT_HTML5,'ISO-8859-1');
-							$option->setContent($escaped);
-							$option->setAttribute('value',$escaped);
+							$option->setText($inputValue);
+							$option->setAttribute('value',$inputValue);
 							$option->setProp('selected');
 							$tag->addContent($option->render());
 						}
 						foreach($options as $value) {
 							$option = new Tag('option');
-							$escaped = htmlspecialchars($value,ENT_COMPAT|ENT_HTML5,'ISO-8859-1');
-							$option->setContent($escaped);
-							$option->setAttribute('value',$escaped);
+							$option->setText($value);
+							$option->setAttribute('value',$value);
 							$option->setProp('selected',in_array($value,$inputValues));
 							$tag->addContent($option->render());
 						}
@@ -341,14 +339,14 @@ class Form
 					foreach($kota['values'] as $i => $value) {
 						$option = new Tag('option');
 						$option->setAttribute('value',$value);
-						$option->setContent($kota['descs'][$i]);
+						$option->setText($kota['descs'][$i]);
 						$option->setProp('selected',$value == $inputValue);
 						$tag->addContent($option->render());
 					}
 					break;
 				case 'textarea':
 					$tag->setTagName('textarea');
-					$tag->setContent($this->getInputValue($field));
+					$tag->setText($this->getInputValue($field));
 					$tag->setSelfClosing(false);
 					break;
 				case 'textplus':
@@ -356,13 +354,14 @@ class Form
 					foreach($this->getTextplusOptions($field,$definition) as $value => $label) {
 						$option = new Tag('option');
 						$option->setAttribute('value',$value);
-						$option->setContent($label);
+						$option->setText($label);
 						$option->setProp('selected',$value == $inputValue);
 						$renderedOptions .= $option->render();
 					}
 					if(empty($definition['renderAsInput'])) {
 						$tag->setTagName('select');
 						$tag->addContent($renderedOptions);
+						$tag->setSelfClosing(false);
 					} else {
 						$tag->setAttribute('list',$field.'_list');
 						$tag->append(
@@ -402,7 +401,7 @@ class Form
 	}
 
 	protected function getTextplusOptions($field,$definition) {
-		$explicitOptions = array_filter(preg_split('/\s*[\r\n]+\s*/',isset($definition['options']) ? $definition['options'] : ''));
+		$explicitOptions = array_filter(array_map('trim',explode("\n",isset($definition['options']) ? $definition['options'] : '')));
 		if($explicitOptions) {
 			$options = [];
 			foreach($explicitOptions as $o) {
@@ -415,7 +414,12 @@ class Form
 			return $options;
 		} else {
 			$kota = $this->getKOTA('ko_leute')[$field]['form'];
-			return array_combine($kota['values'],$kota['values']);
+			if(isset($kota['values'])) {
+				return array_combine($kota['values'],$kota['values']);
+			} else {
+				$values = db_select_distinct('ko_leute', $field, '', $kota['form']['where'], $kota['form']['select_case_sensitive'] ? TRUE : FALSE);
+				return array_combine($values,$values);
+			}
 		}
 	}
 
@@ -785,6 +789,10 @@ class Tag
 		$this->content = $content;
 	}
 
+	public function setText($text) {
+		$this->content = htmlspecialchars($text,ENT_COMPAT|ENT_HTML5,'ISO-8859-1');
+	}
+
 	public function addContent($content) {
 		$this->content .= $content;
 	}
@@ -820,11 +828,11 @@ class Tag
 		foreach($this->attributes as $name => $value) {
 			$html .= ' '.$name;
 			if($value !== true) {
-				$html .= '="'.$value.'"';
+				$html .= '="'.htmlspecialchars($value,ENT_COMPAT|ENT_HTML5,'ISO-8859-1').'"';
 			}
 		}
 		if($this->classes) {
-			$html .= ' class="'.implode(' ',$this->classes).'"';
+			$html .= ' class="'.htmlspecialchars(implode(' ',$this->classes),ENT_COMPAT|ENT_HTML5,'ISO-8859-1').'"';
 		}
 		if($this->selfClosing === true && empty($this->content)) {
 			$html .= ' />';

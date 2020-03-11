@@ -162,6 +162,7 @@
 
 </div>
 
+
 {if $doTabs || $showSave}
 	<div class="btn-field">
 		{if $tpl_special_submit}
@@ -187,6 +188,16 @@
 		{/if}
 	</div>
 {/if}
+
+
+{if $tpl_crinfo}
+	<br />
+	<div class="well well-small">
+		<h4>{ll key="crinfo_title"}</h4>
+		{$tpl_crinfo}
+	</div>
+{/if}
+
 
 {if $tpl_legend}
 	<div style="margin-top: 10px; color: #666;">

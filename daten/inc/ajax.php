@@ -2,7 +2,7 @@
 /***************************************************************
 *  Copyright notice
 *
-*  (c) 2003-2017 Renzo Lauper (renzo@churchtool.org)
+*  (c) 2003-2020 Renzo Lauper (renzo@churchtool.org)
 *  All rights reserved
 *
 *  This script is part of the kOOL project. The kOOL project is
@@ -49,7 +49,7 @@ array_walk_recursive($_POST,'utf8_decode_array');
 ko_get_access('daten');
 if($access['daten']['MAX'] < 1) exit;
  
-ko_include_kota(array('ko_event', 'ko_eventgruppen'));
+ko_include_kota(array('ko_event', 'ko_eventgruppen', 'ko_event_rooms'));
 
 // Plugins einlesen:
 $hooks = hook_include_main("daten");
@@ -104,15 +104,24 @@ if((isset($_GET) && isset($_GET["action"])) || (isset($_POST) && isset($_POST["a
 		break;
 
 
+		case "setsortrooms":
+			$_SESSION['sort_rooms'] = format_userinput($_GET['sort'], 'alphanum+', TRUE, 30);
+			ko_save_userpref($_SESSION['ses_userid'], 'sort_groups', $_SESSION['sort_groups']);
+			$_SESSION['sort_rooms_order'] = format_userinput($_GET['sort_order'], 'alpha', TRUE, 4);
+			ko_save_userpref($_SESSION['ses_userid'], 'sort_groups_order', $_SESSION['sort_groups_order']);
+
+			print "main_content@@@";
+			ko_list_rooms();
+		break;
 
 		case "setsorteventgroups":
-			if($access['daten']['MAX'] < 3) continue;
+			if($access['daten']['MAX'] < 3) break;
 
 			$_SESSION["sort_tg"] = format_userinput($_GET["sort"], "alphanum+", TRUE, 30);
 			$_SESSION["sort_tg_order"] = format_userinput($_GET["sort_order"], "alpha", TRUE, 4);
 
 			print "main_content@@@";
-			print ko_list_groups("all");
+			ko_list_groups();
 		break;
 
 
@@ -127,7 +136,7 @@ if((isset($_GET) && isset($_GET["action"])) || (isset($_POST) && isset($_POST["a
 			if($_GET['view']) $_SESSION['cal_view'] = format_userinput($_GET['view'], 'alpha');
 
 			//Redraw mwselect box
-			$sel = ko_calendar_mwselect($_SESSION['cal_view']);
+			$sel = ko_calendar_mwselect();
 			print 'mwselect@@@'.$sel;
 		break;
 
@@ -137,18 +146,21 @@ if((isset($_GET) && isset($_GET["action"])) || (isset($_POST) && isset($_POST["a
 			//Set list start
 			if(isset($_GET['set_start'])) {
 				$_SESSION['show_start'] = max(1, format_userinput($_GET['set_start'], 'uint'));
-	    }
+			}
+
 			//Set list limit
 			if(isset($_GET['set_limit'])) {
 				$_SESSION['show_limit'] = max(1, format_userinput($_GET['set_limit'], 'uint'));
 				ko_save_userpref($_SESSION['ses_userid'], 'show_limit_daten', $_SESSION['show_limit']);
-	    }
+			}
 
 			print "main_content@@@";
 			if($_SESSION["show"] == "all_events") {
 				print ko_list_events("all");
 			} else if($_SESSION["show"] == "all_groups") {
-				print ko_list_groups("all");
+				ko_list_groups();
+			} else if($_SESSION["show"] == "list_rooms") {
+				ko_list_rooms();
 			}
 		break;
 
@@ -173,6 +185,9 @@ if((isset($_GET) && isset($_GET["action"])) || (isset($_POST) && isset($_POST["a
 					if (substr($id,0,7) == "absence") {
 						$absence_id = substr($id,8);
 						if (!in_array($absence_id, $_SESSION["show_absences"])) $_SESSION["show_absences"][] = $absence_id;
+					} else if (substr($id,0,7) == "amtstag") {
+						$amtstag_id = substr($id,8);
+						if (!in_array($amtstag_id, $_SESSION["show_amtstage"])) $_SESSION["show_amtstage"][] = $amtstag_id;
 					} else {
 						if (!in_array($id, $_SESSION["show_tg"])) $_SESSION["show_tg"][] = $id;
 					}
@@ -180,6 +195,9 @@ if((isset($_GET) && isset($_GET["action"])) || (isset($_POST) && isset($_POST["a
 					if (substr($id,0,7) == "absence") {
 						$absence_id = substr($id,8);
 						if (in_array($absence_id, $_SESSION["show_absences"])) $_SESSION["show_absences"] = array_diff($_SESSION["show_absences"], [$absence_id]);
+					} else if (substr($id,0,7) == "amtstag") {
+						$amtstag_id = substr($id,8);
+						if (in_array($amtstag_id, $_SESSION["show_amtstage"])) $_SESSION["show_amtstage"] = array_diff($_SESSION["show_amtstage"], [$amtstag_id]);
 					} else {
 						if (in_array($id, $_SESSION["show_tg"])) $_SESSION["show_tg"] = array_diff($_SESSION["show_tg"], [$id]);
 					}
@@ -196,6 +214,18 @@ if((isset($_GET) && isset($_GET["action"])) || (isset($_POST) && isset($_POST["a
 								if (!in_array($absence_filter['id'], $_SESSION["show_absences"])) $_SESSION["show_absences"][] = $absence_filter['id'];
 							} else {
 								if (in_array($absence_filter['id'], $_SESSION["show_absences"])) $_SESSION["show_absences"] = array_diff($_SESSION["show_absences"], [$absence_filter['id']]);
+							}
+						}
+					}
+				} else if ($id == "amtstag") {
+					ko_get_access("rota");
+					$allowed_team_ids = [];
+					foreach($access['rota'] AS $team_id => $rights) {
+						if(is_numeric($team_id) && $rights >= 1) {
+							if ($state == "checked") {
+								if (!in_array($team_id, $_SESSION["show_amtstage"])) $_SESSION["show_amtstage"][] = $team_id;
+							} else {
+								if (in_array($team_id, $_SESSION["show_amtstage"])) $_SESSION["show_amtstage"] = array_diff($_SESSION["show_amtstage"], [$team_id]);
 							}
 						}
 					}
@@ -228,6 +258,7 @@ if((isset($_GET) && isset($_GET["action"])) || (isset($_POST) && isset($_POST["a
 			ko_save_userpref($_SESSION["ses_userid"], "show_daten_tg", implode(",", $_SESSION["show_tg"]));
 			ko_save_userpref($_SESSION["ses_userid"], "daten_taxonomy_filter", $_SESSION["daten_taxonomy_filter"]);
 			ko_save_userpref($_SESSION["ses_userid"], "daten_absence_filter", implode(",",$_SESSION["show_absences"]));
+			ko_save_userpref($_SESSION["ses_userid"], "daten_amtstage_filter", implode(",",$_SESSION["show_amtstage"]));
 
 			//Redraw content for list and year view (month and week are done by fullCalendar)
 			$done = FALSE;
@@ -283,19 +314,20 @@ if((isset($_GET) && isset($_GET["action"])) || (isset($_POST) && isset($_POST["a
 
 		case "itemlistsave":
 			//save new value
-			if($_GET["name"] == "") continue;
+			if($_GET["name"] == "") break;
 			$new_value = implode(",", $_SESSION["show_tg"]);
 			$user_id = $access['daten']['MAX'] > 3 && $_GET['global'] == 'true' ? '-1' : $_SESSION['ses_userid'];
 			$name = format_userinput($_GET["name"], "js", FALSE, 0, array("allquotes"));
 			ko_save_userpref($user_id, $name, $new_value, "daten_itemset");
 
-			$taxonomy_filter = $_SESSION['daten_taxonomy_filter'];
-			if(!empty($taxonomy_filter)) {
-				ko_save_userpref($user_id, $name, $taxonomy_filter, "daten_taxonomy_filter");
+			if(!empty($_SESSION['daten_taxonomy_filter'])) {
+				ko_save_userpref($user_id, $name, $_SESSION['daten_taxonomy_filter'], "daten_taxonomy_filter");
 			}
-
 			if(!empty($_SESSION['show_absences'])) {
 				ko_save_userpref($user_id, $name, implode(",", $_SESSION['show_absences']), "daten_absence_filter");
+			}
+			if(!empty($_SESSION['show_amtstage'])) {
+				ko_save_userpref($user_id, $name, implode(",", $_SESSION['show_amtstage']), "daten_amtstage_filter");
 			}
 
 			ko_get_login($_SESSION['ses_userid'], $loggedIn);
@@ -316,11 +348,14 @@ if((isset($_GET) && isset($_GET["action"])) || (isset($_POST) && isset($_POST["a
 						$n = "{$nameForOthers} - {$c}";
 					}
 					ko_save_userpref($lid, $n, $new_value, "daten_itemset");
-					if(!empty($taxonomy_filter)) {
-						ko_save_userpref($lid, $n, $taxonomy_filter, "daten_taxonomy_filter");
+					if(!empty($_SESSION['daten_taxonomy_filter'])) {
+						ko_save_userpref($lid, $n, $_SESSION['daten_taxonomy_filter'], "daten_taxonomy_filter");
 					}
 					if(!empty($_SESSION['show_absences'])) {
 						ko_save_userpref($lid, $n, implode(",", $_SESSION['show_absences']), "daten_absence_filter");
+					}
+					if(!empty($_SESSION['show_amtstage'])) {
+						ko_save_userpref($lid, $n, implode(",", $_SESSION['show_amtstage']), "daten_amtstage_filter");
 					}
 				}
 			}
@@ -332,7 +367,7 @@ if((isset($_GET) && isset($_GET["action"])) || (isset($_POST) && isset($_POST["a
 		case "itemlistopen":
 			//save new value
 			$name = format_userinput($_GET['name'], 'js', FALSE, 0, array(), '@');
-			if($name == "") continue;
+			if($name == "") break;
 
 			if($name == '_all_') {
 				ko_get_eventgruppen($grps);
@@ -342,29 +377,35 @@ if((isset($_GET) && isset($_GET["action"])) || (isset($_POST) && isset($_POST["a
 				$_SESSION['show_absences'] = array_column($absence_filters, "id");
 				$_SESSION["show_absences"][] = "all";
 				$_SESSION["show_absences"][] = "own";
+				$_SESSION["daten_amtstage_filter"] = [];
 			} else if($name == '_none_') {
 				$_SESSION['show_tg'] = [];
 				$_SESSION["daten_taxonomy_filter"] = "";
 				$_SESSION["show_absences"] = [];
+				$_SESSION["show_amtstage"] = [];
 			} else {
 				if(substr($name, 0, 3) == '@G@') {
 					$value = ko_get_userpref('-1', substr($name, 3), 'daten_itemset');
 					$value_taxonomy = ko_get_userpref('-1', substr($name, 3), 'daten_taxonomy_filter');
 					$value_absence = ko_get_userpref('-1', substr($name, 3), 'daten_absence_filter');
+					$value_amtstage = ko_get_userpref('-1', substr($name, 3), 'daten_amtstage_filter');
 				} else {
 					$value = ko_get_userpref($_SESSION['ses_userid'], $name, 'daten_itemset');
 					$value_taxonomy = ko_get_userpref($_SESSION['ses_userid'], $name, 'daten_taxonomy_filter');
 					$value_absence = ko_get_userpref($_SESSION['ses_userid'], $name, 'daten_absence_filter');
+					$value_amtstage = ko_get_userpref($_SESSION['ses_userid'], $name, 'daten_amtstage_filter');
 				}
 
-				$_SESSION["show_tg"] = explode(",", $value[0]["value"]);
+				$_SESSION["show_tg"] = array_filter(explode(",", $value[0]["value"]));
 				$_SESSION["daten_taxonomy_filter"] = $value_taxonomy[0]["value"];
-				$_SESSION["show_absences"] = explode(",",$value_absence[0]["value"]);
+				$_SESSION["show_absences"] = array_filter(explode(",",$value_absence[0]["value"]));
+				$_SESSION["show_amtstage"] = array_filter(explode(",",$value_amtstage[0]["value"]));
 			}
 
 			ko_save_userpref($_SESSION["ses_userid"], "show_daten_tg", implode(',', $_SESSION['show_tg']));
 			ko_save_userpref($_SESSION["ses_userid"], "daten_taxonomy_filter", $_SESSION["daten_taxonomy_filter"]);
 			ko_save_userpref($_SESSION["ses_userid"], "daten_absence_filter", implode(",", $_SESSION["show_absences"]));
+			ko_save_userpref($_SESSION["ses_userid"], "daten_amtstage_filter", implode(",", $_SESSION["show_amtstage"]));
 
 			print submenu_daten("itemlist_termingruppen", "open", 2);
 			if($_SESSION['show'] == 'all_events') {
@@ -385,18 +426,20 @@ if((isset($_GET) && isset($_GET["action"])) || (isset($_POST) && isset($_POST["a
 		case "itemlistdelete":
 			//save new value
 			$name = format_userinput($_GET['name'], 'js', FALSE, 0, array(), '@');
-			if($name == "") continue;
+			if($name == "") break;
 
 			if(substr($name, 0, 3) == '@G@') {
 				if($access['daten']['MAX'] > 3) {
 					ko_delete_userpref('-1', substr($name, 3), 'daten_itemset');
 					ko_delete_userpref('-1', substr($name, 3), 'daten_taxonomy_filter');
 					ko_delete_userpref('-1', substr($name, 3), 'daten_absence_filter');
+					ko_delete_userpref('-1', substr($name, 3), 'daten_amtstage_filter');
 				}
 			} else {
 				ko_delete_userpref($_SESSION['ses_userid'], $name, 'daten_itemset');
 				ko_delete_userpref($_SESSION['ses_userid'], $name, 'daten_taxonomy_filter');
 				ko_delete_userpref($_SESSION['ses_userid'], $name, 'daten_absence_filter');
+				ko_delete_userpref($_SESSION['ses_userid'], $name, 'daten_amtstage_filter');
 			}
 
 			print submenu_daten("itemlist_termingruppen", "open", 2);
@@ -405,7 +448,7 @@ if((isset($_GET) && isset($_GET["action"])) || (isset($_POST) && isset($_POST["a
 
 
 		case "calselect":
-			if($access['daten']['MAX'] < 2) continue;
+			if($access['daten']['MAX'] < 2) break;
 
 			//GET data
 			$id = format_userinput($_GET["cid"], "uint", FALSE, 11, array(), "-");
@@ -416,13 +459,13 @@ if((isset($_GET) && isset($_GET["action"])) || (isset($_POST) && isset($_POST["a
 			if($id == "-") {  //Back to index
 				foreach($v as $vid => $_v) {
 					$suffix = substr($vid, 0, 1) == "i" ? "-->" : "";
-					$values[] = $vid.",".$d[$vid].$suffix;
+					$values[] = $vid.",".str_replace(',', '&comma;', $d[$vid]).$suffix;
 				}
 			} else {  //Show event groups for the chosen calendar
 				//Add up link
 				$values[] = "i-,".str_replace(",", "", getLL("form_peopleselect_up"));
 				foreach($v["i".$id] as $gid => $g) {
-					$values[] = $gid.",".$d[$gid];
+					$values[] = $gid.",".str_replace(',', '&comma;', $d[$gid]);
 				}
 			}
 			$value = implode("#", $values);
@@ -433,8 +476,15 @@ if((isset($_GET) && isset($_GET["action"])) || (isset($_POST) && isset($_POST["a
 
 
 		case 'jsongetevents':
-			$data = array();
+			if (!is_array($access['reservation'])) ko_get_access('reservation');
+
+			$data = [];
 			$monthly_title = ko_get_userpref($_SESSION['ses_userid'], 'daten_monthly_title');
+
+			if($_GET['type'] == "month") {
+				$_SESSION['cal_monat'] = date("m", strtotime($_GET['start']));
+				$_SESSION['cal_jahr'] = date("Y", strtotime($_GET['start']));
+			}
 
 			$start = strtotime('-10 days', strtotime(substr($_GET['start'], 0, 10).' 00:00:00'));
 			$end = strtotime('+10 days', strtotime(substr($_GET['end'], 0, 10).' 23:59:59'));
@@ -455,7 +505,11 @@ if((isset($_GET) && isset($_GET["action"])) || (isset($_POST) && isset($_POST["a
 				}
 
 				if(sizeof($events) == 0) continue;
-				$tooltip_res = ko_get_userpref($_SESSION['ses_userid'], 'daten_show_res_in_tooltip');
+				if(ko_module_installed('reservation') && $access['reservation']['MAX'] > 0) {
+					$tooltip_res = ko_get_userpref($_SESSION['ses_userid'], 'daten_show_res_in_tooltip');
+				} else {
+					$tooltip_res = 0;
+				}
 				foreach($events as $event) {
 					//Only show allowed moderations
 					if($i == 1) {
@@ -476,7 +530,10 @@ if((isset($_GET) && isset($_GET["action"])) || (isset($_POST) && isset($_POST["a
 					else $time = substr($event['startzeit'], 0, -3).' - '.substr($event['endzeit'], 0, -3);
 
 					$comment = $event['kommentar'] ? nl2br($event['kommentar']) : '';
-					$room = $event['room'] ? $event['room'] : '';
+
+					$mapping = ['room' => $event['room']];
+					kota_process_data("ko_event", $mapping, "list");
+					$room = $mapping['room'];
 
 					$tooltip = '';
 
@@ -507,6 +564,7 @@ if((isset($_GET) && isset($_GET["action"])) || (isset($_POST) && isset($_POST["a
 						$ttTitle = $event['eventgruppen_name'];
 					}
 					$tooltip .= '<h3 class="title">'.$ttTitle.'</h3>';
+					/** @noinspection PhpUndefinedVariableInspection */
 					$tooltip .= '<div class="datetime">'.strftime($DATETIME['DdmY'], strtotime($event['startdatum']));
 					if($event['startdatum'] != $event['enddatum']) $tooltip .= ' - '.strftime($DATETIME['DdmY'], strtotime($event['enddatum']));
 					$tooltip .= '<br /> '.getLL('kota_listview_ko_reservation_startzeit').': '.$time.'</div>';
@@ -514,8 +572,18 @@ if((isset($_GET) && isset($_GET["action"])) || (isset($_POST) && isset($_POST["a
 					if($comment) $tooltip .= '<fieldset class="comment"><legend>' . getLL('daten_comment') . '</legend>'.$comment.'</fieldset>';
 
 					$userFields = array_filter(explode(',', ko_get_userpref($_SESSION['ses_userid'], 'daten_tooltip_fields')), function($e){return $e?TRUE:FALSE;});
-					if(sizeof($userFields) == 0) $userFields = $EVENT_TOOLTIP_FIELDS;
+					if(sizeof($userFields) == 0) {
+						/** @noinspection PhpUndefinedVariableInspection */
+						$userFields = $EVENT_TOOLTIP_FIELDS;
+					}
 					if(!is_array($userFields)) $userFields = array();
+
+					//Remove reservationen if no access
+					if((!ko_module_installed('reservation') || $access['reservation']['MAX'] < 1) && in_array('reservationen', $userFields)) {
+						foreach($userFields as $k => $v) {
+							if($v == 'reservationen') unset($userFields[$k]);
+						}
+					}
 
 
 					$teams = ko_rota_get_teams_for_eg($event['eventgruppen_id']);
@@ -541,7 +609,6 @@ if((isset($_GET) && isset($_GET["action"])) || (isset($_POST) && isset($_POST["a
 						if(!isset($processed_event[$dk])) $processed_event[$dk] = '';
 					}
 					kota_process_data('ko_event', $processed_event, 'list', $_, $event['id']);
-
 					if(is_array($userFields)) {
 						foreach($userFields as $field) {
 							if(!isset($processed_event[$field])) continue;
@@ -561,9 +628,11 @@ if((isset($_GET) && isset($_GET["action"])) || (isset($_POST) && isset($_POST["a
 						foreach($ids as $k => $v) {
 							if(!$v) unset($ids[$k]);
 						}
+						$resDesc = [];
 						if(sizeof($ids) > 0) {
 							//Get reservation infos
-							$res = db_select_data('ko_reservation AS r LEFT JOIN ko_resitem AS i ON r.item_id = i.id', "WHERE r.id IN ('".implode("','", $ids)."')", 'i.name AS resitem_name, r.startzeit, r.endzeit, r.zweck', '', '', FALSE, TRUE);
+							$res_columns = 'i.name AS resitem_name, r.startdatum, r.enddatum, r.startzeit, r.endzeit, r.zweck';
+							$res = db_select_data('ko_reservation AS r LEFT JOIN ko_resitem AS i ON r.item_id = i.id', "WHERE r.id IN ('".implode("','", $ids)."')", $res_columns, '', '', FALSE, TRUE);
 							$tooltip .= '<fieldset><legend class="res_title">'.getLL('res_list_title').'</legend><div class="event_res">';
 							foreach($res as $r) {
 								//Format time
@@ -573,9 +642,21 @@ if((isset($_GET) && isset($_GET["action"])) || (isset($_POST) && isset($_POST["a
 									$time = substr($r['startzeit'], 0, -3);
 									if($r['endzeit'] != '00:00:00') $time .= ' - '.substr($r['endzeit'], 0, -3);
 								}
-								$tooltip .= '- '.$r['resitem_name'].': '.$time.'<br />';
+
+								if($r['startdatum'] != $r['enddatum']) {
+									$date = ko_date_format_timespan($r['startdatum'], $r['enddatum']);
+								} else {
+									$date = sql2datum($r['startdatum']);
+								}
+
+								$tooltip .= '- '.$r['resitem_name'].': ' . $date . ' ' .$time.'<br />';
+								$resDesc[] = $r['resitem_name'].': '.$time;
 							}
 							$tooltip .= '</div></fieldset>';
+						}
+
+						if($tooltip_res == 2 && sizeof($resDesc) > 0) {
+							$title = '<b>'.$title.'</b>'.'<p style="margin: 4px 0 0 0;">- '.implode('<br />- ', $resDesc).'</p>';
 						}
 					}
 
@@ -649,6 +730,11 @@ if((isset($_GET) && isset($_GET["action"])) || (isset($_POST) && isset($_POST["a
 
 			if (!empty($_SESSION['show_absences'])) {
 				$data = array_merge(ko_get_absences_for_calendar($_GET['start'], $_GET['end']), $data);
+			}
+
+			list($amtstageEvents, $amtstageEgs) = ko_get_amtstageevents_for_calendar($start, $end);
+			if(!empty($amtstageEvents)) {
+				$data = array_merge($amtstageEvents, $data);
 			}
 
 			//Show birthdays as allDay events
@@ -733,7 +819,7 @@ if((isset($_GET) && isset($_GET["action"])) || (isset($_POST) && isset($_POST["a
 
 		case 'fcdelevent':
 			$id = format_userinput($_GET['id'], 'uint');
-			if(!$id) continue;
+			if(!$id) break;
 			do_del_termin($id);
 		break;
 
@@ -869,12 +955,12 @@ if((isset($_GET) && isset($_GET["action"])) || (isset($_POST) && isset($_POST["a
 			$ep = $_POST;
 
 			// continue if can't find id of entry
-			if (!$ep["koi"]["ko_event"]['eventgruppen_id']) continue;
+			if (!$ep["koi"]["ko_event"]['eventgruppen_id']) break;
 			reset($ep['koi']['ko_event']['eventgruppen_id']);
 			$id = key($ep["koi"]["ko_event"]['eventgruppen_id']);
 
 			// continue of no eg selected yet
-			if (!$ep["koi"]["ko_event"]['eventgruppen_id'][$id]) continue;
+			if (!$ep["koi"]["ko_event"]['eventgruppen_id'][$id]) break;
 
 			// include required code and kota
 			ko_include_kota(array('ko_reservation'));

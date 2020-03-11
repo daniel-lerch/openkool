@@ -2,7 +2,7 @@
 /***************************************************************
 *  Copyright notice
 *
-*  (c) 2003-2017 Renzo Lauper (renzo@churchtool.org)
+*  (c) 2003-2020 Renzo Lauper (renzo@churchtool.org)
 *  All rights reserved
 *
 *  This script is part of the kOOL project. The kOOL project is
@@ -31,13 +31,13 @@ ob_start();  //Ausgabe-Pufferung einschalten
 $ko_path = "../";
 $ko_menu_akt = "daten";
 
-include($ko_path . "inc/ko.inc");
-include($ko_path . 'consensus/consensus.inc');
-include("inc/daten.inc");
-if(ko_module_installed("reservation")) 
-	include($ko_path."reservation/inc/reservation.inc");
+include_once($ko_path . "inc/ko.inc");
+include_once($ko_path . 'consensus/consensus.inc');
+include_once("inc/daten.inc");
+if(ko_module_installed("reservation"))
+	include_once("../reservation/inc/reservation.inc");
 if(ko_module_installed("rota"))
-	include($ko_path."rota/inc/rota.inc");
+	include_once("../rota/inc/rota.inc");
 
 $notifier = koNotifier::Instance();
 
@@ -55,7 +55,7 @@ ko_get_access('daten');
 
 
 //kOOL Table Array
-ko_include_kota(array('ko_event', 'ko_eventgruppen', 'ko_reservation', 'ko_pdf_layout', 'ko_reminder', 'ko_event_absence'));
+ko_include_kota(array('ko_event', 'ko_eventgruppen', 'ko_reservation', 'ko_pdf_layout', 'ko_reminder', 'ko_event_rooms', 'ko_event_absence'));
 
 
 
@@ -86,7 +86,34 @@ if(substr($_SESSION['cal_view'],0,8) == "timeline") {
 }
 
 
+if($_GET['kota_filter']) {
+	list($field, $value) = explode(':', $_GET['kota_filter']);
+	$field = format_userinput($field, 'js');
+	if(isset($KOTA['ko_event'][$field])) {
+		$filterOK = FALSE;
+		foreach($KOTA['ko_event']['_listview'] as $k => $v) {
+			if($v['name'] == $field && $v['filter'] === TRUE) $filterOK = TRUE;
+		}
+		if($filterOK) {
+			$_SESSION['kota_filter']['ko_event'] = array($field => array($value));
+		}
+	}
+}
+
+
 switch($do_action) {
+
+	case "set_absence_ical_url":
+		if (!($access['daten']['ABSENCE'] < 1 || (($leute_id = ko_get_logged_in_id()) == 0 && $access['daten']['ABSENCE'] < 2))) {
+			if(empty($_POST['absence_ical_url']) || preg_match("%^((https?://)|(www\.))([a-z0-9-].?)+(:[0-9]+)?(/.*)?$%i", $_POST['absence_ical_url'])) {
+				ko_save_userpref($_SESSION['ses_userid'], 'absence_ical_url', format_userinput($_POST['absence_ical_url'], 'text'));
+				ko_daten_import_absences();
+			} else {
+				$notifier->addTextError(getLL("daten_settings_absence_ical_url_error"));
+			}
+		}
+		$_SESSION['show'] = 'list_absence';
+		break;
 
 	//Filter
 	case "set_filter_today":
@@ -205,6 +232,8 @@ switch($do_action) {
 		//Check for empty calendars
 		ko_delete_empty_calendars();
 
+		ko_taxonomy_delete_node($del_id, "ko_eventgruppen");
+
 		//Rota
 		if(in_array('rota', $MODULES)) {
 			//Delete reference to this event group for weekly teams
@@ -253,7 +282,6 @@ switch($do_action) {
 		ko_save_userpref($_SESSION['ses_userid'], 'daten_no_cals_in_itemlist', format_userinput($_POST['sel_no_cals_in_itemlist'], 'uint', FALSE, 1));
 		ko_save_userpref($_SESSION['ses_userid'], 'show_birthdays', format_userinput($_POST['sel_show_birthdays'], 'uint', FALSE, 1));
 		ko_save_userpref($_SESSION['ses_userid'], 'daten_show_res_in_tooltip', format_userinput($_POST['sel_show_res_in_tooltip'], 'uint', FALSE, 1));
-		ko_save_userpref($_SESSION['ses_userid'], 'daten_rooms_only_future', format_userinput($_POST['chk_daten_rooms_only_future'], 'uint', FALSE, 1));
 		ko_save_userpref($_SESSION['ses_userid'], 'daten_fm_filter', format_userinput($_POST['sel_fm_filter'], 'text'));
 		ko_save_userpref($_SESSION['ses_userid'], 'daten_ical_deadline', format_userinput($_POST['sel_ical_deadline'], 'int', FALSE));
 		if($access['daten']['MAX'] > 3) {
@@ -262,6 +290,14 @@ switch($do_action) {
 		ko_save_userpref($_SESSION['ses_userid'], 'daten_ical_description_fields', format_userinput($_POST['sel_ical_description_fields'], 'alphanumlist'));
 		ko_save_userpref($_SESSION['ses_userid'], 'daten_tooltip_fields', format_userinput($_POST['sel_tooltip_fields'], 'alphanumlist'));
 
+		if (!($access['daten']['ABSENCE'] < 1 || (($leute_id = ko_get_logged_in_id()) == 0 && $access['daten']['ABSENCE'] < 2))) {
+			if(empty($_POST['txt_absence_ical_url']) || preg_match('%^((https?://)|(www\.))([a-z0-9-].?)+(:[0-9]+)?(/.*)?$%i', $_POST['txt_absence_ical_url'])) {
+				ko_save_userpref($_SESSION['ses_userid'], 'absence_ical_url', format_userinput($_POST['txt_absence_ical_url'], 'text'));
+				ko_daten_import_absences();
+			} else {
+				$notifier->addTextError(getLL("daten_settings_absence_ical_url_error"));
+			}
+		}
 
 		//Global settings
 		if($access['daten']['MAX'] > 3) {
@@ -277,6 +313,7 @@ switch($do_action) {
 			ko_daten_propagate_cal_access();
 			ko_set_setting('daten_show_ical_links_to_guest', format_userinput($_POST['sel_show_ical_links_to_guest'], 'uint'));
 			ko_set_setting('activate_event_program', format_userinput($_POST['sel_activate_event_program'], 'uint'));
+			ko_set_setting('absence_color', format_userinput($_POST['absence_color'], 'color'));
 		}
 
 
@@ -379,7 +416,7 @@ switch($do_action) {
 	break;
 
 	case 'list_absence':
-		if($access['daten']['MAX'] < 1) continue;
+		if($access['daten']['ABSENCE'] < 1) break;
 
 		if($_GET['mode'] == "xls") {
 			if(!empty($_GET['set_person_filter'])) {
@@ -397,18 +434,18 @@ switch($do_action) {
 		break;
 
 	case 'add_absence':
-		if($access['daten']['MAX'] < 1) continue;
+		if($access['daten']['ABSENCE'] < 1) break;
 		$_SESSION["show"] = "add_absence";
 		break;
 
 	case 'edit_absence':
-		if($access['daten']['MAX'] < 1) continue;
+		if($access['daten']['ABSENCE'] < 1) break;
 		$_SESSION["show"] = "edit_absence";
 		break;
 
 	case 'submit_new_absence':
 	case 'submit_edit_absence':
-		if ($access['daten']['MAX'] < 1) continue;
+		if ($access['daten']['ABSENCE'] < 1) break;
 
 		if(sql_datum($_POST['koi']['ko_event_absence']['from_date'][0]) > sql_datum($_POST['koi']['ko_event_absence']['to_date'][0])) {
 			$notifier->addTextError("Startdatum muss vor dem Enddatum liegen");
@@ -423,7 +460,7 @@ switch($do_action) {
 		break;
 
 	case 'delete_absence':
-		if ($access['daten']['MAX'] < 1) continue;
+		if ($access['daten']['ABSENCE'] < 1) break;
 
 		$absence_id = format_userinput($_POST["id"], "uint");
 		if(ko_daten_delete_absence($absence_id)) {
@@ -646,7 +683,7 @@ switch($do_action) {
 	case "submit_edit_termin":
 		$id = format_userinput($_POST["id"], "uint");
 		$event = db_select_data('ko_event', "WHERE `id` = '$id'", '*', '', '', TRUE);
-		if($access['daten'][$event['eventgruppen_id']] < 2) break;
+		if ($access['daten'][$event['eventgruppen_id']] < 2) break;
 
 
 		//Process data
@@ -655,16 +692,16 @@ switch($do_action) {
 
 		//If KOTA exclude columns are set for this user, fill $data with values from current event, so these values won't get changed
 		$kota_columns = ko_access_get_kota_columns($_SESSION['ses_userid'], 'ko_event');
-		if(sizeof($kota_columns) > 0) {
-			foreach($KOTA['ko_event']['_allcolumns'] as $col) {
-				if(substr($col, 0, 1) == '_') continue;
-				if(in_array($col, $kota_columns)) continue;
+		if (sizeof($kota_columns) > 0) {
+			foreach ($KOTA['ko_event']['_allformcolumns'] as $col) {
+				if (substr($col, 0, 1) == '_') continue;
+				if (in_array($col, $kota_columns)) continue;
 				$data[$col] = $event[$col];
 			}
 		}
 
 		$errorOut = check_daten_entries($data);
-		if($errorOut) {
+		if ($errorOut) {
 			$edit_id = $id;
 			break;
 		}
@@ -674,27 +711,27 @@ switch($do_action) {
 		$forceIgnoreRes = !isset($_POST["sel_do_res"]);
 
 		$data["resitems"] = format_userinput($_POST["sel_do_res"], "intlist");
-		foreach($EVENTS_SHOW_RES_FIELDS as $f) {
-			if(in_array($f, array('startzeit', 'endzeit'))) {
-				$data['res_'.$f] = $_POST['res_'.$f] ? sql_zeit($_POST['res_'.$f]) : $data[$f];
+		foreach ($EVENTS_SHOW_RES_FIELDS as $f) {
+			if (in_array($f, ['startzeit', 'endzeit'])) {
+				$data['res_' . $f] = $_POST['res_' . $f] ? sql_zeit($_POST['res_' . $f]) : $data[$f];
 			} else {
-				$data['res_'.$f] = $_POST['res_'.$f];
+				$data['res_' . $f] = $_POST['res_' . $f];
 			}
 		}
-		$data['res_startdatum'] = date('Y-m-d', ($_POST['res_startdatum_delta']*24*3600 + strtotime($data["startdatum"])));
-		$data['res_enddatum'] = date('Y-m-d', ($_POST['res_enddatum_delta']*24*3600 + strtotime($data["enddatum"])));
-
+		$data['res_startdatum'] = date('Y-m-d', ($_POST['res_startdatum_delta'] * 24 * 3600 + strtotime($data["startdatum"])));
+		$data['res_enddatum'] = date('Y-m-d', ($_POST['res_enddatum_delta'] * 24 * 3600 + strtotime($data["enddatum"])));
 		$data['responsible_for_res'] = format_userinput($_POST['sel_responsible_for_res'], 'uint');
-
-
 		$data["startdatum"] = sql_datum($data["startdatum"]);
 		$data["enddatum"] = sql_datum($data["enddatum"]);
-		if($data["enddatum"] == "0000-00-00" || trim($data["enddatum"]) == "") $data["enddatum"] = $data["startdatum"];
+
+		if ($data["enddatum"] == "0000-00-00" || trim($data["enddatum"]) == "") {
+			$data["enddatum"] = $data["startdatum"];
+		}
 
 		//Group subscription (group will be created in ko_daten_store_event() or ko_daten_update_event())
-		if(ko_get_setting('daten_gs_pid') && ko_module_installed('groups')) {
-			if(!isset($access['groups'])) ko_get_access('groups');
-			if($access['groups']['ALL'] > 2 || $access['groups'][ko_get_setting('daten_gs_pid')] > 2) {
+		if (ko_get_setting('daten_gs_pid') && ko_module_installed('groups')) {
+			if (!isset($access['groups'])) ko_get_access('groups');
+			if ($access['groups']['ALL'] > 2 || $access['groups'][ko_get_setting('daten_gs_pid')] > 2) {
 				$data['gs_gid'] = isset($_POST['chk_gs_gid']) ? 1 : '';
 			}
 		}
@@ -702,33 +739,33 @@ switch($do_action) {
 		//Check for changes
 		$event["startzeit"] = sql_zeit($event["startzeit"]);
 		$event["endzeit"] = sql_zeit($event["endzeit"]);
-		$dont_check = array('id', 'gs_gid', 'cdate', 'last_change', 'lastchange_user', 'reservationen', 'import_id');
-		if(!ko_module_installed('rota')) $dont_check[] = 'rota';
+		$dont_check = ['id', 'gs_gid', 'cdate', 'last_change', 'lastchange_user', 'reservationen', 'import_id'];
+		if (!ko_module_installed('rota')) $dont_check[] = 'rota';
 		//Add exclude fields from settings
-		foreach(explode(',', ko_get_setting('daten_mod_exclude_fields')) as $f) {
-			if(!$f || in_array($f, $dont_check)) continue;
+		foreach (explode(',', ko_get_setting('daten_mod_exclude_fields')) as $f) {
+			if (!$f || in_array($f, $dont_check)) continue;
 			$dont_check[] = $f;
 		}
 		$event_changed = FALSE;
-		foreach($event as $key => $value) {
-			if(in_array($key, $dont_check)) continue;
-			if(!isset($KOTA['ko_event'][$key]['form'])) continue;
-			if($event[$key] != $data[$key]) $event_changed = TRUE;
+		foreach ($event as $key => $value) {
+			if (in_array($key, $dont_check)) continue;
+			if (!isset($KOTA['ko_event'][$key]['form'])) continue;
+			if ($event[$key] != $data[$key]) $event_changed = TRUE;
 		}
 
 		//Check for event moderation
 		ko_get_eventgruppe_by_id($data["eventgruppen_id"], $eg);
 		//Only store changes as moderation if something changed. (e.g. only changes in reservations don't need moderation)
-		if($eg["moderation"] > 0 && $access['daten'][$event['eventgruppen_id']] < 3 && $event_changed) {
+		if ($eg["moderation"] > 0 && $access['daten'][$event['eventgruppen_id']] < 3 && $event_changed) {
 			$data["_event_id"] = $id;
 
 			//Copy all fields not set in mod data from original event.
 			// e.g. necessary for file inputs as these are handled in kota_process_data but not set on $data if nothing's changed
-			foreach($event as $k => $v) {
-				if(!isset($data[$k])) $data[$k] = $v;
+			foreach ($event as $k => $v) {
+				if (!isset($data[$k])) $data[$k] = $v;
 			}
 
-			ko_daten_store_moderation(array($data));
+			ko_daten_store_moderation([$data]);
 			$notifier->addWarning(9, $do_action);
 		} else {
 			$errorOut = ko_daten_update_event($id, $data, $forceIgnoreRes);
@@ -738,10 +775,7 @@ switch($do_action) {
 		}
 
 		$_SESSION['show'] = ($_SESSION['show_back'] && in_array($_SESSION['show_back'], array_keys($DISABLE_SM['daten']))) ? $_SESSION['show_back'] : 'calendar';
-	break;
-
-
-
+		break;
 
 
 	case "multiedit":
@@ -1350,42 +1384,31 @@ switch($do_action) {
 
 	//Send email
 	case 'submit_email':
-		$p = ko_get_logged_in_person();
-		$from_name = $p['vorname'] || $p['nachname'] ? $p['vorname'].' '.$p['nachname'] : $p['firm'];
-		$from = ko_mail_get_from($from_name);
-
-		$replyTo = array();
-		if($p['email']) {
-			$replyTo = array($p['email'] => $from_name);
+		if($_POST['rd_bcc_an_mich'] == 'ja') {
+			$p = ko_get_logged_in_person();
+			if(check_email($p['email'])) {
+				$_POST['txt_bcc'] .= ($_POST['txt_bcc'] == '') ? $p['email'] : ','.$p['email'];
+			}
 		}
 
-		if($_POST['rd_bcc_an_mich'] == 'ja' && check_email($p['email'])) {
-			$_POST['txt_bcc'] .= ($_POST['txt_bcc'] == '') ? $p['email'] : ','.$p['email'];
-		}
-
+		$recipients = explode(',', str_replace(";", ",", $_POST["txt_empfaenger"]));
 		if($_POST["txt_cc"] != "") $cc = explode(',', (str_replace(";", ",", $_POST["txt_cc"])));
 		if($_POST["txt_bcc"] != "") $bcc = explode(',', nl2br(str_replace(";", ",", $_POST["txt_bcc"])));
 
-		$recipients = explode(',', str_replace(";", ",", $_POST["txt_empfaenger"]));
-		array_walk($recipients, create_function('&$val', '$val = trim($val);'));
-
-		// remove trailing whitespaces
-		array_walk($cc, create_function('&$val', '$val = trim($val);'));
-
-		// remove trailing whitespaces
-		array_walk($bcc, create_function('&$val', '$val = trim($val);'));
+		foreach($recipients AS $key => $value) $recipients[$key] = trim($value);
+		foreach($cc AS $key => $value) $cc[$key] = trim($value);
+		foreach($bcc AS $key => $value) $bcc[$key] = trim($value);
 
 		$text = ko_emailtext($_POST["txt_emailtext"]);
 
 		ko_send_mail(
-			$from,
+			'',
 			$recipients,
 			$_POST["txt_betreff"],
 			ko_emailtext($_POST['txt_emailtext']),
 			array(),
 			$cc,
-			$bcc,
-			$replyTo
+			$bcc
 		);
 
 		if (!$notifier->hasErrors()) {
@@ -1500,7 +1523,55 @@ switch($do_action) {
 
 
 
+	case "list_rooms":
+		$_SESSION['show'] = 'list_rooms';
+		break;
 
+	case "new_room":
+		$_SESSION["show"] = "new_room";
+		break;
+	case "edit_room":
+		$edit_id = format_userinput($_POST['id'], 'uint');
+		$_SESSION["show_back"] = $_SESSION["show"];
+		$_SESSION['show'] = 'edit_room';
+		$onload_code = "form_set_first_input();".$onload_code;
+		break;
+
+	case 'submit_new_event_room':
+		$id = kota_submit_multiedit('', 'new_room');
+
+		if(!$notifier->hasErrors()) {
+			$notifier->addInfo(18);
+			$_SESSION['show'] = 'list_rooms';
+		}
+		break;
+	case 'submit_edit_event_room':
+		$id = kota_submit_multiedit('', 'edit_room');
+
+		if(!$notifier->hasErrors()) {
+			$notifier->addInfo(19);
+			$_SESSION['show'] = 'list_rooms';
+		}
+		break;
+
+	case 'delete_room':
+		if(FALSE === ($del_id = format_userinput($_POST['id'], 'uint', TRUE))) {
+			trigger_error('Not allowed del_id: '.$_POST['id'], E_USER_ERROR);
+		}
+		if(!$del_id) {
+			if(FALSE === ($del_id = format_userinput($_GET['id'], 'uint', TRUE))) {
+				trigger_error('Not allowed del_id: '.$_GET['id'], E_USER_ERROR);
+			}
+		}
+		if(!$del_id) break;
+
+		if(ko_delete_event_room($del_id)) {
+			$notifier->addTextInfo(getLL("action_delete_event_room_success"));
+		} else {
+			$notifier->addTextError(getLL("action_delete_event_room_error"));
+		}
+
+		break;
 
 	case 'export_xls_daten':
 		if($access['daten']['MAX'] < 1 || $_SESSION['ses_userid'] == ko_get_guest_id()) break;
@@ -1830,6 +1901,11 @@ if(in_array($do_action, array('submit_neue_gruppe', 'submit_edit_gruppe', 'delet
 }
 
 
+// If we are handling a request that was redirected by /inc/form.php, then exit here
+if ($asyncFormSubmit == 1) {
+	throw new Exception('async-form-submit-dummy-exception');
+}
+
 
 
 
@@ -1858,6 +1934,10 @@ if($_SESSION['sort_tg'] == '') {
 	$_SESSION['sort_tg']= 'name';
 	$_SESSION['sort_tg_order'] = 'ASC';
 }
+if($_SESSION['sort_rooms'] == '') {
+	$_SESSION['sort_rooms']= 'title';
+	$_SESSION['sort_rooms_order'] = 'ASC';
+}
 if($_SESSION['cal_tag'] == '') {
 	$_SESSION['cal_tag'] = strftime('%d', time());
 }
@@ -1880,8 +1960,10 @@ if($_SESSION['cal_woche_jahr'] == '') {
 	$_SESSION['cal_woche_jahr'] = strftime('%Y', time());
 }
 if($_SESSION['filter_start'] === NULL) {
-	$_SESSION['filter_start'] = ko_get_userpref($_SESSION['ses_userid'], 'daten_filter_start');
-	$_SESSION['filter_ende'] = ko_get_userpref($_SESSION['ses_userid'], 'daten_filter_ende');
+	$_SESSION['filter_start'] = 'today';
+	$_SESSION['filter_ende'] = 'immer';
+	ko_save_userpref($_SESSION['ses_userid'], 'daten_filter_start', $_SESSION['filter_start']);
+	ko_save_userpref($_SESSION['ses_userid'], 'daten_filter_ende', $_SESSION['filter_ende']);
 }
 $_SESSION['show_birthdays'] = ko_get_userpref($_SESSION['ses_userid'], 'show_birthdays');
 if(!isset($_SESSION['show_birthdays'])) $_SESSION['show_birthdays'] = FALSE;
@@ -1927,7 +2009,6 @@ include("inc/js-daten.inc");
 //Include JS from rota module when editing an event
 if(in_array($_SESSION['show'], array('edit_termin')) && ko_module_installed('rota')) include($ko_path.'rota/inc/js-rota.inc');
 if(in_array($_SESSION["show"], array("neuer_termin", "edit_termin"))) include("inc/js-seleventgroup.inc");
-$js_calendar->load_files();
 ?>
 </head>
 
@@ -1967,9 +2048,18 @@ switch($_SESSION["show"]) {
 	break;
 
 	case "all_groups":
-		ko_list_groups("all");
+		ko_list_groups();
 	break;
 
+	case "list_rooms":
+		ko_list_rooms();
+		break;
+	case "new_room":
+		ko_formular_room("new");
+		break;
+	case "edit_room":
+		ko_formular_room("edit", $edit_id);
+		break;
  	case "neuer_termin":
 		ko_formular_termin("neu", "", $new_event_data);
  	break;

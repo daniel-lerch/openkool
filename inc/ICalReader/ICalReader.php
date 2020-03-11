@@ -2,6 +2,8 @@
 namespace kOOL;
 
 require_once __DIR__.'/recurrence.php';
+use HMuenzer\recurrence;
+
 
 class ICalReader
 {
@@ -136,12 +138,12 @@ class ICalReader
 			if(isset($d['LOCATION'])) $e['room'] = $this->decodeString($d['LOCATION']);
 			if(isset($d['URL'])) $e['url'] = $d['URL'];
 
-			$recurrence = new \HMuenzer\recurrence($d);
+			$recurrence = new recurrence($d);
 			$dates = array();
 			if($recurrence->error) {
 				try {
 					$timezone = $d['TZID'] ? new \DateTimeZone($d['TZID']) : null;
-				} catch(Exception $e) {
+				} catch(\Exception $exc) {
 					$timezone = null;
 				}
 				$dates[] = array(
@@ -171,7 +173,11 @@ class ICalReader
 							if($r_event['RECURRENCE-ID'] == $rid ||
 								($r_event['RECURRENCE-ID'] > $rid && $range == 'THISANDPRIOR') ||
 								($r_event['RECURRENCE-ID'] < $rid && $range == 'THISANDFUTURE')) {
-								$timezone = $r_event['TZID'] ? new \DateTimeZone($r_event['TZID']) : null;
+								try {
+									$timezone = $r_event['TZID'] ? new \DateTimeZone($r_event['TZID']) : null;
+								} catch(\Exception $exc) {
+									$timezone = null;
+								}
 								$start = new \DateTime($r_event['DTSTART'],$timezone);
 								$end = $r_event['DTEND'] ? new \DateTime($r_event['DTEND'],$timezone) : false;
 
@@ -248,6 +254,145 @@ class ICalReader
 		}
 		return $events;
 	}
+
+	/**
+	 * Get a list of absence entries from a ics-file
+	 *
+	 * @param $icalFile
+	 * @return array
+	 * @throws \Exception
+	 */
+	public function getAbsences($icalFile) {
+		$recurrenceCountLimit = 2000;
+		$recurrenceDateLimit = new \DateTime;
+		$recurrenceDateLimit->add(new \DateInterval('P2Y'));
+		$lowerDateLimit = new \DateTime();
+		$targetTimeZone = new \DateTimeZone(date_default_timezone_get());
+
+		if (is_string($icalFile) && strpos($icalFile, 'BEGIN:VCALENDAR') === FALSE) {
+			$icalFile = fopen($icalFile, 'r');
+		}
+		$icalEntries = $this->parseString($icalFile);
+
+		$r_absences = [];
+		foreach ($icalEntries as $key => $icalEntry) {
+			if (!empty($icalEntry['RECURRENCE-ID'])) {
+				$icalEntry['RECURRENCE-ID'] = strtotime($icalEntry['RECURRENCE-ID']);
+				$r_absences[$icalEntry['UID']][] = $icalEntry;
+				unset($icalEntries[$key]);
+			}
+
+			if($icalEntry['X-MICROSOFT-CDO-BUSYSTATUS'] != "OOF") {
+				unset($icalEntries[$key]);
+			}
+		}
+
+		$absences = [];
+		foreach ($icalEntries as $icalEntry) {
+			$absence = [];
+			$absence['crdate'] = date('Y-m-d H:i:s');
+			$absence['ical_id'] = $icalEntry['UID'];
+
+			if (isset($icalEntry['SUMMARY'])) $absence['title'] = $this->decodeString($icalEntry['SUMMARY']);
+			if (isset($icalEntry['DESCRIPTION'])) $absence['description'] = $this->decodeString($icalEntry['DESCRIPTION']);
+
+			$recurrence = new recurrence($icalEntry);
+			$dates = [];
+			if ($recurrence->error) {
+				try {
+					$timezone = $icalEntry['TZID'] ? new \DateTimeZone($icalEntry['TZID']) : NULL;
+				} catch (\Exception $exc) {
+					$timezone = NULL;
+				}
+				$dates[] = [
+					'start' => new \DateTime($icalEntry['DTSTART'], $timezone),
+					'end' => $icalEntry['DTEND'] ? new \DateTime($icalEntry['DTEND'], $timezone) : FALSE,
+					'title' => $absence['title'],
+					'description' => $absence['description'],
+				];
+			} else {
+				for ($c = 0; $c < $recurrenceCountLimit && ($ds = $recurrence->next()) != FALSE; $c++) {
+					if (substr($ds['dtstart'], 0, strpos($ds['dtstart'], '-')) > 3000) continue;
+
+					$start = new \DateTime($ds['dtstart']);
+					if ($start > $recurrenceDateLimit) continue;
+					$end = new \DateTime($ds['dtend']);
+
+					//Set data to base event
+					$title = $absence['title'];
+					$description = $absence['description'];
+					$r_absence = [];
+
+					//Find recurrence entry which is set to overwrite default data from base recurring event
+					if (isset($r_absences[$icalEntry['UID']])) {
+						$rid = strtotime($ds['recurrence-id']);
+
+						$range = isset($r_absence['RECURRENCE-ID-RANGE']) ? $r_absence['RECURRENCE-ID-RANGE'] : '';
+						foreach ($r_absences[$icalEntry['UID']] as $r_absence) {
+							if ($r_absence['RECURRENCE-ID'] == $rid ||
+								($r_absence['RECURRENCE-ID'] > $rid && $range == 'THISANDPRIOR') ||
+								($r_absence['RECURRENCE-ID'] < $rid && $range == 'THISANDFUTURE')) {
+								try {
+									$timezone = $r_absence['TZID'] ? new \DateTimeZone($r_absence['TZID']) : NULL;
+								} catch (\Exception $exc) {
+									$timezone = NULL;
+								}
+								$start = new \DateTime($r_absence['DTSTART'], $timezone);
+								$end = $r_absence['DTEND'] ? new \DateTime($r_absence['DTEND'], $timezone) : FALSE;
+
+								if (isset($r_absence['SUMMARY'])) $title = $this->decodeString($r_absence['SUMMARY']);
+								else $title = '';
+								if (isset($r_absence['DESCRIPTION'])) $description = $this->decodeString($r_absence['DESCRIPTION']);
+								else $description = '';
+							}
+						}
+					}
+
+					$dates[] = [
+						'start' => $start,
+						'end' => $end,
+						'title' => $title,
+						'description' => $description,
+					];
+				}
+			}
+
+			$ical_id = $absence['ical_id'];
+			foreach ($dates as $date) {
+				if (!$date['end']) {
+					$date['end'] = clone $date['start'];
+					$date['end']->add(new \DateInterval('PT1H'));
+				}
+
+				$date['start']->setTimezone($targetTimeZone);
+				$date['end']->setTimezone($targetTimeZone);
+
+				if (!$lowerDateLimit || $lowerDateLimit->format('Ymd') <= $date['end']->format('Ymd')) {
+					if ($date['start']->format('H:i:s') == '00:00:00' && $date['end']->format('H:i:s') == '00:00:00') {
+						//All day event, enddate is given as +1
+						$date['end']->sub(new \DateInterval('P1D'));
+					}
+
+					$absence['from_date'] = $date['start']->format('Y-m-d');
+					$absence['to_date'] = $date['end']->format('Y-m-d');
+					if ($date['title']) $absence['title'] = $date['title'];
+					$absence['description'] = $absence['title'];
+					if ($date['description']) $absence['description'].= ", " . $date['description'];
+
+					if (count($dates) > 1) {
+						$absence['ical_id'] = $ical_id. '_' . $date['start']->format('Ymd');
+					}
+
+					$absence['type'] = ko_daten_absence_map_type($absence['title']);
+					unset($absence['title']);
+
+					$absences[] = $absence;
+				}
+			}
+		}
+		return $absences;
+	}
+
 
 	protected function decodeString($s) {
 		$new = stripslashes(iconv('UTF-8', 'ISO-8859-1//TRANSLIT', str_replace("\\n","\n",$s)));

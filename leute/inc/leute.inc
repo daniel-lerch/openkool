@@ -2,7 +2,7 @@
 /***************************************************************
 *  Copyright notice
 *
-*  (c) 2003-2017 Renzo Lauper (renzo@churchtool.org)
+*  (c) 2003-2020 Renzo Lauper (renzo@churchtool.org)
 *  All rights reserved
 *
 *  This script is part of the kOOL project. The kOOL project is
@@ -40,7 +40,6 @@ function ko_formular_leute($mode, $id=0, $show_save_as_new=true) {
 	global $smarty, $ko_path, $KOTA;
 	global $LEUTE_LAYOUT, $LEUTE_EXCLUDE, $LEUTE_ENUMPLUS, $LEUTE_TEXTSELECT, $LEUTE_EMAIL_FIELDS, $LEUTE_MOBILE_FIELDS;
 	global $FAMILIE_EXCLUDE, $COLS_LEUTE_UND_FAMILIE;
-	global $js_calendar;
 	global $access;
 	global $SMALLGROUPS_ROLES, $RECTYPES;
 	global $LEUTE_NO_FAMILY, $ASYNC_FORM_TAG;
@@ -222,7 +221,7 @@ $(".family-field-header").children("label").append("&nbsp;&nbsp;<span class=\\"f
 }
 
 function ko_formular_leute_mailing() {
-	global $access, $smarty, $COLS_LEUTE_UND_FAMILIE, $ko_path, $LEUTE_EMAIL_FIELDS, $BASE_PATH, $BASE_URL;
+	global $smarty, $COLS_LEUTE_UND_FAMILIE, $ko_path, $LEUTE_EMAIL_FIELDS, $BASE_PATH, $BASE_URL, $MODULES;
 
 	$leuteColNames = ko_get_leute_col_name(TRUE, TRUE);
 
@@ -277,6 +276,12 @@ function ko_formular_leute_mailing() {
 	$mode = in_array($_SESSION['leute_mailing_sel_auswahl'], array('markierte', 'allep')) ? 'person' : 'family';
 
 	$cols = $mode == 'family' ? array_merge(array('vorname', 'nachname', 'email', 'MODULEsalutation_informal', 'MODULEsalutation_formal'), $familyCols) : $_SESSION['show_leute_cols'];
+
+	if (in_array('telegram', $MODULES)) {
+		$cols[] = "telegramlink";
+		$leuteColNames["telegramlink"] = getLL('mailing_placeholder_text_telegramlink');
+	}
+
 	$placeholders = array('' => '');
 	foreach ($cols as $col) {
 		$placeholders[] = array('value' => '###'.strtoupper($col).'###', 'desc' => str_replace('&nbsp;', '', trim($leuteColNames[$col])));
@@ -284,21 +289,10 @@ function ko_formular_leute_mailing() {
 
 	// get reply to addresses
 	$replyToAddresses = array();
-	ko_get_login($_SESSION['ses_userid'], $login);
-	$person = null;
-	if ($login['leute_id']) {
-		ko_get_person_by_id($login['leute_id'], $p);
-		if ($p['id'] == $login['leute_id']) $person = $p;
-	}
-	if ($person) {
-		foreach($LEUTE_EMAIL_FIELDS as $emailField) {
-			if ($person[$emailField]) {
-				$replyToAddresses[$person[$emailField]] = array('value' => $person[$emailField], 'desc' => $person[$emailField]);
-			}
-		}
-	}
-	if ($login['email']) {
-		$replyToAddresses[$login['email']] = array('value' => $login['email'], 'desc' => $login['email']);
+	$p = ko_get_logged_in_person();
+	$emails = ko_get_leute_emails($p['id']);
+	foreach($emails as $email) {
+		$replyToAddresses[$email] = array('value' => $email, 'desc' => $email);
 	}
 
 	// fill values from post (previous submission)
@@ -631,6 +625,10 @@ function ko_list_personen($mode="liste") {
 						$tpl_table_header[$h_counter]['class'] = 'ko_list ko_list_datafields';
 						$tpl_table_header[$h_counter]['title'] = getLL('leute_listheader_df_group').': '.$leute_col_name[substr($c, 0, 15)];
 					}
+				} elseif(substr($c, 0, 12) == "MODULEparent") {
+					$tpl_table_header[$h_counter]["name"] = $leute_col_name[$c];
+					$tpl_table_header[$h_counter]['id'] = 'col_'.$c;
+					$tpl_table_header[$h_counter]["db_name"] = "ko_leute:".$c;
 				} else {
 					if($c != "groups" && $mode != 'birthdays') {
 						$sort_col = $c;
@@ -698,7 +696,7 @@ function ko_list_personen($mode="liste") {
 		$edit_columns = array();
 		foreach($_SESSION["show_leute_cols"] as $col) {
 			if($col != '' && isset($leute_col_name[$col])) {
-				if(isset($KOTA['ko_leute'][$col]) && !in_array($col, array('spouse','terms'))) {
+				if(isset($KOTA['ko_leute'][$col]) && !in_array($col, array('spouse','terms','groups'))) {
 					if(!is_array($allowed_cols['edit'])
 						|| (is_array($allowed_cols['edit']) && in_array($col, $allowed_cols['edit']))
 						|| substr($col, 0, 6) == 'MODULE'
@@ -996,6 +994,7 @@ function ko_list_personen($mode="liste") {
 							&& substr($c, 0, 11) != 'MODULEfamid'
 							&& substr($c, 0, 9) != 'MODULEcrm'
 							&& substr($c, 0, 12) != 'MODULEfamily'
+							&& substr($c, 0, 12) != 'MODULEparent'
 							&& substr($c, 0, 12) != 'MODULEplugin'
 							&& substr($c, 0, 18) != 'MODULEsubscription'
 							&& !$KOTA['ko_leute'][$c]['allow_html']
@@ -1118,6 +1117,16 @@ $('body').on('click', '.list-check input', function() {
 			}
 
 			$smarty->assign('list_footer', $list_footer);
+		} else if ($rows > 0 && $leute_show_deleted) {
+			// show button to delete persons
+			if($access['leute']['MAX'] >= 3 && ko_get_setting('leute_multiple_delete') && ko_get_setting("leute_real_delete")) {
+				$button_code = '<button class="btn btn-sm btn-default" type="submit" onclick="c=confirm(\'' . getLL('leute_list_footer_delete_confirm') . '\'); if(!c) {return false;} else {set_action(\'delete_persons\', this); return true; }" value="' . getLL("leute_list_footer_delete_button") . '">' . getLL("leute_list_footer_delete_button") . '</button>';
+				$list_footer[] = array("label" => getLL("leute_list_footer_delete"),
+					"button" => $button_code);
+				$smarty->assign("show_list_footer", true);
+			}
+
+			$smarty->assign('list_footer', $list_footer);
 		}//if(rows > 0)
 
 
@@ -1138,10 +1147,19 @@ $('body').on('click', '.list-check input', function() {
 				}
 			}
 		} else {
-			$show_control_cols = array('undelete' => 'undelete');
-			if (ko_get_setting('leute_real_delete') == 1) $show_control_cols['delete'] = 'delete';
+			$show_control_cols  = [];
+			if(ko_get_setting("leute_multiple_delete") == 1 && ko_get_setting("leute_real_delete") == 1) {
+				$show_control_cols['check'] = "check";
+			}
+
+			$show_control_cols['undelete'] = 'undelete';
+
+			if (ko_get_setting('leute_real_delete') == 1) {
+				$show_control_cols['delete'] = 'delete';
+			}
+
 			$show_control_cols['version'] = 'version';
-			$show_overlay_cols = array();
+			$show_overlay_cols = [];
 		}
 
 		$colspan_all = $table_cols;
@@ -1462,14 +1480,14 @@ function ko_list_groupsubscriptions() {
 
 
 function ko_list_leute_revisions() {
-	global $smarty, $ko_path, $access, $DATETIME, $js_calendar;
+	global $smarty, $ko_path, $access, $DATETIME, $LEUTE_REVISIONS_FIELDS;
 
 	$counter=0;
 	ko_get_logins($logins);
 	ko_get_leute_revisions($revisions, TRUE);
 	$mods = array();
 
-	$showFields = array('anrede', 'vorname', 'nachname', 'firm', 'adresse', 'plz', 'ort', 'email', 'telp', 'geburtsdatum');
+	$showFields = $LEUTE_REVISIONS_FIELDS;
 
 	foreach($revisions as $r) {
 		if($r['orig_leute_id'] === null) {
@@ -1567,13 +1585,22 @@ function ko_list_leute_revisions() {
 			if ($dbp['id'] == $r['leute_id']) continue;
 			$rev = db_select_data('ko_leute_revisions', "WHERE `leute_id` = {$dbp['id']}", '*', '', '', TRUE);
 			if ($rev) continue;
+
+			//Prepare tooltip
+			$tooltipValues = array();
+			foreach($showFields as $fieldName) {
+				$fieldValue = map_leute_daten($dbp[$fieldName], $fieldName);
+				if(trim($fieldValue) == '') continue;
+				$tooltipValues[] = strip_tags($fieldValue);
+			}
+
 			$db[] = [
 				"_id" => $r["id"],
 				"lid" => $dbp["id"],
 				"name" => $dbp["vorname"]." ".$dbp["nachname"],
 				'firm' => $dbp['firm'],
 				'department' => $dbp['department'],
-				"adressdaten" => $dbp["adresse"].", ".$dbp["plz"]." ".$dbp["ort"].", ".$dbp["telp"].", ".$dbp["email"].", ".sql2datum($dbp["geburtsdatum"]),
+				"adressdaten" => implode(', ', $tooltipValues),
 				'hidden' => $dbp['hidden'],
 			];
 		}
@@ -1663,6 +1690,480 @@ function ko_leute_import(&$context) {
 	if(!ko_get_setting('leute_allow_import')) return;
 
 	$state = &$context['state'];
+
+	switch ($state) {
+		case 1:
+			$rowcounter = 0;
+			$gc = 0;
+
+			$frmgroup[$gc]["row"][$rowcounter]["inputs"][0] = array("desc" => getLL("leute_import_state1_csv"),
+				"type" => "file",
+				"name" => "csv",
+			);
+
+			$frmgroup[++$gc] = array('titel' => getLL('leute_import_state1_additional_settings'), 'state' => 'closed', 'name' => 'additional_settings');
+			$frmgroup[$gc]["row"][$rowcounter]["inputs"][0] = array("desc" => getLL("leute_import_state1_csv_separator"),
+				"type" => "text",
+				"name" => "parameters[separator]",
+				"value" => $context['parameters']['separator'] ? $context['parameters']['separator'] : ',',
+			);
+			$frmgroup[$gc]["row"][$rowcounter++]["inputs"][1] = array("desc" => getLL("leute_import_state1_csv_content_separator"),
+				"type" => "text",
+				"name" => "parameters[content_separator]",
+				"params" => 'size="6"',
+				"value" => $context['parameters']['content_separator'] ? $context['parameters']['content_separator'] : '&quot;',
+			);
+			$frmgroup[$gc]['row'][$rowcounter]['inputs'][0] = array('desc' => getLL('leute_import_state1_csv_file_encoding'),
+				'type' => 'select',
+				'name' => 'parameters[file_encoding]',
+				'params' => 'size="0"',
+				'values' => array('utf-8', 'iso-8859-1', 'macintosh'),
+				'descs' => array('Unicode (UTF-8)', 'Latin1 (iso-8859-1)', 'Mac Roman'),
+				'value' => $context['parameters']['file_encoding'] ? $context['parameters']['file_encoding'] : 'utf-8',
+			);
+			$frmgroup[$gc]['row'][$rowcounter++]['inputs'][1] = array('desc' => getLL('leute_import_state1_csv_first_line'),
+				'type' => 'switch',
+				'name' => 'ignore_first_line',
+				'value' => $context['ignoreFirstLine'] == 1 ? '1' : '0',
+			);
+			$smarty->assign("tpl_titel", getLL("leute_import_state1"));
+			$smarty->assign("tpl_hide_cancel", true);
+			$smarty->assign("tpl_submit_value", getLL("next"));
+			$smarty->assign("tpl_action", "importtwo");
+			$smarty->assign("tpl_groups", $frmgroup);
+			$smarty->assign("help", ko_get_help('leute', 'import'));
+			$smarty->assign("tpl_hidden_inputs", array(array('name' => 'leute_import_manual_parameters', 'value' => isset($_POST['leute_import_manual_parameters']) ? $_POST['leute_import_manual_parameters'] : 0)));
+			$smarty->display('ko_formular.tpl');
+			print(
+"<script>
+	$('#group_additional_settings').on('hide.bs.collapse', function () {
+		$('input[name=\"leute_import_manual_parameters\"]').val('0');
+	});
+	$('#group_additional_settings').on('show.bs.collapse', function () {
+		$('input[name=\"leute_import_manual_parameters\"]').val('1');
+	});
+</script>");
+		break;
+		case 2:
+			$data = &$context['data'];
+			$assign = &$context['fieldAssignments'];
+
+			$rowcounter = 0;
+			$gc = 0;
+
+			$labels = $context['header'];
+			$example = $data[0];
+
+			$dontAllow = array("id", "famid", "deleted", "hidden", "picture", "groups", "kinder", "smallgroups", "famfunction", "lastchange", 'crdate', 'cruserid', 'import_id', 'spouse', 'father', 'mother');
+			$colNames = ko_get_leute_col_name();
+
+			$values = $descs = array();
+			$values[] = '';
+			$descs[] = getLL('leute_import_label_column');
+
+			$dbCols = db_get_columns('ko_leute');
+			foreach ($dbCols as $field) {
+				$value = $field['Field'];
+				$desc = $colNames[$value] ? $colNames[$value] : $value;
+
+				if (in_array($value, $dontAllow)) continue;
+
+				$values[] = $value;
+				$descs[] = $desc;
+			}
+			// Add groups to choose from
+			$groups = null;
+			ko_get_groups($groups, 'and `type` = 0');
+			$fullGroupIds = array();
+			if (!is_array($access['groups'])) ko_get_access('groups');
+			foreach (array_keys($groups) as $groupId) {
+				if ($access['groups']['ALL'] < 2 && $access['groups'][$groupId] < 2) continue;
+				$fullGroupIds[] = ko_groups_decode($groupId, 'full_gid');
+			}
+			asort($fullGroupIds);
+			$fullGroupIds = array_merge($fullGroupIds);
+			foreach ($fullGroupIds as $fullGroupId) {
+				$key = 'MODULEgrp' . substr($fullGroupId, -6);
+				$values[] = $key;
+				$descs[] = ko_groups_decode($fullGroupId, "group_desc_full");
+			}
+
+			$html = '<table id="leute-import-mapping" class="ko_list table table-condensed table-bordered"><tbody>';
+
+			$html .= '<tr class="row-info">';
+			$html .= '<td><label>'.getLL('daten_import_label_col').'</label></td>';
+			$html .= '<td><label>'.getLL('daten_import_label_assign_field').'</label></td>';
+			$html .= '<td><label>'.getLL('daten_import_label_value').'</label></td>';
+			$html .= '</tr>';
+
+			foreach ($example as $k => $line) {
+				$label = $labels[$k];
+				$html .= '<tr class="row-success">';
+				$html .= '<td>'.$label.'</td>';
+				$html .= '<td>';
+				$html .= '<select class="input-sm form-control" name="assign_field['.$k.']" onchange="sendReq(\''.$ko_path.'leute/inc/ajax.php\', \'action,field,k,sesid\', \'getimportmappings,\'+this.options[this.selectedIndex].value+\','.$k.','.session_id().'\', do_element);">';
+				$active = $assign[$k];
+				if (!$active) {
+					$searchLabel = trim(strtolower($label));
+					$key = array_search($searchLabel, array_map(function($el) {return strtolower($el);}, $descs));
+					if (in_array($searchLabel, array_map(function($el) {return strtolower($el);}, $values))) {
+						$active = $searchLabel;
+					} else if ($key !== FALSE) {
+						$active = $values[$key];
+					}
+				}
+				$assign[$k] = $active;
+				foreach ($values as $kk => $value) {
+					$desc = $descs[$kk];
+					$html .= '<option value="'.$value.'"'.($value == $active ? ' selected="selected"' : '').'>'.$desc.'</option>';
+				}
+				$html .= '</select>';
+				$html .= '</td>';
+				$html .= '<td>'.$line.'</td>';
+				$html .= '</tr>';
+
+				$html .= '<tr><td colspan="3" name="leute-import-mapping-'.$k.'" id="leute-import-mapping-'.$k.'">';
+				$html .= ko_leute_import_get_mapping_html($context, $k);
+				$html .= '</td></tr>';
+
+				$rowcounter++;
+			}
+
+			$html .= '</tbody></table>';
+
+			$frmgroup[$gc]['row'][$rowcounter++]['inputs'][0] = array('desc' => '',
+				'type' => 'html',
+				'name' => 'data_table',
+				'value' => $html,
+				'columnWidth' => $BOOTSTRAP_COLS_PER_ROW,
+			);
+
+			$value = $context['addToGroup'];
+			$values = $descs = array('');
+			foreach ($fullGroupIds as $fullGroupId) {
+				$key = substr($fullGroupId, -6);
+				$values[] = $key;
+				$descs[] = ko_groups_decode($fullGroupId, "group_desc_full") . " (".ko_get_group_count($key).")";
+			}
+			$frmgroup[$gc]['row'][$rowcounter]['inputs'][0] = array('desc' => getLL('leute_import_label_add_to_group'),
+				'type' => 'select',
+				'name' => 'add_to_group',
+				'value' => $value,
+				'values' => $values,
+				'descs' => $descs,
+				'columnWidth' => $BOOTSTRAP_COLS_PER_ROW / 2,
+			);
+			$value = $context['createRevision'];
+			$frmgroup[$gc]['row'][$rowcounter++]['inputs'][1] = array('desc' => getLL('leute_import_label_create_revision'),
+				'type' => 'switch',
+				'name' => 'create_revision',
+				'value' => $value,
+				'columnWidth' => $BOOTSTRAP_COLS_PER_ROW / 2,
+			);
+
+
+
+
+			$frmgroup[++$gc] = array('titel' => getLL('leute_import_state1_additional_settings'), 'state' => isset($_POST['leute_import_manual_parameters']) ? ($_POST['leute_import_manual_parameters'] ? 'open' : 'closed') : 'closed', 'name' => 'additional_settings');
+			$frmgroup[$gc]["row"][$rowcounter]["inputs"][0] = array("desc" => getLL("leute_import_state1_csv_separator"),
+				"type" => "text",
+				"name" => "parameters[separator]",
+				"value" => $context['parameters']['separator'] ? $context['parameters']['separator'] : ',',
+			);
+			$frmgroup[$gc]["row"][$rowcounter++]["inputs"][1] = array("desc" => getLL("leute_import_state1_csv_content_separator"),
+				"type" => "text",
+				"name" => "parameters[content_separator]",
+				"params" => 'size="6"',
+				"value" => $context['parameters']['content_separator'] ? $context['parameters']['content_separator'] : '&quot;',
+			);
+			$frmgroup[$gc]['row'][$rowcounter]['inputs'][0] = array('desc' => getLL('leute_import_state1_csv_file_encoding'),
+				'type' => 'select',
+				'name' => 'parameters[file_encoding]',
+				'params' => 'size="0"',
+				'values' => array('utf-8', 'iso-8859-1', 'macintosh'),
+				'descs' => array('Unicode (UTF-8)', 'Latin1 (iso-8859-1)', 'Mac Roman'),
+				'value' => $context['parameters']['file_encoding'] ? $context['parameters']['file_encoding'] : 'utf-8',
+			);
+			$frmgroup[$gc]['row'][$rowcounter++]['inputs'][1] = array('desc' => getLL('leute_import_state1_csv_first_line'),
+				'type' => 'switch',
+				'name' => 'ignore_first_line',
+				'value' => $context['ignoreFirstLine'] == 1 ? '1' : '0',
+			);
+			$frmgroup[$gc]['row'][$rowcounter++]['inputs'][0] = array('desc' => '',
+				'type' => 'html',
+				'value' =>
+'<div class="btn-field">
+	<button type="submit" class="btn btn-warning" name="submit" value="submit" onclick="var ok = confirm(\''.getLL('leute_import_confirm_save_parameters').'\'); if (ok) {set_action(\'importtwo\', this)} else return false;">
+		'.getLL('save').' <i class="fa fa-save"></i>
+	</button>
+</div>',
+				'columnWidth' => $BOOTSTRAP_COLS_PER_ROW,
+			);
+
+			$smarty->assign("tpl_titel", getLL("leute_import_state2"));
+			$smarty->assign("tpl_hide_cancel", true);
+			$smarty->assign("tpl_submit_value", getLL("next"));
+			$smarty->assign("tpl_action", "importthree");
+			$smarty->assign("tpl_groups", $frmgroup);
+			$smarty->assign("help", ko_get_help('leute', 'import'));
+			$smarty->assign("tpl_hidden_inputs", array(array('name' => 'leute_import_manual_parameters', 'value' => isset($_POST['leute_import_manual_parameters']) ? $_POST['leute_import_manual_parameters'] : 0)));
+			$smarty->display('ko_formular.tpl');
+
+			print(
+"<script>
+	$('#group_additional_settings').on('hide.bs.collapse', function () {
+		$('input[name=\"leute_import_manual_parameters\"]').val('0');
+	});
+	$('#group_additional_settings').on('show.bs.collapse', function () {
+		$('input[name=\"leute_import_manual_parameters\"]').val('1');
+	});
+</script>");
+		break;
+		case 3:
+			$data = $context['transformedData'];
+			$assign = $context['fieldAssignments'];
+			$addToGroup = $context['addToGroup'];
+			$createRevision = $context['createRevision'];
+
+			$rowcounter = 0;
+			$gc = 0;
+
+			$colNames = ko_get_leute_col_name();
+
+			$gc = $rowcounter = 0;
+
+			$html = '<table class="ko_list table table-condensed table-bordered"><tbody>';
+
+			$html .= '<tr class="row-info">';
+			for ($i = 0; $i < sizeof($data[0]); $i++) {
+				$column = $assign[$i];
+				if (!$column) continue;
+				if (substr($column, 0, strlen('MODULEgrp') == 'MODULEgrp')) {
+					$groupId = substr($column, strlen('MODULEgrp'));
+					$group = db_select_data('ko_groups', "WHERE `id` 0 '{$groupId}'", 'id, name', '', '', TRUE);
+					$colName = $group['name'];
+				} else {
+					$colName = $colNames[$column];
+				}
+				$html .= '<th>'.$colName.'</th>';
+			}
+			if ($addToGroup) {
+				$fullGid = ko_groups_decode($addToGroup, 'full_gid');
+				$html .= '<th>'.ko_groups_decode($fullGid, 'group_desc_full').'</th>';
+			}
+			$html .= '</tr>';
+
+			foreach ($data as $line) {
+				$html .= '<tr>';
+				for ($i = 0; $i < sizeof($line); $i++) {
+					$column = $assign[$i];
+					if (!$column) continue;
+					if (ko_leute_col_is_mappable($column)) {
+						$mapping = $context['mappings'][$i];
+						$value = $mapping['curr'][$line[$i]];
+						$key = array_search($value, $mapping['possValues']);
+						$value = $mapping['possDescs'][$key];
+					} else {
+						$value = $line[$i];
+					}
+					$html .= '<td>'.$value.'</td>';
+				}
+				if ($addToGroup) {
+					$html .= '<td>'.getLL('leute_import_label_group_member').'</td>';
+				}
+				$html .= '</tr>';
+			}
+
+			$html .= '</tbody></table>';
+
+			$frmgroup[$gc]['row'][$rowcounter++]['inputs'][0] = array('desc' => '',
+				'type' => 'html',
+				'name' => 'data_table',
+				'value' => $html,
+				'columnWidth' => $BOOTSTRAP_COLS_PER_ROW,
+			);
+
+			$smarty->assign("tpl_titel", getLL("leute_import_state3"));
+			$smarty->assign("tpl_hide_cancel", true);
+			$smarty->assign("tpl_special_submit",
+'<a class="btn btn-warning" name="back" value="back" href="?action=importgoto&state=2">
+	<i class="fa fa-arrow-left"></i> '.getLL('leute_import_label_back').'
+</a>
+<button type="submit" class="btn btn-primary" name="submit" value="submit" onclick="var ok = check_mandatory_fields($(this).closest(\'form\')); if (ok) {set_action(\'importfour\', this)} else return false;">
+	'.getLL('leute_import_do_import').' <i class="fa fa-save"></i>
+</button>');
+			$smarty->assign("tpl_submit_value", getLL("next"));
+			$smarty->assign("tpl_action", "importfour");
+			$smarty->assign("tpl_groups", $frmgroup);
+			$smarty->assign("help", ko_get_help('leute', 'import'));
+			$smarty->display('ko_formular.tpl');
+		break;
+	}
+}
+
+
+
+function ko_leute_import_get_mapping_html(&$context, $nth, $field=NULL) {
+	global $KOTA, $smarty;
+
+	$data = &$context['data'];
+	$assign = &$context['fieldAssignments'];
+
+	$active = $field ? $field : $assign[$nth];
+
+	$showMapping = ($active && ko_leute_col_is_mappable($active));
+
+	$html = '';
+	if ($showMapping) {
+		$mapping =  $context['mappings'][$nth];
+
+		if (!$mapping) {
+			$mappingFroms = array_unique(ko_array_column($data, $nth));
+			$rv = ko_leute_get_possible_values_for_col($active);
+			$possValues = $rv['values'];
+			$possDescs = $rv['descs'];
+			$possUserDescs = $rv['userDescs'];
+			$current = array();
+			foreach ($mappingFroms as $mappingFrom) {
+				$mappingTo = '';
+				for ($i = 0; $i < sizeof($possValues); $i++) {
+					if (in_array(trim(strtolower($mappingFrom)), $possUserDescs[$i])) $mappingTo = $possValues[$i];
+				}
+				$current[$mappingFrom] = $mappingTo;
+			}
+
+			$mapping = array(
+				'possDescs' => $possDescs,
+				'possValues' => $possValues,
+				'possUserDescs' => $possUserDescs,
+				'curr' => $current,
+			);
+		}
+
+		$context['mappings'][$nth] = $mapping;
+
+		$iHtml = '<div class="form-horizontal">';
+		$counter = 0;
+		foreach ($mapping['curr'] as $from => $to) {
+			$iHtml .= '
+<div class="form-group" style="margin-bottom: '.($counter == sizeof($mapping['curr']) -1 ? '0' : '3').'px;">
+	<label class="col-sm-4 col-md-2 control-label"><span '.ko_get_tooltip_code(getLL('leute_import_label_value_in_file')).'>'.$from.'</span>&nbsp;&nbsp;&nbsp;--></label>
+	<div class="col-sm-6 col-md-7 col-lg-5">';
+
+			if ($KOTA['ko_leute'][$active]['form']['type'] == 'textplus') {
+				$smarty->assign('input', array('type' => 'textplus', 'name' => 'mappings['.$nth.']['.$from.']', 'value' => $to, 'values' => $mapping['possValues'], 'descs' => $mapping['possDescs']));
+				$iHtml .= $smarty->fetch('ko_formular_elements.tmpl');
+			} else {
+
+				$iHtml .= '
+		<select class="input-sm form-control" name="mappings['.$nth.']['.$from.']">
+			';
+				foreach ($mapping['possValues'] as $i => $candTo) {
+					$iHtml .= '<option value="'.$candTo.'"'.($candTo == $to ?' selected="selected"':'').'>'.$mapping['possDescs'][$i].'</option>';
+				}
+				$iHtml .= '
+		</select>';
+			}
+
+			$iHtml .= '
+	</div>
+</div>
+';
+
+			$counter++;
+		}
+		$iHtml .= '</div>';
+
+		$html .= $iHtml;
+
+		$html .= '<script>$(\'#leute-import-mapping-'.$nth.'\').show();</script>';
+	} else {
+		$html .= '<script>$(\'#leute-import-mapping-'.$nth.'\').hide();</script>';
+	}
+
+	return $html;
+}
+
+
+
+function ko_leute_col_is_mappable($col) {
+	global $KOTA;
+
+	if (substr($col, 0, strlen('MODULEgrp')) == 'MODULEgrp') {
+		return TRUE;
+	} else if (in_array($KOTA['ko_leute'][$col]['type'], array('textplus', 'select'))) {
+		return TRUE;
+	} else {
+		return FALSE;
+	}
+}
+
+
+
+function ko_leute_get_possible_values_for_col($col) {
+	global $LEUTE_TEXTSELECT, $KOTA;
+
+	$values = array('');
+	$descs = array('');
+	$userDescs = array('');
+	$default = array('values' => $values, 'descs' => $descs, 'userDescs' => $userDescs);
+
+	if (!ko_leute_col_is_mappable($col)) return $default;
+
+	if (substr($col, 0, strlen('MODULEgrp')) == 'MODULEgrp') {
+		$groupId = substr($col, -6);
+		$group = db_select_data('ko_groups', "WHERE `id` = {$groupId}", '*', '', '', TRUE);
+		if ($group['id'] != $groupId) return $default;
+
+		$values[] = 'x';
+		$descs[] = getLL('leute_import_label_group_member');
+		$userDescs[] = array_map(function($el){return strtolower($el);}, array('x', '1', 'yes', getLL('yes'), 'member', getLL('leute_import_label_group_member')));
+
+		$roleIds = array_filter(explode(',', $group['roles']), function($el){return trim($el) != '';});
+		if (sizeof($roleIds) > 0) {
+			$roles = db_select_data('ko_grouproles', "WHERE `id` IN (".implode(',', $roleIds).")");
+			foreach ($roles as $role) {
+				$values[] = "r".$role['id'];
+				$descs[] = getLL('groups_role').": ".$role['name'];
+				$userDescs[] = array(strtolower($role['name']));
+			}
+		}
+	} else if ($KOTA['ko_leute'][$col]['form']['type'] == 'textplus') {
+		$allValues = db_select_distinct('ko_leute', $col, "ORDER BY `{$col}` ASC");
+		foreach ($allValues as $value) {
+			if (!in_array($value, $values)) {
+				$values[] = $value;
+				$descs[] = $value;
+				$userDescs[] = array(strtolower($value));
+			}
+		}
+	} else if ($KOTA['ko_leute'][$col]['form']['type'] == 'select') {
+		foreach ($KOTA['ko_leute'][$col]['form']['values'] as $value) {
+			$value = trim($value, "' ");
+			if (!in_array($value, $values)) {
+				$values[] = $value;
+				$desc = getLL('kota_ko_leute_' . $col . '_' . strtolower($value));
+				$descs[] = $desc ? $desc : $value;
+				$userDesc = array(strtolower($value));
+				if ($desc) $userDesc[] = strtolower($desc);
+				$userDescs[] = $userDesc;
+			}
+		}
+	} else {
+		return $default;
+	}
+	return array('values' => $values, 'descs' => $descs, 'userDescs' => $userDescs);
+}
+
+function ko_leute_import(&$context) {
+	global $smarty, $access, $BOOTSTRAP_COLS_PER_ROW, $ko_path;
+
+	if(!ko_get_setting('leute_allow_import')) return;
+
+function ko_leute_import_old($state, $mode) {
+	global $ko_path, $smarty;
+	global $all_groups;
+	global $access;
 
 	switch ($state) {
 		case 1:
@@ -2348,12 +2849,10 @@ function ko_leute_import_old($state, $mode) {
 }//ko_leute_import()
 
 
-
-
-
-
 /**
  * Show settings for PDF export of address data
+ *
+ * @param int $layout_id
  */
 function ko_export_leute_as_pdf_settings($layout_id) {
 	global $smarty;
@@ -2361,140 +2860,150 @@ function ko_export_leute_as_pdf_settings($layout_id) {
 
 	$gc = $rowcounter = 0;
 
-	//Get layout from db
-	$_layout = db_select_data("ko_pdf_layout", "WHERE `id` = '$layout_id'", "*", "", "", true);
+	$_layout = db_select_data("ko_pdf_layout", "WHERE `id` = '$layout_id'", "*", "", "", TRUE);
 	$layout = unserialize($_layout["data"]);
 
 	//Prepare filter select
-	$filter_values = $filter_descs = array();
-	if(sizeof($_SESSION['my_list']) > 0) {
+	$filter_values = $filter_descs = [];
+	if (sizeof($_SESSION['my_list']) > 0) {
 		$filter_values[] = '_mylist';
 		$filter_descs[] = getLL('leute_export_pdf_filter_mylist');
 	}
-	if($layout["filter"]) {
+	if ($layout["filter"]) {
 		$filter_values[] = "_layout";
 		$filter_descs[] = getLL("leute_export_pdf_filter_layout");
 	}
+
 	$filter_values[] = "_current";
 	$filter_descs[] = getLL("leute_export_pdf_filter_current");
 	$filter_values[] = "_currently_sel";
 	$filter_descs[] = getLL("leute_export_pdf_filter_currently_sel");
 	$filterset = array_merge((array)ko_get_userpref('-1', '', 'filterset', 'ORDER BY `key` ASC'), (array)ko_get_userpref($_SESSION['ses_userid'], '', 'filterset', 'ORDER BY `key` ASC'));
-	foreach($filterset as $f) {
-		$filter_values[] = $f['user_id'] == '-1' ? '@G@'.$f['key'] : $f['key'];
-		$filter_descs[] = $f['user_id'] == '-1' ? getLL('itemlist_global_short').' '.$f['key'] : $f['key'];
+
+	foreach ($filterset as $f) {
+		$filter_values[] = $f['user_id'] == '-1' ? '@G@' . $f['key'] : $f['key'];
+		$filter_descs[] = $f['user_id'] == '-1' ? getLL('itemlist_global_short') . ' ' . $f['key'] : $f['key'];
 	}
-	//Set current selection
-	if($layout['filter']) {  //Filter as set for this pdf layout
+
+	if ($layout['filter']) {
 		$filter_selected = '_layout';
-	} else if($_SESSION['show_back'] == 'show_my_list' && sizeof($_SESSION['my_list']) > 0) {  //Use my list if entries
+	} else if ($_SESSION['show_back'] == 'show_my_list' && sizeof($_SESSION['my_list']) > 0) {  //Use my list if entries
 		$filter_selected = '_mylist';
-	} else {  //Otherwise use currently applied filter
+	} else if (substr($_POST['sel_auswahl'],0, 8) == "markiert") {
+		$filter_selected = "_currently_sel";
+	} else {
 		$filter_selected = '_current';
 	}
 
 	//Prepare columns select
-	if($layout["columns"]) {
+	if ($layout["columns"]) {
 		$columns_values[] = "_layout";
 		$columns_descs[] = getLL("leute_export_pdf_columns_layout");
 	}
 	$columns_values[] = "_current";
 	$columns_descs[] = getLL("leute_export_pdf_columns_current");
 	$itemset = array_merge((array)ko_get_userpref('-1', '', 'leute_itemset', 'ORDER BY `key` ASC'), (array)ko_get_userpref($_SESSION['ses_userid'], '', 'leute_itemset', 'ORDER BY `key` ASC'));
-	foreach($itemset as $f) {
-		$columns_values[] = $f['user_id'] == '-1' ? '@G@'.$f['key'] : $f['key'];
-		$columns_descs[] = $f['user_id'] == '-1' ? getLL('itemlist_global_short').' '.$f['key'] : $f['key'];
+	foreach ($itemset as $f) {
+		$columns_values[] = $f['user_id'] == '-1' ? '@G@' . $f['key'] : $f['key'];
+		$columns_descs[] = $f['user_id'] == '-1' ? getLL('itemlist_global_short') . ' ' . $f['key'] : $f['key'];
 	}
 
-	$group[$gc] = array("titel" => getLL("leute_export_pdf_title_data"), "state" => "open");
-	$group[$gc]["row"][$rowcounter++]["inputs"][0] = array("desc" => getLL("leute_export_pdf_filter"),
-																												 "type" => "select",
-																												 "name" => "pdf[filter]",
-																												 "values" => $filter_values,
-																												 "descs" => $filter_descs,
-																												 "value" => $filter_selected,
-																												 "params" => 'size="0"'
-																												 );
-	$group[$gc]["row"][$rowcounter]["inputs"][0] = array("desc" => getLL("leute_export_pdf_columns"),
-																											 "type" => "select",
-																											 "name" => "pdf[columns]",
-																											 "values" => $columns_values,
-																											 "descs" => $columns_descs,
-																											 "value" => "_layout",
-																											 "params" => 'size="0"'
-																											 );
-
-	$children_check = $layout["columns_children"] ? true : false;
-	if (!$LEUTE_NO_FAMILY) {
-		$group[$gc]["row"][$rowcounter]["inputs"][1] = array("desc" => getLL("leute_export_pdf_show_children"),
-			"type" => "switch",
-			"name" => "pdf[columns_children]",
-			"value" => $children_check ? "1" : "0",
-		);
-	}
+	$group[$gc] = ["titel" => getLL("leute_export_pdf_title_data"), "state" => "open"];
+	$group[$gc]["row"][$rowcounter++]["inputs"][0] = [
+		"desc" => getLL("leute_export_pdf_filter"),
+		"type" => "select",
+		"name" => "pdf[filter]",
+		"values" => $filter_values,
+		"descs" => $filter_descs,
+		"value" => $filter_selected,
+		"params" => 'size="0"',
+	];
+	$group[$gc]["row"][$rowcounter]["inputs"][0] = [
+		"desc" => getLL("leute_export_pdf_columns"),
+		"type" => "select",
+		"name" => "pdf[columns]",
+		"values" => $columns_values,
+		"descs" => $columns_descs,
+		"value" => "_layout",
+		"params" => 'size="0"',
+	];
 
 	//Header and Footer
-	$group[++$gc] = array("titel" => getLL("leute_export_pdf_title_headerfooter"), "state" => "open");
-	$group[$gc]["row"][$rowcounter++]["inputs"][0] = array("desc" => getLL("help"),
-																												 "type" => "html",
-																												 "value" => getLL("leute_export_pdf_help_headerfooter"),
-																												 "colspan" => 'colspan="3"',
-																												 );
-	$group[$gc]["row"][$rowcounter++]["inputs"][0] = array("type" => "   ", "colspan" => 'colspan="3"');
-	$group[$gc]["row"][$rowcounter]["inputs"][0] = array("desc" => getLL("leute_export_pdf_header_left"),
-																												 "type" => "text",
-																												 "name" => "pdf[header][left][text]",
-																												 "value" => $layout["header"]["left"]["text"],
-																												 "params" => 'size="50"',
-																												 );
-	$group[$gc]["row"][$rowcounter]["inputs"][1] = array("desc" => getLL("leute_export_pdf_header_center"),
-																												 "type" => "text",
-																												 "name" => "pdf[header][center][text]",
-																												 "value" => $layout["header"]["center"]["text"],
-																												 "params" => 'size="50"',
-																												 );
-	$group[$gc]["row"][$rowcounter++]["inputs"][2] = array("desc" => getLL("leute_export_pdf_header_right"),
-																												 "type" => "text",
-																												 "name" => "pdf[header][right][text]",
-																												 "value" => $layout["header"]["right"]["text"],
-																												 "params" => 'size="50"',
-																												 );
-	$group[$gc]["row"][$rowcounter]["inputs"][0] = array("desc" => getLL("leute_export_pdf_footer_left"),
-																												 "type" => "text",
-																												 "name" => "pdf[footer][left][text]",
-																												 "value" => $layout["footer"]["left"]["text"],
-																												 "params" => 'size="50"',
-																												 );
-	$group[$gc]["row"][$rowcounter]["inputs"][1] = array("desc" => getLL("leute_export_pdf_footer_center"),
-																												 "type" => "text",
-																												 "name" => "pdf[footer][center][text]",
-																												 "value" => $layout["footer"]["center"]["text"],
-																												 "params" => 'size="50"',
-																												 );
-	$group[$gc]["row"][$rowcounter++]["inputs"][2] = array("desc" => getLL("leute_export_pdf_footer_right"),
-																												 "type" => "text",
-																												 "name" => "pdf[footer][right][text]",
-																												 "value" => $layout["footer"]["right"]["text"],
-																												 "params" => 'size="50"',
-																												 );
+	$group[++$gc] = ["titel" => getLL("leute_export_pdf_title_headerfooter"), "state" => "open"];
+	$group[$gc]["row"][$rowcounter++]["inputs"][0] = [
+		"desc" => getLL("help"),
+		"type" => "html",
+		"value" => getLL("leute_export_pdf_help_headerfooter"),
+		"colspan" => 'colspan="3"',
+	];
+	$group[$gc]["row"][$rowcounter++]["inputs"][0] = [
+		"type" => "   ",
+		"colspan" => 'colspan="3"'
+	];
+	$group[$gc]["row"][$rowcounter]["inputs"][0] = [
+		"desc" => getLL("leute_export_pdf_header_left"),
+		"type" => "text",
+		"name" => "pdf[header][left][text]",
+		"value" => $layout["header"]["left"]["text"],
+		"params" => 'size="50"',
+	];
+	$group[$gc]["row"][$rowcounter]["inputs"][1] = [
+		"desc" => getLL("leute_export_pdf_header_center"),
+		"type" => "text",
+		"name" => "pdf[header][center][text]",
+		"value" => $layout["header"]["center"]["text"],
+		"params" => 'size="50"',
+	];
+	$group[$gc]["row"][$rowcounter++]["inputs"][2] = [
+		"desc" => getLL("leute_export_pdf_header_right"),
+		"type" => "text",
+		"name" => "pdf[header][right][text]",
+		"value" => $layout["header"]["right"]["text"],
+		"params" => 'size="50"',
+	];
+	$group[$gc]["row"][$rowcounter]["inputs"][0] = [
+		"desc" => getLL("leute_export_pdf_footer_left"),
+		"type" => "text",
+		"name" => "pdf[footer][left][text]",
+		"value" => $layout["footer"]["left"]["text"],
+		"params" => 'size="50"',
+	];
+	$group[$gc]["row"][$rowcounter]["inputs"][1] = [
+		"desc" => getLL("leute_export_pdf_footer_center"),
+		"type" => "text",
+		"name" => "pdf[footer][center][text]",
+		"value" => $layout["footer"]["center"]["text"],
+		"params" => 'size="50"',
+	];
+	$group[$gc]["row"][$rowcounter]["inputs"][2] = [
+		"desc" => getLL("leute_export_pdf_footer_right"),
+		"type" => "text",
+		"name" => "pdf[footer][right][text]",
+		"value" => $layout["footer"]["right"]["text"],
+		"params" => 'size="50"',
+	];
 
-	$smarty->assign("tpl_titel", getLL("leute_export_pdf").": ".$_layout["name"]);
+	$smarty->assign("tpl_titel", getLL("leute_export_pdf") . ": " . $_layout["name"]);
 	$smarty->assign("tpl_submit_value", getLL("leute_export_pdf_submit"));
 	$smarty->assign("tpl_action", "do_export_pdf");
 	$smarty->assign("tpl_cancel", "show_all");
 	$smarty->assign("tpl_groups", $group);
-	$smarty->assign("tpl_hidden_inputs", array(0 => array("name" => "layout_id", "value" => $layout_id), 1 => array('name' => 'pdf[filter_sel_ids]', 'value' => $_POST['ids'])));
+	$smarty->assign("tpl_hidden_inputs", [0 => ["name" => "layout_id", "value" => $layout_id], 1 => ['name' => 'pdf[filter_sel_ids]', 'value' => $_POST['ids']]]);
 
 	$smarty->display('ko_formular.tpl');
 }//ko_export_leute_as_pdf_settings()
 
 
-
-
 /**
  * Exports address data as pdf file
+ *
+ * @param int    $layout_id
+ * @param string $settings
+ * @param bool   $force
+ * @param bool   $fromSession
+ * @return bool|string
  */
-function ko_export_leute_as_pdf($layout_id, $settings="", $force=false, $fromSession=FALSE) {
+function ko_export_leute_as_pdf($layout_id, $settings = "", $force = FALSE, $fromSession = FALSE) {
 	global $ko_path;
 	global $all_groups;
 	global $access;
@@ -2502,80 +3011,41 @@ function ko_export_leute_as_pdf($layout_id, $settings="", $force=false, $fromSes
 	global $RECTYPES;
 
 	$z_where = "";
-	if(!$layout_id) return false;
+	if (!$layout_id) return FALSE;
 
-	if(!$all_groups) ko_get_groups($all_groups);
+	if (!$all_groups) ko_get_groups($all_groups);
 	$all_datafields = db_select_data("ko_groups_datafields", "WHERE 1=1", "*");
 
-
 	//Get selected layout
-	$_layout = db_select_data("ko_pdf_layout", "WHERE `id` = '$layout_id'", "*", "", "", true);
+	$_layout = db_select_data("ko_pdf_layout", "WHERE `id` = '$layout_id'", "*", "", "", TRUE);
 	$layout = unserialize($_layout["data"]);
-	/**
-	 * Array as it is stored in ko_pdf_layout
-	 **
-	$layout = array("page" => array("orientation" => "L", "margin_left" => 10, "margin_top" => 10, "margin_right" => 10, "margin_bottom" => 10),
-									"header" => array("left" => array("font" => "arialb", "fontsize" => "13"), "center" => array(), "right" => array()),
-									"footer" => array("left" => array("font" => "arial", "fontsize" => "10"), "center" => array(), "right" => array()),
-									"headerrow" => array("font" => "arialb", "fontsize" => "11", "fillcolor" => "255"),
-									"columns" => array("vorname", "nachname", "plz", "ort"),
-									"columns_children" => FALSE,
-									"filter" => array(),
-									"sort" => "nachname",
-									"sort_order" => "ASC",
-									"col_template" => array("_default" => array("font" => "arial", "fontsize" => "11")),
-									);
-	**/
 
-
-	//GET-Data
 	$post = $settings ? $settings : $_POST["pdf"];
 
 	/* Columns to be used */
-	$cols = array();
+	$cols = [];
 	//Get columns from layout
-	if($post["columns"] == "_layout" && $layout["columns"]) {
+	if ($post["columns"] == "_layout" && $layout["columns"]) {
 		$do_cols = $layout["columns"];
-	}
-	//Get columns as array from post (used for T3-Extension kool_leute)
-	else if(is_array($post["columns"]) && sizeof($post["columns"]) > 0) {
+	} //Get columns as array from post (used for T3-Extension kool_leute)
+	else if (is_array($post["columns"]) && sizeof($post["columns"]) > 0) {
 		$do_cols = $post["columns"];
-	}
-	//Get columns from userprefs
-	else if($post["columns"] && $post["columns"] != "_current") {
-		if(substr($post['columns'], 0, 3) == '@G@') $value = ko_get_userpref('-1', substr($post["columns"], 3), "leute_itemset");
+	} //Get columns from userprefs
+	else if ($post["columns"] && $post["columns"] != "_current") {
+		if (substr($post['columns'], 0, 3) == '@G@') $value = ko_get_userpref('-1', substr($post["columns"], 3), "leute_itemset");
 		else $value = ko_get_userpref($_SESSION["ses_userid"], $post["columns"], "leute_itemset");
 		$do_cols = explode(",", $value[0]["value"]);
-	}
-	//Otherwise use the currently displayed columns
+	} //Otherwise use the currently displayed columns
 	else {
 		$do_cols = $_SESSION["show_leute_cols"];
 	}
-	$layout["columns_children"] = $post["columns_children"] ? true : false;
 
 	//Prepare columns with group/groupdatafield info
-	$leute_col_name = ko_get_leute_col_name($groups_hierarchie=false, $add_group_datafields=true, "view", $force);
+	$leute_col_name = ko_get_leute_col_name($groups_hierarchie = FALSE, $add_group_datafields = TRUE, "view", $force);
 
-	//Add children columns if given
-	if($layout["columns_children"]) {
-		foreach(explode(',', ko_get_userpref($_SESSION['ses_userid'], 'leute_children_columns')) as $col) {
-			$ll = getLL("leute_children_col".$col);
-			if(!$ll) {
-				if(in_array(substr($col, 0, 8), array('_father_', '_mother_'))) {
-					$ll = $leute_col_name[substr($col, 8)].' '.getLL('leute_children_col'.substr($col, 0, 7));
-				} else {
-					$ll = $leute_col_name[substr($col, 1)];
-				}
-			}
-			$leute_col_name_add[$col] = $ll ? $ll : substr($col, 1);
-			$do_cols[] = $col;
-		}
-	}
-	$leute_col_name = array_merge($leute_col_name, (array)$leute_col_name_add);
-
-	foreach($do_cols as $k => $c) {
+	foreach ($do_cols as $k => $c) {
 		$colName = $leute_col_name[$c];
-		if(!$colName) {
+		if (!$colName) {
 			unset($do_cols[$k]);
 			continue;
 		}
@@ -2583,24 +3053,21 @@ function ko_export_leute_as_pdf($layout_id, $settings="", $force=false, $fromSes
 	}
 	$layout["columns"] = $cols;
 
-
-
 	/* Sorting */
-	if($layout["sort"]) {
-		$layout["sort"] = array($layout["sort"]);
-		$layout["sort_order"] = array($layout["sort_order"]);
+	if ($layout["sort"]) {
+		$layout["sort"] = [$layout["sort"]];
+		$layout["sort_order"] = [$layout["sort_order"]];
 	} else if ($post["filter"] == "_layout" && $layout["filter"] && $layout["filter"]['sort']) {
 		$layout["sort"] = explode(',', $layout["filter"]["sort"]);
 		$layout["sort_order"] = explode(',', $layout["filter"]["sort_order"]);
 	} else if ($post["filter"] != "_current" && $post["filter"] != "_currently_sel") {
-		if(substr($post["filter"], 0, 3) == '@G@') $value = ko_get_userpref('-1', substr($post["filter"], 3), "filterset");
+		if (substr($post["filter"], 0, 3) == '@G@') $value = ko_get_userpref('-1', substr($post["filter"], 3), "filterset");
 		else $value = ko_get_userpref($_SESSION["ses_userid"], $post["filter"], "filterset");
 		$filter = unserialize($value[0]["value"]);
 		if (trim($filter["sort"]) != '') {
 			$layout["sort"] = explode(',', $filter["sort"]);
 			$layout["sort_order"] = explode(',', $filter["sort_order"]);
-		}
-		else {
+		} else {
 			$layout["sort"] = $_SESSION["sort_leute"];
 			$layout["sort_order"] = $_SESSION["sort_leute_order"];
 		}
@@ -2609,58 +3076,48 @@ function ko_export_leute_as_pdf($layout_id, $settings="", $force=false, $fromSes
 		$layout["sort_order"] = $_SESSION["sort_leute_order"];
 	}
 	//Switch sorting for DOB column (according to userpref)
-	if(in_array('geburtsdatum', $layout['sort']) && ko_get_userpref($_SESSION['ses_userid'], 'leute_sort_birthdays') == 'monthday') {
-		$new = array();
-		foreach($layout['sort'] as $col) {
-			if($col == 'geburtsdatum') $new[] = 'MODULE'.$col;
+	if (in_array('geburtsdatum', $layout['sort']) && ko_get_userpref($_SESSION['ses_userid'], 'leute_sort_birthdays') == 'monthday') {
+		$new = [];
+		foreach ($layout['sort'] as $col) {
+			if ($col == 'geburtsdatum') $new[] = 'MODULE' . $col;
 			else $new[] = $col;
 		}
 		$layout['sort'] = $new;
 	}
 
-
-
 	/* Get Filter */
-	if($post["filter"] == "_layout") {
+	if ($post["filter"] == "_layout") {
 		$do_filter = $layout["filter"];
-	}
-	else if ($post['filter'] == '_currently_sel') {
+	} else if ($post['filter'] == '_currently_sel') {
 		$ids = $post['filter_sel_ids'];
 		if (trim($ids) == '') {
 			$z_where = " AND 1=2 ";
-		}
-		else {
+		} else {
 			$z_where = " AND `id` IN (" . $ids . ') ';
 		}
-	}
-	//Use my list
-	else if($post['filter'] == '_mylist') {
-		if(sizeof($_SESSION['my_list']) > 0) {
-			$z_where = " AND `id` IN ('".implode("','", $_SESSION['my_list'])."') ";
+	} //Use my list
+	else if ($post['filter'] == '_mylist') {
+		if (sizeof($_SESSION['my_list']) > 0) {
+			$z_where = " AND `id` IN ('" . implode("','", $_SESSION['my_list']) . "') ";
 		} else {
 			$z_where = ' AND 1=2 ';
 		}
-	}
-	//Get filter as array from post (used for T3-Extension kool_leute)
-	else if(is_array($post["filter"]) && sizeof($post["filter"]) > 0) {
+	} //Get filter as array from post (used for T3-Extension kool_leute)
+	else if (is_array($post["filter"]) && sizeof($post["filter"]) > 0) {
 		$z_where = $post["filter"]["where"];
-	}
-	//Get filter from userpref
-	else if($post["filter"] && $post["filter"] != "_current") {
-		if(substr($post['filter'], 0, 3) == '@G@') {
+	} //Get filter from userpref
+	else if ($post["filter"] && $post["filter"] != "_current") {
+		if (substr($post['filter'], 0, 3) == '@G@') {
 			$value = ko_get_userpref('-1', "", "filterset");
 			$post['filter'] = substr($post['filter'], 3);
 		} else $value = ko_get_userpref($_SESSION["ses_userid"], "", "filterset");
-		foreach($value as $v_i => $v) {
-			if($v["key"] == $post["filter"]) $do_filter = unserialize($value[$v_i]["value"]);
+		foreach ($value as $v_i => $v) {
+			if ($v["key"] == $post["filter"]) $do_filter = unserialize($value[$v_i]["value"]);
 		}
-	}
-	//Use current filter
+	} //Use current filter
 	else {
 		$do_filter = $_SESSION["filter"];
 	}
-
-
 
 	//Header and Footer texts
 	$layout["header"]["left"]["text"] = $post["header"]["left"]["text"];
@@ -2670,37 +3127,39 @@ function ko_export_leute_as_pdf($layout_id, $settings="", $force=false, $fromSes
 	$layout["footer"]["center"]["text"] = $post["footer"]["center"]["text"];
 	$layout["footer"]["right"]["text"] = $post["footer"]["right"]["text"];
 
-
-
-
 	//Get data from ko_leute
-	foreach($layout["sort"] as $i => $col) {
-		if(substr($col, 0, 6) != "MODULE") {
-			$sort_add[] = $col." ".$layout["sort_order"][$i];
+	foreach ($layout["sort"] as $i => $col) {
+		if (substr($col, 0, 6) != "MODULE") {
+			$sort_add[] = $col . " " . $layout["sort_order"][$i];
 		}
 	}
-	if(!in_array("nachname", $layout["sort"])) $sort_add[] = "nachname ASC";
-	if(!in_array("vorname", $layout["sort"])) $sort_add[] = "vorname ASC";
-	$sql_sort = "ORDER BY ".implode(", ", $sort_add);
+
+	if (!in_array("nachname", $layout["sort"])) $sort_add[] = "nachname ASC";
+	if (!in_array("vorname", $layout["sort"])) $sort_add[] = "vorname ASC";
+	$sql_sort = "ORDER BY " . implode(", ", $sort_add);
 	//z_where can be set if called by T3 extension kool_leute through get.php
-	if(!$z_where) apply_leute_filter($do_filter, $z_where, $access['leute']['ALL'] < 1);
+	if (!$z_where) apply_leute_filter($do_filter, $z_where, $access['leute']['ALL'] < 1);
 
 	ko_get_leute($es, $z_where, "", "", $sql_sort);
+
+	$restricted_leute_ids = ko_apply_leute_information_lock();
+	if (!empty($restricted_leute_ids)) {
+		foreach($restricted_leute_ids AS $restricted_leute_id) {
+			unset($es[$restricted_leute_id]);
+		}
+	}
 
 	if ($fromSession) {
 		$oldPost = $_POST;
 		$oldGet = $_GET;
 		$_POST = $_SESSION['post_data'];
 		$_GET = $_SESSION['get_data'];
-
-		$fam = array();
-		$person = array();
-		$mapLeuteDatenOptions = array();
+		$mapLeuteDatenOptions = [];
 
 		$leute_col_name = ko_get_leute_col_name(FALSE, TRUE);
 
 		// transfer information from $_GET to $_POST
-		foreach (array('sel_cols', 'sel_auswahl', 'ids', 'id') as $tf) {
+		foreach (['sel_cols', 'sel_auswahl', 'ids', 'id'] as $tf) {
 			if (isset($_GET[$tf]) && !isset($_POST[$tf])) $_POST[$tf] = $_GET[$tf];
 		}
 
@@ -2708,26 +3167,25 @@ function ko_export_leute_as_pdf($layout_id, $settings="", $force=false, $fromSes
 		$xls_cols = array_keys($layout['columns']);
 
 		// rows
-		if(substr($_POST["sel_auswahl"], 0, 4) == "alle" && $_SESSION["show"] == "show_all") {
+		if (substr($_POST["sel_auswahl"], 0, 4) == "alle" && $_SESSION["show"] == "show_all") {
 			$mode = substr($_POST["sel_auswahl"], 4);
-		} else if(($_POST['sel_auswahl'] == 'markierte' || substr($_POST['sel_auswahl'], 0, 4) == 'alle') && $_SESSION['show'] == 'geburtstagsliste') {
+		} else if (($_POST['sel_auswahl'] == 'markierte' || substr($_POST['sel_auswahl'], 0, 4) == 'alle') && $_SESSION['show'] == 'geburtstagsliste') {
 			$mode = 'p';
-		} else if(substr($_POST["sel_auswahl"], 0, 4) == "alle") {
+		} else if (substr($_POST["sel_auswahl"], 0, 4) == "alle") {
 			$mode = substr($_POST["sel_auswahl"], 4);
-		} else if($_POST["sel_auswahl"] == "markierte") {
+		} else if ($_POST["sel_auswahl"] == "markierte") {
 			$mode = "f";
-		} else if($_POST["sel_auswahl"] == "markiertef") {
+		} else if ($_POST["sel_auswahl"] == "markiertef") {
 			$mode = "f";
-		} else if($_POST["sel_auswahl"] == "markierteFam2") {
+		} else if ($_POST["sel_auswahl"] == "markierteFam2") {
 			$mode = "Fam2";
 		} else {
 			$mode = 'p';
 		}
 
-		if(true === ko_manual_sorting($layout["sort"])) {
-			$es = ko_leute_sort($es, $layout["sort"], $layout["sort_order"], true, $forceDatafields=true);
+		if (TRUE === ko_manual_sorting($layout["sort"])) {
+			$es = ko_leute_sort($es, $layout["sort"], $layout["sort_order"], TRUE, $forceDatafields = TRUE);
 		}
-		$allExportIds = array_keys($es);
 
 		//Keep list of addresses before removing not needed addresses because of family mergings
 		$orig_es = $es;
@@ -2738,30 +3196,29 @@ function ko_export_leute_as_pdf($layout_id, $settings="", $force=false, $fromSes
 		//Preprocess data if alleFam2
 		//Unset famid for people where only one member of their family has been found
 		//And unset all members of a family except for husband or wife or the first child
-		$fam = array();
-		foreach($es as $pid => $p) {
-			if(!$p["famid"]) continue;
+		$fam = [];
+		foreach ($es as $pid => $p) {
+			if (!$p["famid"]) continue;
 			$fam[$p["famid"]][] = $pid;  //Save all pids for each family
 		}
-		if($mode == "Fam2") {
+		if ($mode == "Fam2") {
 			//Find
-			foreach($fam as $famid => $pids) {
+			foreach ($fam as $famid => $pids) {
 				//Find families with only one member in filtered people
-				if(sizeof($pids) == 1) {
-					foreach($pids as $pid) $es[$pid]["famid"] = "";  //And unset this famid, so it will be exported as person
-				}
-				//Export as family if more than one member has been found
-				else if(sizeof($pids) > 1) {
-					$famroles = array(); $keep = "";
-					foreach($pids as $pid) {
+				if (sizeof($pids) == 1) {
+					foreach ($pids as $pid) $es[$pid]["famid"] = "";  //And unset this famid, so it will be exported as person
+				} //Export as family if more than one member has been found
+				else if (sizeof($pids) > 1) {
+					$famroles = [];
+					foreach ($pids as $pid) {
 						$famroles[] = $es[$pid]["famfunction"];
 					}
-					if(in_array("husband", $famroles)) $keep = "husband";
-					else if(in_array("wife", $famroles)) $keep = "wife";
+					if (in_array("husband", $famroles)) $keep = "husband";
+					else if (in_array("wife", $famroles)) $keep = "wife";
 					else $keep = "";
 					$done = FALSE;
-					foreach($pids as $pid) {
-						if( ($keep == "" && $done)
+					foreach ($pids as $pid) {
+						if (($keep == "" && $done)
 							|| ($keep != "" && $es[$pid]["famfunction"] != $keep)
 						) {
 							unset($es[$pid]);
@@ -2774,11 +3231,11 @@ function ko_export_leute_as_pdf($layout_id, $settings="", $force=false, $fromSes
 
 		//Household export and use parents' firstnames in export
 		//  then get parents and include them in the export list
-		else if($mode == 'f' && ko_get_userpref($_SESSION['ses_userid'], 'leute_force_family_firstname') == 1) {
-			foreach($fam as $famid => $pids) {
-				$parents = (array)db_select_data('ko_leute', "WHERE `famid` = '$famid' AND `famfunction` IN ('husband', 'wife') AND `deleted` = '0'".ko_get_leute_hidden_sql());
-				foreach($parents as $parent) {
-					if(!in_array($parent['id'], $pids)) {
+		else if ($mode == 'f' && ko_get_userpref($_SESSION['ses_userid'], 'leute_force_family_firstname') == 1) {
+			foreach ($fam as $famid => $pids) {
+				$parents = (array)db_select_data('ko_leute', "WHERE `famid` = '$famid' AND `famfunction` IN ('husband', 'wife') AND `deleted` = '0'" . ko_get_leute_hidden_sql());
+				foreach ($parents as $parent) {
+					if (!in_array($parent['id'], $pids)) {
 						$es[$parent['id']] = $parent;
 						$orig_es[$parent['id']] = $parent;
 						$fam[$famid][] = $parent['id'];
@@ -2788,20 +3245,23 @@ function ko_export_leute_as_pdf($layout_id, $settings="", $force=false, $fromSes
 		}
 
 		//Force rectype
-		if($_POST['sel_rectype'] && (in_array($_POST['sel_rectype'], array_keys($RECTYPES)) || $_POST['sel_rectype'] == '_default')) $force_rectype = $_POST['sel_rectype'];
-		else $force_rectype = '';
+		if ($_POST['sel_rectype'] && (in_array($_POST['sel_rectype'], array_keys($RECTYPES)) || $_POST['sel_rectype'] == '_default')) {
+			$force_rectype = $_POST['sel_rectype'];
+		} else {
+			$force_rectype = '';
+		}
 
 		//Apply rectype here to be able to add more addresses to $es if needed
-		foreach($es as $pid => $p) {
+		foreach ($es as $pid => $p) {
 			//Use address as given in rectype (only apply if not _default was selected, which keeps the default address)
-			if($force_rectype != '_default') {
+			if ($force_rectype != '_default') {
 				$p = $es[$pid] = ko_apply_rectype($p, $force_rectype, $addp);
-				if(sizeof($addp) > 0) {
-					$new = array();
-					foreach($es as $k => $v) {
+				if (sizeof($addp) > 0) {
+					$new = [];
+					foreach ($es as $k => $v) {
 						$new[$k] = $v;
-						if($k == $pid) {
-							foreach($addp as $addk => $add) {
+						if ($k == $pid) {
+							foreach ($addp as $addk => $add) {
 								$new[$addk] = $add;
 							}
 						}
@@ -2813,14 +3273,14 @@ function ko_export_leute_as_pdf($layout_id, $settings="", $force=false, $fromSes
 		}
 
 		// create crm entries
-		$mapLeuteDatenOptions['crmContactId'] = ko_create_crm_contact_from_post(TRUE, array('leute_ids' => implode(',', $_POST['leute_ids'])));
-		if (in_array($_POST["id"], array('xls_settings', 'excel', 'csv'))) $mapLeuteDatenOptions['kota_process_modes'] = 'xls,list';
-		if (in_array($_POST["id"], array('mailmerge', 'etiketten', 'etiketten_settings'))) $mapLeuteDatenOptions['kota_process_modes'] = 'pdf,list';
+		$mapLeuteDatenOptions['crmContactId'] = ko_create_crm_contact_from_post(TRUE, ['leute_ids' => implode(',', $_POST['leute_ids'])]);
+		if (in_array($_POST["id"], ['xls_settings', 'excel', 'csv'])) $mapLeuteDatenOptions['kota_process_modes'] = 'xls,list';
+		if (in_array($_POST["id"], ['mailmerge', 'etiketten', 'etiketten_settings'])) $mapLeuteDatenOptions['kota_process_modes'] = 'pdf,list';
 
 		$row = 0;
-		$data = array();
-		foreach($es as $pid => $p) {
-			if(($access['leute']['ALL'] < 1 && $access['leute'][$pid] < 1) || !$pid) continue;
+		$data = [];
+		foreach ($es as $pid => $p) {
+			if (($access['leute']['ALL'] < 1 && $access['leute'][$pid] < 1) || !$pid) continue;
 
 			list($addToExport, $isFam) = ko_leute_process_person_for_export($p, $orig_es, $done_fam, $fam, $families, $xls_cols, $mode);
 			if (!$addToExport) {
@@ -2831,23 +3291,25 @@ function ko_export_leute_as_pdf($layout_id, $settings="", $force=false, $fromSes
 			if (!$isFam) {
 				unset($cols_no_map);
 			} else {
-        $cols_no_map = array('MODULEsalutation_formal', 'MODULEsalutation_informal');
+				$cols_no_map = ['MODULEsalutation_formal', 'MODULEsalutation_informal'];
 			}
 
 			$es[$pid] = $p;
 
 			$col = 0;
-			foreach($xls_cols as $c) {
-				if(!$leute_col_name[$c]) continue;
+			foreach ($xls_cols as $c) {
+				if (!$leute_col_name[$c]) continue;
+
+				if($c == "terms") $p['terms'] = TRUE;
 
 				//Check for columns that don't need any more mapping (may be set in plugin above)
-				if(in_array($c, $cols_no_map)) {
+				if (in_array($c, $cols_no_map)) {
 					$value = $p[$c];
 				} else {
 					$value = map_leute_daten($p[$c], $c, $p, $all_datafields, FALSE, $mapLeuteDatenOptions);
 				}
-				if(is_array($value)) {  //group with datafields, so more than one column has to be added
-					foreach($value as $v) $data[$row][$col++] = ko_unhtml(strip_tags($v));
+				if (is_array($value)) {  //group with datafields, so more than one column has to be added
+					foreach ($value as $v) $data[$row][$col++] = ko_unhtml(strip_tags($v));
 				} else {
 					$data[$row][$col++] = ko_unhtml(strip_tags($value));
 				}
@@ -2857,32 +3319,20 @@ function ko_export_leute_as_pdf($layout_id, $settings="", $force=false, $fromSes
 
 		$_POST = $oldPost;
 		$_GET = $oldGet;
-
-		/*$sessionData = $_SESSION['export_data'];
-		$data = array();
-		$cols = $_SESSION['export_cols'];
-		foreach ($sessionData as $sd) {
-			$row = array();
-			foreach ($cols as $col) {
-				$row[] = $sd[$col];
-			}
-			$data[] = $row;
-		}*/
 	} else {
-		if(true === ko_manual_sorting($layout["sort"])) {
-			$es = ko_leute_sort($es, $layout["sort"], $layout["sort_order"], true, $forceDatafields=true);
+		if (TRUE === ko_manual_sorting($layout["sort"])) {
+			$es = ko_leute_sort($es, $layout["sort"], $layout["sort_order"], TRUE, $forceDatafields = TRUE);
 		}
 
 		//TODO: Apply rectype (add setting in preset or form)
 
 		//Loop all addresses
-		$data = array();
-		foreach($es as $id => $person) {
-			$row = array();
-			foreach($layout["columns"] as $col => $colName) {
-				//TODO: Set layouts for different columns (needs change in settings and in fpdf/mc_table.php)
+		$data = [];
+		foreach ($es as $id => $person) {
+			$row = [];
+			foreach ($layout["columns"] as $col => $colName) {
 				$value = map_leute_daten($person[$col], $col, $person, $all_datafields, $force);
-				if(is_array($value)) {
+				if (is_array($value)) {
 					$row[] = ko_unhtml(strip_tags($value[0]));
 				} else {
 					$row[] = ko_unhtml(strip_tags($value));
@@ -2894,13 +3344,11 @@ function ko_export_leute_as_pdf($layout_id, $settings="", $force=false, $fromSes
 		unset($all);
 	}
 
-	$filename = $ko_path."download/pdf/".getLL("leute_filename_pdf").strftime("%d%m%Y_%H%M%S", time()).".pdf";
+	$filename = $ko_path . "download/pdf/" . getLL("leute_filename_pdf") . strftime("%d%m%Y_%H%M%S", time()) . ".pdf";
 	ko_export_to_pdf($layout, $data, $filename);
 
 	return $filename;
 }//ko_export_leute_as_pdf()
-
-
 
 
 
@@ -3378,18 +3826,16 @@ function ko_leute_chart_subgroups($where_base) {
 				$sel = $grp['id'].':'.$rid == $_SESSION['leute_chart_subgroups_gid'] ? 'selected = "selected"' : '';
 				$gsel .= '<option value="'.$grp['id'].':'.$rid.'" '.$sel.'>'.$pre.ko_html($grp['name'].': '.$roles[$rid]['name']).'</option>';
 			}
-		}
-	}
-	$gsel .= '</select>';
 
 	$html = '';
 
 
-	//Draw pie chart if a group id is given
-	if($_SESSION["leute_chart_subgroups_gid"]) {
-		list($gid, $rid) = explode(':', $_SESSION['leute_chart_subgroups_gid']);
-		//Get all children groups
-		$groups = db_select_data("ko_groups", "WHERE `pid` = '$gid' ".ko_get_groups_zwhere(), "*", "ORDER BY `name` ASC");
+		chart.draw(data, options);
+	});
+</script>
+";
+	return $html;
+} //ko_leute_chart_generic_pie_from_data()
 
 		$value1 = $value2 = $label = array();
 		foreach($groups as $id => $group) {
@@ -3924,54 +4370,6 @@ function ko_leute_export_xls_settings() {
 	}
 
 	$leute_col_name = ko_get_leute_col_name();
-	$cols = db_get_columns('ko_leute');
-	$exclude = array('id', 'famid', 'smallgroups', 'lastchange', 'kg_seit', 'kgleiter_seit', 'famfunction', 'picture', 'groups', 'deleted', 'hidden', 'crdate', 'cruserid');
-
-	if ($_POST['sel_cols'] == 'children') {
-		//Children columns
-		$values = $descs = $avalues = $adescs = null;
-		$values = array('_father', '_mother');
-		$descs = array(getLL('leute_children_col_father'), getLL('leute_children_col_mother'));
-		$value = ko_get_userpref($_SESSION['ses_userid'], 'leute_children_columns');
-
-		foreach($cols as $_col) {
-			$col = $_col['Field'];
-			if(in_array($col, $exclude)) continue;
-			if($leute_col_name[$col] == '') continue;
-			$values[] = '_'.$col;
-			$descs[] = $leute_col_name[$col];
-			$values[] = '_father_'.$col;
-			$descs[] = $leute_col_name[$col].' ('.getLL('leute_children_col_father').')';
-			$values[] = '_mother_'.$col;
-			$descs[] = $leute_col_name[$col].' ('.getLL('leute_children_col_mother').')';
-		}
-
-		//Prepare list with selected parents columns
-		foreach(explode(',', $value) as $v) {
-			if(in_array($v, $values)) {
-				$avalues[] = $v;
-				foreach($values as $kk => $vv) {
-					if($vv == $v) {
-						$adescs[] = $descs[$kk];
-						continue;
-					}
-				}
-			}
-		}
-
-		$frmgroup[$gc]['row'][$rowcounter++]['inputs'][0] = array('desc' => getLL('leute_settings_children_columns'),
-			'type' => 'doubleselect',
-			'js_func_add' => 'double_select_add',
-			'name' => 'sel_children_columns',
-			'values' => $values,
-			'descs' => $descs,
-			'avalue' => $value,
-			'avalues' => $avalues,
-			'adescs' => $adescs,
-			'params' => 'size="7"',
-			'show_moves' => TRUE,
-		);
-	}
 
 	//Prepare list with linebreak columns
 	$linebreak_avalues = array();
@@ -4109,12 +4507,12 @@ function ko_leute_export_details_settings() {
 
 
 
-function ko_leute_settings() {
-	global $smarty, $ko_path;
-	global $access, $MODULES;
-	global $LEUTE_NO_FAMILY;
+function ko_leute_export_details_settings() {
+	global $smarty, $ko_path, $es, $access;
 
-	if($access['leute']['MAX'] < 1 || $_SESSION['ses_userid'] == ko_get_guest_id()) return false;
+	ko_get_access('admin');
+
+	$exportIds = $_SESSION['export_ids'];
 
 	//build form
 	$gc = 0;
@@ -4206,7 +4604,7 @@ function ko_leute_settings() {
 	if (!$LEUTE_NO_FAMILY) {
 
 		//Family firstname
-		$frmgroup[$gc]['row'][$rowcounter]['inputs'][0] = array('desc' => getLL('admin_settings_options_leute_force_family_firstname'),
+		$frmgroup[$gc]['row'][$rowcounter++]['inputs'][0] = array('desc' => getLL('admin_settings_options_leute_force_family_firstname'),
 			'type' => 'select',
 			'name' => 'sel_leute_force_family_firstname',
 			'params' => 'size="0"',
@@ -4214,53 +4612,6 @@ function ko_leute_settings() {
 			'descs' => array(getLL('admin_settings_options_leute_force_family_firstname_0'), getLL('admin_settings_options_leute_force_family_firstname_1'), getLL('admin_settings_options_leute_force_family_firstname_2')),
 			'value' => ko_get_userpref($_SESSION['ses_userid'], 'leute_force_family_firstname'),
 		);
-
-
-		//Children columns
-		$values = $descs = $avalues = $adescs = null;
-		$values = array('_father', '_mother');
-		$descs = array(getLL('leute_children_col_father'), getLL('leute_children_col_mother'));
-		$value = ko_get_userpref($_SESSION['ses_userid'], 'leute_children_columns');
-
-		$leute_col_name = ko_get_leute_col_name();
-		$cols = db_get_columns('ko_leute');
-		$exclude = array('id', 'famid', 'smallgroups', 'lastchange', 'kg_seit', 'kgleiter_seit', 'famfunction', 'picture', 'groups', 'deleted', 'hidden', 'crdate', 'cruserid', 'father', 'mother', 'spouse');
-		foreach($cols as $_col) {
-			$col = $_col['Field'];
-			if(in_array($col, $exclude)) continue;
-			if($leute_col_name[$col] == '') continue;
-			$values[] = '_'.$col;
-			$descs[] = $leute_col_name[$col];
-			$values[] = '_father_'.$col;
-			$descs[] = $leute_col_name[$col].' ('.getLL('leute_children_col_father').')';
-			$values[] = '_mother_'.$col;
-			$descs[] = $leute_col_name[$col].' ('.getLL('leute_children_col_mother').')';
-		}
-		//Prepare list with selected columns
-		foreach(explode(',', $value) as $v) {
-			if(in_array($v, $values)) {
-				$avalues[] = $v;
-				foreach($values as $kk => $vv) {
-					if($vv == $v) {
-						$adescs[] = $descs[$kk];
-						continue;
-					}
-				}
-			}
-		}
-		$frmgroup[$gc]['row'][$rowcounter++]['inputs'][1] = array('desc' => getLL('leute_settings_children_columns'),
-			'type' => 'doubleselect',
-			'js_func_add' => 'double_select_add',
-			'name' => 'sel_children_columns',
-			'values' => $values,
-			'descs' => $descs,
-			'avalue' => $value,
-			'avalues' => $avalues,
-			'adescs' => $adescs,
-			'params' => 'size="7"',
-			'show_moves' => TRUE,
-		);
-
 
 		$frmgroup[$gc]['row'][$rowcounter++]['inputs'][0] = array('type' => '   ');
 	}
@@ -4308,6 +4659,7 @@ function ko_leute_settings() {
 			$adescs[] = $ff['name'];
 		}
 	}
+
 	$frmgroup[$gc]['row'][$rowcounter++]['inputs'][1] = array('desc' => getLL('admin_settings_filter_hide'),
 			'type' => 'checkboxes',
 			'name' => 'sel_hide_filter',
@@ -4317,17 +4669,6 @@ function ko_leute_settings() {
 			'avalues' => $avalues,
 			'size' => '6',
 			);
-
-	/*
-	if (!$LEUTE_NO_FAMILY) {
-		$value = ko_get_userpref($_SESSION['ses_userid'], 'leute_fam_checkbox');
-		$frmgroup[$gc]['row'][$rowcounter]['inputs'][0] = array('desc' => getLL('leute_settings_fam_checkbox'),
-			'type' => 'switch',
-			'name' => 'chk_fam_checkbox',
-			'value' => $value ? "1" : "0",
-		);
-	}
-	*/
 
 	$filterset = array_merge((array)ko_get_userpref('-1', '', 'filterset', 'ORDER BY `key` ASC'), (array)ko_get_userpref($_SESSION['ses_userid'], '', 'filterset', 'ORDER BY `key` ASC'));
 
@@ -4537,6 +4878,16 @@ function ko_leute_settings() {
 				'label_1' => getLL('yes'),
 				'value' => $value == '' ? 0 : $value,
 			);
+
+			$value = ko_get_setting('leute_information_lock');
+			$frmgroup[$gc]['row'][$rowcounter++]['inputs'][0] = [
+				'desc' => getLL('leute_settings_information_lock'),
+				'type' => 'switch',
+				'name' => 'chk_leute_information_lock',
+				'label_0' => getLL('no'),
+				'label_1' => getLL('yes'),
+				'value' => $value == '' ? 0 : $value,
+			];
 		}
 
 
@@ -4611,17 +4962,12 @@ function ko_word_docx($file, $person) {
 
 	if(!file_exists($file)) return FALSE;
 
-	$map = ko_word_person_array($person);
-
-	require_once ($BASE_PATH . 'inc/phpword/Autoloader.php');
-	\PhpOffice\PhpWord\Autoloader::register();
-	\PhpOffice\PhpWord\Settings::loadConfig();
-
 	//Create PHPWord Object
 	$phpWord = new \PhpOffice\PhpWord\PhpWord();
-
-
+	\PhpOffice\PhpWord\Settings::setOutputEscapingEnabled(true);
 	$document = $phpWord->loadTemplate($file);
+
+	$map = ko_word_person_array($person);
 	foreach($map as $key => $value) {
 		$value = utf8_encode($value);
 		$document->setValue($key, $value);
@@ -4634,7 +4980,14 @@ function ko_word_docx($file, $person) {
 	return $filename;
 }//ko_word_docx()
 
+function my_kota_pre_ko_leute_crm_entries_html(&$value, $data) {
+	global $access;
 
+	if ($data['id'] == ko_get_logged_in_id($_SESSION['ses_userid']) && $access['crm']['MAX'] < 2) return false;
+	if ($data['id'] != ko_get_logged_in_id($_SESSION['ses_userid']) && $access['crm']['MAX'] < 5) return false;
+
+	$value = leute_get_crm_entries_html($data['id']);
+}
 
 function leute_get_crm_entries_html($id, $rows_only=FALSE) {
 	global $KOTA, $smarty, $access;
@@ -4713,6 +5066,10 @@ function leute_get_crm_entries_html($id, $rows_only=FALSE) {
 	return $smarty->fetch('ko_leute_crm_entries.tpl');
 }
 
+function leute_get_crm_entries_html($id, $rows_only=FALSE) {
+	global $KOTA, $smarty, $access;
+	if (!isset($access['crm'])) ko_get_access('crm');
+	ko_include_kota(array('ko_crm_contacts'));
 
 function leute_mailmerge_pdf_layout_default($general, $data, $filename) {
 	global $ko_path;

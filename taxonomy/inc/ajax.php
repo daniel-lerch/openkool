@@ -2,7 +2,7 @@
 /***************************************************************
  *  Copyright notice
  *
- *  (c) 2003-2017 Renzo Lauper (renzo@churchtool.org)
+ *  (c) 2003-2020 Renzo Lauper (renzo@churchtool.org)
  *  All rights reserved
  *
  *  This script is part of the kOOL project. The kOOL project is
@@ -58,7 +58,7 @@ if (isset($_GET) && isset($_GET["action"])) {
 
 	switch ($action) {
 		case 'termsearch':
-			if ($access['taxonomy']['MAX'] < 1) continue;
+			if ($access['taxonomy']['MAX'] < 1) break;
 
 			$string = format_userinput($_GET['query'], 'alphanum++');
 			if (!$string) {
@@ -109,7 +109,7 @@ if (isset($_GET) && isset($_GET["action"])) {
 			print json_encode($result);
 			break;
 		case 'terminsert':
-			if ($access['taxonomy']['MAX'] < 2) continue;
+			if ($access['taxonomy']['MAX'] < 2) break;
 
 			$string = format_userinput($_GET['query'], 'alphanum++');
 			ko_taxonomy_add_term($string);
@@ -129,7 +129,7 @@ if (isset($_GET) && isset($_GET["action"])) {
 			print json_encode($result);
 			break;
 		case "setstart":
-			if($access['taxonomy']['MAX'] < 1) continue;
+			if($access['taxonomy']['MAX'] < 1) break;
 
 			//Set list start
 			if(isset($_GET['set_start'])) {

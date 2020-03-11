@@ -2,7 +2,7 @@
 /***************************************************************
 *  Copyright notice
 *
-*  (c) 2003-2017 Renzo Lauper (renzo@churchtool.org)
+*  (c) 2003-2020 Renzo Lauper (renzo@churchtool.org)
 *  All rights reserved
 *
 *  This script is part of the kOOL project. The kOOL project is
@@ -131,9 +131,7 @@ function ko_list_reservations() {
 	}
 
 	$list->setFooter($list_footer);
-
 	$list->setWarning(kota_filter_get_warntext('ko_reservation'));
-
 
 	//Output the list
 	$list->render($es);
@@ -323,7 +321,7 @@ function ko_show_items_liste() {
 	if ($access['reservation']['MAX'] > 3) $list->setActionNew('new_item');
 	$list->setSort(TRUE, 'setsortresgroups', $_SESSION['sort_group'], $_SESSION['sort_group_order']);
 	$list->setStats($rows);
-	
+	$list->setWarning(kota_filter_get_warntext('ko_resitem'));
 	//Output the list
 	$list->render($res);
 }//ko_show_items_liste()
@@ -347,16 +345,7 @@ function ko_formular_reservation($mode, $id, $data=array()) {
 
 		ko_get_res_by_id($id, $r_);
 		$r = $r_[$id];
-
-		//Info über Reservation für Moderator
-		if($access['reservation']['MAX'] > 1 && $_SESSION['ses_userid'] != ko_get_guest_id()) {
-			ko_get_login($r['user_id'], $res_login);
-			$res_info  = getLL('res_info_cdate').': <b>'.sqldatetime2datum($r['cdate']).'</b>';
-			$res_info .= '<br />'.getLL('res_info_user').': <b>'.$res_login['login'].' ('.$r['user_id'].')</b>';
-			$res_info .= '<br />'.getLL('res_info_mdate').': <b>'.sqldatetime2datum($r['last_change']).'</b>';
-			//$res_info .= '<br />'.getLL('res_info_code').': <b>'.$r['code'].'</b>';
-		}
-	}//if(mode==edit && id)
+	}
 	else if ($mode == 'edit_mod' && $id) {
 		$r = db_select_data('ko_reservation_mod', "WHERE `id` = '{$id}'", '*', '', '', TRUE, TRUE);
 
@@ -367,9 +356,11 @@ function ko_formular_reservation($mode, $id, $data=array()) {
 		//Info über Reservation für Moderator
 		if($access['reservation']['MAX'] > 1 && $_SESSION['ses_userid'] != ko_get_guest_id()) {
 			ko_get_login($r['user_id'], $res_login);
+			if($r['lastchange_user']) ko_get_login($r['lastchange_user'], $change_login);
 			$res_info  = getLL('res_info_cdate').': <b>'.sqldatetime2datum($r['cdate']).'</b>';
 			$res_info .= '<br />'.getLL('res_info_user').': <b>'.$res_login['login'].' ('.$r['user_id'].')</b>';
 			$res_info .= '<br />'.getLL('res_info_mdate').': <b>'.sqldatetime2datum($r['last_change']).'</b>';
+			if($change_login['login']) $res_info .= '<br />'.getLL('res_info_muser').': <b>'.$change_login['login'].' ('.$r['lastchange_user'].')</b>';
 			//$res_info .= '<br />'.getLL('res_info_code').': <b>'.$r['code'].'</b>';
 		}
 
@@ -474,17 +465,18 @@ function ko_formular_reservation($mode, $id, $data=array()) {
 		'type' => 'multidateselect',
 		'name' => 'sel_repeat_dates',
 		'avalue' => $_POST['sel_repeat_dates'],
+		'params' => 'size="8"',
 	);
 	$localSmarty->assign('input', $sel_code_dates_input);
 	$sel_code_dates = $localSmarty->fetch('ko_formular_elements.tmpl');
 
-	$repeat_descs[] = getLL("daten_repeat_none");
-	$repeat_descs[] = sprintf(getLL("daten_repeat_daily"), ' </label><input class="res-conflict-field" type="text" name="txt_repeat_tag" value="'.$txt_repeat_tag.'" size="2" /> ', '<label>');
-	$repeat_descs[] = sprintf(getLL("daten_repeat_weekly"), ' </label><input class="res-conflict-field" type="text" name="txt_repeat_woche" value="'.$txt_repeat_woche.'" size="2" /> ', '<label>');
-	$repeat_descs[] = sprintf(getLL("daten_repeat_monthly1"), ' </label><select class="res-conflict-field" name="sel_monat1_nr" size="0">'.$sel1_code.'</select><select class="res-conflict-field" name="sel_monat1_tag" size="0">'.$sel2_code.'</select><label>');
-	$repeat_descs[] = sprintf(getLL("daten_repeat_monthly2"), ' </label><input class="res-conflict-field" type="text" name="txt_repeat_monat2" value="'.$txt_repeat_monat2.'" size="2" /> ', '<label>');
-	$repeat_descs[] = sprintf(getLL("daten_repeat_holidays"), ' </label><select class="res-conflict-field" name="sel_repeat_holidays">'.$sel_code_holidays.'</select><select class="res-conflict-field" name="sel_repeat_holidays_offset">'.$sel_code_holidays_offset.'</select>'.getLL('days').' <label>');
-	$repeat_descs[] = sprintf(getLL("daten_repeat_dates"), ' </label>'.$sel_code_dates.'<label>');
+	$repeat_descs[] = " " . getLL("daten_repeat_none");
+	$repeat_descs[] = " " . sprintf(getLL("daten_repeat_daily"), ' </label><input class="res-conflict-field" type="text" name="txt_repeat_tag" value="'.$txt_repeat_tag.'" size="2" /> ', '<label>');
+	$repeat_descs[] = " " . sprintf(getLL("daten_repeat_weekly"), ' </label><input class="res-conflict-field" type="text" name="txt_repeat_woche" value="'.$txt_repeat_woche.'" size="2" /> ', '<label>');
+	$repeat_descs[] = " " . sprintf(getLL("daten_repeat_monthly1"), ' </label><select class="res-conflict-field" name="sel_monat1_nr" size="0">'.$sel1_code.'</select><select class="res-conflict-field" name="sel_monat1_tag" size="0">'.$sel2_code.'</select><label>');
+	$repeat_descs[] = " " . sprintf(getLL("daten_repeat_monthly2"), ' </label><input class="res-conflict-field" type="text" name="txt_repeat_monat2" value="'.$txt_repeat_monat2.'" size="2" /> ', '<label>');
+	$repeat_descs[] = " " . sprintf(getLL("daten_repeat_holidays"), ' </label><select class="res-conflict-field" name="sel_repeat_holidays">'.$sel_code_holidays.'</select><select class="res-conflict-field" name="sel_repeat_holidays_offset">'.$sel_code_holidays_offset.'</select>'.getLL('days').' <label>');
+	$repeat_descs[] = " " . sprintf(getLL("daten_repeat_dates"), ' </label>'.$sel_code_dates.'<label>');
 
 	//Repeat-Stop
 	$values = array(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31);
@@ -518,7 +510,7 @@ function ko_formular_reservation($mode, $id, $data=array()) {
 	}
 
 	//Eventgroup select to exclude holidays
-	$holiday_code = '<select class="res-conflict-field" name="sel_repeat_eg" size="0"><option value=""></option>';
+	$holiday_code = '<select class="form-control res-conflict-field" name="sel_repeat_eg" size="0"><option value=""></option>';
 	$value = $_POST['sel_repeat_eg'] ? format_userinput($_POST['sel_repeat_eg'], 'uint') : '';
 	foreach(ko_get_eventgruppen_for_select() as $entry) {
 		$sel = $value == $entry['value'] && !$entry['disabled'] ? ' selected="selected"' : '';
@@ -529,10 +521,13 @@ function ko_formular_reservation($mode, $id, $data=array()) {
 	}
 	$holiday_code .= '</select>';
 
-	$repeat_stop  = '<select class="res-conflict-field" name="sel_bis_tag" size="0">'.$sel_day_code.'</select>&nbsp;&nbsp;';
-	$repeat_stop .= '<select class="res-conflict-field" name="sel_bis_monat" size="0">'.$sel_month_code.'</select>&nbsp;&nbsp;';
-	$repeat_stop .= '<select class="res-conflict-field" name="sel_bis_jahr" size="0">'.$sel_year_code.'</select>';
-	$repeat_stop .= '<br />'.getLL("daten_repeat_or").'<br /><input class="res-conflict-field" type="text" name="txt_num_repeats" size="4" maxlength="3" value="'.($_POST['txt_num_repeats'] ? $_POST['txt_num_repeats'] : '').'" onkeyup="repeat_disable(this.value);" />&nbsp;'.getLL("daten_repeat_iterations").' <a href="#" onclick="return false;" '.ko_get_tooltip_code(getLL('res_repeat_iterations_help')).'><i class="fa fa-question-circle"></i></a>';
+	$repeat_stop  = '
+<div class="input-group">
+<select class="form-control res-conflict-field" name="sel_bis_tag" style="width:50px;" size="0">'.$sel_day_code.'</select>&nbsp;&nbsp;';
+	$repeat_stop .= '<select class="form-control res-conflict-field" name="sel_bis_monat" style="width:130px;" size="0">'.$sel_month_code.'</select>&nbsp;&nbsp;';
+	$repeat_stop .= '<select class="form-control res-conflict-field" name="sel_bis_jahr" style="width:80px;" size="0">'.$sel_year_code.'</select></div>';
+	$repeat_stop .= '<br />'.getLL("daten_repeat_or").'<br />
+<input class="res-conflict-field" type="text" name="txt_num_repeats" size="4" maxlength="3" value="'.($_POST['txt_num_repeats'] ? $_POST['txt_num_repeats'] : '').'" onkeyup="repeat_disable(this.value);" />&nbsp;'.getLL("daten_repeat_iterations").' <a href="#" onclick="return false;" '.ko_get_tooltip_code(getLL('res_repeat_iterations_help')).'><i class="fa fa-question-circle"></i></a>';
 	$repeat_stop .= '<script>repeat_disable($(\'[name="txt_num_repeats"]\')[0].value);</script>';
 	$repeat_stop .= '<br /><br />'.getLL('daten_repeat_eg').'<br />'.$holiday_code;
 
@@ -582,16 +577,6 @@ function ko_formular_reservation($mode, $id, $data=array()) {
 			"name" => "chk_serie",
 			"value" => "1",
 			"desc2" => getLL("res_serie_apply")." (".db_get_count($table, "id", "AND `serie_id` = '".$r["serie_id"]."'").")",
-			"colspan" => 'colspan="2"',
-			"add_class" => "res-conflict-field",
-		);
-	}
-	if($access['reservation']['MAX'] > 1 && in_array($mode, array("edit", 'edit_mod')) && $_SESSION['ses_userid'] != ko_get_guest_id()) {
-		$group[0]['groups'][$gc]["rows"][$rowcounter++]["inputs"][0] = array("type" => "   ");
-		$group[0]['groups'][$gc]["rows"][$rowcounter++]["inputs"][0] = array(
-			"desc" => getLL("res_info_title"),
-			"type" => "html",
-			"value" => $res_info,
 			"colspan" => 'colspan="2"',
 			"add_class" => "res-conflict-field",
 		);
@@ -693,6 +678,14 @@ function ko_formular_item($mode, $id) {
 		$KOTA["ko_resitem"]["gruppen_id"]["form"]["new_line"] = TRUE;
 		//Use descs as values so code for storing will work, as this expects the name of the group and not the id
 		$KOTA["ko_resitem"]["gruppen_id"]["form"]["values"] = $KOTA["ko_resitem"]["gruppen_id"]["form"]["descs"];
+
+		//Mark current option as selected when editing
+		if($mode == 'edit') {
+			ko_get_resitem_by_id($id, $resitem_);
+			$resitem = $resitem_[$id];
+			$resgroup = db_select_data('ko_resgruppen', "WHERE `id` = '".$resitem['gruppen_id']."'", '*', '', '', TRUE);
+			$KOTA['ko_resitem']['gruppen_id']['form']['value'] = $resgroup['name'];
+		}
 	}
 
 
@@ -706,41 +699,45 @@ function ko_formular_item($mode, $id) {
 
 
 /**
- * Stores a new reservation to be moderated
- * @param array $data
+ * Stores new reservations to be moderated
+ *
+ * @param array $reservations
  * @param bool $sendEmails
  */
-function ko_res_store_moderation($data, $sendEmails=TRUE) {
+function ko_res_store_moderation($reservations, $sendEmails = TRUE) {
 	$clientEmail = array();
 	$mod_obj = array();
 	$items = db_select_data("ko_resitem", "WHERE 1=1", "*");
 
-	foreach($data as $res) {
-		$resitem = $items[$res["item_id"]];
-		//add other data
-		$res["code"] = substr(md5($res["name"].microtime()), 2, 8);
-		$res["cdate"] = strftime("%Y-%m-%d %H:%M:%S", time());
-		$res["last_change"] = strftime("%Y-%m-%d %H:%M:%S", time());
-		$res["linked_items"] = $resitem["linked_items"];
-		if(!$res["user_id"]) $res["user_id"] = $_SESSION["ses_userid"];
+	foreach($reservations as $reservation) {
+		$resitem = $items[$reservation["item_id"]];
+		//add other reservations
+		$reservation["code"] = substr(md5($reservation["name"].microtime()), 2, 8);
+		$reservation["cdate"] = strftime("%Y-%m-%d %H:%M:%S", time());
+		$reservation["last_change"] = strftime("%Y-%m-%d %H:%M:%S", time());
+		$reservation['lastchange_user'] = $_SESSION['ses_userid'];
+		$reservation["linked_items"] = $resitem["linked_items"];
+		if(!$reservation["user_id"]) $reservation["user_id"] = $_SESSION["ses_userid"];
 
 		//Store moderation
-		$new_id = db_insert_data("ko_reservation_mod", $res);
+		$new_id = db_insert_data("ko_reservation_mod", $reservation);
 
 		//Add log entry
-		$log_data = $res;
+		$log_data = $reservation;
 		$log_data['id'] = $new_id;
 		ko_log_diff('new_mod_res', $log_data);
 
 		//Prepare email text for moderators
 		if($resitem['moderation'] == 2 && $sendEmails) {
-			$txt = ko_get_res_infotext($res);
+			$txt = ko_get_res_infotext($reservation);
 			//Add links to confirm and delete reservation
-			$txt .= "\n".ko_get_mod_links($res, $new_id);
+			$txt .= "\n".ko_get_mod_links($reservation, $new_id);
 			$mod_obj[$resitem["gruppen_id"]]['items'][$resitem['id']].= $txt."\n\n";
-			if(check_email($res['email']) && sizeof($clientEmail) < 1) $clientEmail[$res['email']] = $res['name'];
+			if(check_email($reservation['email']) && sizeof($clientEmail) < 1) {
+				$clientEmail[$reservation['email']] = $reservation['name'];
+			}
 		}
-	}//foreach(data as res)
+	}//foreach(reservations as reservation)
 
 	//Inform all moderators for the different resgroups
 	if($sendEmails) {
@@ -794,7 +791,7 @@ function ko_res_send_mod_mail($objects, $clientEmail = array()) {
     if(sizeof($clientEmail) > 0) $replyTo = $clientEmail;
     else $replyTo = array();
 
-		ko_send_mail(ko_mail_get_from(), $mod['email'], getLL('email_subject_prefix').getLL("res_email_mod_subject"), ko_emailtext($text), array(), array(), array(), $replyTo);
+		ko_send_mail('', $mod['email'], getLL('email_subject_prefix').getLL("res_email_mod_subject"), ko_emailtext($text), array(), array(), array(), $replyTo);
 	}
 }//ko_res_send_mod_mail()
 
@@ -845,6 +842,7 @@ function ko_res_mod_approve($ids, $notification=TRUE) {
 
 		//Neue Reservation speichern
 		$r["last_change"] = strftime("%Y-%m-%d %H:%M:%S", time());
+		$r['lastchange_user'] = $_SESSION['ses_userid'];
 		unset($r['_orig_res_id']);
 		$res_data[] = $r;
 
@@ -861,7 +859,7 @@ function ko_res_mod_approve($ids, $notification=TRUE) {
 		if($notification) {
 			if($r["email"]) $email_rec[] = $r["email"];
 			else $noemail_rec[] = ko_html($r["name"]).", ".ko_html($r["telefon"]);
-			$res_text .= ko_get_res_infotext($r, $items[$r["item_id"]])."\n\n";
+			$res_text .= ko_get_res_infotext($r)."\n\n";
 		}
 	}
 
@@ -932,6 +930,7 @@ function ko_res_store_reservation($data, $send_user_email, &$double_error_txt = 
 		//add other data
 		if(!$res["code"]) $res["code"] = substr(md5($res["name"].microtime()), 2, 8);
 		$res["last_change"] = strftime("%Y-%m-%d %H:%M:%S", time());
+		$res['lastchange_user'] = $_SESSION['ses_userid'];
 		$res["linked_items"] = $resitem["linked_items"];
 		if(!$res["cdate"]) $res["cdate"] = strftime("%Y-%m-%d %H:%M:%S", time());
 		if(!$res["user_id"]) $res["user_id"] = $_SESSION["ses_userid"];
@@ -965,7 +964,7 @@ function ko_res_store_reservation($data, $send_user_email, &$double_error_txt = 
 		if($do_event) {
 			$event = db_select_data("ko_event", "WHERE `id` = '$do_event'", "*", "", "", TRUE);
 			$new_reservationen = $event["reservationen"] ? ($event["reservationen"].",$new_id") : $new_id;
-			db_update_data("ko_event", "WHERE `id` = '$do_event'", array("reservationen" => $new_reservationen, 'last_change' => date('Y-m-d H:i:s')));
+			db_update_data("ko_event", "WHERE `id` = '$do_event'", array("reservationen" => $new_reservationen, 'last_change' => date('Y-m-d H:i:s'), 'lastchange_user' => $_SESSION['ses_userid']));
 		}
 
 		//Log entry
@@ -976,6 +975,7 @@ function ko_res_store_reservation($data, $send_user_email, &$double_error_txt = 
 		$success[] = $oldId;
 	}//foreach(data as res)
 
+	$replyTo = check_email($user_email) ? $user_email : '';
 
 	//Get replyTo email (current user)
 	if($_SESSION['ses_userid'] != ko_get_guest_id()) {
@@ -1007,7 +1007,7 @@ function ko_res_store_reservation($data, $send_user_email, &$double_error_txt = 
 			$file = NULL;
 		}
 
-		ko_send_mail($from_email, $user_email, getLL('email_subject_prefix').getLL("res_email_confirm_subject"), $mailtext, $file, array(), array(), $replyToUser);
+		ko_send_mail(ko_get_setting('info_email'), $user_email, getLL('email_subject_prefix').getLL("res_email_confirm_subject"), $mailtext, $file);
 	}
 
 	//2: Mail for moderator, if user with access level 4 has made a reservation of a moderated object
@@ -1019,7 +1019,7 @@ function ko_res_store_reservation($data, $send_user_email, &$double_error_txt = 
 				//Check user_pref for this moderator
 				if (!$mod['email']) continue;
 				if(ko_get_userpref($mod["id"], "do_mod_email_for_edit_res") == 1) {
-					ko_send_mail($from_email, $mod["email"], getLL('email_subject_prefix').getLL("res_email_mod3_subject"), $mailtext, array(), array(), array(), $replyTo);
+					ko_send_mail('', $mod["email"], getLL('email_subject_prefix').getLL("res_email_mod3_subject"), $mailtext, array(), array(), array(), $replyTo);
 				}
 			}
 		}
@@ -1032,7 +1032,7 @@ function ko_res_store_reservation($data, $send_user_email, &$double_error_txt = 
 		foreach($recipients as $rec) {
 			$rec = trim($rec);
 			if(!check_email($rec)) continue;
-			ko_send_mail($from_email, $rec, getLL('res_email_confirm_subject'), getLL('res_email_confirm_text')."\n\n".$data['leadtext']."\n\n".$data['text'], array(), array(), array(), $replyTo);
+			ko_send_mail('', $rec, getLL('res_email_confirm_subject'), getLL('res_email_confirm_text')."\n\n".$data['leadtext']."\n\n".$data['text'], array(), array(), array(), $replyTo);
 		}//foreach(recipients)
 	}
 
@@ -1339,7 +1339,7 @@ function ko_res_settings() {
 		$frmgroup[$gc]['row'][$rowcounter++]['inputs'][1] = kota_get_mandatory_fields_choices_for_sel('ko_reservation', TRUE);
 
 
-		$resFieldsExclude = array('id', 'item_id', 'cdate', 'user_id', 'last_change', 'code', 'serie_id', 'linked_items');
+		$resFieldsExclude = array('id', 'item_id', 'cdate', 'user_id', 'last_change', 'lastchange_user', 'code', 'serie_id', 'linked_items');
 		$fields = db_get_columns('ko_reservation');
 		$values = $descs = array();
 		foreach ($fields as $field) {
@@ -1610,7 +1610,7 @@ function check_entries(&$koi) {
 /**
  * Create a text with all informations about given reservation.
  * Excluding fields which are set through globa var $RES_EXCLUDED_FIELDS_IN_INFOTEXT
- * @param $data Array information about the rservation
+ * @param $data array information about the rservation
  *
  * @return string containing key:value with translations
  */
@@ -1790,7 +1790,7 @@ function ko_res_calendar() {
 	$code .= '<div id="ko_calendar">';
 	$code .= '<div class="fc-mwselect fc-mwselect-res">';
 	$code .= '<div name="mwselect" id="mwselect">';
-	$code .= ko_calendar_mwselect($_SESSION['cal_view']);
+	$code .= ko_calendar_mwselect();
 	$code .= '</div>';
 	$code .= '</div>';
 	$code .= '</div>';
@@ -1928,7 +1928,8 @@ function ko_res_ical_links() {
 
 
 function ko_reservation_export_months($num, $month, $year) {
-	global $BASE_PATH, $EVENT_ABSENCE_COLOR;
+	global $BASE_PATH;
+	$absence_color = substr(ko_get_setting('absence_color'), 1);
 
 	//Start pdf
 	define('FPDF_FONTPATH',$BASE_PATH.'fpdf/schriften/');
@@ -1972,7 +1973,12 @@ function ko_reservation_export_months($num, $month, $year) {
 			require_once($BASE_PATH . 'daten/inc/daten.inc');
 			$absenceEvents = ko_get_absences_for_calendar(date("Y-m-d", $startstamp), date("Y-m-d", $endstamp), "ko_reservation");
 			if(sizeof($absenceEvents) > 0) {
-				$items['absence'] = array('id' => 'absence', 'farbe' => $EVENT_ABSENCE_COLOR, 'name' => getLL('absence_eventgroup'), 'shortname' => getLL('absence_eventgroup_short'));
+				$items['absence'] = [
+					'id' => 'absence',
+					'farbe' => $absence_color,
+					'name' => getLL('absence_eventgroup'),
+					'shortname' => getLL('absence_eventgroup_short')
+				];
 				$reservations = $reservations + $absenceEvents;
 			}
 		}
