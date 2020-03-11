@@ -2,7 +2,7 @@
 /***************************************************************
 *  Copyright notice
 *
-*  (c) 2003-2017 Renzo Lauper (renzo@churchtool.org)
+*  (c) 2003-2020 Renzo Lauper (renzo@churchtool.org)
 *  All rights reserved
 *
 *  This script is part of the kOOL project. The kOOL project is
@@ -86,33 +86,31 @@ switch($do_action) {
 	break;
 
 	case 'settings':
-		if($access['rota']['MAX'] < 2) break;
+		if($access['rota']['MAX'] < 1) break;
 
 		$_SESSION['show_back'] = $_SESSION['show'];
 		$_SESSION['show'] = 'settings';
 	break;
 
 	case 'submit_rota_settings':
-		if($access['rota']['MAX'] < 2) break;
+		if($access['rota']['MAX'] < 1) break;
 
 		//User settings
 		ko_save_userpref($_SESSION['ses_userid'], 'default_view_rota', format_userinput($_POST['sel_rota_default_view'], 'js'));
 		ko_save_userpref($_SESSION['ses_userid'], 'rota_delimiter', format_userinput($_POST['txt_delimiter'], 'text'));
-		ko_save_userpref($_SESSION['ses_userid'], 'rota_markempty', format_userinput($_POST['markempty'], 'uint'));
-		ko_save_userpref($_SESSION['ses_userid'], 'rota_show_participation', format_userinput($_POST['sel_show_participation'], 'alphanum'));
-		if($_SESSION['ses_userid'] != ko_get_guest_id()) {
-			ko_save_userpref($_SESSION['ses_userid'], 'rota_ical_deadline', format_userinput($_POST['sel_ical_deadline'], 'int', FALSE));
-		}
+		ko_save_userpref($_SESSION['ses_userid'], 'rota_eventfields', format_userinput($_POST['eventfields'], 'alphanumlist'));
+
 		if($access['rota']['MAX'] > 2) {
 			ko_save_userpref($_SESSION['ses_userid'], 'rota_orderby', format_userinput($_POST['orderby'], 'alpha'));
 			ko_save_userpref($_SESSION['ses_userid'], 'rota_pdf_names', format_userinput($_POST['pdf_names'], 'uint'));
+			ko_save_userpref($_SESSION['ses_userid'], 'rota_show_participation', format_userinput($_POST['sel_show_participation'], 'alphanum'));
 		}
 		if($access['rota']['MAX'] > 1) {
+			ko_save_userpref($_SESSION['ses_userid'], 'rota_markempty', format_userinput($_POST['markempty'], 'uint'));
 			ko_save_userpref($_SESSION['ses_userid'], 'rota_pdf_title', format_userinput($_POST['pdf_title'], 'alpha+'));
 			ko_save_userpref($_SESSION['ses_userid'], 'rota_pdf_fontsize', format_userinput($_POST['pdf_fontsize'], 'uint'));
 			ko_save_userpref($_SESSION['ses_userid'], 'rota_pdf_use_colors', format_userinput($_POST['pdf_use_colors'], 'uint'));
 		}
-		ko_save_userpref($_SESSION['ses_userid'], 'rota_eventfields', format_userinput($_POST['eventfields'], 'alphanumlist'));
 
 		//Global settings
 		if($access['rota']['MAX'] > 4) {
@@ -129,30 +127,12 @@ switch($do_action) {
 				$_SESSION['sort_rota_teams'] = 'name';
 			}
 
-
-			$weekly_delete = $weekly_export = FALSE;
-			//Week start (update export of weekly scheduling if changed)
-			$current_value = ko_get_setting('rota_weekstart');
-			$new_value = format_userinput($_POST['weekstart'], 'int');
-			ko_set_setting('rota_weekstart', $new_value);
-			if($current_value != $new_value) $weekly_export = TRUE;
-
-			//Export weekly teams
-			$current_value = ko_get_setting('rota_export_weekly_teams');
-			$new_value = format_userinput($_POST['export_weekly_teams'], 'uint');
-			ko_set_setting('rota_export_weekly_teams', $new_value);
-			if($current_value != $new_value) {
-				if($new_value == 1) $weekly_export = TRUE;
-				else if($new_value == 0) $weekly_delete = TRUE;
-			}
-
-			if($weekly_delete) rota_delete_weekly_export();
-			else if($weekly_export) rota_export_weekly_teams();
-
 			// Save consensus settings
 			ko_set_setting('consensus_eventfields', format_userinput($_POST['consensus_eventfields'], 'alphanumlist'));
 			ko_set_setting('consensus_description', format_userinput($_POST['consensus_description'], 'text'));
 			ko_set_setting('consensus_restrict_link', format_userinput($_POST['consensus_restrict_link'], 'uint'));
+			ko_set_setting('consensus_ongoing_cal', format_userinput($_POST['consensus_ongoing_cal'], 'uint'));
+			ko_set_setting('consensus_ongoing_cal_timespan', format_userinput($_POST['consensus_ongoing_cal_timespan'], 'text'));
 			ko_set_setting('consensus_display_participation', format_userinput($_POST['consensus_display_participation'], 'uint'));
 		}
 
@@ -182,12 +162,6 @@ switch($do_action) {
 
 			$new_team = db_select_data('ko_rota_teams', 'WHERE `id` = '.$new_id, '*', '', '', TRUE);
 			ko_log_diff('rota_new_team', $new_team);
-
-			//Create new event group for weekly team
-			if($new_team['rotatype'] == 'week' && ko_get_setting('rota_export_weekly_teams') == 1) {
-				$egid = db_insert_data('ko_eventgruppen', array('calendar_id' => ko_get_setting('rota_export_calid'), 'name' => $new_team['name'], 'type' => 2));
-				db_update_data('ko_rota_teams', "WHERE `id` = '$new_id'", array('export_eg' => $egid));
-			}
 		}
 	break;
 	
@@ -206,40 +180,35 @@ switch($do_action) {
 		list($table, $columns, $id, $hash) = explode('@', $_POST['id']);
 		$id = format_userinput($id, 'uint');
 		if(!$id) break;
-		$old = db_select_data('ko_rota_teams', "WHERE `id` = '$id'", '*', '', '', TRUE);
-		if($old['id'] != $id) break;
+		$old_team = db_select_data('ko_rota_teams', "WHERE `id` = '$id'", '*', '', '', TRUE);
+		if ($old_team['id'] != $id) break;
 
 		kota_submit_multiedit('', 'edit_rota_team');
 
-		if(!$notifier->hasErrors()) {
+		if (!$notifier->hasErrors()) {
 			$notifier->addInfo(3, $do_action);
 			$_SESSION['show'] = 'list_teams';
 
 			//If rotatype has changed export/delete events
 			$new_team = db_select_data('ko_rota_teams', 'WHERE `id` = '.$id, '*', '', '', TRUE);
-			if($old['rotatype'] != $new_team['rotatype']) {
+			if ($old_team['rotatype'] != $new_team['rotatype']) {
 				//Delete all scheduling entries, as scheduling entries can not really be converted
 				db_delete_data('ko_rota_schedulling', "WHERE `team_id` = '$id'");
+			}
 
-
-				if(ko_get_setting('rota_export_weekly_teams') == 1) {
-					//Create new event group if new type is week
-					if($new_team['rotatype'] == 'week') {
-						$egid = db_insert_data('ko_eventgruppen', array('calendar_id' => ko_get_setting('rota_export_calid'), 'name' => $new_team['name'], 'type' => 2));
-						db_update_data('ko_rota_teams', "WHERE `id` = '$newid'", array('export_eg' => $egid));
-					}
-					//Delete event group if not week type anymore
-					else if($old['rotatype'] == 'week') {
-						$egid = $old['export_eg'];
-						if($egid) {
-							db_delete_data('ko_event', "WHERE `eventgruppen_id` = '$egid'");
-							db_delete_data('ko_eventgruppen', "WHERE `id` = '$egid'");
-						}
-						db_update_data('ko_rota_teams', "WHERE `id` = '$newid'", array('export_eg' => '0'));
+			if ($old_team['days_range'] != $new_team['days_range']) {
+				// remove schedulled days, which are now deactivated in saved team
+				$removed_days = array_diff(explode(",", $old_team['days_range']), explode(",", $new_team['days_range']));
+				$where = "WHERE team_id = '" . $id . "' AND event_id >= '" . date("Y-m-d", time()) . "'";
+				$schedullings = db_select_data("ko_rota_schedulling", $where);
+				foreach($schedullings AS $schedulling) {
+					if (in_array(date("N", strtotime($schedulling['event_id'])), $removed_days)) {
+						$where = " WHERE team_id = '" . $id . "' AND event_id = '" . $schedulling['event_id'] . "'";
+						db_delete_data("ko_rota_schedulling", $where);
+						ko_log("rota_schedule_delete", json_encode($schedulling));
 					}
 				}
 			}
-
 		}
 	break;
 
@@ -257,15 +226,6 @@ switch($do_action) {
 
 		//Delete scheduling data
 		db_delete_data('ko_rota_schedulling', "WHERE `team_id` = '$id'");
-
-		//Delete events for this rota team
-		if(ko_get_setting('rota_export_weekly_teams') == 1 && $old['rotatype'] == 'week') {
-			$egid = $old['export_eg'];
-			if($egid) {
-				db_delete_data('ko_event', "WHERE `eventgruppen_id` = '$egid'");
-				db_delete_data('ko_eventgruppen', "WHERE `id` = '$egid'");
-			}
-		}
 	break;
 
 
@@ -379,7 +339,7 @@ switch($do_action) {
 	case 'filesend':
 
 		if($access['rota']['MAX'] < 4) break;
-		ko_rota_filesend_parse_post('SEND', $text, $subject, $recipients, $eventid, $restrict_to_teams, $from, $reply_to, $send_files);
+		ko_rota_filesend_parse_post('SEND', $text, $subject, $recipients, $eventid, $restrict_to_teams, $from, $send_files);
 
 		//Send file to recipients
 		$subject = strtr($subject, array("\n" => '', "\r" => ''));
@@ -388,7 +348,7 @@ switch($do_action) {
 		$no_email = $email_recipients = $noemail_recipients = $failed = array();
 		foreach($recipients as $recipient) {
 			if($recipient['_has_mail']) {
-				$success = ko_rota_filesend_send_mail('SEND', $text, $subject, $recipient, $send_files, $eventid, $from, $reply_to, $restrict_to_teams);
+				$success = ko_rota_filesend_send_mail('SEND', $text, $subject, $recipient, $send_files, $eventid, $from, $restrict_to_teams);
 
 				if ($success) $email_recipients[] = $success['email'].' ('.$recipient['id'].')';
 				else $failed[] = $recipient;

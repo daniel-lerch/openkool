@@ -2,7 +2,7 @@
 /***************************************************************
 *  Copyright notice
 *
-*  (c) 2003-2017 Renzo Lauper (renzo@churchtool.org)
+*  (c) 2003-2020 Renzo Lauper (renzo@churchtool.org)
 *  All rights reserved
 *
 *  This script is part of the kOOL project. The kOOL project is
@@ -81,10 +81,6 @@ if ($_SESSION['leute_export_xls_post'] != '' && $_POST['action'] == 'leute_submi
 	$_POST['id'] = 'excel';
 	$_POST['from_settings'] = 'true';
 
-	// save userprefs (if necessary)
-	if ($_POST['sel_children_columns'] != '') {
-		ko_save_userpref($_SESSION['ses_userid'], 'leute_children_columns', format_userinput($_POST['sel_children_columns'], 'alphanumlist'));
-	}
 	if ($_POST['sel_leute_force_family_firstname'] != '') {
 		$v = format_userinput($_POST['sel_leute_force_family_firstname'], 'uint', FALSE, 1);
 		if($v == 0 || $v == 1 || $v == 2) {
@@ -359,11 +355,11 @@ switch($do_action) {
 				//don't save not allowed columns (edit)
 				//kota_process_data() adds empty values for checkbox/switch inputs if they're not set in _POST
 				// so make sure to not store them on the family if no access is given, which makes them not to show up in _POST
-        if(is_array($allowed_cols['edit'])) {
-           if(!in_array($col, $allowed_cols['edit'])) continue;
-        } else if(is_array($allowed_cols['view'])) {
-           if(!in_array($col, $allowed_cols['view'])) continue;
-        }
+				if(is_array($allowed_cols['edit'])) {
+				   if(!in_array($col, $allowed_cols['edit'])) continue;
+				} else if(is_array($allowed_cols['view'])) {
+				   if(!in_array($col, $allowed_cols['view'])) continue;
+				}
 
 				if($col && isset($kotaData[$col])) {
 					$fam_data[$col] = $kotaData[$col];
@@ -590,17 +586,11 @@ switch($do_action) {
 						$loggedinPerson = ko_get_logged_in_person($lid);
 						$text = sprintf(getLL('leute_announce_changes_email_text'), $moderator['vorname'].' '.$moderator['nachname'], $name)."\n\n".str_replace(',', "\n", substr($log_message, 0, -2));
 
-						$from_name = $moderator['vorname'] || $moderator['nachname'] ? $moderator['vorname'].' '.$moderator['nachname'] : $moderator['firm'];
-
 						ko_send_mail(
-							ko_mail_get_from($from_name),
+							'',
 							$loggedinPerson['email'],
 							getLL('leute_announce_changes_email_subject'),
-							$text,
-							null,
-							null,
-							null,
-							array($moderator['email'] => $moderator['vorname'] . ' ' . $moderator['nachname'])
+							$text
 						);
 					}
 				}//if(POST[sel_announce_changes])
@@ -618,449 +608,6 @@ switch($do_action) {
 		//Set show case
 		$_SESSION["show"] = $_SESSION["show_back"] ? $_SESSION["show_back"] : "show_all";
 	break;
-
-
-
-	/*
-	 	case "submit_neue_person":
-	case "submit_edit_person":
-	case "submit_als_neue_person":
-		//Beim Editieren auf korrekte Leute-ID prüfen
-		if($do_action == "submit_edit_person") {
-			if(!$_POST["leute_id"] || !format_userinput($_POST["leute_id"], "uint", TRUE, 10)) continue;
-			$leute_id = format_userinput($_POST["leute_id"], "uint");
-			ko_get_person_by_id($leute_id, $person);
-			$action = "submit_edit_person";
-		}
-		//New person or "save as new person" for an existing one
-		else if($do_action == "submit_als_neue_person" || $do_action == "submit_neue_person") {
-			//Create a new entry and store new id
-			$leute_id = db_insert_data("ko_leute", array("id" => "NULL", "crdate" => date("Y-m-d H:i:s"), "cruserid" => $_SESSION["ses_userid"]));
-			//Simulate editing with new id
-			$action = "submit_edit_person";
-		  //Everything as when editing, but a new LDAP entry has to be created
-			$ldap_new_entry = TRUE;
-		}//if(do_action == submit_als_neue_person)
-		else {
-			continue;
-		}
-
-		if($access['leute']['MAX'] > 1 || (ko_get_setting("login_edit_person") == 1 && $leute_id == ko_get_logged_in_id())) {} else continue;
-
-		//Funktion (kundenspezifisch) einlesen, die Variablen speziell behandeln lässt
-		if(file_exists($ko_path."leute/inc/my_fcn_leute.inc")) {
-			include($ko_path."leute/inc/my_fcn_leute.inc");
-		}
-		$log_message = "";
-
-
-		//LDAP
-		$do_ldap = ko_do_ldap();
-
-
-		//Datenbank-Spalten auslesen
-		$leute_cols = db_get_columns("ko_leute");
-		$col_namen = ko_get_leute_col_name();
-
-		//get the cols, for which this user has edit-rights (saved in allowed_cols[edit])
-		$allowed_cols = ko_get_leute_admin_spalten($_SESSION["ses_userid"], "all", $leute_id);
-		//add cols of MODULES, if allowed
-		//Handle view and edit separately because if only one of them is set for a login,
-		//the test is_array() has to be called separately, so allowed_cols doesn't get turned into an array.
-		if(is_array($allowed_cols["view"]) && sizeof($allowed_cols["view"]) > 0) {
-			if($access['groups']['MAX'] > 0) $allowed_cols["view"][] = "groups";
-			if($access['kg']['MAX'] > 1) $allowed_cols["view"][] = "smallgroups";
-		}
-		if(is_array($allowed_cols["edit"]) && sizeof($allowed_cols["edit"]) > 0) {
-			if($access['groups']['MAX'] > 1) $allowed_cols["edit"][] = "groups";
-			if($access['kg']['MAX'] > 2) $allowed_cols["edit"][] = "smallgroups";
-		}
-
-
-		// Familien-Daten speichern
-	$old_famid  = $person["famid"];
-	if(!is_array($allowed_cols["edit"]) || in_array("famid", $allowed_cols["edit"])) {
-		$do_update_familie = FALSE;  //Familiendaten - falls nötig - erst nach Speichern der Person updaten
-		$new_familie = FALSE;
-
-		//Neue Familie
-		if($_POST["hid_new_family"] == 1) {
-			$save_famid = db_insert_data("ko_familie", array("nachname" => ""));
-			$new_familie = TRUE;
-		} else {
-			$save_famid = format_userinput($_POST["sel_familie"], "uint");
-		}
-
-		//Familie geändert
-		if($save_famid != $old_famid) {
-			$log_message .= getLL("leute_log_family").": $old_famid --> $save_famid, ";
-
-			//Alte Familie löschen, falls keine Mitglieder mehr
-			if($old_famid != 0) {
-				$num = ko_get_personen_by_familie($old_famid, $asdf);
-				if($num <= 1) {
-					db_update_data('ko_leute', "WHERE `famid` = '$old_famid'", array('famid' => '0', 'kinder' => '0'));
-					db_delete_data('ko_familie', "WHERE `famid` = '$old_famid'");
-				}
-			}
-		}
-
-		// save father, mother and spouse
-		$data['father'] = format_userinput($_POST['input_father'], 'uint');
-		$data['mother'] = format_userinput($_POST['input_mother'], 'uint');
-	}//if(in_array(famid, allowed_cols[edit]))
-	else {
-		$save_famid = $person['famid'];
-	}
-
-	//Gleiche Familie oder eine neue, dann Familiendaten speichern
-	if($save_famid == $old_famid || $new_familie) {
-		$familien_cols = db_get_columns('ko_familie');
-		foreach($familien_cols as $col_) {
-			$col = $col_['Field'];
-			if($col && in_array($col, $LEUTE_TEXTSELECT) && $_POST['input_'.$col.'_2']) {
-				$fam_data[$col] = format_userinput($_POST['input_'.$col.'_2'], 'text');
-			} else if($col && isset($_POST['input_'.$col])) {
-				$fam_data[$col] = format_userinput($_POST['input_'.$col], 'text');
-			}
-		}
-		$do_update_familie = TRUE;
-	}//if..else(save_famid != old_famid)
-
-
-
-	foreach($leute_cols as $c_i => $c) {
-		if(in_array($c["Field"], $LEUTE_EXCLUDE)) continue;
-		//don't save not allowed columns (edit)
-		if(is_array($allowed_cols["edit"])) {
-			if(!in_array($c["Field"], $allowed_cols["edit"])) continue;
-		} else if(is_array($allowed_cols['view'])) {
-			if(!in_array($c["Field"], $allowed_cols["view"])) continue;
-		}
-
-		$dont_log = FALSE;
-
-		//Groups-Modul
-		if($c["Field"] == "groups") {
-			//Nötige rechte Checken
-			$go_on = (ko_module_installed("groups") && $access['groups']['MAX'] > 1);
-			if(!$go_on) continue;
-
-			ko_groups_get_savestring($_POST["input_groups"], array("id" => $leute_id), $log, $person["groups"]);
-			//Store current datafields for versioning (stored with ko_save_leute_changes())
-			$datafields = ko_get_datafields($leute_id);
-			//Store datafields in DB
-			ko_groups_save_datafields($_POST["group_datafields"], array("id" => $leute_id, "groups" => $_POST["input_groups"], "old_groups" => $person["groups"]), $log2);
-
-			//Log-Message:
-			$dont_log = TRUE;
-			if(trim($log) != "") $log_message .= getLL("leute_log_groups").": $log";
-			if(trim($log2) != "") $log_message .= getLL("leute_log_datafields").": $log2";
-		}//groups-Modul
-
-		//Small groups
-		if($c['Field'] == 'smallgroups') {
-			$go_on = (ko_module_installed('kg') && $access['kg']['MAX'] > 2);
-			if(!$go_on) continue;
-
-			$bisher   = $person[$c['Field']];
-			$submitted = $_POST['input_'.$c['Field']];
-			$dont_log = TRUE;
-			if( ($bisher || $submitted) && $bisher != $submitted ) {
-				$log_message .= $col_namen[$c['Field']].': '.ko_kgliste($bisher).' --> '.ko_kgliste($submitted).', ';
-			}
-		}
-
-		// Spouse (will be handled below)
-		if ($c['Field'] == 'spouse') {
-			$dont_log = TRUE;
-			continue;
-		}
-
-
-		$endpos = strpos($c["Type"], "(") ? strpos($c["Type"], "(") : strlen($c["Type"]);
-		$endpos2 = strpos($c["Type"], ")") ? strpos($c["Type"], ")") : strlen($c["Type"]);
-		$input_type = substr($c["Type"], 0, $endpos);
-		$input_size = ($endpos && $endpos2) ? substr($c["Type"], ($endpos+1), ($endpos2-$endpos-1)) : 0;
-
-		switch($input_type) {
-
-			case "varchar": //Textfeld
-			case "tinyint":
-			case "smallint":
-			case "mediumint":
-			case "blob":
-			case "enum":
-			case "text":
-				if(in_array($c["Field"], $LEUTE_TEXTSELECT) && $_POST["input_".$c["Field"]."_2"]) {
-					$data[$c["Field"]] = format_userinput($_POST["input_".$c["Field"]."_2"], "text");
-				}
-				else if(in_array($c["Field"], $LEUTE_ENUMPLUS) && $_POST["input_".$c["Field"]."_2"]) {
-					//Enum-Definition neu erstellen
-					$options = db_get_enums("ko_leute", $c["Field"]);
-					$options[] = format_userinput($_POST["input_".$c["Field"]."_2"], "text");
-					sort($options);
-					reset($options);
-					$enum_code = "";
-					foreach($options as $o) {
-						$enum_code .= "'$o', ";
-					}
-					$enum_code = substr($enum_code, 0, -2);
-					db_alter_table("ko_leute", "CHANGE `".$c["Field"]."` `".$c["Field"]."` ENUM( $enum_code ) DEFAULT NULL ");
-
-					if(function_exists("my_enumplus")) {
-						my_enumplus($c["Field"], format_userinput($_POST["input_".$c["Field"]], "text"), format_userinput($_POST["input_".$c["Field"]."_2"], "text"));
-					}
-
-					$data[$c["Field"]] = format_userinput($_POST["input_".$c["Field"]."_2"], "text");
-				} else if($KOTA['ko_leute'][$c['Field']]['form']['type'] == 'peoplesearch') {
-					$data[$c['Field']] = format_userinput($_POST['input_'.$c['Field']], 'intlist');
-				} else {
-					$data[$c["Field"]] = format_userinput($_POST["input_".$c["Field"]], "text");
-				}
-				break;
-
-			case "date":
-				$data[$c["Field"]] = sql_datum($_POST["input_".$c["Field"]]);
-				break;
-
-			//picture
-			case "tinytext":
-				if($_FILES["input_".$c["Field"]]["tmp_name"]) {
-					$upload_name = $_FILES["input_".$c["Field"]]["name"];
-					$tmp = $_FILES["input_".$c["Field"]]["tmp_name"];
-					$ext_ = explode(".", $upload_name);
-					$ext = $ext_[sizeof($ext_)-1];
-
-					$path = $BASE_PATH."my_images/";
-					$filename = 'person_'.$c['Field'].'_'.$leute_id.'.'.$ext;
-					$dest = $path.$filename;
-
-					$ret = move_uploaded_file($tmp, $dest);
-					if($ret) {
-						$data[$c["Field"]] = "/my_images/".$filename;
-						chmod($dest, 0644);
-					} else {
-						$data[$c["Field"]] = "";
-					}
-				}
-				//delete picture
-				else if($_POST["input_".$c["Field"]."_DELETE"] == 1) {
-					$data[$c["Field"]] = "";
-					if($person[$c["Field"]] && file_exists($BASE_PATH.$person[$c["Field"]])) unlink($BASE_PATH.$person[$c["Field"]]);
-				}
-				$test["columns"][] = $col;
-				break;
-
-		}//switch(input_type)
-
-
-		//Kunden-spezifische Behandlung der Leute-Felder
-		if(function_exists("my_fcn_leute")) {
-			my_fcn_leute($c["Field"], format_userinput($_POST["input_".$c["Field"]], "text"), format_userinput($_POST["input_".$c["Field"]."_2"], "text"));
-		}
-
-
-		//Log-Message
-		if(!$dont_log) {
-			if($action == "submit_neue_person") {  //Alle gemachten Angaben loggen
-				if($_POST["input_".$c["Field"]]) {
-					$label = $col_namen[$c["Field"]];
-					$value = format_userinput($_POST["input_".$c["Field"]], "text");
-				} else if($_POST["input_".$c["Field"]."_2"]) {
-					$label = $col_namen[$c["Field"]];
-					$value = format_userinput($_POST["input_".$c["Field"]."_2"], "text");
-				}
-				if($value) $log_message .= "$label: '$value', ";
-
-			} else {  //Bei Editieren nur die loggen, die geändert wurden
-				$new  = format_userinput($_POST["input_".$c["Field"]], "text");
-				$new2 = format_userinput($_POST["input_".$c["Field"]."_2"], "text");
-				$old  = $c["Type"] == "date" ? map_leute_daten($person[$c["Field"]], $c["Field"], $person) : $person[$c["Field"]];
-				if( ($old || $new) && $new != $old) {
-					$ll_old = getLL('kota_ko_leute_'.$c['Field'].'_'.$old);
-					$ll_new = getLL('kota_ko_leute_'.$c['Field'].'_'.$new);
-					$log_message .= $col_namen[$c["Field"]].": '".($ll_old ? $ll_old : $old)."' --> '".($ll_new ? $ll_new : $new)."', ";
-				} else if($new2 && $old != $new2) {
-					$log_message .= $col_namen[$c["Field"]].": '$new2', ";
-				}
-			}
-		}//if(!dont_log)
-
-	}//foreach(leute_cols as c_i => c)
-
-	// create log entry for parents
-	foreach (array('father', 'mother') as $parent) {
-		if (!isset($data[$parent])) continue;
-		$val = (int)$data[$parent];
-		if ($action == 'submit_neue_person') {
-			$log_message .= "{$col_namen[$parent]}: '{$val}', ";
-		} else {
-			if ($person[$parent] != $val) {
-				$log_message .= "{$col_namen[$parent]}: '{$person[$parent]}' --> '{$val}', ";
-			}
-		}
-
-	}
-
-
-	//Check for leute_admin_groups to be added
-	if((!defined('LEUTE_ADMIN_GROUPS_NEW_ONLY') || LEUTE_ADMIN_GROUPS_NEW_ONLY == FALSE)
-		|| in_array($do_action, array("submit_neue_person", "submit_als_neue_person")))
-	{
-		$lag = ko_get_leute_admin_groups($_SESSION["ses_userid"], 'all');
-		if(is_array($lag) && sizeof($lag) > 0) {
-			foreach($lag as $gid) {
-				if(!$gid) continue;
-				if(FALSE === strstr($data["groups"], $gid)) {
-					$data["groups"] .= $data["groups"] != "" ? ",".$gid : $gid;
-				}
-			}
-		}
-	}
-
-
-	//In DB speichern
-	$data["lastchange"] = date("Y-m-d H:i:s");  //LastChange hinzufügen
-	//Familien-ID hinzufügen
-	if(!is_array($allowed_cols["edit"]) || in_array("famid", $allowed_cols["edit"])) {
-		$data["famid"] = $save_famid;
-		if($data['famid'] <= 0) $data['kinder'] = '0';  //Set number of children to 0 for persons without a family
-	}
-	if($action == "submit_edit_person") {
-		db_update_data("ko_leute", "WHERE `id` = '$leute_id'", $data);
-	} else {
-		//Not needed? as submit_neue_person is handled as submit_edit_person with id of new empty entry...?
-		$leute_id = db_insert_data("ko_leute", $data);
-	}
-
-
-	// Spouse
-	ko_leute_set_spouse($leute_id, format_userinput($_POST['input_spouse'], 'uint'));
-
-
-	//Familien-Daten
-	//Erst nachher updaten, damit Personendaten nicht Familiendaten überschreiben
-	if($save_famid > 0 || $old_famid > 0) {
-		if($do_update_familie) ko_update_familie($save_famid, $fam_data, $leute_id);
-		else {
-			ko_update_leute_in_familie($save_famid);
-			ko_update_leute_in_familie($old_famid);
-		}
-		ko_update_familie_filter();
-	}
-
-
-	//Store email checkboxes to define prefered email fields
-	if(sizeof($LEUTE_EMAIL_FIELDS) > 1) {
-		foreach($LEUTE_EMAIL_FIELDS as $email_field) {
-			if(is_array($allowed_cols['edit']) && !in_array($email_field, $allowed_cols['edit'])) continue;
-			$current = db_select_data('ko_leute_preferred_fields', "WHERE `type` = 'email' AND `lid` = '$leute_id' AND `field` = '$email_field'", '*', '', '', TRUE);
-			if($_POST['email_chk_'.$email_field]) {  //Field selected
-				if($data[$email_field]) {  //Only set checkbox if email address is given
-					if(!$current) db_insert_data('ko_leute_preferred_fields', array('type' => 'email', 'lid' => $leute_id, 'field' => $email_field));
-				} else {  //Delete checkbox if no email address is given
-					if($current) db_delete_data('ko_leute_preferred_fields', "WHERE `type` = 'email' AND `lid` = '$leute_id' AND `field` = '$email_field'");
-				}
-			} else {  //Field not selected
-				if($current) db_delete_data('ko_leute_preferred_fields', "WHERE `type` = 'email' AND `lid` = '$leute_id' AND `field` = '$email_field'");
-			}
-		}
-	}
-
-	//Store mobile checkboxes to define prefered mobile fields
-	if(sizeof($LEUTE_MOBILE_FIELDS) > 1) {
-		foreach($LEUTE_MOBILE_FIELDS as $mobile_field) {
-			if(is_array($allowed_cols['edit']) && !in_array($mobile_field, $allowed_cols['edit'])) continue;
-			$current = db_select_data('ko_leute_preferred_fields', "WHERE `type` = 'mobile' AND `lid` = '$leute_id' AND `field` = '$mobile_field'", '*', '', '', TRUE);
-			if($_POST['mobile_chk_'.$mobile_field]) {  //Field selected
-				if($data[$mobile_field]) {  //Only set checkbox if mobile number is given
-					if(!$current) db_insert_data('ko_leute_preferred_fields', array('type' => 'mobile', 'lid' => $leute_id, 'field' => $mobile_field));
-				} else {  //Delete checkbox if no mobile number is given
-					if($current) db_delete_data('ko_leute_preferred_fields', "WHERE `type` = 'mobile' AND `lid` = '$leute_id' AND `field` = '$mobile_field'");
-				}
-			} else {  //Field not selected
-				if($current) db_delete_data('ko_leute_preferred_fields', "WHERE `type` = 'mobile' AND `lid` = '$leute_id' AND `field` = '$mobile_field'");
-			}
-		}
-	}
-
-
-	//In LDAP speichern
-	if($do_ldap) {
-		$ldap = ko_ldap_connect();
-		//Get full person record (if only some columns can be edited only these would be in $data)
-		ko_get_person_by_id($leute_id, $ldap_person);
-		if($action == "submit_edit_person" && !$ldap_new_entry) {  //Als neue Person speichern, ist zwar edit, muss aber neu angelegt werden.
-			ko_ldap_add_person($ldap, $ldap_person, $person['id'], TRUE);
-		} else {
-			ko_ldap_add_person($ldap, $ldap_person, $leute_id);
-		}
-		ko_ldap_close($ldap);
-	}//if(do_ldap)
-
-
-	//ezmlm: change email in mailinglist address if email has changed
-	if($action != 'submit_neue_person' && defined("EXPORT2EZMLM") && EXPORT2EZMLM) {
-		$old_email = $person['email']; $new_email = $_POST['input_email'];
-		if($old_email != $new_email && check_email($new_email)) {  //Check for changed valid email
-			foreach(explode(",", $data["groups"]) as $group) {  //Check this user's groups for one with an ML assigned
-				$gid = ko_groups_decode($group, "group_id");
-				if($all_groups[$gid]["ezmlm_list"]) {
-					//Un- and resubscribe
-					ko_ezmlm_unsubscribe($all_groups[$gid]["ezmlm_list"], $all_groups[$gid]["ezmlm_moderator"], $old_email);
-					ko_ezmlm_subscribe($all_groups[$gid]["ezmlm_list"], $all_groups[$gid]["ezmlm_moderator"], $new_email);
-				}
-			}
-		}
-	}
-
-	//Update count for groups this person is/was assigned to
-	$ag = array_unique(array_merge(explode(',', $person['groups']), explode(',', $data['groups'])));
-	foreach($ag as $g) {
-		$g = ko_groups_decode($g, 'group_id');
-		if($all_groups[$g]['maxcount'] > 0) {
-			ko_update_group_count($g, $all_groups[$g]['count_role']);
-		}
-	}
-
-
-	//Log-Meldung
-	if($do_action == "submit_neue_person") {
-		ko_log("new_person", $leute_id . ": " . substr($log_message,0,-2));
-		$notifier->addInfo(1, $do_action);
-	} else {
-		if($log_message != "") {
-			$name = $person["vorname"]." ".$person["nachname"];
-			if(!$name) $name = $person["firm"];
-			ko_log("edit_person", $leute_id . " ($name): " . substr($log_message,0,-2));
-			//Save changes for versioning
-			ko_save_leute_changes($leute_id, $person, $datafields);
-
-			//Announce changes to selected users
-			if(sizeof($_POST['sel_announce_changes']) > 0) {
-				$sender = ko_get_logged_in_person();
-				foreach($_POST['sel_announce_changes'] as $lid) {
-					$lid = (int)$lid;
-					if(!$lid) continue;
-
-					$person = ko_get_logged_in_person($lid);
-					$text = sprintf(getLL('leute_announce_changes_email_text'), $sender['vorname'].' '.$sender['nachname'], $name)."\n\n".str_replace(',', "\n", substr($log_message, 0, -2));
-					ko_send_mail(array($sender['email'] => $sender['vorname'] . ' ' . $sender['nachname']), $person['email'], getLL('leute_announce_changes_email_subject'), $text);
-				}
-			}//if(POST[sel_announce_changes])
-
-		}//if(log_message)
-		if (!$notifier->hasErrors()) {
-			$notifier->addInfo(2, $do_action);
-		}
-	}
-
-	//Set show case
-	$_SESSION["show"] = $_SESSION["show_back"] ? $_SESSION["show_back"] : "show_all";
-	break;
-	 */
-
 
 	case "mailing":
 		$_SESSION['show'] = 'leute_mailing';
@@ -1602,6 +1149,20 @@ switch($do_action) {
 			foreach($new_person as $k => $v) {
 				if(substr($k, 0, 1) == "_") unset($new_person[$k]);
 			}
+
+			//Set salutation from gender or vice versa
+			if($new_person['anrede'] != '' && $new_person['geschlecht'] == '') {
+				$new_person['geschlecht'] = $LEUTE_TITLE_TO_SEX[$_SESSION['lang']][$new_person['anrede']];
+
+			} else if($new_person['geschlecht'] != '' && $new_person['anrede'] == '') {
+				$title2GeschlechtMap = $LEUTE_TITLE_TO_SEX[$_SESSION['lang']];
+				$geschlecht2TitleMap = array();
+				foreach ($title2GeschlechtMap as $t => $s) {
+					if(!isset($geschlecht2TitleMap[$s])) $geschlecht2TitleMap[$s] = $t;
+				}
+				$new_person['anrede'] = $geschlecht2TitleMap[$new_person['geschlecht']];
+			}
+
 			$new_person["crdate"] = date("Y-m-d H:i:s");
 			$new_person["cruserid"] = $_SESSION["ses_userid"];
 			$lid = db_insert_data("ko_leute", $new_person);
@@ -1818,8 +1379,15 @@ switch($do_action) {
 			}
 		}
 
+		//Set address ID to be kept. If force_keep is set on revision then use the new address,
+		// otherwise (default) keep the older address from the database.
+		// Keeping the new address is needed e.g. for import scripts, where the new address can hold
+		// a newer import id (e.g. Wiederzuzüger)). Used e.g. in plugin gemowin_import.
+		// For group subscriptions one usually wants to keep the old address (default)
+		$keepId = $revision['force_keep'] ? $revision['leute_id'] : $mergeId;
+
 		// perform merging of addresses
-		ko_leute_merge_ids(array($mergeId, $revision['leute_id']), $showMutations, NULL, $mergeId);
+		ko_leute_merge_ids(array($mergeId, $revision['leute_id']), $showMutations, NULL, $keepId);
 
 		db_delete_data('ko_leute_revisions', 'where `id` = ' . $id);
 		ko_log_diff($do_action, $revision);
@@ -1935,28 +1503,6 @@ switch($do_action) {
 				else
 					$xls_cols = $_SESSION["show_leute_cols"];
 			break;
-
-			case "children":
-				if($_SESSION["show"] == "show_adressliste")
-					$xls_cols = $_SESSION["show_adressliste_cols"];
-				else
-					$xls_cols = $_SESSION["show_leute_cols"];
-
-				foreach(explode(',', ko_get_userpref($_SESSION['ses_userid'], 'leute_children_columns')) as $col) {
-					$ll = getLL("leute_children_col".$col);
-					if(!$ll) {
-						if(in_array(substr($col, 0, 8), array("_father_", "_mother_"))) {
-							$ll = getLL("kota_ko_leute_".substr($col, 8))." ".getLL("leute_children_col".substr($col, 0, 7));
-						} else {
-							$ll = getLL("kota_ko_leute".$col);
-						}
-					}
-					$leute_col_name_add[$col] = $ll ? $ll : substr($col, 1);
-					$xls_cols[] = $col;
-				}
-				$leute_col_name = array_merge($leute_col_name, (array)$leute_col_name_add);
-			break;  //children
-
 			default:
 				if(substr($_POST["sel_cols"], 0, 4) == "set_") {
 					$setname = substr($_POST["sel_cols"], 4);
@@ -2086,6 +1632,13 @@ switch($do_action) {
 			}
 		}
 
+		$restricted_leute_ids = ko_apply_leute_information_lock();
+		if (!empty($restricted_leute_ids)) {
+			foreach($restricted_leute_ids AS $restricted_leute_id) {
+				unset($es[$restricted_leute_id]);
+				$notifier->addTextWarning(getLL("leute_notice_export_information_lock"));
+			}
+		}
 
 		if(sizeof($es) == 0) $notifier->addError(5, $do_action);
 		if($notifier->hasErrors()) break;
@@ -2317,102 +1870,131 @@ switch($do_action) {
 					$onload_code = "ko_popup('".$ko_path."download.php?action=file&amp;file=".substr($filename, 3)."');";
 				break;
 
-
 				case "sms":
-					$smarty->assign("sms_balance", ko_html(get_cache_sms_balance()));
+				case "telegram":
+				case "smstelegram":
 
+					if ($_POST['id'] == 'sms' || !ko_module_installed('telegram')) {
+						$sendmode = "sms";
+					} else if ($_POST['id'] == 'telegram') {
+						$sendmode = "telegram";
+					} else {
+						$sendmode = "smstelegram";
+					}
+
+					$smarty->assign("tpl_viewmode", $sendmode);
+
+					$link = "/leute/index.php?";
+					foreach($_REQUEST AS $key => $value) {
+						if ($key == 'id') continue;
+						$link.= $key . "=" . $value . "&";
+					}
+
+					$smarty->assign("tpl_viewmodelink", $link);
 					$smarty->assign("ko_path", $ko_path);
 
 					//Leute-cols für Excel-Datei auslesen
 					$cols = array("anrede", "vorname", "nachname", "adresse", "adresse_zusatz", "plz", "ort", "telp", "telg", "natel");
-					$header = array();
+					if (strpos($sendmode, 'telegram') !== false) $cols[] = "telegram_id";
+
+					$header = $xls_data = array();
+					$rec_invalid = $rec_invalid_ids = "";
 					foreach($cols as $c) {
 						$header[] = $leute_col_name[$c];
 					}
 
-					$leuteIds = array();
-					//Empfänger auslesen
-					$rec_invalid = $rec_invalid_ids = $recipients_names = "";
-					$row = 0;
-					$xls_data = $array_empfaenger = array();
+					$invalid_recipients_count = 0;
 					foreach($es as $l_id => $l) {
 						$invalid = FALSE;
-						ko_get_leute_mobile($l, $mobiles);
-						if(sizeof($mobiles) > 0) {
-							foreach($mobiles as $mobile) {
-								if(check_natel($mobile)) {
-									$leuteIds[] = $l_id;
-									$array_empfaenger[] = $mobile;
-									$recipients_names .= $l["vorname"]." ".$l["nachname"].", ";
-								} else {
-									$invalid = TRUE;
+
+						// todo: ignore not selected user from mylist (sind anscheinend im array, obwohl nicht gewählt.
+
+						// first priority is telegram
+						if (strpos($sendmode, 'telegram') !== false && $l['telegram_id'] != -1) {
+							$telegram_recipient_leuteIds[] = $l_id;
+							$telegram_recipient_names[] = $l["vorname"]." ".$l["nachname"];
+						} else if (strpos($sendmode, 'sms') !== false)  {
+							ko_get_leute_mobile($l, $mobiles);
+							if(sizeof($mobiles) > 0) {
+								foreach($mobiles as $mobile) {
+									if(check_natel($mobile)) {
+										$sms_recipient_leuteIds[] = $l_id;
+										$sms_recipient_names[] = $l["vorname"]." ".$l["nachname"];
+									} else {
+										$invalid = TRUE;
+									}
 								}
+							} else {
+								$invalid = TRUE;
 							}
 						} else {
-							$invalid = TRUE;
+							$invalid = true;
 						}
+
 						if($invalid) {
-							$rec_invalid .= $l["vorname"]." ".$l["nachname"].($l["ort"] ? (" ".getLL('from')." ".$l["ort"]) : "").", ";
+							$rec_invalid .= $l["vorname"]." ".$l["nachname"].($l["ort"] ? (" ".getLL('from')." ".$l["ort"]) : "")."<br>";
 							$rec_invalid_ids .= $l["id"].",";
 
 							$col = 0;
 							foreach($cols as $c) {
-								$xls_data[$row][$col++] = sql2datum($l[$c]);
+								$xls_data[$invalid_recipients_count][$col++] = sql2datum($l[$c]);
 							}
-							$row++;
+							$invalid_recipients_count++;
 						}
-
-					}//foreach(leute as l_id)
-					$smarty->assign("tpl_show_recipients", 1);
-					$smarty->assign("tpl_show_sendbutton", 1);
-					$smarty->assign("tpl_show_header", 1);
-					$smarty->assign("tpl_recipients_names", ko_html(substr($recipients_names, 0, -2)));
+					}
 
 					//XLS-Datei aller Leute ohne GSM-Nummer erstellen
 					if($rec_invalid != "") {
-						$rec_invalid = substr($rec_invalid, 0, -2);
 						$rec_invalid_ids = substr($rec_invalid_ids, 0, -1);
-						$smarty->assign("tpl_recipients_invalid", ko_html($rec_invalid));
+						$smarty->assign("tpl_recipients_invalid", $rec_invalid);
 						$smarty->assign("tpl_recipients_invalid_ids", $rec_invalid_ids);
-
 						$filename = $ko_path."download/excel/".getLL("export_filename").strftime("%d%m%Y_%H%M%S", time()).".xlsx";
 						$filename = ko_export_to_xlsx($header, $xls_data, $filename, "kOOL");
 						$smarty->assign("xls_filename", $filename);
 					}
 
-					//Sender select
-					$senders = array();
-					//Check for admin mobile
-					ko_get_login($_SESSION['ses_userid'], $login);
-					$sender_ids = explode(',', ko_get_setting('sms_sender_ids'));
-					if($login['mobile'] && in_array($login['mobile'], $sender_ids)) $senders[] = $login['mobile'];
-					//Check for assigned person
-					ko_get_leute_mobile(ko_get_logged_in_id(), $mobiles);
-					foreach($mobiles as $mobile) {
-						if(!check_natel($mobile)) continue;
-						if(!in_array($mobile, $sender_ids)) continue;
-						if(in_array($mobile, $senders)) continue;
-						$senders[] = $mobile;
-					}
-					if(sizeof($senders) > 1) {
-						$smarty->assign('tpl_show_sender', TRUE);
-						$smarty->assign('tpl_senders', $senders);
+					$smarty->assign("tpl_show_recipients", 1);
+					$smarty->assign("tpl_show_sendbutton", 1);
+					$smarty->assign("tpl_show_header", 1);
+
+					if (strpos($sendmode, 'sms') !== false) {
+						//Sender select
+						$senders = array();
+						//Check for admin mobile
+						ko_get_login($_SESSION['ses_userid'], $login);
+						$sender_ids = explode(',', ko_get_setting('sms_sender_ids'));
+						if ($login['mobile'] && in_array($login['mobile'], $sender_ids)) $senders[] = $login['mobile'];
+						//Check for assigned person
+						ko_get_leute_mobile(ko_get_logged_in_id(), $mobiles);
+						foreach ($mobiles as $mobile) {
+							if (!check_natel($mobile)) continue;
+							if (!in_array($mobile, $sender_ids)) continue;
+							if (in_array($mobile, $senders)) continue;
+							$senders[] = $mobile;
+						}
+
+						$smarty->assign('tpl_sms_senders', $senders);
+
+						$smarty->assign("tpl_sms_recipients_avalues", "[" . implode(',', $sms_recipient_leuteIds) . "]");
+						$smarty->assign("tpl_sms_recipients_avalue", "[" . implode(',', $sms_recipient_leuteIds) . "]");
+						$smarty->assign("tpl_sms_recipients_adescs", "[\"" . implode('","', $sms_recipient_names) . "\"]");
 					}
 
-					//Empfänger zuweisen
-					$array_empfaenger = array_unique($array_empfaenger);
-					foreach($array_empfaenger as $e) {
-						$tpl_recipients .= $e . ",";
+					if (strpos($sendmode, 'telegram') !== false) {
+						$smarty->assign("tpl_telegram_recipients_avalues", "[" . implode(',', $telegram_recipient_leuteIds) . "]");
+						$smarty->assign("tpl_telegram_recipients_avalue", "[" . implode(',', $telegram_recipient_leuteIds) . "]");
+						$smarty->assign("tpl_telegram_recipients_adescs", "[\"" . implode('","', $telegram_recipient_names) . "\"]");
+						$smarty->assign("tpl_leute_telegram_sender_text", sprintf(getLL('leute_telegram_sender_text'), ko_get_setting("telegram_botname")));
 					}
-					$tpl_recipients = substr($tpl_recipients, 0, -1);
-					$smarty->assign("tpl_recipients", ko_html($tpl_recipients));
-					$smarty->assign("tpl_recipient_ids", implode(',', array_unique($leuteIds)));
-					$smarty->assign('tpl_num_recipients', sizeof($array_empfaenger));
 
 					$smarty->assign('crm_contact_tpl_groups', ko_get_crm_contact_form_group(array('leute_ids'), array('type' => 'sms')));
 
+					if(ko_module_installed('telegram') && ko_module_installed('sms')) {
+						$smarty->assign("tpl_show_sendmethods", TRUE);
+					}
+
 					$_SESSION["show_back"] = $_SESSION["show"];
-					$_SESSION["show"] = "sms_versand";
+					$_SESSION["show"] = "mobil_versand";
 				break;
 
 
@@ -2778,106 +2360,100 @@ switch($do_action) {
 
 
 	case "submit_sms":
-		//Empfaenger
-		$empfaenger_ = explode(",", format_userinput($_POST["txt_recipients"], "intlist"));
-		$empfaenger__ = explode(",", format_userinput($_POST["txt_recipients_add"], "intlist"));
-		$empfaenger = array_unique(array_merge($empfaenger_, $empfaenger__));
+	case "submit_telegram":
+	case "submit_smstelegram":
+		if($do_action == 'submit_telegram' || $do_action == 'submit_smstelegram') {
+			$empfaenger = explode(",", format_userinput($_POST["sel_telegram_people"], "intlist"));
+			$p = ko_get_logged_in_person();
+			$text = format_userinput($_POST["txt_telegram_text"],'text');
+			$text.= "\n\nVerschickt von {$p['vorname']} {$p['nachname']} ({$_SESSION['ses_username']})";
 
-		$rec_ids = explode(',', format_userinput($_POST['hid_recipient_ids'], 'intlist'));
+			$telegramRecipients = [];
+			foreach($empfaenger AS $userid) {
+				ko_get_person_by_id($userid, $telegram_user);
+				$telegramRecipients[] = $telegram_user;
+			}
 
-		//Text
-		$text = $_POST["txt_smstext"];
-
-
-		//Get possible senders
-		$senders = array();
-		//Check for admin mobile
-		ko_get_login($_SESSION['ses_userid'], $login);
-		$sender_ids = explode(',', ko_get_setting('sms_sender_ids'));
-		if($login['mobile'] && in_array($login['mobile'], $sender_ids)) $senders[] = $login['mobile'];
-		//Check for assigned person
-		ko_get_leute_mobile(ko_get_logged_in_id(), $mobiles);
-		foreach($mobiles as $mobile) {
-			if(!check_natel($mobile)) continue;
-			if(!in_array($mobile, $sender_ids)) continue;
-			if(in_array($mobile, $senders)) continue;
-			$senders[] = $mobile;
-		}
-
-		//Absender
-		$p = ko_get_logged_in_person();
-		if($_POST['sel_sender'] && in_array($_POST['sel_sender'], $senders)) {  //User selected sener from GUI if set
-			$from = $_POST['sel_sender'];
-		} else if(sizeof($senders) > 0) {  //Use first (possibly only) entry of senders
-			$from = array_shift($senders);
-		} else if(!ko_get_logged_in_id()) {  //If no person is assigned just use the login name
-			$from = $_SESSION["ses_username"];
-		} else {
-			$from = '';
-		}
-
-		if($SMS_PARAMETER['provider'] == 'aspsms') {
-			$ret = send_aspsms($empfaenger, $text, $from, $num, $charges, $log_id);
-			if($ret) {
-				$info_txt = getLL('info_leute_99a').$num.getLL('info_leute_99b');
-				$info_txt .= getLL('info_leute_99d').' '.$charges;
-				$notifier->addTextInfo($info_txt, $do_action);
-
+			if(!empty($telegramRecipients)) {
+				send_telegram_message($telegramRecipients, $text);
 			}
 		}
-		//Use Clickatell as default (for backwards compatibility, if no provider is set in $SMS_PARAMETER)
-		else {
-			$climsgid = time()."_".$p["id"];
-			$msg_type = "SMS_TEXT";
-			$ret = send_sms($empfaenger, $text, $from, $climsgid, $msg_type, $success, $done, $problems, $charges, $error_message, $log_id);
 
-			if($ret) {
-				$notifier->addInfo(99, $do_action);
-				$info_txt = getLL('info_leute_99a').$success.'/'.$done. getLL('info_leute_99b');
-				if($problems) $info_txt .= getLL('info_leute_99c').substr($problems, 0, -2);
-				$info_txt .= getLL('info_leute_99d').' '.$charges;
+		if($do_action == 'submit_sms' || $do_action == 'submit_smstelegram') {
+			$sel_sms_people = explode(",", format_userinput($_POST["sel_sms_people"], "intlist"));
+
+			foreach($sel_sms_people AS $id) {
+				ko_get_leute_mobile($id, $mobiles);
+				if (check_natel($mobiles[0])) {
+					$empfaenger_[] = $mobiles[0];
+				}
+			}
+
+			$empfaenger__ = explode(",", format_userinput($_POST["txt_sms_recipients_add"], "intlist"));
+			$empfaenger = array_unique(array_merge($empfaenger_, $empfaenger__));
+
+			$rec_ids = explode(',', format_userinput($_POST['hid_recipient_ids'], 'intlist'));
+			$text = $_POST["txt_smstext"];
+
+
+			//Get possible senders
+			$senders = array();
+			//Check for admin mobile
+			ko_get_login($_SESSION['ses_userid'], $login);
+			$sender_ids = explode(',', ko_get_setting('sms_sender_ids'));
+			if ($login['mobile'] && in_array($login['mobile'], $sender_ids)) $senders[] = $login['mobile'];
+			//Check for assigned person
+			ko_get_leute_mobile(ko_get_logged_in_id(), $mobiles);
+			foreach ($mobiles as $mobile) {
+				if (!check_natel($mobile)) continue;
+				if (!in_array($mobile, $sender_ids)) continue;
+				if (in_array($mobile, $senders)) continue;
+				$senders[] = $mobile;
+			}
+
+			//Absender
+			$p = ko_get_logged_in_person();
+			if ($_POST['sel_sender'] && in_array($_POST['sel_sender'], $senders)) {  //User selected sener from GUI if set
+				$from = $_POST['sel_sender'];
+			} else if (sizeof($senders) > 0) {  //Use first (possibly only) entry of senders
+				$from = array_shift($senders);
 			} else {
-				$my_error_txt = $error_message;
-				$notifier->addTextError($my_error_text, $do_action);
+				$from = $_SESSION["ses_username"];
 			}
-		}
 
-		// create crm entry
-		if (!$notifier->hasErrors()) {
-			ko_create_crm_contact_from_post(TRUE, array('leute_ids' => implode(',', array_unique($rec_ids)), 'reference' => 'ko_log:'.$log_id));
+			if ($SMS_PARAMETER['provider'] == 'aspsms') {
+				$ret = send_aspsms($empfaenger, $text, $from, $num, $charges, $log_id);
+				if ($ret) {
+					$info_txt = getLL('info_leute_99a') . $num . getLL('info_leute_99b');
+					$info_txt .= getLL('info_leute_99d') . ' ' . $charges;
+					$notifier->addTextInfo($info_txt, $do_action);
+
+				}
+			} //Use Clickatell as default (for backwards compatibility, if no provider is set in $SMS_PARAMETER)
+			else {
+				$climsgid = time() . "_" . $p["id"];
+				$msg_type = "SMS_TEXT";
+				$ret = send_sms($empfaenger, $text, $from, $climsgid, $msg_type, $success, $done, $problems, $charges, $error_message, $log_id);
+
+				if ($ret) {
+					$notifier->addInfo(99, $do_action);
+					$info_txt = getLL('info_leute_99a') . $success . '/' . $done . getLL('info_leute_99b');
+					if ($problems) $info_txt .= getLL('info_leute_99c') . substr($problems, 0, -2);
+					$info_txt .= getLL('info_leute_99d') . ' ' . $charges;
+				} else {
+					$my_error_txt = $error_message;
+					$notifier->addTextError($my_error_text, $do_action);
+				}
+			}
+
+			// create crm entry
+			if (!$notifier->hasErrors()) {
+				ko_create_crm_contact_from_post(TRUE, array('leute_ids' => implode(',', array_unique($rec_ids)), 'reference' => 'ko_log:' . $log_id));
+			}
 		}
 
 		$_SESSION['show'] = $_SESSION['show_back'] ? $_SESSION['show_back'] : 'show_all';
 	break;
-
-
-
-	case "export_sms_to_mylist":
-	case "exportadd_sms_to_mylist":
-		if($_POST["hid_recipients_invalid_ids"]) {
-			if($do_action == "export_sms_to_mylist") $_SESSION["my_list"] = array();
-			foreach(explode(",", format_userinput($_POST["hid_recipients_invalid_ids"], "intlist")) as $c) {
-				if($c) $_SESSION["my_list"][$c] = $c;
-			}
-			ko_save_userpref($_SESSION["ses_userid"], "leute_my_list", serialize($_SESSION["my_list"]));
-		}
-
-		$smarty->assign("sms_balance", format_userinput($_POST["hid_sms_balance"], "float"));
-		$smarty->assign("tpl_recipients", format_userinput($_POST["txt_recipients"], "intlist"));
-		$smarty->assign("tpl_recipients_add", format_userinput($_POST["txt_recipients_add"], "intlist"));
-		$smarty->assign("txt_smstext", ko_html($_POST["txt_smstext"]));
-		$smarty->assign("txt_letters", format_userinput($_POST["txt_letters"], "uint"));
-		$smarty->assign("tpl_recipients_invalid_ids", format_userinput($_POST["hid_recipients_invalid_ids"], "intlist"));
-		$smarty->assign("tpl_recipients_invalid", ko_html($_POST["hid_recipients_invalid"]));
-		$smarty->assign("tpl_recipients_names", ko_html($_POST["hid_recipients_names"]));
-		$smarty->assign("xls_filename", ko_html($_POST["hid_xls_filename"]));
-
-		$smarty->assign("tpl_show_recipients", 1);
-		$smarty->assign("tpl_show_sendbutton", 1);
-		$smarty->assign("tpl_show_header", 1);
-	break;
-
-
 
 	case 'submit_mailmerge':
 		$layout = $_POST['sel_layout'] ? format_userinput($_POST['sel_layout'], 'alphanum') : 'default';
@@ -3023,9 +2599,6 @@ switch($do_action) {
 			$subject = $_POST['leute_mailing_subject'];
 
 			$replyTo = $_POST['leute_mailing_reply_to'];
-			if(!check_email($replyTo)) {
-				$replyTo = ko_get_setting('info_email');
-			}
 
 			$fileNames = array_filter(explode('@|,|@', $_POST['leute_mailing_files']), function ($e) {
 				return $e ? true : false;
@@ -3043,18 +2616,17 @@ switch($do_action) {
 
 			//Get sender (current user)
 			$p = ko_get_logged_in_person();
-			if($p['vorname'] || $p['nachname']) {
+			if(isset($MAILING_SENDER_NAME) && $replyTo == "info@refgossau.ch") {
+				// temp fix for refgossau. see #3241
+				$senderName = $MAILING_SENDER_NAME;
+			} else if($p['vorname'] || $p['nachname']) {
 				$senderName = $p['vorname'].' '.$p['nachname'];
 			} else if($p['firm']) {
 				$senderName = $p['firm'];
 			} else {
 				$senderName = $_SESSION['ses_username'];
 			}
-			if(ko_get_setting('force_mail_from')) {
-				$from = ko_mail_get_from($senderName);
-			} else {
-				$from = array($replyTo => $senderName);
-			}
+			$from = array($replyTo => $senderName);
 
 			$message = ko_prepare_mail($from, $replyTo, $subject, $text, $files, array(), array(), array($replyTo));
 			$message->setContentType('text/html');
@@ -3417,6 +2989,26 @@ switch($do_action) {
 	break;
 
 
+
+
+	case 'set_rotafilter':
+		if($access['leute']['MAX'] < 1) break;
+
+		$event_id = format_userinput($_GET['event'], 'uint');
+		if(!$event_id) break;
+
+		$where = "WHERE typ = 'leute' AND dbcol = 'ko_rota_schedulling.event_id' AND name ='rota'";
+		$f = db_select_data('ko_filter', $where, '*', '', '', TRUE);
+		if(!$f['id']) break;
+		if(db_get_count("ko_event", "id"," AND id = '" . $event_id . "'") == 0) break;
+
+		//Apply filter
+		$_SESSION['filter'] = array();
+		$_SESSION['filter'][] = array($f['id'], array(1 => $event_id), 0);
+
+		$_SESSION['show'] = 'show_all';
+		$_SESSION['show_start'] = 1;
+		break;
 
 
 	case 'set_famfilter':
@@ -4070,6 +3662,8 @@ switch($do_action) {
 			ko_set_setting('leute_disable_aa_fm', format_userinput($_POST['chk_disable_aa_fm'], 'uint'));
 			ko_set_setting('candidate_adults_min_age', format_userinput($_POST['txt_candidate_adults_min_age'], 'uint'));
 			ko_set_setting('leute_multiple_delete', format_userinput($_POST['chk_multi_delete'], 'uint'));
+			ko_set_setting('leute_information_lock', format_userinput($_POST['chk_leute_information_lock'], 'uint'));
+
 			kota_save_mandatory_fields('ko_leute', $_POST);
 		}
 
@@ -4107,21 +3701,6 @@ switch($do_action) {
 		//Send notification email
 		$email = ko_get_setting('leute_assign_global_notification');
 		if($email) {
-			//Get sender email (current user)
-			$p = ko_get_logged_in_person();
-
-			if($p['vorname'] || $p['nachname']) {
-				$login = $p['vorname'].' '.$p['nachname'].' ('.$_SESSION['ses_username'].')';
-			} else {
-				$login = $_SESSION['ses_username'];
-			}
-
-			$from = ko_mail_get_from($login);
-
-			$reply_to = array(
-					(check_email($p['email']) ? $p['email'] : ko_get_setting('info_email')) => $login
-			);
-
 			//Prepare email text
 			$subject = getLL('email_subject_prefix').sprintf(getLL('leute_global_assign_notification_subject'), $login);
 			$text = sprintf(getLL('leute_global_assign_notification_text'), $login, $group['name']);
@@ -4134,14 +3713,10 @@ switch($do_action) {
 				$e = trim($e);
 				if(!check_email($e)) continue;
 				ko_send_mail(
-					$from,
+					'',
 					$e,
 					$subject,
-					$text,
-					null,
-					null,
-					null,
-					$reply_to
+					$text
 				);
 			}
 		}
@@ -4288,13 +3863,14 @@ include("inc/js-leute.inc");
 //prepare group select for formular and group filter
 $list_id = 1;
 
-if (ko_module_installed('crm') && in_array($_SESSION['show'], array('etiketten_optionen', 'sms_versand', 'xls_settings', 'email_versand'))) {
+if (ko_module_installed('crm') && in_array($_SESSION['show'], array('etiketten_optionen', 'mobil_versand', 'xls_settings', 'email_versand'))) {
 	include($ko_path.'crm/inc/js-selproject.inc');
 }
 if($_SESSION["show"] == "neue_person" || $_SESSION["show"] == "edit_person") {
 	// This code is copied in /inc/form.php (marked by **LEUTE_INDEX_SNIPPET_1**)
 
 	$show_all_types = FALSE;
+	$includeMaxedGroups = FALSE;
 	//Beim Einteilen die vergangenen Gruppen nie anzeigen
 	$orig_value = ko_get_userpref($_SESSION['ses_userid'], 'show_passed_groups');
 	ko_save_userpref($_SESSION['ses_userid'], 'show_passed_groups', 0);
@@ -4311,6 +3887,7 @@ if($_SESSION["show"] == "neue_person" || $_SESSION["show"] == "edit_person") {
 	//Beim Filter die vergangenen Gruppen gemäss Einstellung zeigen
 	//allerdings auch Platzhalter-Gruppen anzeigen
 	$show_all_types = TRUE;
+	$includeMaxedGroups = TRUE;
 	include("inc/js-groupmenu.inc");
 }
 ?>
@@ -4409,10 +3986,10 @@ switch($_SESSION["show"]) {
 		$smarty->display("ko_mailmerge.tpl");
 	break;
 
-	case "sms_versand":
-		$smarty->assign("tpl_send_sms", getLL('leute_sms_send'));
+	case "mobil_versand":
+		$smarty->assign("tpl_send_mobilemessage", getLL('leute_mobilemessage_send'));
+		$smarty->assign("tpl_receiver", getLL('leute_sms_receiver'));
 		$smarty->assign("tpl_sms_bal", getLL('leute_sms_balance'));
-		$smarty->assign("tpl_sms_receiver", getLL('leute_sms_receiver'));
 		$smarty->assign('tpl_sms_sender', getLL('leute_sms_sender'));
 		$smarty->assign("tpl_sms_add_receiver", getLL('leute_sms_add_receiver'));
 		$smarty->assign("tpl_sms_no_number", getLL('leute_sms_no_number'));
@@ -4421,8 +3998,7 @@ switch($_SESSION["show"]) {
 		$smarty->assign("tpl_sms_my_add", getLL('leute_sms_my_add'));
 		$smarty->assign("tpl_sms_text", getLL('leute_sms_text'));
 		$smarty->assign("tpl_sms_submit", getLL('leute_sms_submit'));
-		$smarty->assign('help', ko_get_help('leute', 'sms'));
-		$smarty->display("ko_formular_sms.tpl");
+		$smarty->display("ko_formular_mobilemessage.tpl");
 	break;
 
 	case "email_versand":
@@ -4438,7 +4014,7 @@ switch($_SESSION["show"]) {
 	break;
 
 	case "groupsubscriptions":
-		ko_list_groupsubscriptions($_GET['gid']);
+		ko_list_groupsubscriptions();
 	break;
 
 	case "list_kg":

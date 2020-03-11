@@ -105,7 +105,7 @@ class koProcessor implements \LPC\LpcEsr\CashManagement\ProcessorInterface {
 			'valuta_date' => $message->getValutaDate()->format('Y-m-d'),
 			'refnumber' => $message->getReferenceNumber(),
 			'charges' => $message->getCharges(),
-			'crdate' => $message->getCrdate(),
+			'crdate' => $message->getCrdate()->format('Y-m-d'),
 			'currency' => $message->getCurrency(),
 			'note' => utf8_decode($message->getNote()),
 			'purpose' => $message->getPurpose(),

@@ -2,7 +2,7 @@
 /***************************************************************
  *  Copyright notice
  *
- *  (c) 2003-2017 Renzo Lauper (renzo@churchtool.org)
+ *  (c) 2003-2020 Renzo Lauper (renzo@churchtool.org)
  *  All rights reserved
  *
  *  This script is part of the kOOL project. The kOOL project is
@@ -27,84 +27,49 @@
 $ko_path = "../";
 $ko_menu_akt = "ical";
 
-include($ko_path."inc/ko.inc");
-include($ko_path."rota/inc/rota.inc");
-
+include($ko_path . "inc/ko.inc");
+include($ko_path . "rota/inc/rota.inc");
 
 //Include plugins
 $hooks = hook_include_main('rota');
-if(sizeof($hooks) > 0) foreach($hooks as $hook) include_once($hook);
+if (sizeof($hooks) > 0) foreach ($hooks as $hook) include_once($hook);
+
+$mapping = [';' => '\;', ',' => '\,', "\r" => '', "\n" => "\r\n "];
+define('CRLF', chr(13) . chr(10));
+
+$ical_deadline = date('Y-m-d H:i:s', strtotime("-9999 months", time()));
+ko_include_kota(['ko_rota_teams']);
 
 
-$mapping = array(';' => '\;', ',' => '\,', "\r" => '', "\n" => "\r\n ");
-define('CRLF', chr(13).chr(10));
-
-
-$mode = 'person';
-
-if(isset($_GET['user'])) { //User hash given in URL
-	$userhash = $_GET['user'];
-	if(strlen($userhash) != 32) exit;
-	for($i=0; $i<32; $i++) {
-		if(!in_array(substr($userhash, $i, 1), array(1,2,3,4,5,6,7,8,9,0,'a','b','c','d','e','f'))) exit;
+/**
+ * check if checksum is correct
+ *
+ * @param string $hash
+ * @return int|bool $id
+ */
+function ko_check_ical_hash($hash) {
+	$xPos = strpos($hash, 'x');
+	$id = intval(substr($hash, 0, $xPos));
+	$pHash = substr($hash, $xPos + 1);
+	$test = strtolower(substr(md5($id . KOOL_ENCRYPTION_KEY . 'rotaIcal' . KOOL_ENCRYPTION_KEY . 'rotaIcal' . KOOL_ENCRYPTION_KEY . $id), 0, 10));
+	if($pHash != $test) {
+		return FALSE;
+	} else {
+		return $id;
 	}
-	if(!defined('KOOL_ENCRYPTION_KEY') || trim(KOOL_ENCRYPTION_KEY) == '') exit;
-
-	$pId = 0;
-	ko_get_logins($logins);
-	foreach($logins as $login) {
-		if(md5($login['id'].$login['password'].KOOL_ENCRYPTION_KEY) == $userhash) {
-			$auth = TRUE;
-			$_SESSION['ses_username'] = $login['login'];
-			$_SESSION['ses_userid']   = $login['id'];
-			$pId = $login['leute_id'];
-			ko_init();
-		}
-	}
-	unset($logins);
-
-	$mode = 'user';
-
-	if(!$pId || !ko_module_installed("rota")) {
-		header("HTTP/1.0 404 Not Found");
-	}
-	$ical_deadline = ko_get_userpref($_SESSION['ses_userid'], 'rota_ical_deadline');
 }
-else if ($_GET['person']) {
-	// check if checksum is correct for given userId
-	$pS = $_GET['person'];
-	$xPos = strpos($pS, 'x');
-	$pId = intval(substr($pS, 0, $xPos));
-	$pHash = substr($pS, $xPos+1);
 
-	$mode = 'person';
+$schedule = [];
+if ($_GET['person']) {
+	$id = ko_check_ical_hash($_GET['person']);
+	ko_get_person_by_id($id, $person);
 
-	$test = strtolower(substr(md5($pId . KOOL_ENCRYPTION_KEY . 'rotaIcal' . KOOL_ENCRYPTION_KEY . 'rotaIcal' . KOOL_ENCRYPTION_KEY . $pId), 0, 10));
-	ko_get_person_by_id($pId, $person);
-	if ($test != $pHash || !$person) {
+	if (!$person) {
 		header("HTTP/1.0 401 Unauthorized");
-		print "No access";
-		exit;
+		print "No access"; exit;
 	}
 
-	$ical_deadline = -9999; // equals "ohne limit"
-}
-else {
-	header("HTTP/1.0 401 Unauthorized");
-	print "No access";
-	exit;
-}
-
-//Get setting of how far back to export events
-if($ical_deadline >= 0) $ical_deadline = date('Y-m-d H:i:s');
-else $ical_deadline = date('Y-m-d H:i:s', strtotime("{$ical_deadline} months", time()));
-
-ko_include_kota(array('ko_rota_teams'));
-
-if ($mode == 'person' || $mode == 'user') {
-	$schedule = array();
-	$schedule_ = ko_rota_get_scheduled_events($pId, $ical_deadline);
-
+	$schedule_ = ko_rota_get_scheduled_events($id, $ical_deadline);
 	foreach ($schedule_ as $eventId => $s_) {
 		foreach ($s_['in_teams'] as $team) {
 			$s = $s_;
@@ -114,48 +79,101 @@ if ($mode == 'person' || $mode == 'user') {
 			$schedule[] = $s;
 		}
 	}
-} else {
-	//Get access rights
-	ko_get_access('rota', $_SESSION['ses_userid'], TRUE);
+} else if ($_GET['team']) {
+	$id = ko_check_ical_hash($_GET['team']);
+	$where = "WHERE id = '" . $id ."'";
+	$team = db_select_data("ko_rota_teams", $where, "*", "", "LIMIT 1", TRUE, TRUE);
 
-	// TODO: has to be completed if we want iCal links for teams
+	if (!$team) {
+		header("HTTP/1.0 401 Unauthorized");
+		print "No access"; exit;
+	}
+
+	$where = "WHERE team_id = '" . $id . "'";
+	$schedules = db_select_data("ko_rota_schedulling", $where);
+
+	if($team['rotatype'] == "day") {
+		foreach($schedules AS $schedule_) {
+			$helpers = [];
+			foreach(explode(",", $schedule_['schedule']) AS $person_id) {
+				if(is_numeric($person_id)) {
+					ko_get_person_by_id($person_id, $person);
+					$helpers[] = [
+						"vorname" => $person['vorname'],
+						"nachname" => $person['nachname'],
+					];
+				} else {
+					$helpers[] = [
+						"name" => $person_id,
+						"is_free_text" => true,
+					];
+				}
+			}
+
+			$schedule[] = [
+				"id" => $schedule_['team_id'] . "_" . $schedule_['event_id'],
+				"startdatum" => $schedule_['event_id'],
+				"startzeit" => "00:00:00",
+				"enddatum" => $schedule_['event_id'],
+				"endzeit" => "00:00:00",
+				"_helpers" => $helpers,
+				"team_id" => $schedule_['team_id'],
+				"event_id" => $schedule_['team_id'] . "_" . $schedule_['event_id'],
+			];
+		}
+
+	} else {
+		foreach($schedules AS $schedule_) {
+			$helpers = ko_rota_get_helpers_by_event_team($schedule_['event_id'], $id, true);
+			ko_get_event_by_id($schedule_['event_id'], $event);
+			if(empty($event)) continue;
+			$schedule[] = [
+				"id" => $schedule_['event_id'],
+				"startdatum" => $event['startdatum'],
+				"startzeit" => $event['startzeit'],
+				"enddatum" => $event['enddatum'],
+				"endzeit" => $event['endzeit'],
+				"_helpers" => $helpers,
+				"team_id" => $id,
+				"event_id" => $schedule_['event_id'],
+			];
+		}
+	}
+} else {
 	header("HTTP/1.0 401 Unauthorized");
+	print "No access";
 	exit;
 }
 
 $ical = ko_get_ics_for_rota($schedule);
 
-
 //Set charset to utf-8, but not for google calendar (there seem to be problems with utf-8 for google as of 2010-08)
-if(FALSE === strpos($_SERVER['HTTP_USER_AGENT'], 'Googlebot')) {
+if (FALSE === strpos($_SERVER['HTTP_USER_AGENT'], 'Googlebot')) {
 	$charset = 'utf-8';
 	$ical = utf8_encode($ical);
 } else {
 	$charset = 'latin1';
 }
 
-
 //Output
 if (isset($_SERVER["HTTP_USER_AGENT"]) && strpos($_SERVER["HTTP_USER_AGENT"], "MSIE")) {
 	// IE cannot download from sessions without a cache
 	header("Cache-Control: public");
 	// q316431 - Don't set no-cache when over HTTPS
-	if (	!isset($_SERVER["HTTPS"]) || $_SERVER["HTTPS"] != "on") {
+	if (!isset($_SERVER["HTTPS"]) || $_SERVER["HTTPS"] != "on") {
 		header("Pragma: no-cache");
 	}
-}
-else {
+} else {
 	header("Cache-Control: no-cache, must-revalidate");
 	header("Pragma: no-cache");
 }
-header('Content-Type: text/calendar; charset='.$charset, TRUE);
-header('Content-Disposition: attachment; filename="kOOLrota.ics"');
-header("Content-Length: ".strlen($ical));
-print $ical;
 
+header('Content-Type: text/calendar; charset=' . $charset, TRUE);
+header('Content-Disposition: attachment; filename="kOOLrota.ics"');
+header("Content-Length: " . strlen($ical));
+print $ical;
 
 //Clear session
 session_destroy();
 unset($_SESSION);
 unset($GLOBALS['kOOL']);
-?>

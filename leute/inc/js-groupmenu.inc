@@ -4,7 +4,7 @@
 /***************************************************************
 *  Copyright notice
 *
-*  (c) 2003-2017 Renzo Lauper (renzo@churchtool.org)
+*  (c) 2003-2020 Renzo Lauper (renzo@churchtool.org)
 *  All rights reserved
 *
 *  This script is part of the kOOL project. The kOOL project is
@@ -32,7 +32,7 @@ $level = 0;
 $counter = 1;
 ko_get_groups($all_groups);
 ko_get_grouproles($all_roles);
-ko_selmenu_generate_children_entries("NULL", $list_id, $all_groups, $all_roles, $show_all_types);
+ko_selmenu_generate_children_entries("NULL", $list_id, $all_groups, $all_roles, $show_all_types, $includeMaxedGroups);
 ?>
 -->
 </script>

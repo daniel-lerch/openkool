@@ -1,11 +1,13 @@
 <h3 class="clearfix">
 	<span class="pull-left">
 		{$tracking.name}
-		&nbsp;&nbsp;<a href="index.php?action=enter_tracking&amp;id={$tracking.id}"><i class="fa fa-refresh"></i></a>
+		&nbsp;&nbsp;<a href="index.php?action=select_tracking&amp;id={$tracking.id}"><i class="fa fa-refresh"></i></a>
 		{if $help.show}
 			&nbsp;&nbsp;{$help.link}
 		{/if}
 	</span>
+
+	<small style="position: relative; top: 7px; margin-left: 22px;">{$subtitle}</small>
 
 	<div class="pagestats pull-right">
 		<div class="btn-toolbar">

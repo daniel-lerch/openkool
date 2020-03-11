@@ -2,7 +2,7 @@
 /***************************************************************
 *  Copyright notice
 *
-*  (c) 2003-2017 Renzo Lauper (renzo@churchtool.org)
+*  (c) 2003-2020 Renzo Lauper (renzo@churchtool.org)
 *  All rights reserved
 *
 *  This script is part of the kOOL project. The kOOL project is
@@ -51,6 +51,7 @@ $LL["en"] = array(
 'submenu_daten_title_itemlist_termingruppen' => "Event groups",
 "submenu_daten_title_reminder" => "Reminder",
 'submenu_daten_import' => "Import",
+'submenu_daten_list_rooms' => "Show event-locations",
 'submenu_leute_neue_kg' => "Add smallgroup",
 'submenu_leute_list_kg' => "List groups",
 'submenu_leute_chart_kg' => "Statistics",
@@ -64,7 +65,8 @@ $LL["en"] = array(
 'submenu_leute_leute_chart' => "Statistics",
 'submenu_leute_import' => "Import",
 'submenu_leute_settings' => "Settings",
-'submenu_leute_show_my_list' => "Show My List",
+'submenu_leute_show_my_list' => "show",
+'submenu_leute_clear_my_list' => "clear",
 'submenu_leute_global_assign' => "Global search and assign",
 'submenu_leute_global_assign_label' => "Assign to group",
 'submenu_leute_global_assign_button' => "Assign",
@@ -104,6 +106,7 @@ $LL["en"] = array(
 'submenu_rota_schedule' => "Schedule",
 'submenu_rota_settings' => "Settings",
 'submenu_rota_ical_links' => "iCal links",
+'submenu_rota_planning' => "Planning overview",
 'submenu_admin_admin_settings' => 'Settings',
 'submenu_admin_change_password' => "Change password",
 'submenu_admin_set_new_login' => "Add login",
@@ -112,6 +115,7 @@ $LL["en"] = array(
 'submenu_admin_set_show_admingroups' => "Show Admin Groups",
 'submenu_admin_show_logs' => "List log entries",
 'submenu_admin_show_sms_log' => "SMS log",
+'submenu_admin_show_telegram_log' => "Telegram log",
 'submenu_admin_new_news' => "Add news entry",
 'submenu_admin_list_news' => "List news entries",
 'submenu_admin_set_leute_pdf' => "List PDF Presets",
@@ -139,7 +143,11 @@ $LL["en"] = array(
 'submenu_fileshare_title_webfolders' => "Web Folders",
 'submenu_fileshare_new_webfolder' => "New Web Folder",
 'submenu_fileshare_list_webfolders' => "List Web Folders",
-'submenu_tools_testmail' => "Testmail",
+	'submenu_taxonomy_title_taxonomy' => "Taxonomy / Keywords",
+	'submenu_taxonomy_list_terms' => "Show keywords",
+	'submenu_taxonomy_new_term' => "New keyword",
+	'submenu_taxonomy_taxonomy_settings' => "Settings",
+'submenu_tools_testmail' => "Mail settings",
 'submenu_tools_mailing_mails' => "Mailings",
 'submenu_tools_show_leute_db' => "Edit filters",
 'submenu_tools_show_familie_db' => "Edit household form",
@@ -159,6 +167,7 @@ $LL["en"] = array(
 'submenu_tools_title_typo3' => "TYPO3",
 'submenu_tools_typo3_connection' => "TYPO3 connection",
 'submenu_tools_kota_fields' => 'KOTA-Fields',
+'submenu_tools_list_updates' => "List updates",
 'submenu_admin_vesr_archive' => 'Archive',
 'submenu_groups_new_group' => "Add group",
 'submenu_groups_list_groups' => "List groups",
@@ -187,6 +196,8 @@ $LL["en"] = array(
 'submenu_donations_title_accounts' => "Accounts",
 'submenu_donations_list_accounts' => "List accounts",
 'submenu_donations_new_account' => "Add account",
+'submenu_donations_list_accountgroups' => "List account groups",
+'submenu_donations_new_accountgroup' => "Add account group",
 'submenu_donations_show_stats' => "Statistics",
 'submenu_donations_donation_settings' => "Settings",
 'submenu_donations_title_itemlist_accounts' => "Accounts filter",
@@ -196,7 +207,8 @@ $LL["en"] = array(
 'submenu_tracking_title_trackings' => "Trackings",
 'submenu_tracking_new_tracking' => "Add tracking",
 'submenu_tracking_list_trackings' => "List trackings",
-'submenu_tracking_enter_tracking' => "Enter trackings:",
+'submenu_tracking_enter_tracking' => "Enter trackings",
+'submenu_tracking_list_tracking_entries' => "List entries",
 'submenu_tracking_title_itemlist_trackings' => "Trackings",
 'submenu_tracking_title_filter' => "Filter",
 'submenu_tracking_title_export' => "Export",
@@ -247,6 +259,7 @@ $LL["en"] = array(
 'module_reservation' => "Reservations",
 'module_admin' => "Admin",
 'module_sms' => "SMS",
+'module_telegram' => "Telegram",
 'module_tools' => "Tools",
 'module_kg' => "Smallgroups",
 'module_groups' => "Groups",
@@ -257,6 +270,7 @@ $LL["en"] = array(
 'module_crm' => "CRM",
 'module_vesr' => "VESR",
 'module_checkin' => "Check-In",
+'module_taxonomy' => "Taxonomy",
 'module' => "Module",
 'other' => 'other',
 'all' => "All",
@@ -316,7 +330,8 @@ $LL["en"] = array(
 'export_vcard_short' => "vcard",
 'export_csv_short' => "CSV",
 'export_pdf_short' => "PDF",
-'export_chart_short' => "Chart",
+'export_telegram' => "Telegram",
+'export_telegram_short' => "Telegram",
 'export_details_short' => "Details",
 'export_filename' => "table_",
 'more' => "more",
@@ -345,6 +360,7 @@ $LL["en"] = array(
 'twelvemonths' => "12 months",
 'legend' => "legend",
 'yes' => "yes",
+'maybe' => "(yes)",
 'no' => "no",
 'none' => 'none',
 'not' => "not shown",
@@ -491,6 +507,7 @@ $LL["en"] = array(
 'error_admin_22' => "No donations could be found in the file.",
 'error_admin_23' => "The CAMT-Import could not be parsed. The file is broken.",
 'error_admin_24' => "The CAMT file has already been processed. The import was aborted.",
+'error_admin_25' => "The webhook registration failed.",
 'error_admin_disable_root' => "root can not be disabled.",
 'error_admin_disable_guest' => "ko_guest can not be disabled.",
 'error_admin_disable_self' => "You can not disable your own login as this would log you out immediately.",
@@ -647,6 +664,7 @@ $LL["en"] = array(
 'info_admin_9' => "The selected senderID has been deleted.",
 'info_admin_10' => "This entry has been deleted",
 'info_admin_11' => "%s donations were inserted into kOOL as moderated donations.",
+'info_admin_12' => "The webhook has been registered successfully.",
 'info_daten_1' => "The new event has been saved.",
 'info_daten_2' => "The event has been saved.",
 'info_daten_3' => "The selected event has been deleted.",
@@ -664,6 +682,8 @@ $LL["en"] = array(
 'info_daten_15' => 'Reminder was edited successfully',
 'info_daten_16' => 'Reminder was deleted successfully',
 'info_daten_17' => 'The test mail was sent successfully to %s',
+'info_daten_18' => "Event-location successfully created",
+'info_daten_19' => "Event-location successfully updated",
 'info_donations_1' => "The new donation has been stored. %s",
 'info_donations_2' => "The new promise has been stored. %s",
 'info_donations_3' => "This promise has been stored as a donation. %s",
@@ -726,7 +746,7 @@ $LL["en"] = array(
 'info_res_11' => "The selected reservations were deleted.",
 'info_res_12' => "The data was saved.",
 'info_tracking_1' => 'Stored this tracking entry permanently',
-'info_tracking_2' => 'This temporary entry has been deleted',
+'info_tracking_2' => 'This entry has been deleted',
 'info_checkin_1' => 'You were successfully logged in as admin',
 'info_checkin_2' => 'You were successfully logged in as guest',
 'info_checkin_3' => '%s person(s) were successfully checked in',
@@ -782,6 +802,7 @@ $LL["en"] = array(
 'admin_logins_apply_all_title' => "Apply this access level to all",
 'admin_logins_kota_columns' => "Restrict access to these columns",
 'admin_logins_disable_password_change' => "Disallow changing login password",
+'admin_logins_information_lock' => "User is allowed to bypass information lock",
 'admin_new_login' => "New login",
 'admin_edit_login' => "Edit login",
 'admin_del_login' => "Delete login",
@@ -790,6 +811,7 @@ $LL["en"] = array(
 'admin_edit_admingroup' => "Edit User Group",
 'admin_change_user_label' => "Switch to selected user",
 'admin_change_user' => "Switch",
+'admin_button_access_rights' => "Set access levels",
 'admin_refresh_google_cloud_printers_label' => "Refresh list",
 'admin_refresh_google_cloud_printers' => "Refresh&nbsp;<i class=\"fa fa-refresh\"></i>",
 'admin_settings_general_settings' => "General settings",
@@ -826,13 +848,15 @@ $LL["en"] = array(
 'admin_settings_sms_new_sender_id_code' => "Confirmation code",
 'admin_settings_sms_new_sender_id_clickatell' => "Enter registered senderID (Clickatell)",
 'admin_settings_sms_confirm_delete_sender_id' => "Are your sure you want to delete this senderID?",
+'admin_settings_telegram' => "Telegram-Settings",
+'admin_settings_telegram_botname' => "Name of the bot (visible)",
+'admin_settings_telegram_botid' => "Name of the bot (internal)",
+'admin_settings_telegram_token' => "Token for API-Authentification",
 'admin_settings_mailing' => "Mailing settings",
 'admin_settings_mailing_mails_per_cycle' => "Number of mails to be sent by cycle",
 'admin_settings_mailing_max_recipients' => "Maximum number of recipients (set to 0 to disable limit)",
 'admin_settings_mailing_only_alias' => "Disallow the use of default email addresses with IDs, only allow using aliases",
 'admin_settings_mailing_allow_double' => "Allow emails to be sent to the same address multiple times",
-'admin_settings_mailing_from_email' => "Group-mailing: sender email address",
-'admin_settings_force_mail_from' => "Foce sender address to prevent spam detection",
 'admin_settings_mailing_max_attempts' => "Max. delivery attemts before deleting from queue",
 'admin_mailing_max_attempts_subject' => "Mail could not be delivered",
 'admin_mailing_max_attempts_mailbody' => "The following e-mail could not be delivered several times and will now be removed from the mailing list",
@@ -891,10 +915,13 @@ $LL["en"] = array(
 'admin_labels_form_title_new' => 'New Label',
 'admin_labels_form_title_edit' => 'Edit Label',
 'admin_labels_form_submit_as_new' => 'Save as new label',
+'admin_labels_form_access_level' => "Access level",
+'admin_access_all' => "ALL: Minimum access level",
 'admin_detailed_person_export_title' => "Print-templates",
 'admin_detailed_person_export_form_title_new' => 'New Template',
 'admin_detailed_person_export_form_title_edit' => 'Edit Template',
 'admin_detailed_person_export_form_submit_as_new' => 'Save as new template',
+'admin_detailed_person_export_label_colname' => "Address field",
 'admin_detailed_person_export_label_placeholder' => 'Placeholder',
 'admin_detailed_person_export_label_example_value' => 'Example Value for %s',
 'admin_settings_layout' => "Layout",
@@ -913,6 +940,7 @@ $LL["en"] = array(
 'admin_settings_limits_numberof_donations' => "List: Number of donations/accounts per page",
 'admin_settings_limits_numberof_trackings' => "List: Number of trackings per page",
 'admin_settings_limits_numberof_tracking_dates' => "Number of tracking events per page",
+'admin_settings_limits_numberof_taxonomy' => "List: Number of keywords per page",
 'admin_settings_default' => "Default views for each module",
 'admin_settings_menu' => "Drop down menus",
 'admin_settings_menu_submenus' => "Submenus for modules",
@@ -963,6 +991,11 @@ $LL["en"] = array(
 'admin_logins_rights_tracking' => "0: no rights, 1: view, 2: enter, 3: edit trackings, 4: add/delete trackings",
 'admin_logins_rights_rota' => "0: no rights, 1: view, 2: export, 3: schedule, 4: send emails, 5: teams, event status, global settings",
 'admin_logins_rights_crm' => "0: no rights, 1: view own contacts, 2: edit/delete own contacts, 3: view contacts of own admingroups, 4: edit/delete contacts of own admingroups, 5: view/edit/delete all contacts, view/edit/delete projects, view/edit/delete status",
+'admin_logins_rights_sms' => "With this module, the login may send SMS messages from kOOL",
+'admin_logins_rights_mailing' => "With this module, the login may send email messages from kOOL",
+'admin_logins_rights_telegram' => "With this module, the login may send telegram messages from kOOL",
+'admin_logins_rights_tools' => "The module \"Tools\" can only be used by root",
+'admin_logins_rights_taxonomy' => "0: no rights, 1: view, 2: add/edit	",
 'admin_logins_rights_vesr' => "0: no rights, 1: upload vesr files, 2: settings",
 'admin_settings_label_open' => "open",
 'admin_settings_label_delete' => "delete",
@@ -1020,6 +1053,9 @@ $LL["en"] = array(
 'admin_news_form_title_new' => "Add new news entry",
 'admin_news_form_title_edit' => "Edit news entry",
 'admin_news_form_submit_as_new' => "Save as new entry",
+'news_mark_read' => 'read',
+'news_mark_new' => 'new',
+'news_filter' => "filter:",
 'admin_sms_log_list_title' => "SMS statistics",
 'admin_sms_log_total' => "A total of <b>%s</b> sms have been sent. Immediate delivery for <b>%s</b> messages using up <b>%s</b> credits (estimated total: <b>%s</b> credits).",
 'admin_sms_log_total_user' => "%s has sent <b>%s</b> sms using up <b>%s</b> credits.",
@@ -1101,6 +1137,9 @@ $LL["en"] = array(
 'daten_settings_mark_with_eg_color' => "with color from event group",
 'daten_settings_no_cals_in_itemlist' => "Don't show calendars in eventgroup submenu",
 'daten_settings_monthly_title' => "Monthly calendar: Use this as title",
+'daten_settings_absence_ical_url' => "Import my absences from Outlook: ical url",
+'daten_settings_absence_ical_url_no_leute_id' => "Your login is not assigned to an address, so you can not add any absences. Ask your administrator to assign a 'Person from the database' to your login.",
+'daten_settings_absence_ical_url_error' => "iCal URL is broken and can not be saved. Please correct.",
 'daten_settings_ical_deadline' => "iCal export: Show events in the past",
 'daten_settings_ical_deadline_0' => "Only from today",
 'daten_settings_ical_deadline_1' => "-1 month",
@@ -1114,7 +1153,6 @@ $LL["en"] = array(
 'daten_settings_gs_available_roles' => "Available roles in new subscription group",
 'daten_settings_default_view' => "Default view",
 'daten_settings_show_res_in_tooltip' => "Show events's reservations in calender tooltip",
-'daten_settings_rooms_only_future' => "Only use rooms of future events to prefill room select",
 'daten_settings_show_mod_to_all' => "Show open moderation requests to all users?",
 'daten_settings_mod_exclude_fields' => "Allow changes to moderated events for these fields without moderation",
 'daten_settings_ical_description_fields' => "iCal export: Use these fields as description",
@@ -1249,7 +1287,9 @@ $LL["en"] = array(
 'daten_export_preset_year_length' => 'Number of months',
 'daten_export_preset_number_pages' => 'Number of pages',
 'daten_export_pdf_title' => 'Events',
-'daten_info_title' => "Event Information",
+'crinfo_title' => "Entry information",
+'kota_crinfo_cr' => "Created: <b>%s</b> by <b>%s (%s)</b>",
+'kota_crinfo_lc' => "Last change: <b>%s</b> by <b>%s (%s)</b>",
 'daten_label_program_no_access' => "You don\'t have enough rights in this event group to access the program tool",
 'daten_label_export_single' => "Export to PDF",
 'daten_label_export_single_short' => "PDF",
@@ -1290,11 +1330,13 @@ $LL["en"] = array(
 'rota_timespan_12m' => 'One year',
 'rota_timespan_18m' => '1.5 years',
 'rota_timespan_245m' => 'two years',
+'rota_timespan_24m' => "two years",
 'rota_change_status_for_all_events' => 'Change status for all events',
 'rota_calweek' => 'Week number',
 'rota_ical_links_title' => "iCal export links for rotations",
 'rota_ical_links_description' => "Helpers can use the following iCal links to display their schedules in a calendar application like iCal, Outlook, iPhone, Android. <br>Click on the QR-code icon to display a QR-code or copy the link on the name of a helper. You can also send those links to helpers by using the mail form.",
-'rota_ical_weekly_event' => 'Weekly event',
+'rota_ical_daily_event' => 'Amtstag-Event',
+'rota_ical_links_title_teams' => 'iCal-Links for teams',
 'rota_ical_links_title_personal' => 'Individual schedules',
 'rota_ical_label_helpers' => 'Helpers',
 'rota_export_title' => 'Rota',
@@ -1361,6 +1403,8 @@ $LL["en"] = array(
 'rota_settings_consensus_display_participation_0' => "Show number of entries",
 'rota_settings_consensus_display_participation_1' => "Show entries with names",
 'rota_settings_consensus_display_participation_2' => "Show nothing",
+'rota_settings_consensus_ongoing_cal' => "Activate the ongoing calendar for consensus",
+'rota_settings_consensus_ongoing_cal_timespan' => "Timespan for ongoing calendar in consensus",
 'rota_settings_markempty' => 'Mark empty entries',
 'rota_settings_eventfields' => 'Show these event fields',
 'rota_settings_consensus_eventfields' => 'Show these event fields in the consensus module',
@@ -1370,7 +1414,6 @@ $LL["en"] = array(
 'rota_settings_pdf_title_eg' => "Eventgroup",
 'rota_settings_pdf_title_title' => "Event's title",
 'rota_settings_pdf_title_shortname' => "Eventgroup's short title",
-'rota_settings_export_weekly_teams' => 'Export weekly teams as events?',
 'rota_settings_pdf_names' => 'How to display the names in the PDF export?',
 'rota_settings_pdf_names_1' => 'Firstname L.',
 'rota_settings_pdf_names_2' => 'Firstname La.',
@@ -1398,7 +1441,11 @@ $LL["en"] = array(
 'rota_empty' => "[ - empty - ]",
 'rota_header_weeknum' => 'Week no',
 'rota_header_weeknum_date' => 'Date',
-'rota_week_short' => 'w',
+'rota_day_short' => 'AD',
+'rota_day_itemlist_schedule' => "Schedule",
+'rota_day_itemlist_display' => "Display",
+'amtstage_eventgroup_filter' => "Rotadays (Teams)",
+'daten_settings_absence_color' => "Color for absences in calendar",
 'rota_placeholder__SALUTATION' => 'Informal salutation',
 'rota_placeholder__SALUTATION_FORMAL' => 'Formal salutation',
 'rota_placeholder_FIRSTNAME' => 'First name of recipient',
@@ -1412,10 +1459,11 @@ $LL["en"] = array(
 'rota_placeholder_LEADER_TEAM_EVENTS_SCHEDULE' => 'List of team events with scheduling (for leaders)',
 'rota_placeholder_ALL_EVENTS' => 'List of all events',
 'rota_placeholder_ALL_EVENTS_SCHEDULE' => 'List of all events with scheduling',
-'rota_placeholder_CONSENSUS_LINK' => 'Link to the consensus page',
+'rota_placeholder_CONSENSUS_LINK' => 'Open my consensus',
 'rota_placeholder_ICAL_LINK' => 'iCal Link',
 'rota_schedule_warning_double' => 'This person is already scheduled for %s',
 'rota_schedule_warning_double_group' => '%s is already scheduled for %s',
+'rota_schedule_only_characters_allowed' => "Only letters and numbers are allowed. Please do not use any special characters.",
 'rota_weekly_export_calendar' => 'Rota weeks',
 'rota_shortname' => 'Rota',
 'rota_kota_prefix_ko_event' => 'Team',
@@ -1428,6 +1476,8 @@ $LL["en"] = array(
 'rota_event_export_single_event' => "Export event details as PDF",
 'rota_event_email' => 'Send an email to all scheduled people',
 'rota_event_mylist' => 'Add the scheduled people to My List',
+'rota_event_mylist_week' => "Add people from this week to My List",
+'rota_event_leutefilter' => "Add scheduled people in list",
 'rota_helperoverview_p_export' => 'Overview of scheduled helpers (portrait)',
 'rota_helperoverview_l_export' => 'Overview of scheduled helpers (landscape)',
 'rota_helperoverview_title' => 'Helper Overview',
@@ -1496,6 +1546,7 @@ $LL["en"] = array(
 'groups_settings_show_top' => "Group Show: Show highest level group",
 'groups_settings_filterlink_add_column' => "Filter link for a group displays this group's column",
 'groups_settings_groups_people_include_start' => "Export groups with addresses: include entry date",
+'groups_entry_date' => "Member since",
 'groups_filename_all' => "allgroups_",
 'groups_exportxls_title' => "All groups",
 'groups_copy_suffix_new' => " [Copy]",
@@ -1550,6 +1601,8 @@ $LL["en"] = array(
 'leute_list_footer_delete_confirm' => "Should selected addresses be deleted?",
 'leute_list_footer_delete_button' => "Delete",
 'leute_settings_multiple_delete' => 'Allow to delete selected persons?',
+'leute_settings_information_lock' => "Activate informations lock",
+'leute_action_information_lock' => "Use information lock",
 'leute_list_footer_merge_duplicates' => "Merge selected duplicates",
 'leute_list_footer_merge_duplicates_confirm' => "Are you sure you want to merge these addresses?",
 'leute_list_footer_merge_duplicates_button' => "Merge",
@@ -1722,7 +1775,6 @@ $LL["en"] = array(
 'leute_export_pdf_columns' => "Columns",
 'leute_export_pdf_columns_layout' => "[Using Preset]",
 'leute_export_pdf_columns_current' => "[Current Columns]",
-'leute_export_pdf_show_children' => "Include parents' columns for children",
 'leute_export_pdf_help_headerfooter' => "The following substitution variables may be used: [[Day]], [[Month]], [[MonthName]], [[Year]], [[Hour]], [[Minute]], [[PageNumber]] and [[kOOL-URL]].",
 'leute_export_pdf_header_left' => "Left header: Text",
 'leute_export_pdf_header_center' => "Centre header: Text",
@@ -1757,11 +1809,18 @@ $LL["en"] = array(
 'leute_email_sent_emails' => "Reuse sent email:",
 'leute_email_confirm_placeholders_nok' => "Your email subject or text contain placeholders that may not be supported. Do you really want to continue?",
 'leute_email_confirm_replace_text' => "The subject and the email-text will be replaced. Do you want to continue?",
-'leute_sms_send' => "Send Text Message",
+'leute_email_send' => "Send",
+'leute_mobilemessage_send' => "Send Text Message via SMS/Telegram",
+'leute_mobilemethode' => "Write to recipient via the following method",
+'leute_mobilemethode_sms' => "only activate SMS",
+'leute_mobilemethode_smstelegram' => "Activate SMS and Telegram",
+'leute_mobilemethode_telegram' => "Only activate Telegram",
+'leute_mobile_recipients_not_send' => "The listed persons can not be contacted with the selected method.",
 'leute_sms_balance' => "Account Balance:",
-'leute_sms_receiver' => "Recipients:",
+'leute_sms_receiver' => "SMS Recipients:",
 'leute_sms_sender' => "Sender:",
-'leute_sms_add_receiver' => "Additional recipients:",
+'leute_sms_my_export_added' => 'Ausgewählte Leute ohne gültige GSM-Nummer wurden zu "Meine Liste" hinzugefügt',
+'leute_sms_add_receiver' => "Additional recipients (mobile number, commaseperated):",
 'leute_sms_no_number' => "- The following recipients have no, or invalid mobile numbers:",
 'leute_sms_excel_file' => "Excel file",
 'leute_sms_my_export' => "Export to My List (Overwrite)",
@@ -1840,7 +1899,6 @@ $LL["en"] = array(
 'leute_announce_changes_email_text' => "%s wants you to know about the changes made to %s's address record:",
 'leute_settings_form_title' => "Settings for the people module",
 'leute_settings_default_view' => "Default view",
-'leute_settings_children_columns' => "Columns for export \"Shown and parents' data\"",
 'leute_settings_labels' => "Labels presets",
 'leute_settings_labels_text' => "Edit presets for printing labels",
 'leute_settings_leute_pdf' => "PDF layouts",
@@ -1887,13 +1945,13 @@ $LL["en"] = array(
 'leute_col_child_by_blood_in_household' => "This child lives in the same household",
 'leute_salutation_formal_m_married' => "Dear Mr.",
 'leute_salutation_formal_m_unmarried' => "Dear Mr.",
-'leute_salutation_formal_f_married' => "Dear Mrs.",
-'leute_salutation_formal_f_unmarried' => "Dear Ms.",
+'leute_salutation_formal_w_married' => "Dear Mrs.",
+'leute_salutation_formal_w_unmarried' => "Dear Ms.",
 'leute_salutation_formal_' => "",
 'leute_salutation_informal_m_married' => "Dear",
 'leute_salutation_informal_m_unmarried' => "Dear",
-'leute_salutation_informal_f_married' => "Dear",
-'leute_salutation_informal_f_unmarried' => "Dear",
+'leute_salutation_informal_w_married' => "Dear",
+'leute_salutation_informal_w_unmarried' => "Dear",
 'leute_salutation_informal_' => "",
 'leute_show_hidden' => "Show hidden",
 'leute_hide_hidden' => "Hide hidden",
@@ -1983,6 +2041,7 @@ $LL["en"] = array(
 'mailing_crm_description_to' => 'To: %s',
 'mailing_crm_description_from' => 'From: %s',
 'mailing_infotext_parameter_not_set' => 'You can not send emails without setting the mailing parameters.<br>Please contact the admin of this kOOL installation.',
+'mailing_placeholder_text_telegramlink' => 'Link for telegram registration',
 'res_code' => "code",
 'res_collision' => "collision",
 'res_collision_text' => "There has been a collision with an existing reservation:",
@@ -2121,6 +2180,7 @@ $LL["en"] = array(
 'donations_refno_listtitle_short' => 'D->R:',
 'donations_refno_list_title' => 'Reference number:',
 'donations_accounts_list_title' => "Accounts",
+'donations_accountgroups_list_title' => "Account groups",
 'donations_list_footer_stats_totals' => "A total of %s in %s donations made by %s donors",
 'donations_list_footer_stats_averages' => "Each donation averages %s and each donor %s",
 'donations_list_footer_mark_thanked' => "Mark selected/filtered donations as thanked",
@@ -2168,6 +2228,7 @@ $LL["en"] = array(
 'donations_settings_recurring_prompt' => 'Ask for date and amount when storing reoccurring donations?',
 'donations_settings_date_field' => 'Process donations by this date field',
 'donations_settings_use_promise' => 'Allow donation promises to be entered',
+'donations_settings_use_repetition' => 'Allow repeated donations',
 'donations_settings_show_intermediate_export_page' => "Show intermediate export page",
 'donations_title_apply_person_filter' => "Show this person's donations",
 'donations_title_pfilter' => "Show this person in the people module",
@@ -2193,10 +2254,16 @@ $LL["en"] = array(
 'tracking_filter_show_hidden' => 'Show Hidden',
 'tracking_form_title_new' => "Add new tracking",
 'tracking_form_title_edit' => "Edit tracking",
+'tracking_entry_form_title_new' => "Add new tracking entry",
+'tracking_entry_form_title_edit' => "Edit tracking entry",
+'tracking_entry_form_submit_as_new' => "Save as new tracking entry",
 'tracking_form_submit_as_new' => "Save as new tracking",
 'tracking_form_title_edit_mod' => "Edit tracking moderation",
 'tracking_form_submit_edit_approve_mod' => "Save and approve",
 'tracking_list_title' => "Tracking",
+'tracking_list_subtitle_list' => "List view",
+'tracking_list_subtitle_table' => "Table view",
+'tracking_entries_list_title' => "Tracking entries",
 'tracking_list_name' => "Name",
 'tracking_list_total' => "Total",
 'tracking_export_layout' => "Layout",
@@ -2242,6 +2309,7 @@ $LL["en"] = array(
 'tracking_settings_add_roles' => "Include group roles into group selection",
 'tracking_settings_show_inactive' => "Show data of former members",
 'tracking_settings_show_cols' => "Show these address columns when entering tracking data",
+'tracking_settings_default_show' => "Default view for trackings",
 'tracking_settings_dateformat' => "Format for dates",
 'tracking_settings_enable_checkin' => "Enable Check-In (ROOT ONLY)",
 'tracking_settings_checkin_display_leute_fields' => "Check-In: Show these fields per person",
@@ -2306,10 +2374,14 @@ $LL["en"] = array(
 'tools_testmail_receiver' => "Receiver",
 'tools_testmail_subject' => "Subject",
 'tools_testmail_text' => "Text",
+'tools_updates_list_title' => "Update scripts",
 'ko_tools_cleanup_group_entry' => "Group-History update with datafield",
 'ko_tools_cleanup_trim_dbfield' => "Remove Whitspaces from selected field in database",
 'ko_tools_cleanup_rte' => "Convert db field from textarea to richtexteditor",
 'ko_tools_cleanup_update_userprefs' => "Set userprefs for all users",
+'ko_tools_cleanup_update_ko_leute_field' => "Rename field in ko_leute",
+'ko_tools_cleanup_gdf_duplicates' => "Remove duplicate group datafield entries by keeping the newest one",
+'ko_tools_cleanup_resitem_linked_items' => "Update linked_items for all reservations according to resitem",
 'form_scheduler_title_new_task' => "Add task",
 'form_scheduler_title_edit_task' => "Edit task",
 'install_welcome' => "Welcome to the first time installation of kOOL - the church tool!",
@@ -2360,6 +2432,7 @@ $LL["en"] = array(
 'install_settings_sms_provider' => "SMS: Your provider",
 'install_settings_sms_user' => "SMS: Username of your account",
 'install_settings_sms_pass' => "SMS: Password of your account",
+'install_settings_sms_apiid' => "SMS: API-ID from Clickatell Account",
 'install_settings_warranty_giver' => "Warranty: The name of your company that gives warranty for kOOL:",
 'install_settings_warranty_url' => "Warranty: Your url:",
 'install_settings_warranty_email' => "Warranty: Your email address: (Used for error and bug reports)",
@@ -2389,62 +2462,123 @@ $LL["en"] = array(
 'form_leute_announce_changes_title' => "Announce changes",
 'form_leute_announce_changes_description' => "Select the users you want to inform about these changes:",
 'form_leute_mailing_title' => "Send mail:",
-'form_groups_name' => "Name:",
-'form_groups_description' => "Description:",
-'form_groups_parentgroup' => "Parent group:",
-'form_groups_linked_group' => 'Linked group:',
-'form_groups_type' => "Dummy group (no assignments):",
-'form_groups_cal2' => "End date (leave blank if not scheduled):",
-'form_groups_mailing' => "Mailing",
-'form_groups_mailing_alias' => "Mailing alias (e.g. 'mygroup' for mygroup@kool.domain.tld)",
-'form_groups_mailing_address' => "Default mailing address",
-'form_groups_mailing_address_whole_group' => "Group",
-'form_groups_mailing_mod_moderated' => "With moderation",
-'form_groups_mailing_mod_nonmoderated' => "Without moderation",
-'form_groups_mailing_mod_members' => "Are group members allowed to send emails?",
-'form_groups_mailing_mod_others' => "Are non-members allowed to send emails?",
-'form_groups_mailing_mod_logins' => "Are moderators / logins allowed to send emails?",
-'form_groups_mailing_mod_role' => "Moderators are defined by the following role",
-'form_groups_mailing_mod_role_none' => "-- No role --",
-'form_groups_mailing_reply_to' => "Set Reply-To",
-'form_groups_mailing_reply_to_' => "As set in original email",
-'form_groups_mailing_reply_to_sender' => "Back to sender",
-'form_groups_mailing_reply_to_list' => "To the whole group",
-'form_groups_mailing_modify_rcpts' => "Addressing of the individual emails",
-'form_groups_mailing_do_modify_rcpts' => "To personal email address (standard)",
-'form_groups_mailing_dont_modify_rcpts' => "To group email address",
-'form_groups_mailing_prefix' => "Subject prefix",
-'form_groups_mailing_rectype' => "Recipient address type",
-'form_groups_mailing_crm_project_id' => "Store group emails as crm contacts in this project",
-'form_groups_rights_view' => "The following users are allowed to view this group (1):",
-'form_groups_rights_new' => "The following users are allowed to assign to this group (2):",
-'form_groups_rights_edit' => "The following users are allowed to edit this group (3):",
-'form_groups_rights_del' => "The following users are allowed to delete this group (4):",
-'form_groups_role_name' => "Name:",
-'form_groups_rights' => "Permissions",
-'form_groups_rights_login' => "Login:",
-'form_groups_rights_help' => "Granting access rights on one level automatically includes all lower access levels.<br />Access to a group includes access to all it's subgroups and subsubgroups etc.",
-'form_groups_rights_help_title' => "Rules for granting access",
+
+'form_groups_datafield_help' => "<b>Important:</b><br />Changing the options for selection lists doesn't change the stored values. Any changes to an option have to be applied manually to all persons' records.<br /><br />",
+
 'form_groups_rights_rights_view' => "view-rights (1) for the following groups:",
 'form_groups_rights_rights_new' => "assign-rights (2) for the following groups:",
 'form_groups_rights_rights_edit' => "edit-rights (3) for the following groups:",
 'form_groups_rights_rights_del' => "delete-rights (4) for the following groups:",
+'form_taxonomy_rights_rights_view' => "view-rights (1) for groups with the following keywords:",
+'form_taxonomy_rights_rights_new' => "assign-rights (2) for groups with the following keywords:",
+'form_taxonomy_rights_rights_edit' => "edit-rights (3) for groups with the following keywords:",
+'form_taxonomy_rights_rights_del' => "delete-rights (4) for groups with the following keywords:",
 'form_groups_all_groups' => "all groups",
-'form_groups_datafields' => "Data fields",
-'form_groups_datafields_select' => "Data fields for this group",
-'form_groups_datafields_create' => "Create new datafield",
-'form_groups_datafields_new_description' => "Description",
-'form_groups_datafields_new_type' => "Type",
-'form_groups_datafields_new_options' => "Selection options (one per line)",
-'form_groups_datafields_new_create' => "Create",
+
+'kota_listview_ko_groups_datafields_description' => "Name",
+'kota_listview_ko_groups_datafields_type' => "Type",
+'kota_listview_ko_groups_datafields_reusable' => "Global",
+'kota_listview_ko_groups_datafields_private' => "Private",
+'kota_listview_ko_groups_datafields_preset' => "Preset",
+'kota_listview_ko_groups_datafields_used_in' => "Used in",
+'kota_listview_ko_groups_datafields_options' => "Options",
+
+'kota_ko_groups_role_name' => "Name:",
+
+'kota_ko_groups_tab_general' => "General",
+'kota_ko_groups_tab_assignment_history' => "Assignment History",
+'kota_ko_groups_nump' => "Number of members",
+'kota_ko_groups_numug' => "Number of subgroups",
+'kota_ko_groups_terms' => "Terms",
+'kota_ko_groups_crdate' => "creation date",
+'kota_ko_groups_linked_group' => 'Linked group',
+'kota_ko_groups_stop' => "End date (leave blank if not scheduled):",
+'kota_ko_groups_name' => "Name",
+'kota_ko_groups_description' => "Description",
+'kota_ko_groups_parentgroup' => "Parent group:",
+'kota_ko_groups_type' => "Dummy group (no assignments)",
+'kota_ko_groups_deadline' => "Deadline for subscription (web)",
+'kota_ko_groups_roles' => "Use the following roles in this group",
+'kota_ko_groups_maxcount' => "Maximum number of members",
+'kota_ko_groups_count_role' => "Apply maximum to this role",
+'kota_ko_groups_datafields' => "Datafields",
+'kota_ko_groups_rights_view' => "The following users are allowed to view this group (1):",
+'kota_ko_groups_rights_new' => "The following users are allowed to assign to this group (2):",
+'kota_ko_groups_rights_edit' => "The following users are allowed to edit this group (3):",
+'kota_ko_groups_rights_del' => "The following users are allowed to delete this group (4):",
+'kota_ko_groups_rights' => "Permissions",
+'kota_ko_groups_rights_login' => "Login:",
+'kota_ko_groups_rights_help' => "Granting access rights on one level automatically includes all lower access levels.<br />Access to a group includes access to all it's subgroups and subsubgroups etc.",
+'kota_ko_groups_rights_help_title' => "Rules for granting access",
+'kota_ko_groups_rights_rights_view' => "view-rights (1) for the following groups:",
+'kota_ko_groups_rights_rights_new' => "assign-rights (2) for the following groups:",
+'kota_ko_groups_rights_rights_edit' => "edit-rights (3) for the following groups:",
+'kota_ko_groups_rights_rights_del' => "delete-rights (4) for the following groups:",
+'kota_ko_groups_all_groups' => "all groups",
+'kota_ko_groups_datafields' => "Data fields",
+'kota_ko_groups_datafields_select' => "Data fields for this group",
+'kota_ko_groups_datafields_create' => "Create new datafield",
+'kota_ko_groups_datafields_new_description' => "Description",
+'kota_ko_groups_datafields_new_type' => "Type",
+'kota_ko_groups_datafields_new_options' => "Selection options (one per line)",
+'kota_ko_groups_datafields_new_create' => "Create",
+'kota_group_title_ko_groups_general_mailing' => "Mailing",
+'kota_ko_groups_mailing' => "Mailing",
+'kota_ko_groups_mailing_alias' => "Mailing alias (e.g. 'mygroup' for mygroup@kool.domain.tld)",
+'kota_ko_groups_mailing_address' => "Default mailing address",
+'kota_ko_groups_mailing_address_whole_group' => "Group",
+'kota_ko_groups_mailing_mod_members' => "Are group members allowed to send emails?",
+'kota_ko_groups_mailing_mod_members_0' => "no",
+'kota_ko_groups_mailing_mod_members_1' => "with moderation",
+'kota_ko_groups_mailing_mod_members_2' => "without moderation",
+'kota_ko_groups_mailing_mod_others' => "Are non-members allowed to send emails?",
+'kota_ko_groups_mailing_mod_others_0' => "no",
+'kota_ko_groups_mailing_mod_others_1' => "with moderation",
+'kota_ko_groups_mailing_mod_others_2' => "without moderation",
+'kota_ko_groups_mailing_mod_logins' => "Are moderators / logins allowed to send emails?",
+'kota_ko_groups_mailing_mod_logins_0' => "no",
+'kota_ko_groups_mailing_mod_logins_1' => "with moderation",
+'kota_ko_groups_mailing_mod_logins_2' => "without moderation",
+'kota_ko_groups_mailing_mod_role' => "Moderators are defined by the following role",
+'kota_ko_groups_mailing_mod_role_none' => "-- No role --",
+'kota_ko_groups_mailing_reply_to' => "Set Reply-To",
+'kota_ko_groups_mailing_reply_to_' => "As set in original email",
+'kota_ko_groups_mailing_reply_to_sender' => "Back to sender",
+'kota_ko_groups_mailing_reply_to_list' => "To the whole group",
+'kota_ko_groups_mailing_modify_rcpts' => "Addressing of the individual emails",
+'kota_ko_groups_mailing_modify_rcpts_0' => "To personal email address (standard)",
+'kota_ko_groups_mailing_modify_rcpts_1' => "To group email address",
+'kota_ko_groups_mailing_prefix' => "Subject prefix",
+'kota_ko_groups_mailing_rectype' => "Recipient address type",
+'kota_ko_groups_mailing_crm_project_id' => "Store group emails as crm contacts in this project",
+
+'kota_listview_ko_groups_maxcount' => "max. #p",
+'kota_listview_ko_groups_count_role' => "max. role",
+'kota_listview_ko_groups_stop' => "stop",
+'kota_listview_ko_groups_roles' => "roles",
+'kota_listview_ko_groups_type' => "dummy",
+'kota_listview_ko_groups_type_help' => "This group has subgroups. So in most cases you might want to set this as a dummy group.",
+'kota_listview_ko_groups_nump' => "#p",
+'kota_listview_ko_groups_numug' => "#sg",
+'kota_listview_ko_groups_terms' => "keywords",
+'kota_listview_ko_groups_mailing_alias' => "alias",
+'kota_listview_ko_groups_mailing_mod' => "moderation",
+'kota_listview_ko_groups_mailing_mod_members' => "members sending?",
+'kota_listview_ko_groups_mailing_mod_others' => "others sending?",
+'kota_listview_ko_groups_mailing_mod_logins' => "logins sending?",
+'kota_listview_ko_groups_mailing_mod_role' => "moderatior role",
+'kota_listview_ko_groups_mailing_reply_to' => "reply address",
+'kota_listview_ko_groups_mailing_modify_rcpts' => "addressing",
+'kota_listview_ko_groups_mailing_crm_project_id' => "CRM project",
+'kota_listview_ko_groups_deadline' => "deadline",
+'kota_listview_ko_groups_mailing_rectype' => "rec type",
+
+'groups_assignment_history_no_entries' => "No entries found",
+'ezmlm_ml' => "ML",
 'form_groups_ezmlm' => "Export to mailinglist",
 'form_groups_ezmlm_list' => "mailinglist: Address of the mailinglist",
 'form_groups_ezmlm_moderator' => "mailinglist: Address of the list's moderator",
 'form_groups_ezmlm_export' => "mailinglist: Perform initial export",
-'form_groups_tab_assignment_history' => "Assignment History",
-'form_groups_tab_general' => "General",
-'groups_assignment_history_no_entries' => "No entries found",
-'ezmlm_ml' => "ML",
 'form_donation_title_new' => "Add donation",
 'form_donation_title_edit' => "Edit donation",
 'form_donation_promise_title_new' => "Add promise",
@@ -2452,6 +2586,8 @@ $LL["en"] = array(
 'form_donation_promise_save' => "Save promise",
 'form_donation_title_new_account' => "Add account",
 'form_donation_title_edit_account' => "Edit account",
+'form_donation_title_new_accountgroup' => "Add account group",
+'form_donation_title_edit_accountgroup' => "Edit account group",
 'form_ds_top' => "Go to Top",
 'form_ds_up' => "Page up",
 'form_ds_down' => "Page Down",
@@ -2475,6 +2611,8 @@ $LL["en"] = array(
 'form_error_empty_title' => "The subject must be filled in",
 'form_error_empty_mail' => "No recipient specified",
 'form_error_incorrect_mail' => "The specified recipient is not a valid e-mail address",
+'form_taxonomy_title' => "Taxonomy",
+'form_taxonomy_suggestbox_text' => "<span class=\"glyphicon glyphicon-plus text-muted\"></span> Save new keyword <span style='text-decoration: underline;'>%s</span>",
 'entry_by_guest_without_contactinfos' => "This reservation was requested by a guest without e-mail.",
 'kota_ko_event_eventgruppen_id' => "Event group",
 'kota_ko_event_url' => "URL (Link to a web page for this event)",
@@ -2498,11 +2636,13 @@ $LL["en"] = array(
 'kota_ko_event_cdate' => "Creation date",
 'kota_ko_event_last_change' => "Date of last change",
 'kota_ko_event_user_id' => "Created by",
+'kota_ko_event_terms' => "Keywords",
 'kota_listview_ko_event_program' => "Programm",
 'kota_listview_ko_event_eventgruppen_id' => "Event group",
 'kota_listview_ko_event_startdatum' => "Date",
 'kota_listview_ko_event_startzeit' => "Time",
 'kota_listview_ko_event_title' => "Title",
+'kota_listview_ko_event_terms' => "Keywords",
 'kota_listview_ko_event_kommentar' => "Description",
 'kota_listview_ko_event_kommentar2' => "Remarks",
 'kota_listview_ko_event_room' => "Room",
@@ -2516,7 +2656,9 @@ $LL["en"] = array(
 'kota_listview_ko_event_mod_kommentar' => "Description",
 'kota_listview_ko_event_mod_kommentar2' => "Remarks",
 'kota_listview_ko_event_mod_room' => "Room",
+'kota_listview_ko_event_mod_rota' => "Rota",
 'kota_listview_ko_event_registrations' => "Regs",
+'kota_listview_ko_event_mod_reservationen' => "Res",
 'kota_listview_ko_event_mod__user_id' => "User",
 'kota_listview_ko_event_cdate' => "Creation date",
 'kota_listview_ko_event_last_change' => "Date of last change",
@@ -2531,6 +2673,11 @@ $LL["en"] = array(
 'kota_listview_ko_event_program_team' => "Responsible Team",
 'kota_listview_ko_event_program_infrastructure' => "Infrastructure",
 'kota_listview_ko_event_program_name' => "Title",
+'kota_group_title_ko_eventgruppen_general_general' => "General",
+'kota_group_title_ko_eventgruppen_general_event' => "Defaults for new events",
+'kota_group_title_ko_eventgruppen_general_rota' => "Rota",
+'kota_group_title_ko_eventgruppen_general_reservation' => "Reservations",
+'kota_group_title_ko_eventgruppen_general_program' => "Program",
 'kota_ko_eventgruppen_calendar_id' => "Calendar",
 'kota_ko_eventgruppen_calendar_id_placeholder' => "Create new calendar",
 'kota_ko_eventgruppen_name' => "Name",
@@ -2558,6 +2705,7 @@ $LL["en"] = array(
 'kota_ko_eventgruppen_ical_title' => "Static title for imported events",
 'kota_ko_eventgruppen_update' => "Update interval",
 'kota_ko_eventgruppen_last_update' => "Last update",
+'kota_ko_eventgruppen_terms' => "Keywords",
 'kota_ko_eventgruppen_responsible_for_res' => "Responsible person for reservations",
 'kota_listview_ko_eventgruppen_calendar_id' => "calendar",
 'kota_listview_ko_eventgruppen_name' => "name",
@@ -2569,6 +2717,7 @@ $LL["en"] = array(
 'kota_listview_ko_eventgruppen_res_combined' => "com. res",
 'kota_listview_ko_eventgruppen_moderation' => "mod?",
 'kota_listview_ko_eventgruppen_farbe' => "Color",
+'kota_listview_ko_eventgruppen_terms' => "keywords",
 'kota_formlegend_ko_eventgruppen_icon' => 'bullet_star.png',
 'kota_formlegend_ko_eventgruppen' => 'These fields will be used as default values when adding new events',
 'kota_ko_eventgruppen_program' => "Program",
@@ -2581,24 +2730,28 @@ $LL["en"] = array(
 'kota_ko_rota_teams_name' => 'Name',
 'kota_ko_rota_teams_rotatype' => 'Mode of schedulling',
 'kota_ko_rota_teams_rotatype_event' => 'For single events (default)',
-'kota_ko_rota_teams_rotatype_week' => 'For whole weeks',
+'kota_ko_rota_teams_rotatype_day' => 'For daily entries',
 'kota_ko_rota_teams_eg_id' => 'This team is active in these event groups',
+'kota_ko_rota_teams_farbe' => "Color",
+'kota_ko_rota_teams_days_range' => "Amtstage: Duty on following days",
+'kota_ko_rota_teams_days_range_values' => [1 => 'Mo', 2 => 'Tu', 3 => 'We', 4 => 'Th', 5 => 'Fr', 6 => 'Sa', 7 => 'Su'],
 'kota_ko_rota_teams_group_id' => 'Use team members from these groups',
 'kota_ko_rota_teams_schedule_subgroup_members' => 'Show individual members of subgroups for scheduling?',
 'kota_ko_rota_teams_allow_consensus' => 'Allow usage of consensus module',
 'kota_ko_rota_teams_consensus_description' => 'Text that will be displayed to users of the consensus module',
 'kota_ko_rota_teams_consensus_disable_maybe_option' => 'Consensus: disable <i>maybe</i> option',
 'kota_ko_rota_teams_consensus_max_promises' => 'Consensus: maximum number of promises',
-
+'kota_layout_group_ko_leute_family' => "Familydata",
+'kota_layout_group_ko_leute_membership' => "Membership",
 'form_ko_rota_teams_title_new' => "Add team",
 'form_ko_rota_teams_title_edit' => "Edit team",
-
+'ko_rota_consensus_already_scheduled' => "You are already scheduled on this event.",
 'kota_listview_ko_rota_teams_name' => 'Name',
 'kota_listview_ko_rota_teams_rotatype' => 'Type',
 'kota_listview_ko_rota_teams_eg_id' => 'Event groups',
 'kota_listview_ko_rota_teams_group_id' => 'Groups',
 'kota_listview_ko_rota_teams_allow_consensus' => 'Allow consensus',
-
+'kota_listview_ko_rota_teams_farbe' => "Color for calendar",
 
 'kota_listview_ko_tracking_name' => "Name",
 'kota_listview_ko_tracking_group_id' => "Group",
@@ -2610,6 +2763,7 @@ $LL["en"] = array(
 'kota_mandatory_fields_ko_leute' => 'Mandatory fields in person form',
 'kota_mandatory_fields_ko_event' => 'Mandatory fields in event form',
 'kota_mandatory_fields_ko_reservation' => 'Mandatory fields in reservation form',
+'kota_mandatory_fields_guest' => "Guest",
 'kota_ko_leute_id' => "ID",
 'kota_ko_leute_anrede' => "Salutation",
 'kota_ko_leute_hidden' => "Hidden",
@@ -2655,7 +2809,7 @@ $LL["en"] = array(
 'kota_ko_leute_rectype' => "Recipient address",
 'kota_ko_leute_rectype_default' => "Default",
 'kota_ko_leute_rectype_b' => "Business",
-'kota_ko_leute_family_data' => " ",
+'kota_ko_leute_family_data' => "Family data",
 'kota_ko_leute_father' => "Father",
 'kota_ko_leute_mother' => "Mother",
 'kota_ko_leute_spouse' => "Spouse",
@@ -2666,14 +2820,18 @@ $LL["en"] = array(
 'kota_ko_leute__family_children' => 'Children',
 'kota_ko_leute_MODULEsalutation_formal' => 'Letter salutation (formal)',
 'kota_ko_leute_MODULEage_ymd' => 'Age (Y/M/D)',
+'kota_ko_leute_telegram_token' => "Telegram key",
+'kota_ko_leute_telegram_id' => "Telegram registration",
 'kota_ko_leute_MODULEsalutation_informal' => 'Letter salutation (informal)',
 'kota_ko_leute_MODULEfamid_title' => 'Address title (household)',
 'kota_ko_leute_groups' => 'Groups',
 'kota_ko_leute_groups_datafields' => 'Group datafields',
 'kota_ko_leute_groups_history' => 'Groups (In the past)',
 'kota_ko_leute_assignment_history' => 'Groups Assignment History',
+'kota_ko_leute_terms' => "Keywords",
 'kota_ko_leute_crdate' => "Creation date",
 'kota_ko_leute_lastchange' => "Date of last change",
+'kota_ko_leute_information_lock' => "Information Lock",
 'kota_formlegend_ko_leute' => "<i class=\"fa fa-group\"></i>:&nbsp;These fields are shared between all household members - changing one changes it for all household members.",
 'kota_group_title_ko_leute_general_family' => "Family Data",
 'kota_group_title_ko_leute_general_membership' => "Memberships",
@@ -2690,6 +2848,16 @@ $LL["en"] = array(
 'kota_group_title__dummy' => "&nbsp;",
 'kota_group_title__others' => "Others",
 'kota_group_title__default' => "General",
+'kota_group_title_ko_leute_family' => "Family",
+'kota_group_title_ko_leute_membership' => "Memberships",
+'kota_group_title_ko_leute_contact' => "Contact",
+'kota_group_title_ko_leute_com' => "Communication",
+'kota_group_title_ko_leute_status' => "Status",
+'kota_group_title_ko_leute_family_general' => "Family Data",
+'kota_group_title_ko_leute_membership_general' => "Memberships",
+'kota_group_title_ko_leute_contact_general' => "Contact",
+'kota_group_title_ko_leute_com_general' => "Communication",
+'kota_group_title_ko_leute_status_general' => "Status",
 'kota_ko_kleingruppen_new' => "New Smallgroup",
 'kota_ko_kleingruppen_change' => "Change Smallgroup",
 'kota_ko_kleingruppen_type' => "Smallgroup type",
@@ -2725,7 +2893,11 @@ $LL["en"] = array(
 'kota_ko_kleingruppen_mailing_alias' => "Mailing alias (e.g. 'mysg' for mysg@kool.domain.tld)",
 'kota_ko_kleingruppen_role_L' => "Leaders of this small group",
 'kota_ko_kleingruppen_role_M' => "Members of this small group",
+'kota_ko_kleingruppen_members_L' => "Leaders of this small group",
+'kota_ko_kleingruppen_members_M' => "Members of this small group",
 'kota_ko_kleingruppen_anz_leute' => "Number of People",
+'kota_ko_kleingruppen_crdate' => "Creation date",
+'kota_ko_kleingruppen_lastchange' => "Last change",
 'kota_ko_reservation_item_id' => "Object",
 'kota_ko_reservation_item_id_zweck' => "Object and purpose",
 'kota_ko_reservation_startdatum' => "Start date",
@@ -2775,6 +2947,8 @@ $LL["en"] = array(
 'kota_ko_resitem_moderation_2' => "Yes: E-Mail",
 'kota_ko_resitem_email_recipient' => "Send email for each reservation to this address",
 'kota_ko_resitem_email_text' => "Include this email text",
+'kota_group_title_ko_resitem_general_general' => "General",
+'kota_group_title_ko_resitem_general_email' => "Emails",
 'kota_listview_ko_resitem_gruppen_id' => "Group",
 'kota_listview_ko_resitem_name' => "Name",
 'kota_listview_ko_resitem_beschreibung' => "Description",
@@ -2791,22 +2965,6 @@ $LL["en"] = array(
 'kota_ko_reservation_mod_email' => "Requester E-Mail",
 'kota_ko_reservation_mod_telefon' => "Requester Telephone number",
 'kota_ko_reservation_mod_comments' => "Comments",
-'kota_ko_groups_name' => "Name",
-'kota_ko_groups_description' => "Description",
-'kota_ko_groups_start' => "Start",
-'kota_ko_groups_stop' => "Stop",
-'kota_ko_groups_deadline' => "Deadline for subscription (web)",
-'kota_ko_groups_roles' => "Role",
-'kota_ko_groups_type' => "Dummy group (no assignments)",
-'kota_ko_groups_maxcount' => "Maximum number of members",
-'kota_ko_groups_count_role' => "Apply maximum to this role",
-'kota_listview_ko_groups_name' => "Name",
-'kota_listview_ko_groups_description' => "Description",
-'kota_listview_ko_groups_start' => "Start",
-'kota_listview_ko_groups_roles' => "Roles",
-'kota_listview_ko_groups_type' => "Dummy",
-'kota_listview_ko_groups_nump' => "#P",
-'kota_listview_ko_groups_numug' => "#SG",
 'kota_ko_grouproles_name' => "Name",
 'kota_ko_grouproles_used_in' => "Used in",
 'kota_listview_ko_grouproles_name' => "Name",
@@ -2823,18 +2981,11 @@ $LL["en"] = array(
 'kota_ko_groups_datafields_preset' => "Store as preset",
 'kota_ko_groups_datafields_options' => "Options (for selection list)",
 'kota_ko_groups_datafields_help' => "Help",
-'form_groups_datafield_help' => "<b>Important:</b><br />Changing the options for selection lists doesn't change the stored values. Any changes to an option have to be applied manually to all persons' records.<br /><br />",
-'kota_listview_ko_groups_datafields_description' => "Name",
-'kota_listview_ko_groups_datafields_type' => "Type",
-'kota_listview_ko_groups_datafields_reusable' => "Global",
-'kota_listview_ko_groups_datafields_private' => "Private",
-'kota_listview_ko_groups_datafields_preset' => "Preset",
-'kota_listview_ko_groups_datafields_used_in' => "Used in",
-'kota_listview_ko_groups_datafields_options' => "Options",
 'kota_ko_donations_date' => "Date",
 'kota_ko_donations_valutadate' => "Valuta date",
 'kota_ko_donations_person' => "Donor",
 'kota_ko_donations_account' => "Account",
+'kota_ko_donations_account_group' => "Account group",
 'kota_ko_donations_amount' => "Amount",
 'kota_ko_donations_source' => "Method of payment",
 'kota_ko_donations_comment' => "Comments",
@@ -2849,9 +3000,17 @@ $LL["en"] = array(
 'kota_ko_donations_reoccuring_4m' => "four months",
 'kota_ko_donations_reoccuring_6m' => "six months",
 'kota_ko_donations_reoccuring_12m' => "one year",
+'kota_ko_donations_information_lock' => "Information lock",
+'kota_ko_donations_person_vorname' => "Firstname",
+'kota_ko_donations_person_nachname' => "Lastname",
+'kota_ko_donations_person_adresse' => "Address",
+'kota_ko_donations_person_plz' => "Zip",
+'kota_ko_donations_person_ort' => "City",
+'kota_listview_ko_donations_information_lock' => "Information lock",
 'kota_listview_ko_donations_date' => "Date",
 'kota_listview_ko_donations_valutadate' => "Valuta date",
 'kota_listview_ko_donations_account' => "Account",
+'kota_listview_ko_donations_account_group' => "Account group",
 'kota_listview_ko_donations_amount' => "Amount",
 'kota_listview_ko_donations_source' => "Payment",
 'kota_listview_ko_donations_person' => "Donor",
@@ -2869,14 +3028,16 @@ $LL["en"] = array(
 'kota_ko_donations_accounts_comment' => "Comments",
 'kota_ko_donations_accounts_archived' => "Archived",
 'kota_ko_donations_accounts_group_id' => 'Moderation: Assign newly created addresses to this group',
-'kota_ko_donations_accounts_account_group' => 'Account group',
-'kota_ko_donations_accounts_account_group_placeholder' => "Create new account group",
+'kota_ko_donations_accounts_accountgroup_id' => "Account group",
 'kota_listview_ko_donations_accounts_id' => "ID",
 'kota_listview_ko_donations_accounts_number' => "Number",
 'kota_listview_ko_donations_accounts_name' => "Name",
 'kota_listview_ko_donations_accounts_comment' => "Comments",
 'kota_listview_ko_donations_accounts_archived' => "Archived",
-'kota_listview_ko_donations_accounts_account_group' => "Account group",
+'kota_ko_donations_accountgroups_title' => "Name",
+'kota_ko_donations_accountgroups_archived' => "Archived",
+'kota_listview_ko_donations_accountgroups_title' => "Name",
+'kota_listview_ko_donations_accountgroups_archived' => "Archived",
 'kota_listview_ko_pdf_layout_name' => "Name",
 'kota_listview_ko_pdf_layout_layout' => "Layout",
 'kota_listview_ko_pdf_layout_start' => "Start",
@@ -2917,6 +3078,9 @@ $LL["en"] = array(
 'kota_ko_taxonomy_terms_used_in_label_ko_event' => "(%s events)",
 'kota_ko_taxonomy_terms_used_in_label_ko_eventgruppe' => "(%s event groups)",
 'kota_ko_taxonomy_terms_used_in_groups_label' => "(%s keywords in groups)",
+'kota_ko_taxonomy_terms_used_in_label_ko_eventgruppen' => "(%s event groups)",
+'ko_taxonomy_terms_form_title_new' => "Add new keyword",
+'ko_taxonomy_terms_form_title_edit' => "Edit keyword",
 'kota_listview_ko_tracking_entries_tid' => "Tracking",
 'kota_listview_ko_tracking_entries_lid' => "Person",
 'kota_listview_ko_tracking_entries_date' => "Date",
@@ -2933,6 +3097,7 @@ $LL["en"] = array(
 'kota_ko_news_text' => "Text",
 'kota_ko_news_link' => "Link",
 'kota_ko_news_author' => "Author",
+'kota_ko_news_category' => "Category",
 'kota_ko_news_cdate' => "Date",
 'kota_listview_ko_news_title' => "Title",
 'kota_listview_ko_news_type' => "Type",
@@ -2943,6 +3108,12 @@ $LL["en"] = array(
 'kota_listview__ko_sms_log_ratio' => "Ratio",
 'kota_listview__ko_sms_log_numbers' => "Recipients",
 'kota_listview__ko_sms_log_text' => "Text",
+'kota_listview__ko_telegram_log_id' => "Log-Id",
+'kota_listview__ko_telegram_log_date' => "Date",
+'kota_listview__ko_telegram_log_user_id' => "User",
+'kota_listview__ko_telegram_log_recipients' => "Recipients",
+'kota_listview__ko_telegram_log_text' => "Text",
+'admin_telegram_log_list_title' => "Telegram Statistic",
 'kota_ko_leute_mod_zivilstand_single' => "single",
 'kota_ko_leute_mod_zivilstand_married' => "married",
 'kota_ko_leute_mod_zivilstand_divorced' => "divorced",
@@ -2966,6 +3137,21 @@ $LL["en"] = array(
 'kota_listview_ko_scheduler_tasks_last_call' => "Last call",
 'kota_listview_ko_scheduler_tasks_next_call' => "Next call",
 'kota_listview_ko_mailing_mails_status' => "Status",
+'kota_ko_updates_name' => "Bezeichnung",
+'kota_ko_updates_status' => "Status",
+'kota_ko_updates_status_0' => "Open",
+'kota_ko_updates_status_1' => "Done",
+'kota_ko_updates_status_2' => "Never needed",
+'kota_ko_updates_done_date' => "Ausführungsdatum",
+'kota_ko_updates_module' => "Modul",
+'kota_ko_updates_plugin' => "Plugin",
+'kota_ko_updates_crdate' => "Creation date",
+'kota_listview_ko_updates_name' => "Bezeichnung",
+'kota_listview_ko_updates_status' => "Status",
+'kota_listview_ko_updates_done_date' => "Ausführungsdatum",
+'kota_listview_ko_updates_module' => "Modul",
+'kota_listview_ko_updates_plugin' => "Plugin",
+'kota_listview_ko_updates_crdate' => "Created",
 'kota_ko_mailing_mails_status' => "Status",
 'kota_ko_mailing_mails_status_1' => "New",
 'kota_ko_mailing_mails_status_2' => "Confirmed",
@@ -2980,6 +3166,7 @@ $LL["en"] = array(
 'kota_filter_submit' => "Apply",
 'kota_filter_clear' => "Clear",
 'kota_filter_applied' => "Filtered view",
+'kota_filter_current' => "Applied filters",
 
 'kota_ko_log_date' => 'Time',
 'kota_ko_log_type' => 'Type',
@@ -3015,8 +3202,14 @@ $LL["en"] = array(
 'ko_kleingruppen_change' => "Edit smallgroup",
 'ko_kleingruppen_delete' => "Delete smallgroup",
 'ko_kleingruppen_confirm_delete' => "Really delete selected smallgroup?",
+'kota__ko_telegram_log_text' => "Message",
+'kota__ko_telegram_log_date' => "Date",
+'kota__ko_telegram_log_recipients' => "Recipients",
+'kota__ko_sms_log_text' => "Message",
+'kota__ko_sms_log_date' => "Date",
 'ko_familie_famemail_husband' => 'Husband',
 'ko_familie_famemail_wife' => 'Wife',
+'family_all_persons' => "Other persons in household",
 'list_check' => "Check all",
 'list_check_family' => "Check all households",
 'list_next' => "Next Page",
@@ -3080,9 +3273,11 @@ $LL["en"] = array(
 'filter_url' => "URL",
 'filter_civil status' => "Marital status",
 'filter_birthdate' => "DOB",
+'filter_information_lock' => "Information Lock",
 'filter_var1_birthdate' => "day",
 'filter_var2_birthdate' => "month",
 'filter_var3_birthdate' => "year",
+'filter_var2_taxonomy' => "Role",
 'filter_sex' => "Sex",
 'filter_smallgroup' => "Smallgroup",
 'filter_var1_smallgroup' => "Smallgroup",
@@ -3137,7 +3332,13 @@ $LL["en"] = array(
 'filter_var2_addchildren' => "...to age",
 'filter_var3_addchildren' => "Show only children",
 'filter_addparents' => "AddParents",
-'filter_var1_addparents' => "Show only parents",
+'filter_addparents_0' => "Add parents for all children",
+'filter_addparents_1' => "Only show all parents",
+'filter_addparents_2' => "Add parents for children without email",
+'filter_addparents_3' => "Add parents for children without mobile",
+'filter_addparents_4' => "Add household leaders for children without mobile",
+'filter_addparents_5' => "Add household leaders for children without mobile",
+'filter_var1_addparents' => "Show parents",
 'filter_childrencount' => "Children",
 'filter_var1_childrencount' => "Number of children",
 'filter_duplicates' => "Duplicates",
@@ -3159,6 +3360,8 @@ $LL["en"] = array(
 'filter_crm_project' => "CRM Projekt",
 'filter_var1_crm_project' => "In Project",
 'filter_var2_crm_project' => "In Status",
+'filter_var1_crm' => "In contact",
+'filter_var2_crm' => "In status",
 'filter_crm_contact' => "CRM Contact",
 'filter_var1_crm_contact' => "In Contact",
 'filter_random_ids' => "Random Addresses",
@@ -3200,6 +3403,7 @@ $LL["en"] = array(
 'filter_var4_trackingentries' => 'Value',
 'filter_trackingentries_withoutentry' => "Without entry",
 'filter_trackingentries_withoutentry_desc' => "Ignore value-field and list all addresses without entries",
+'itemlist_preset_placeholder' => "New preset...",
 'itemlist_open_preset' => "Load preset",
 'itemlist_save_preset' => "Save as preset",
 'itemlist_preset_all' => "[ ALL ]",
@@ -3223,7 +3427,7 @@ $LL["en"] = array(
 'list_sortcolumn_title' => "Grab here to move this column left or right",
 'error_file_not_found' => "Can not find file",
 'error_not_allowed' => "Action not allowed",
-'copyright_notice' => "Version %s, Copyright &copy; 2003-2017 Renzo Lauper - Plugins are copyright of their respective owners.",
+'copyright_notice' => "Version %s, Copyright &copy; 2003-2020 Renzo Lauper - Plugins are copyright of their respective owners.",
 'copyright_warranty' => "Warranty is supplied by %s.",
 'copyright_no_warranty' => "kOOL comes with ABSOLUTELY NO WARRANTY.",
 'copyright_free_software' => "This is free software, and you are welcome to redistribute it under %scertain conditions%s.",
@@ -3254,6 +3458,9 @@ $LL["en"] = array(
 'kota_ko_reminder_recipients_mails' => 'Recipients by mail address',
 'kota_ko_reminder_filter' => 'Filter',
 'kota_ko_reminder_status' => 'Active',
+'kota_group_title_ko_reminder_general_general' => "General",
+'kota_group_title_ko_reminder_general_recipient' => "Recipient",
+'kota_group_title_ko_reminder_general_content' => "Content",
 'kota_listview_ko_reminder_title' => 'Title',
 'kota_listview_ko_reminder_action' => 'Action',
 'kota_listview_ko_reminder_deadline' => 'Deadline',
@@ -3268,24 +3475,47 @@ $LL["en"] = array(
 'ko_event_reminder_form_title_new' => 'New Reminder',
 'ko_event_reminder_form_title_edit' => 'Edit Reminder',
 'ko_event_reminder_list_title' => 'Reminders',
+'ko_event_rooms_form_title_new' => "New event-location",
+'ko_event_rooms_form_title_edit' => "Edit event-location",
+'submit_new_event_room' => "Save new event-location",
+'submit_edit_event_room' => "Save event-location",
+'kota_ko_event_rooms_title' => "Room title",
+'kota_ko_event_rooms_title_short' => "Room title (short)",
+'kota_ko_event_rooms_address' => "Full address",
+'kota_ko_event_rooms_coordinates' => "GPS coordinates",
+'kota_ko_event_rooms_url' => "Website with more details about the location",
+'kota_listview_ko_event_rooms_title' => "Title",
+'kota_listview_ko_event_rooms_title_short' => "Short title",
+'kota_listview_ko_event_rooms_address' => "Address",
+'kota_listview_ko_event_rooms_coordinates' => "Coordinates",
+'kota_listview_ko_event_rooms_url' => "Website",
+'kota_ko_event_rooms_used_in' => "Used in",
+'kota_ko_event_rooms_hidden' => "Deactivated",
+'daten_rooms_list_title' => "event-locations",
+'action_delete_event_room_error' => "The selected event-location could not be deleted",
+'action_delete_event_room_success' => "The selected event-location is now deleted",
 'kota_group_title_ko_rota_teams_general_consensus' => "Consensus",
 'ko_consensus' => 'Consensus',
 'ko_consensus_descriptions_title' => 'Descriptions',
 'ko_consensus_descriptions_general' => 'General',
 'ko_consensus_disabled_teams' => 'The consensus module is disabled for the following teams: %s',
-'ko_consensus_no_events' => 'At the moment, there are no events',
+'ko_consensus_no_events' => 'There are no events in the current date range',
+'ko_consensus_comment' => "Comment",
 'rota_consensus_filter_title' => "Filter",
 'rota_consensus_filter_all' => "All",
 'rota_consensus_filter_todo' => "To-Do",
 'rota_consensus_filter_answered' => "Answered",
 'rota_consensus_filter_scheduled' => "Scheduled",
 'rota_consensus_filter_nobody' => "Nobody",
+'rota_consensus_filter_noyes' => "No consent",
 'rota_consensus_filter_no_results' => "No appointments could be found with the currently applied filter",
 'rota_consensus_team_disabled' => "Team for this event deactivated",
 'rota_no_data_available' => "Due to the current filtering, no data is available.",
 'rota_planning_no_mobile' => "Due to the complex representation of teams and events, the planning view is not suitable for small screens. In this case, please use the <a href='/rota/index.php?action=schedule'>Schedule-View</a>",
 'rota_planning_help' => "Schedule people with a double click on one of the circles.",
 'rota_add_freetext_person' => "Add freetext user",
+'rota_planning_title' => "Planning overview",
+'rota_prefix_group' => "[G]",
 'list_sorting' => 'sorting',
 'selection' => 'selection',
 'datepicker_language' => "en",
@@ -3379,6 +3609,9 @@ $LL["en"] = array(
 'kota_listview_ko_crm_contacts_file' => "File",
 'kota_listview_ko_crm_contacts_cruser' => "Login",
 'kota_listview_ko_crm_contacts_description' => "Description",
+'kota_listview_ko_crm_contacts_deadline' => "Deadline",
+'kota_group_title_ko_leute_crm_crm' => "CRM",
+'kota_ko_leute_crm' => "CRM Contacts",
 // This is a fake entry since there is no db-col for 'leute_ids' in 'ko_crm_contacts'
 'kota_listview_ko_crm_contacts_reference' => "People",
 'crm_settings_default_view' => "Default View",
@@ -3459,7 +3692,6 @@ $LL["en"] = array(
 'fine_uploader_label_paused' => 'Paused',
 'fine_uploader_label_waitingForResponse' => 'Processing...',
 'crm_label_show_leute_ids' => "Show these people",
-'groups_settings_mailing_from_email' => "Mailing: Sender address",
 'groups_edit_assignment_history_entry' => "Edit group assignment entry",
 'kota_ko_groups_assignment_history_group_id' => "Group",
 'kota_ko_groups_assignment_history_person_id' => "Person",
@@ -3537,6 +3769,7 @@ $LL["en"] = array(
 'kota_ko_vesr_camt_type' => "Type",
 'kota_ko_vesr_camt_type_none' => "Unknown",
 'kota_ko_vesr_camt_type_donations' => "Donation",
+'kota_ko_vesr_camt_type_billing' => "billing",
 'kota_ko_vesr_camt_refnumber' => "Reference number",
 'kota_ko_vesr_camt_amount' => "Payed amount",
 'kota_ko_vesr_camt_booking_date' => "Date of payment",
@@ -3572,66 +3805,10 @@ $LL["en"] = array(
 'vesr_import_email_no_connection' => "Could not find the server '%s'",
 'vesr_import_email_no_attachments' => "The email has no attachments",
 'vesr_import_email_attachment_invalid_format' => "The file has an invalid format",
-'vesr_import_email_report_subject' => "Report about the automatic VESR import",
+'vesr_import_email_report_subject_automatic' => "Report about the automatic VESR import",
+'vesr_import_email_report_subject_manuell' => "Report about the manuel VESR import",
 'vesr_import_email_report_no_mails' => "No emails on the server.",
-'vesr_import_email_report_content' => '
-<html>
-<head>
-<meta http-equiv="Content-Type" content="text/html;charset=ISO-8859-1">
-	<style>
-table.ko_list td {
-	vertical-align: top;
-}
-table.ko_list td,
-th.ko_list,
-th.ko_list_footer {
-	padding: 1px;
-	border: 1px solid #fff;
-}
-th.ko_list {
-	background: #9abdea;
-	text-align: center;
-	font-weight: 900;
-}
-th.ko_list_datafields {
-	background: #9aea9a;
-	text-align: center;
-	font-weight: 100;
-}
-span.ko_list_hide {
-	position: absolute;
-	top: 2px;
-	left: 20px;
-	width: 10px;
-	height: 10px;
-}
-tr.ko_list_even:hover,
-tr.ko_list_odd:hover,
-th.ko_list_footer {
-	background: #9abdea;
-}
-
-tr.ko_list_even {
-	background: #fff;
-	text-align: left;
-}
-
-tr.ko_list_odd {
-	background: #e8e8e8;
-	text-align: left;
-}
-	</style>
-</head>
-<body>
-	Hello<br><br>
-	This email was automatically generated by your kOOL installation on %s.<br>
-	<h3>
-		Report for the automatic VESR import:
-	</h3>
-	Processed E-Mails:<br>%s
-</body>
-',
-'vesr_camt_import_email_report_content' => '
+'vesr_import_email_report_content_automatic' => '
 <html>
 <head>
 <meta http-equiv="Content-Type" content="text/html;charset=ISO-8859-1">
@@ -3688,7 +3865,179 @@ tr.ko_list_odd {
 	%s
 </body>
 ',
+'vesr_import_email_report_content_manuell' => '
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html;charset=ISO-8859-1">
+	<style>
+table.ko_list td {
+	vertical-align: top;
+}
+table.ko_list td,
+th.ko_list,
+th.ko_list_footer {
+	padding: 1px;
+	border: 1px solid #fff;
+}
+th.ko_list {
+	background: #9abdea;
+	text-align: center;
+	font-weight: 900;
+}
+th.ko_list_datafields {
+	background: #9aea9a;
+	text-align: center;
+	font-weight: 100;
+}
+span.ko_list_hide {
+	position: absolute;
+	top: 2px;
+	left: 20px;
+	width: 10px;
+	height: 10px;
+}
+tr.ko_list_even:hover,
+tr.ko_list_odd:hover,
+th.ko_list_footer {
+	background: #9abdea;
+}
+
+tr.ko_list_even {
+	background: #fff;
+	text-align: left;
+}
+
+tr.ko_list_odd {
+	background: #e8e8e8;
+	text-align: left;
+}
+	</style>
+</head>
+<body>
+	Hello<br><br>
+	This email was automatically generated by your kOOL installation on %s.<br>
+	<h3>
+		Report for the manually VESR import:
+	</h3>
+	Processed E-Mails:<br>%s
+</body>
+',
+'vesr_camt_import_email_report_content_automatic' => '
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html;charset=ISO-8859-1">
+	<style>
+table.ko_list td {
+	vertical-align: top;
+}
+table.ko_list td,
+th.ko_list,
+th.ko_list_footer {
+	padding: 1px;
+	border: 1px solid #fff;
+}
+th.ko_list {
+	background: #9abdea;
+	text-align: center;
+	font-weight: 900;
+}
+th.ko_list_datafields {
+	background: #9aea9a;
+	text-align: center;
+	font-weight: 100;
+}
+span.ko_list_hide {
+	position: absolute;
+	top: 2px;
+	left: 20px;
+	width: 10px;
+	height: 10px;
+}
+tr.ko_list_even:hover,
+tr.ko_list_odd:hover,
+th.ko_list_footer {
+	background: #9abdea;
+}
+
+tr.ko_list_even {
+	background: #fff;
+	text-align: left;
+}
+
+tr.ko_list_odd {
+	background: #e8e8e8;
+	text-align: left;
+}
+	</style>
+</head>
+<body>
+	Hello<br><br>
+	This email was automatically generated by your kOOL installation on %s.<br>
+	<h3>
+		Report for the automatic VESR import:
+	</h3>
+	%s
+</body>
+',
+'vesr_camt_import_email_report_content_manuell' => '
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html;charset=ISO-8859-1">
+	<style>
+table.ko_list td {
+	vertical-align: top;
+}
+table.ko_list td,
+th.ko_list,
+th.ko_list_footer {
+	padding: 1px;
+	border: 1px solid #fff;
+}
+th.ko_list {
+	background: #9abdea;
+	text-align: center;
+	font-weight: 900;
+}
+th.ko_list_datafields {
+	background: #9aea9a;
+	text-align: center;
+	font-weight: 100;
+}
+span.ko_list_hide {
+	position: absolute;
+	top: 2px;
+	left: 20px;
+	width: 10px;
+	height: 10px;
+}
+tr.ko_list_even:hover,
+tr.ko_list_odd:hover,
+th.ko_list_footer {
+	background: #9abdea;
+}
+
+tr.ko_list_even {
+	background: #fff;
+	text-align: left;
+}
+
+tr.ko_list_odd {
+	background: #e8e8e8;
+	text-align: left;
+}
+	</style>
+</head>
+<body>
+	Hello<br><br>
+	This email was automatically generated by your kOOL installation on %s.<br>
+	<h3>
+		Report for the automatic VESR import:
+	</h3>
+	Processed E-Mails:<br>%s
+</body>
+',
 'vesr_donations' => 'Donations',
+'vesr_donations_mod' => "Donations (mod)",
 'vesr_none' => 'Unknown target',
 'leute_itemlist_donations_refno' => 'Donations: Ref-No.',
 'email_subject_prefix' => "[kOOL] ",
@@ -3705,6 +4054,7 @@ tr.ko_list_odd {
 'checkin_label_search_btn' => "Search",
 'checkin_label_add_new_person' => "New Person",
 'checkin_label_link_no_printer' => "No labels",
+'checkin_label_link_open' => "Open list",
 'kota_listview_ko_google_cloud_printers_google_id' => "Google id",
 'kota_listview_ko_google_cloud_printers_name' => "Name",
 'kota_listview_ko_google_cloud_printers_owner_name' => "Owner",
@@ -3713,6 +4063,33 @@ tr.ko_list_odd {
 'kota_ko_detailed_person_exports_instructions' => "Instructions",
 'kota_listview_ko_detailed_person_exports_name' => "Name",
 'kota_listview_ko_detailed_person_exports_template' => "Template-file",
+'telegram_registration_success' => 'Thank you for the registration.',
+'telegram_registration_error' => 'The registration failed.',
+'telegram_registration_error_no_token' => 'The registration failed. Please use the link you received by email or sms.',
+'telegram_stop_success' => "You have successfully unsuscribed from this bot.",
+'telegram_stop_error' => "Unsubscribe not successful, because you don't seem to be subscribed to this bot.",
+'telegram_help_notification' => 'This Bot is used to send message from the kOOL installation "%s".<br /><br />You will first have to register before you can receive messages. Please contact you kOOL administrator and ask for a registration link.<br /><br />After registration you may used the following commands:<br /><br />/help - shows this message<br />/stop - deleted your registration',
+'telegram_unknown_command' => '<b>Error</b>: Unknown command.',
+'telegram_default_error_message' => '<b>You may not reply to messages in this bot.</b><br /><br />Send /help to get a list of possible commands.',
+'telegram_command_help' => 'zeigt diese Meldung',
+'telegram_command_start' => 'Registration. Only valid with code received by email or sms.',
+'telegram_command_stop' => 'ends registration.',
+'telegram_send_registration_link' => 'Send registration-link directly via %s',
+'telegram_send_registration_link_sent' => 'Anmeldelink für Telegram wurde verschickt',
+'telegram_send_registration_via' => 'No: send link via %s',
+'telegram_send_registration_email_subject' => 'Your Telegram-Activationlink from %s',
+'telegram_send_registration_email' => '
+<br /><br />This email was automatically generated in kOOL.<br />
+To register in Telegram, please follow this link:<br /><br />
+<a href="%s">Telegram-Link</a><br /><br />
+Click on "Start" to activate the notifications.',
+'telegram_send_registration_sms' => 'Your Telegram-Activationlink: %s . Kind regards',
+'leute_telegram_sender' => "Telegram Sender:",
+'leute_telegram_sender_text' => "This message will be send through telegram user <b>%s</b>",
+'leute_telegram_receiver' => "Telegram Receiver:",
+'leute_telegram_message_sent' => "Message sent by telegram",
+'leute_telegram_message_error' => "Message could not be sent with telegram",
+'email_signature' => "Kind regards",
 'form_addressblock_import' => 'Addressblock',
 'form_addressblock_import_title' => 'Paste an address by clicking Ctrl+V into this text field to have it filled in the form below.',
 'payment_list_not_mapped_title' => 'Payments that could not be assigned',
@@ -3864,6 +4241,7 @@ tr.ko_list_odd {
 'submenu_admin_title_pubkey' => 'Public-Key',
 'submenu_admin_show_pubkey' => 'Show Key',
 'admin_show_pubkey_format' => 'Public-Key',
+'admin_show_pubkey_key' => "Public-Key",
 'taxonomy_settings_form_title' => "Settings for taxonomy",
 'taxonomy_settings_default_view' => "Default page",
 'taxonomy_term_saved' => "Keyword has been saved",
@@ -3892,6 +4270,7 @@ Subscriptions to calendar programs such as Outlook or Nextcloud must then be add
 'kota_ko_event_absence_type_free' => "Free",
 'kota_ko_event_absence_type_vacation' => "Vacation",
 'kota_ko_event_absence_type_training' => "Training",
+'kota_ko_event_absence_type_school' => "School",
 'kota_ko_event_absence_type_compensation' => "Compensation",
 'kota_ko_event_absence_type_army' => "Army",
 'kota_ko_event_absence_type_civilservice' => "Civil service",
@@ -3916,15 +4295,18 @@ Subscriptions to calendar programs such as Outlook or Nextcloud must then be add
 'ko_event_absence_filename_xls' => "Absence_",
 'absence_rights' => "Absence administration",
 'absence_rights_0' => "No Access",
-'absence_rights_1' => "View only own",
-'absence_rights_2' => "View all",
-'absence_rights_3' => "Edit all",
+'absence_rights_1' => "Only add your own absences",
+'absence_rights_2' => "Add your own and view all",
+'absence_rights_3' => "Edit all (admin)",
+'absence_error_no_person' => "No person is assigned to the current login. Please contact the administrator so that he can assign a person from the database to your login.",
+'absence_warning_no_person' => "No person is assigned to the current login. For optimal use of this module, it is advisable that your login is assigned to a person. Please contact the administrator.",
 'absence_eventgroup' => "Absences",
 'absence_eventgroup_short' => "Abs.",
 'status_absent' => "Absence registered",
 'placeholder_absence_link' => "Absence administration",
 'submenu_daten_list_absence' => "Absences",
 'fm_name_absence' => "Absences",
+'fm_name_rota_ical' => "Personal iCal-Link",
 'fm_absence_title' => "Manage absences",
 'fm_absence_add_person' => "Registration for absence-administration",
 'fm_absence_add_person_button' => "Login",
@@ -3941,6 +4323,7 @@ Subscriptions to calendar programs such as Outlook or Nextcloud must then be add
 'kota_ko_leute_info_rota_1' => "Rota team membership",
 'kota_ko_leute_info_rota_2' => "Upcoming rota",
 'kota_listview_ko_leute_absence' => "Absences",
+'kota_listview_ko_leute_terms' => "Keywords",
 'ko_event_absence_form_delete_cookie' => "Logout person",
 'ko_event_absence_form_delete_cookie_help' => "If you are using a public PC, it is recommended to log out after using kOOL.<br />On your own PC you may stay logged in, this way you won't have to request a new link via email each time.",
 'checkin_checkout_confirm' => 'Should %s be checked out again?',
@@ -3950,9 +4333,12 @@ Subscriptions to calendar programs such as Outlook or Nextcloud must then be add
 'subscription_textplus_options_help' => "If empty, all options are selectable (%s).\nWith a pipe (|) you can seperate displayed from stored values.\nAn empty option can be specified with a single pipe (|).\nEmpty lines are ignored.",
 'subscription_settings_text_header' => 'Header text shown on all forms',
 'subscription_settings_text_footer' => 'Footer text shown on all forms',
+'subscription_settings_sender_email' => 'Sender email',
+'subscription_settings_sender_name' => 'Sender name',
 'leute_info_rota_team' => 'Rota team',
 'leute_info_rota_membership' => 'Membership',
 'leute_info_rota_chart' => 'Schedules',
 'leute_info_rota_helpers' => 'Helpers',
+'submenu_daten_filter_taxonomy_label' => "Search for events by keyword",
 	); //en
 ?>

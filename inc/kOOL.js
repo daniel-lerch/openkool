@@ -68,6 +68,10 @@ function double_select_move(name, mode) {
 	var $activeChildren = $children.filter('.'+doubleSelectActiveClass);
 		//delete
 	if(mode == "del") {
+		$activeChildren.each(function() {
+			var remove_id = $(this).data("value");
+			$(document.getElementsByName(('sel_ds1_'+name))[0]).find(".select-item[data-value='"+remove_id+"']").removeClass("selected");
+		});
 		$activeChildren.remove();
 	} else {
 		//move modes
@@ -130,6 +134,13 @@ function do_fill_select() {
 
 				// insert html
 				$list.html(html);
+
+				// highlight selected values
+				var $right_column = $list.closest(".doubleselect_container").find(".doubleselect-right");
+				$right_column.find(".select-item").each(function() {
+					var id = $(this).data("value");
+					$list.find(".select-item[data-value='"+id+"']").addClass("selected");
+				});
 			}//if(list)
 
 		}//if(http.status == 200)
@@ -637,6 +648,14 @@ if(typeof jQuery != 'undefined') {
 			inlineform_submit(this, fullid);
 		});
 
+		/* Groupselect changes -> Store changes */
+		$('body').on('change', ".inlineform input.groupselectvalues", function(event) {
+			if($(this).parent().find('input[name="old_'+$(this).prop('name')+'"]').val() !== $(this).val()) {
+				fullid = $(this).parents(".inlineform").attr("id").slice(3);
+				inlineform_submit(this, fullid);
+			}
+		});
+
 		/* Submit button for doubleselect forms clicked -> Store */
 		$('body').on('click', ".inlineform button.if_submit", function(event) {
 			fullid = $(this).parents(".inlineform").attr("id").slice(3);
@@ -647,19 +666,6 @@ if(typeof jQuery != 'undefined') {
 		$(".btn-clear").click(function() {
 			$(this).parent().parent().find('input').val('').submit();
 		});
-
-
-		//Logins: Apply ALL access level to all selects
-		$('.access_apply_all').click(function() {
-			name = 'sel_'+$(this).attr('id');
-			sel = document.getElementsByName(name)[0];
-			val = sel.options[sel.selectedIndex].value;
-			$(this).closest('.panel-body').find('select.sel_rechte').each(function() {
-				$(this).val(val);
-			});
-			return false;
-		});
-
 
 		$("input.textmultiplus-new").keypress(function(e) {
 			if(e.keyCode == 13) {  //Return
@@ -897,8 +903,10 @@ if(typeof jQuery != 'undefined') {
 				$(this).parent().removeClass("koi-checkboxes-checked");
 			}
 			value = '';
+			separator = $(this).parent('div').parent("div.koi-checkboxes-container").children("input.koi-checkboxes-separator").val();
+			if(!separator) separator = ',';
 			$(this).parent('div.koi-checkboxes-entry').parent("div.koi-checkboxes-container").find("input:checked").each(function() {
-				value += (value != '' ? ',' : '') + $(this).val();
+				value += (value != '' ? separator : '') + $(this).val();
 			});
 			$(this).parent('div').parent("div.koi-checkboxes-container").children("input.koi-checkboxes-value").val(value);
 		});
@@ -966,6 +974,23 @@ if(typeof jQuery != 'undefined') {
 				var team_id = $(this).parent().data('team');
 				var event_id = $(this).parent().data('event');
 				window.location = "?action=planning&add_person=" + person + "&team_id=" + team_id + "&event_id=" + event_id;
+			}
+		});
+
+		//FM news filter
+		$(".news-filter a").click(function() {
+			if($(this).hasClass('label-danger')) {
+				$("div.news-filter a").removeClass('label-danger').addClass('label-default');
+
+				$("li.news-item").show();
+			} else {
+				$("div.news-filter a").removeClass('label-danger').addClass('label-default');
+				$(this).addClass('label-danger').removeClass('label-default');
+
+				cat = $(this).data('cat');
+
+				$("li.news-item").hide();
+				$("li.news-item[data-cat='"+cat+"']").show();
 			}
 		});
 
@@ -2066,11 +2091,14 @@ $(function() {
 				targetName,
 				hiddenName
 			);
+			$(this).addClass("selected");
 		});
 		var afterFuncAdd = $this.data('js-after-add');
 		if (afterFuncAdd) eval(afterFuncAdd);
 		$activeOptions.removeClass(doubleSelectActiveClass);
 	});
+
+
 	$('body').on('keypress', '.doubleselect-left', function (e) {
 		var $this = $(this);
 		switch (e.which) {
@@ -2140,6 +2168,34 @@ $(function() {
 			$hidden.trigger('change');
 		}
 	});
+
+	$('body').on('keyup', '.doubleselect_filter_field', function() {
+		let search_string = $(this).val().toLowerCase();
+		let parent_field = $(this).data('parent');
+
+		$("div[id='" + parent_field +"']").find('.select-item').each(function() {
+			let title = $(this).attr('title').toLowerCase();
+			console.log(title);
+			if (title.indexOf(search_string) === -1 && search_string.length >= 2) {
+				$(this).hide();
+			} else {
+				$(this).show();
+			}
+		});
+	});
+
+	$('div.doubleselect-right').each(function() {
+		$(this).find(".select-item").each(function() {
+			let doubleselect_left = $(this).closest(".doubleselect_container").find(".doubleselect-left");
+			let search_id = $(this).data("value");
+			$(doubleselect_left).find(".select-item").each(function() {
+				if ($(this).data("value") === search_id) {
+					$(this).addClass("selected");
+				}
+			});
+		});
+	});
+
 
 	// conflict checks for reservations (used in event and res forms)
 	$('body').on('change', '.res-conflict-field, .mandatory', function(e) {

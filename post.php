@@ -2,7 +2,7 @@
 /***************************************************************
  *  Copyright notice
  *
- *  (c) 2003-2017 Renzo Lauper (renzo@churchtool.org)
+ *  (c) 2003-2020 Renzo Lauper (renzo@churchtool.org)
  *  All rights reserved
  *
  *  This script is part of the kOOL project. The kOOL project is
@@ -332,6 +332,24 @@ switch ($action) {
 			ko_res_store_moderation($mod_data, $sendModerationEmails);
 		}
 
+		break;
+
+	case 'postFile':
+		$checkedFiles = [];
+		foreach($_FILES as $file) {
+			if(isset($request[$file['name']])) {
+				if(md5_file($file['tmp_name']) == $request[$file['name']]) {
+					$checkedFiles[] = $file;
+				} else {
+					reportError(null, 'checksum for file '.$file['name'].' is incorrect.');
+				}
+			}
+		}
+		foreach($checkedFiles as $file) {
+			$path = 'my_images/'.$file['name'];
+			move_uploaded_file($file['tmp_name'],$BASE_PATH.$path);
+			$response[$file['name']] = $path;
+		}
 		break;
 
 	default:

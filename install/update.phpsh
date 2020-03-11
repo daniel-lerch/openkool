@@ -3,7 +3,7 @@
 /***************************************************************
 *  Copyright notice
 *
-*  (c) 2003-2017 Renzo Lauper (renzo@churchtool.org)
+*  (c) 2003-2020 Renzo Lauper (renzo@churchtool.org)
 *  All rights reserved
 *
 *  This script is part of the kOOL project. The kOOL project is
@@ -34,6 +34,7 @@ Possible options:
 -n: only inserts
 -p: preview
 -d: debug
+-s: scripts
 -h: help
 */
 
@@ -134,16 +135,12 @@ if(!$options['only_inserts']) {
 				if($options['preview']) {
 					print $sql."\n";
 				} else if($options['automatic']) {
-					mysqli_query(db_get_link(), $sql);
-					print mysqli_error(db_get_link());
-					print "DONE: $sql\n\n";
+					perform_sql($sql);
 				} else if($options['interactive']) {
 					print $sql."\n";
 					$cmd = cli_read_stdin("(y)es apply, (N)o don't apply, (q)uit: ", array('', 'y', 'n', 'q'), 'n');
 					if($cmd == 'y') {
-						mysqli_query(db_get_link(), $sql);
-						print mysqli_error(db_get_link());
-						print "DONE: $sql\n";
+						perform_sql($sql);
 					} elseif($cmd == 'q') {
 						print "\n";
 						exit;
@@ -161,16 +158,12 @@ if(!$options['only_updates']) {
 			if($options['preview']) {
 				print $sql."\n";
 			} else if($options['automatic']) {
-				mysqli_query(db_get_link(), $sql);
-				print mysqli_error(db_get_link());
-				print "DONE: $sql\n\n";
+				perform_sql($sql);
 			} else if($options['interactive']) {
 				print $sql."\n";
 				$cmd = cli_read_stdin("(y)es apply, (N)o don't apply, (q)uit: ", array('', 'y', 'n', 'q'), 'n');
 				if($cmd == 'y') {
-					mysqli_query(db_get_link(), $sql);
-					print mysqli_error(db_get_link());
-					print "DONE: $sql\n";
+					perform_sql($sql);
 				} elseif($cmd == 'q') {
 					print "\n";
 					exit;
@@ -179,6 +172,52 @@ if(!$options['only_updates']) {
 			}
 		}
 		print "\n";
+	}
+}
+
+
+function perform_sql($sql) {
+	mysqli_query(db_get_link(), $sql);
+	print mysqli_error(db_get_link());
+	print "DONE: $sql\n\n";
+}
+
+
+//Check for update scripts
+ko_updates_find_update_files();
+$updates = db_select_data('ko_updates', "WHERE `status` = '0' ORDER BY `crdate` ASC");
+if(sizeof($updates) > 0) {
+	print "\n\nUPDATE SCRIPTS\n\n";
+	if($options['preview'] || !$options['scripts']) {
+		print "!!! This is only a preview. To run update-scripts: add -s parameter !!!\n\n";
+	}
+
+	foreach($updates as $update) {
+		print "\e[1;32m".$update['name']."\e[0m\n";
+		print $update['description']."\n\n";
+
+		if($options['preview'] || !$options['scripts']) {
+			//Do nothing else
+		}
+		else if($options['automatic']) {
+			$ret = ko_updates_call_update($update['name']);
+			if($ret !== 0) print "\e[0;31mERROR: ".$ret."\e[0m\n";
+
+			print "DONE: ".$update['name']."\n\n\n";
+		}
+		else if($options['interactive']) {
+			$cmd = cli_read_stdin("(y)es apply, (n)o don't apply, (q)uit: ", array('', 'y', 'n', 'q'), 'n');
+			if($cmd == 'y') {
+				ko_updates_call_update($update['name']);
+				if($ret !== 0) print "\e[0;31mERROR: ".$ret."\e[0m\n";
+
+				print "DONE: ".$update['name']."\n\n";
+			} elseif($cmd == 'q') {
+				print "\n";
+				exit;
+			}
+			print "\n";
+		}
 	}
 }
 
@@ -207,6 +246,7 @@ function get_cli_options($argv) {
 		'only_inserts' => FALSE,
 		'preview' => FALSE,
 		'debug' => FALSE,
+		'scripts' => FALSE,
 		'help' => FALSE,
 	);
 
@@ -225,6 +265,7 @@ function get_cli_options($argv) {
 				case 'n': $options['only_inserts'] = TRUE; break;
 				case 'p': $options['preview'] = TRUE; break;
 				case 'd': $options['debug'] = TRUE; break;
+				case 's': $options['scripts'] = TRUE; break;
 				case 'h': $options['help'] = TRUE; break;
 				default: return FALSE;
 			}
@@ -252,6 +293,7 @@ function print_help() {
 	print "-n: Only perform db INSERT commands (combine with -a or -i)\n";
 	print "-p: Preview: Only show SQL statements but don't change anything\n";
 	print "-d: Debug: Show debug info, e.g. original SQL statement for differences\n";
+	print "-s: Call update scripts as well, without it they are only shown but not called\n";
 	print "-h: Show this help\n";
 	print "\n";
 }

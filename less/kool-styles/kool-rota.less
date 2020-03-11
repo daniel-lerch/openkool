@@ -12,6 +12,20 @@
         filter: alpha(opacity=65);
         -webkit-box-shadow: none;
         box-shadow: none;
+
+        .fa-exclamation-triangle {
+            color: #ac7168;
+        }
+    }
+
+    .consensus_yes {
+        box-shadow: inset 0px -7px 0px -1px #6fa949;
+    }
+    .consensus_maybe {
+        box-shadow: inset 0px -7px 0px -1px #e3bc3a;
+    }
+    .consensus_no {
+        box-shadow: inset 0px -7px 0px -1px #d23c2f;
     }
 }
 
@@ -37,6 +51,8 @@
 	button.btn {
 		min-width: 54px;
 		outline: none;
+		display: block;
+		margin: 3px auto;
 	}
 }
 
@@ -96,6 +112,16 @@ ul.dropdown-menu {
             &__absent {
                 color: #8a8a8a;
             }
+
+
+            .glyphicon {
+                width: 12px;
+                margin-left: -10px;
+            }
+
+            .glyphicon-alert {
+                color: #ac7168;
+            }
         }
 
         a.rota-consensus-group-bg {
@@ -143,6 +169,11 @@ ul.dropdown-menu {
             }
         }
     }
+}
+
+#rota-teams-ical-links {
+    column-width: 250px;
+    list-style: none;
 }
 
 .rota-tooltip-inner-full {
@@ -359,9 +390,23 @@ ul.dropdown-menu {
                 }
             }
 
-            .member_event_info.consensus-disabled {
-                color: #bebebe;
-                cursor: initial;
+            .member_event_info {
+                &.member_absent:after {
+                    position: absolute;
+                    left: -4px;
+                    top: 10px;
+                    height: 2px;
+                    background: #c00;
+                    content: "";
+                    width: 49px;
+                    display: block;
+                    transform: rotate(28deg);
+                }
+
+                &.consensus-disabled {
+                    color: #bebebe;
+                    cursor: initial;
+                }
             }
 
             .member_sum {

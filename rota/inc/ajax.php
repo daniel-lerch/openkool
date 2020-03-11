@@ -2,7 +2,7 @@
 /***************************************************************
 *  Copyright notice
 *
-*  (c) 2003-2017 Renzo Lauper (renzo@churchtool.org)
+*  (c) 2003-2020 Renzo Lauper (renzo@churchtool.org)
 *  All rights reserved
 *
 *  This script is part of the kOOL project. The kOOL project is
@@ -82,8 +82,15 @@ function ko_rota_print_planning_code($event_id, $team_id, $schedule, $action) {
 	}
 
 	$all_teams = ko_rota_get_all_teams();
-	$events = array_column(ko_rota_get_events(array_keys($all_teams), '', FALSE, TRUE), "id");
-	$where = "WHERE team_id = " . $team_id . " AND event_id IN(" . implode(",", $events). ")";
+	$event = ko_rota_get_events('', $event_id, TRUE);
+
+	if($all_teams[$team_id]['rotatype'] == "day") {
+		$events = array_column(ko_rota_get_events(array_keys($all_teams), '', FALSE, TRUE), "startdatum");
+		$where = "WHERE team_id = " . $team_id . " AND event_id IN('" . implode("','", $events) . "')";
+	} else {
+		$events = array_column(ko_rota_get_events(array_keys($all_teams), '', FALSE, TRUE), "id");
+		$where = "WHERE team_id = " . $team_id . " AND event_id IN(" . implode(",", $events) . ")";
+	}
 	$db_schedules = db_select_data("ko_rota_schedulling", $where);
 	$scheduled_N_times = 0;
 	foreach($db_schedules AS $db_schedule) {
@@ -99,7 +106,11 @@ function ko_rota_print_planning_code($event_id, $team_id, $schedule, $action) {
 		print '@@@rota_schedule_' . $team_id . '_free_' . md5($schedule) . '_sum@@@' . $scheduled_N_times;
 	}
 
-	$where = "WHERE team_id = " . $team_id . " AND event_id = " . $event_id;
+	if($all_teams[$team_id]['rotatype'] == "day") {
+		$where = "WHERE team_id = " . $team_id . " AND event_id = '" . $event['startdatum'] . "'";
+	} else {
+		$where = "WHERE team_id = " . $team_id . " AND event_id = " . $event_id;
+	}
 	$teams_schedules = db_select_data("ko_rota_schedulling", $where, "schedule", "", "LIMIT 1", TRUE, TRUE);
 
 	if(empty($teams_schedules['schedule'])) {
@@ -108,11 +119,16 @@ function ko_rota_print_planning_code($event_id, $team_id, $schedule, $action) {
 		print '@@@rota_schedule_event_' . $team_id . '_' . $event_id . '_sum@@@' . (trim($teams_schedules['schedule']) != '' ? sizeof(explode(",", $teams_schedules['schedule'])) : '');
 	}
 
-	$events = ko_rota_get_events(array_keys($all_teams), '', FALSE, TRUE);
-	$where = "WHERE event_id IN ('".implode('\',\'', array_column($events,"id"))."') AND team_id = '" . $team_id ."' AND schedule != ''";
+	if($all_teams[$team_id]['rotatype'] == "day") {
+		$events = ko_rota_get_events(array_keys($all_teams), '', FALSE, TRUE);
+		$where = "WHERE event_id IN ('" . implode('\',\'', array_column($events, "startdatum")) . "') AND team_id = '" . $team_id . "' AND schedule != ''";
+	} else {
+		$events = ko_rota_get_events(array_keys($all_teams), '', FALSE, TRUE);
+		$where = "WHERE event_id IN ('" . implode('\',\'', array_column($events, "id")) . "') AND team_id = '" . $team_id . "' AND schedule != ''";
+	}
 	$scheduled_N_times = count(db_select_data("ko_rota_schedulling", $where));
 
-	$all_events = ko_rota_get_events(array_keys($all_teams), '', FALSE, TRUE);
+	$all_events = ko_rota_get_events(array_keys($all_teams), '', TRUE, TRUE);
 	foreach($all_events AS $key => $event) {
 		if(!in_array($team_id,$event['teams']) ||
 			ko_rota_is_scheduling_disabled($event['id'], $team_id)
@@ -134,46 +150,46 @@ if((isset($_GET) && isset($_GET["action"])) || (isset($_POST) && isset($_POST["a
  	switch($action) {
 
 		case 'setsort':
-			if($access['rota']['MAX'] < 5) continue;
+			if($access['rota']['MAX'] < 5) break;
 
 			$_SESSION['sort_rota_teams'] = format_userinput($_GET['sort'], 'alphanum+', TRUE, 30);
 			$_SESSION['sort_rota_teams_order'] = format_userinput($_GET['sort_order'], 'alpha', TRUE, 4);
 
 			print 'main_content@@@';
 			ko_rota_list_teams();
-		break;
+			break;
 
 
 		case 'settime':
 		case 'timetoday':
 		case 'timeplus':
 		case 'timeminus':
-			if($action == 'settime') {
+			if ($action == 'settime') {
 				$mul = 0;
 				$date = format_userinput($_GET['date'], 'date');
 				$_SESSION['rota_timestart'] = strtotime($date) > 0 ? $date : date('Y-m-d');
-			} else if($action == 'timetoday') {
+			} else if ($action == 'timetoday') {
 				$mul = 0;
 				$_SESSION['rota_timestart'] = date('Y-m-d');
 			} else {
 				$mul = $action == 'timeplus' ? 1 : -1;
 			}
 
-			switch(substr($_SESSION['rota_timespan'], -1)) {
+			switch (substr($_SESSION['rota_timespan'], -1)) {
 				case 'd':
 					$inc = substr($_SESSION['rota_timespan'], 0, -1);
-					$new = add2date($_SESSION['rota_timestart'], 'day', $mul*$inc, TRUE);
-				break;
+					$new = add2date($_SESSION['rota_timestart'], 'day', $mul * $inc, TRUE);
+					break;
 
 				case 'w':
 					$inc = substr($_SESSION['rota_timespan'], 0, -1);
-					$new = add2date(date_find_last_monday($_SESSION['rota_timestart']), 'week', $mul*$inc, TRUE);
-				break;
+					$new = add2date(date_find_last_monday($_SESSION['rota_timestart']), 'week', $mul * $inc, TRUE);
+					break;
 
 				case 'm':
 					$inc = substr($_SESSION['rota_timespan'], 0, -1);
-					$new = add2date(substr($_SESSION['rota_timestart'], 0, -2).'01', 'month', $mul*$inc, TRUE);
-				break;
+					$new = add2date(substr($_SESSION['rota_timestart'], 0, -2) . '01', 'month', $mul * $inc, TRUE);
+					break;
 			}
 
 			$_SESSION['rota_timestart'] = $new;
@@ -214,20 +230,20 @@ if((isset($_GET) && isset($_GET["action"])) || (isset($_POST) && isset($_POST["a
 
 		case 'settimespan':
 			$ts = format_userinput($_GET['timespan'], 'alphanum');
-			if(!in_array($ts, $ROTA_TIMESPANS)) break;
+			if (!in_array($ts, $ROTA_TIMESPANS)) break;
 
 			$_SESSION['rota_timespan'] = $_GET['timespan'];
 			ko_save_userpref($_SESSION['ses_userid'], 'rota_timespan', $_SESSION['rota_timespan']);
 
 			//Correct timestart
-			switch(substr($_SESSION['rota_timespan'], -1)) {
+			switch (substr($_SESSION['rota_timespan'], -1)) {
 				case 'w':
 					$_SESSION['rota_timestart'] = date_find_last_monday($_SESSION['rota_timestart']);
-				break;
+					break;
 
 				case 'm':
-					$_SESSION['rota_timestart'] = substr($_SESSION['rota_timestart'], 0, -2).'01';
-				break;
+					$_SESSION['rota_timestart'] = substr($_SESSION['rota_timestart'], 0, -2) . '01';
+					break;
 			}
 
 			print 'main_content@@@';
@@ -237,29 +253,39 @@ if((isset($_GET) && isset($_GET["action"])) || (isset($_POST) && isset($_POST["a
 			} else {
 				ko_rota_schedule();
 			}
-		break;
+			break;
 
 
-		
 		case 'seteventstatus':
-			if($access['rota']['MAX'] < 5) continue;
+			if($access['rota']['MAX'] < 5) break;
 
-			$id = format_userinput($_GET['id'], 'uint');
-			$status = format_userinput($_GET['status'], 'uint');
-			if(!in_array($status, array(1,2))) continue;
-			if($id <= 0) continue;
-
-			if(db_get_count('ko_rota_schedulling', 'event_id', "AND `event_id` = '$id'") > 0) {
-				db_update_data('ko_rota_schedulling', "WHERE `event_id` = '$id'", array('status' => $status));
+			$ids = [];
+			if (strstr($_GET['id'], "-")) {
+				list($year,$week_number) = explode("-", $_GET['id']);
+				for($day=1; $day<=7; $day++) {
+					$ids[] = date('Y-m-d', strtotime($year."W".$week_number.$day));
+				}
 			} else {
-				db_insert_data('ko_rota_schedulling', array('event_id' => $id, 'status' => $status));
+				$ids[] = format_userinput($_GET['id'], 'uint');
 			}
 
+			$status = format_userinput($_GET['status'], 'uint');
+			if(!in_array($status, array(1,2))) break;
 
-			//Log message
-			ko_get_events($event, "AND ko_event.id = '$id'");
-			$event = array_shift($event);
-			ko_log('rota_event_status', 'Status: '.$status.': '.$event['id'].': '.$event['eventgruppen_name'].', '.$event['startdatum'].', '.$event['startzeit']);
+			foreach($ids AS $id) {
+				if (empty($id)) continue;
+
+				if (db_get_count('ko_rota_schedulling', 'event_id', "AND `event_id` = '$id'") > 0) {
+					db_update_data('ko_rota_schedulling', "WHERE `event_id` = '$id'", ['status' => $status]);
+				} else {
+					db_insert_data('ko_rota_schedulling', ['event_id' => $id, 'status' => $status]);
+				}
+
+				//Log message
+				ko_get_events($event, "AND ko_event.id = '$id'");
+				$event = array_shift($event);
+				ko_log('rota_event_status', 'Status: ' . $status . ': ' . $event['id'] . ': ' . $event['eventgruppen_name'] . ', ' . $event['startdatum'] . ', ' . $event['startzeit']);
+			}
 
 			print 'main_content@@@';
 			ko_rota_schedule();
@@ -268,16 +294,16 @@ if((isset($_GET) && isset($_GET["action"])) || (isset($_POST) && isset($_POST["a
 
 
 		case 'seteventteamstatus':
-			if($access['rota']['MAX'] < 5) continue;
+			if($access['rota']['MAX'] < 5) break;
 
 			$teamId = format_userinput($_GET['teamid'], 'uint');
 			$eventId = format_userinput($_GET['eventid'], 'js');
 			$status = format_userinput($_GET['status'], 'uint');
 			$type = format_userinput($_GET['type'], 'js');
-			if(!in_array($status, array(0,1))) continue;
-			if(!$teamId || !$eventId) continue;
+			if(!in_array($status, array(0,1))) break;
+			if(!$teamId || !$eventId) break;
 
-			if($access['rota'][$teamId] < 5) continue;
+			if($access['rota'][$teamId] < 5) break;
 
 			if ($status == 1) {
 				ko_rota_disable_scheduling($eventId, $teamId);
@@ -292,7 +318,6 @@ if((isset($_GET) && isset($_GET["action"])) || (isset($_POST) && isset($_POST["a
 			$event = array_shift($event);
 			$team = db_select_data('ko_rota_teams', "WHERE `id` = {$teamId}", '*', '', '', TRUE);
 			ko_log('rota_event_team_status', "Status: {$statusText}, Event: (id: {$event['id']}, eg_name: {$event['eventgruppen_name']}, startdatum: {$event['startdatum']}, startzeit: {$event['startzeit']}), Team: (id: {$teamId}, name: {$team['name']}, rotatype: {$team['rotatype']})");
-
 
 			if($type == "planning") {
 				$all_teams = ko_rota_get_all_teams();
@@ -340,22 +365,21 @@ if((isset($_GET) && isset($_GET["action"])) || (isset($_POST) && isset($_POST["a
 						}
 					}
 				}
+
 			} else {
-				$mode = FALSE === strpos($eventId, '-') ? 'event' : 'week';
+				$mode = FALSE === strpos($eventId, '-') ? 'event' : 'day';
 				//Make sure, the function uses all teams if called from event form
-				if ($_GET['module'] == 'daten') $teams = array_keys(db_select_data('ko_rota_teams', 'WHERE 1'));
+				if($_GET['module'] == 'daten') $teams = array_keys(db_select_data('ko_rota_teams', 'WHERE 1'));
 				else $teams = '';
-				print 'rota_schedule_' . $eventId . '@@@' . ko_rota_get_schedulling_code($eventId, $mode, $teams);
+				print 'rota_schedule_'.$eventId.'@@@'.ko_rota_get_schedulling_code($eventId, $mode, $teams);
 
 				//Set new status
-				if ($mode == 'event') $event = ko_rota_get_events('', $eventId);
-				else $event = ko_rota_get_weeks('', $eventId);
-				if ($event['_stats']['total'] == $event['_stats']['done']) {
+				if($mode == 'event') $event = ko_rota_get_events('', $eventId);
+				else $event = ko_rota_get_days('', $eventId);
+				if($event['_stats']['total'] == $event['_stats']['done']) {
 					$class = 'success';
-				} else if ($event['_stats']['done'] == 0) {
+				} else if($event['_stats']['done'] == 0) {
 					$class = 'danger';
-				} else {
-					$class = 'warning';
 				}
 
 				print '<script>$(".selectpicker").selectpicker();</script>';
@@ -366,10 +390,10 @@ if((isset($_GET) && isset($_GET["action"])) || (isset($_POST) && isset($_POST["a
 
 
 		case 'setalleventstatus':
-			if($access['rota']['MAX'] < 5) continue;
+			if($access['rota']['MAX'] < 5) break;
 
 			$status = format_userinput($_GET['status'], 'uint');
-			if(!in_array($status, array(1,2))) continue;
+			if(!in_array($status, array(1,2))) break;
 
 			//Get all currently displayed events
 			$ids = array();
@@ -387,32 +411,27 @@ if((isset($_GET) && isset($_GET["action"])) || (isset($_POST) && isset($_POST["a
 				}
 			}
 
-
-			//Change weeks' status as well
-			$wids = array();
-			$weeks = ko_rota_get_weeks();
-			foreach($weeks as $week) {
-				if($week['id']) $wids[] = $week['id'];
+			//Change days' status as well
+			$day_ids = [];
+			$days = ko_rota_get_days();
+			foreach($days as $day) {
+				if($day['id']) $day_ids[] = $day['id'];
 			}
-			if(sizeof($wids) > 0) db_update_data('ko_rota_schedulling', "WHERE `event_id` IN ('".implode("','", $wids)."')", array('status' => $status));
+			if(sizeof($day_ids) > 0) db_update_data('ko_rota_schedulling', "WHERE `event_id` IN ('".implode("','", $day_ids)."')", array('status' => $status));
 
-
-			//Log message
-			ko_log('rota_event_status_all', 'Status: '.$status.': '.$_SESSION['rota_timestart'].' (+'.$_SESSION['rota_timespan'].') - Total '.sizeof($wids).' + '.sizeof($ids).': '.implode(', ', $eids).' - '.implode(', ', $ids));
+			ko_log('rota_event_status_all', 'Status: '.$status.': '.$_SESSION['rota_timestart'].' (+'.$_SESSION['rota_timespan'].') - Total '.sizeof($day_ids).' + '.sizeof($ids).': '.implode(', ', $day_ids).' - '.implode(', ', $ids));
 
 			print 'main_content@@@';
 			ko_rota_schedule();
 		break;
 
-
-
-		case 'setweekstatus':
-			if($access['rota']['MAX'] < 5) continue;
+		case 'setdaystatus':
+			if($access['rota']['MAX'] < 5) break;
 
 			$id = format_userinput($_GET['id'], 'int');
 			$status = format_userinput($_GET['status'], 'uint');
-			if(!in_array($status, array(1,2))) continue;
-			if(strlen($id) != 7) continue;
+			if(!in_array($status, array(1,2))) break;
+			if(strlen($id) != 7) break;
 
 			if(db_get_count('ko_rota_schedulling', 'event_id', "AND `event_id` = '$id'") > 0) {
 				db_update_data('ko_rota_schedulling', "WHERE `event_id` = '$id'", array('status' => $status));
@@ -420,108 +439,245 @@ if((isset($_GET) && isset($_GET["action"])) || (isset($_POST) && isset($_POST["a
 				db_insert_data('ko_rota_schedulling', array('event_id' => $id, 'status' => $status));
 			}
 
-
-			//Log message
-			ko_log('rota_week_status', 'Status: '.$status.': '.$id);
+			ko_log('rota_day_status', 'Status: '.$status.': '.$id);
 
 			print 'main_content@@@';
 			ko_rota_schedule();
 		break;
 
-
-
 		case 'schedule':
 			$team_id = format_userinput($_GET['teamid'], 'uint');
-			if(!$team_id) continue;
-			if($access['rota']['ALL'] < 3 && $access['rota'][$team_id] < 3) continue;
+			if(!$team_id) break;
+			if($access['rota']['ALL'] < 3 && $access['rota'][$team_id] < 3) break;
 
 			$event_id = format_userinput($_GET['eventid'], 'int');
 			$schedule = str_replace(',', '', format_userinput($_GET['schedule'], 'js'));
 
 			//Get event and check for valid one
-			if(FALSE === strpos($event_id, '-')) {  //Event ID
+			if(FALSE === strpos($event_id, '-')) {
 				$mode = 'event';
 				$event = db_select_data('ko_event', "WHERE `id` = '$event_id'", '*', '', '', TRUE);
-				if(!isset($event['id']) || $event['id'] != $event_id || $event['rota'] != 1) continue;
-			} else {  //Week ID
-				$mode = 'week';
-				$current_schedule = db_select_data('ko_rota_schedulling', "WHERE `team_id` = '$team_id' AND `event_id` = '$event_id'", '*', '', '', TRUE);
-				if(isset($current_schedule['event_id'])) {  //Only check for status if this week has values in the db already
-					if($current_schedule['event_id'] != $event_id || $current_schedule['status'] != 1) continue;
+				if(!isset($event['id']) || $event['id'] != $event_id || $event['rota'] != 1) break;
+
+				$team = db_select_data("ko_rota_teams", "WHERE id = '" . $team_id . "'", "*", "","LIMIT 1", TRUE, TRUE);
+				if($team['rotatype'] == "day") {
+					$event_id = $event['startdatum'];
 				}
-			}
 
-			//Get current schedule entry and append new value
-			if(!is_array($current_schedule)) $current_schedule = db_select_data('ko_rota_schedulling', "WHERE `team_id` = '$team_id' AND `event_id` = '$event_id'", '*', '', '', TRUE);
-			if(!isset($current_schedule['schedule'])) {
-				db_insert_data('ko_rota_schedulling', array('team_id' => $team_id, 'event_id' => $event_id, 'schedule' => $schedule));
-				$new_schedule = $schedule;
-			} else {
-				$new = implode(',', array_unique(array_merge(explode(',', $current_schedule['schedule']), array($schedule))));
-				while(substr($new, 0, 1) == ',') $new = substr($new, 1);
-				while(substr($new, -1) == ',') $new = substr($new, 0, -1);
-				db_update_data('ko_rota_schedulling', "WHERE `team_id` = '$team_id' AND `event_id` = '$event_id'", array('schedule' => $new));
-				$new_schedule = $new;
-			}
+				$where = "WHERE `team_id` = '$team_id' AND `event_id` = '$event_id'";
+				$current_schedule = db_select_data('ko_rota_schedulling', $where, '*', '', '', TRUE);
+				if(isset($current_schedule['event_id']) && ($current_schedule['event_id'] != $event_id || $current_schedule['status'] != 1)) {
+					continue;
+				}
 
+				//Get current schedule entry and append new value
+				if(!is_array($current_schedule)) $current_schedule = db_select_data('ko_rota_schedulling', "WHERE `team_id` = '$team_id' AND `event_id` = '$event_id'", '*', '', '', TRUE);
+				if(!isset($current_schedule['schedule'])) {
+					db_insert_data('ko_rota_schedulling', array('team_id' => $team_id, 'event_id' => $event_id, 'schedule' => $schedule));
+					$new_schedule = $schedule;
+				} else {
+					$new = implode(',', array_unique(array_merge(explode(',', $current_schedule['schedule']), array($schedule))));
+					while(substr($new, 0, 1) == ',') $new = substr($new, 1);
+					while(substr($new, -1) == ',') $new = substr($new, 0, -1);
+					db_update_data('ko_rota_schedulling', "WHERE `team_id` = '$team_id' AND `event_id` = '$event_id'", array('schedule' => $new));
+					$new_schedule = $new;
+				}
 
-			//Store week entry as event
-			if(ko_get_setting('rota_export_weekly_teams') == 1 && $mode == 'week') {
+				//Make sure, the function uses all teams if called from event form
+				if($_GET['module'] == 'daten') $teams = array_keys(db_select_data('ko_rota_teams', 'WHERE 1'));
+				else $teams = '';
+
+				if($_GET['type'] == "planning") {
+					ko_rota_print_planning_code($event['id'], $team_id, $schedule, $_GET['action']);
+				} else {
+					print 'rota_schedule_' . $event_id . '@@@' . ko_rota_get_schedulling_code($event_id, $mode, $teams);
+				}
+				//Set new status
+				if($mode == 'event') $event = ko_rota_get_events('', $event_id);
+				else $event = ko_rota_get_days('', $event_id);
+				if($event['_stats']['total'] == $event['_stats']['done']) {
+					$class = 'success';
+				} else if($event['_stats']['done'] == 0) {
+					$class = 'danger';
+				} else {
+					$class = 'warning';
+				}
+
 				$team = db_select_data('ko_rota_teams', "WHERE `id` = '$team_id'", '*', '', '', TRUE);
-				ko_rota_create_weekly_event($event_id, $team_id, $team['export_eg'], $new_schedule);
-			}
-		
-
-			//Make sure, the function uses all teams if called from event form
-			if($_GET['module'] == 'daten') $teams = array_keys(db_select_data('ko_rota_teams', 'WHERE 1'));
-			else $teams = '';
-
-			if($_GET['type'] == "planning") {
-				ko_rota_print_planning_code($event_id, $team_id, $schedule, $_GET['action']);
+				ko_log('rota_schedule', $mode.($_GET['module'] == 'daten' ? ' (from event)' : '').': '.$event_id.($mode == 'event' ? (', '.$event['eventgruppen_name'].' '.$event['_date']) : '').', Team: '.$team['name'].' ('.$team_id.'), Schedule: '.$schedule.': '.implode(', ', ko_rota_schedulled_text($schedule, 4)));
+				if($_GET['type'] !== "planning") {
+					print '<script>$(".selectpicker").selectpicker();</script>';
+					print '@@@rota_stats_' . $event['id'] . '@@@<button class="btn btn-' . $class . '" disabled>' . $event['_stats']['done'] . '/' . $event['_stats']['total'] . '</button>';
+				}
 			} else {
-				print 'rota_schedule_' . $event_id . '@@@' . ko_rota_get_schedulling_code($event_id, $mode, $teams);
-			}
-			//Set new status
-			if($mode == 'event') $event = ko_rota_get_events('', $event_id);
-			else $event = ko_rota_get_weeks('', $event_id);
-			if($event['_stats']['total'] == $event['_stats']['done']) {
-				$class = 'success';
-			} else if($event['_stats']['done'] == 0) {
-				$class = 'danger';
-			} else {
-				$class = 'warning';
-			}
+				$mode = 'day';
+				$person_id = format_userinput($_GET['personid'], "text");
 
+				if(!is_numeric($person_id)) {
+					$person_id = decodeFreeTextName($person_id);
+				}
 
-			//Log message
-			$team = db_select_data('ko_rota_teams', "WHERE `id` = '$team_id'", '*', '', '', TRUE);
-			ko_log('rota_schedule', $mode.($_GET['module'] == 'daten' ? ' (from event)' : '').': '.$event_id.($mode == 'event' ? (', '.$event['eventgruppen_name'].' '.$event['_date']) : '').', Team: '.$team['name'].' ('.$team_id.'), Schedule: '.$schedule.': '.implode(', ', ko_rota_schedulled_text($schedule)));
-			if($_GET['type'] !== "planning") {
+				list($year, $week_number) = explode("-", $event_id);
+
+				$week = [];
+				$selected_days = explode("-",$_GET['schedule']);
+				for ($day=1; $day<=7; $day++) {
+					$event_id = date('Y-m-d', strtotime($year . "W" . $week_number . $day));
+					$where = "WHERE `team_id` = '$team_id' AND `event_id` = '$event_id'";
+					$current_schedule = db_select_data('ko_rota_schedulling', $where, '*', '', '', TRUE);
+					if (isset($current_schedule['event_id']) && ($current_schedule['event_id'] != $event_id || $current_schedule['status'] != 1)) {
+						continue;
+					}
+
+					if (in_array($day, $selected_days)) {
+
+						if (!isset($current_schedule['schedule'])) {
+							db_insert_data('ko_rota_schedulling', ['team_id' => $team_id, 'event_id' => $event_id, 'schedule' => $person_id]);
+							$new_schedule = $person_id;
+						} else {
+							$new = implode(',', array_unique(array_merge(explode(',', $current_schedule['schedule']), [$person_id])));
+							while (substr($new, 0, 1) == ',') $new = substr($new, 1);
+							while (substr($new, -1) == ',') $new = substr($new, 0, -1);
+							if($new == $current_schedule['schedule']) continue;
+
+							db_update_data('ko_rota_schedulling', "WHERE `team_id` = '$team_id' AND `event_id` = '$event_id'", ['schedule' => $new]);
+							$new_schedule = $new;
+						}
+
+						$team = db_select_data('ko_rota_teams', "WHERE `id` = '$team_id'", '*', '', '', TRUE);
+						$log_message = "added: " . $mode.($_GET['module'] == 'daten' ? ' (from event)' : '').': '.$event_id . ' ';
+						$log_message.= 'Team: '.$team['name'].' ('.$team_id.'), ';
+						$log_message.= 'Schedule: '.implode(', ', ko_rota_schedulled_text($person_id, 4)) . ' ('.$person_id.')';
+						ko_log('rota_schedule', $log_message);
+					} else {
+						// remove from schedule
+						$new = [];
+						foreach(explode(',', $current_schedule['schedule']) as $e) {
+							if($e != $person_id && trim($e) != '') $new[] = $e;
+						}
+
+						$where = "WHERE `team_id` = '$team_id' AND `event_id` = '$event_id'";
+						if(empty($new) && !empty($current_schedule['schedule'])) {
+							db_delete_data("ko_rota_schedulling", $where);
+						} else if(implode(",", $new) != $current_schedule['schedule'] ) {
+							db_update_data('ko_rota_schedulling', $where, ['schedule' => implode(',', $new)]);
+						} else {
+							continue;
+						}
+						$new_schedule = $new;
+						$team = db_select_data('ko_rota_teams', "WHERE `id` = '$team_id'", '*', '', '', TRUE);
+						$log_message = "removed: " . $mode.($_GET['module'] == 'daten' ? ' (from event)' : '').': '.$event_id . ' ';
+						$log_message.= 'Team: '.$team['name'].' ('.$team_id.'), ';
+						$log_message.= 'Schedule: '.implode(', ', ko_rota_schedulled_text($person_id, 4)) . ' ('.$person_id.')';
+						ko_log('rota_schedule', $log_message);
+					}
+				}
+
+				$order = 'ORDER BY '.$_SESSION['sort_rota_teams'].' '.$_SESSION['sort_rota_teams_order'];
+				$rota_teams = db_select_data('ko_rota_teams', "WHERE `id` IN (".implode(',', $_SESSION['rota_teams']).")", '*', $order);
+				$show_days = FALSE;
+				if($_SESSION['rota_timespan'] != '1d') {
+					foreach($rota_teams as $team) {
+						if($team['rotatype'] == 'day') $show_days = TRUE;
+					}
+				}
+
+				$weeks = [];
+				if($show_days) {
+					$all_teams = db_select_data('ko_rota_teams', "WHERE rotatype='day'");
+					$days = ko_rota_get_days($rota_teams, '', '',TRUE);
+					foreach($days as $key => $day) {
+						if($days[$key]['month'] == 12 && $days[$key]['num'] == 1) {
+							$week_key = ($days[$key]['year']+1) . $days[$key]['num'];
+						} else {
+							$week_key = $days[$key]['year'] . $days[$key]['num'];
+						}
+
+						if(isset($weeks[$week_key]['days'])) {
+							$weeks[$week_key]['days'][] = $days[$key];
+							$weeks[$week_key]['rotastatus'] = 1;
+						} else {
+							$weeks[$week_key]['days'][1] = $days[$key];
+							$weeks[$week_key]['teams'] = [];
+						}
+
+						if ($days[$key]['rotastatus'] == 2) {
+							$weeks[$week_key]['rotastatus'] = 2;
+						}
+
+						$weeks[$week_key]['_stats']['done']+= count($day['schedule']);
+						$weeks[$week_key]['teams'] = array_unique(array_merge($weeks[$week_key]['teams'], $day['teams']));
+
+						$week_start = new DateTime();
+						$week_start->setISODate($days[$key]['year'], $days[$key]['num']);
+						$week_stop = clone $week_start;
+						$week_stop->modify("+6 days");
+						$weeks[$week_key]['label'] = $week_start->format('d.m.Y') . " - " . $week_stop->format('d.m.Y');
+						$weeks[$week_key]['id'] = $days[$key]['year'] . "-" . $days[$key]['num'];
+					}
+
+					foreach($weeks AS $key => $week) {
+						$active_days_in_week = 0;
+
+						foreach($week['teams'] aS $team) {
+							$active_days_in_week+= count(explode(",",$all_teams[$team]['days_range']));
+						}
+
+						$weeks[$key]['_stats']['total'] = $active_days_in_week;
+						$weeks[$key]['schedulling_code'] = ko_rota_get_schedulling_code_days($week);
+					}
+				}
+
+				$selected_week = $weeks[$year.$week_number];
+				print 'rota_schedule_' . $year . '-' . $week_number . '@@@' . $selected_week['schedulling_code'];
+
+				if($selected_week['_stats']['done'] >= $selected_week['_stats']['total']) {
+					$class = 'success';
+				} else if($selected_week['_stats']['done'] == 0) {
+					$class = 'danger';
+				} else {
+					$class = 'warning';
+				}
+
+				if($_GET['type'] !== "planning") {
+					print '@@@rota_stats_' . $selected_week['id'] . '@@@<button class="btn btn-' . $class . '" disabled>' . $selected_week['_stats']['done'] . '/' . $selected_week['_stats']['total'] . '</button>';
+				}
+
+				$events = ko_rota_get_events();
+				$teams = $_SESSION['rota_teams'];
+				foreach($events AS $event) {
+					print '@@@rota_schedule_' . $event['id'] . '@@@' . ko_rota_get_schedulling_code($event['id'], "event", $teams);
+				}
+
 				print '<script>$(".selectpicker").selectpicker();</script>';
-				print '@@@rota_stats_' . $event['id'] . '@@@<button class="btn btn-' . $class . '" disabled>' . $event['_stats']['done'] . '/' . $event['_stats']['total'] . '</button>';
 			}
 		break;
 
-
-
 		case 'delschedule':
 			$team_id = format_userinput($_GET['teamid'], 'uint');
-			if(!$team_id) continue;
-			if($access['rota']['ALL'] < 3 && $access['rota'][$team_id] < 3) continue;
+			if(!$team_id) break;
+			if($access['rota']['ALL'] < 3 && $access['rota'][$team_id] < 3) break;
 
 			$event_id = format_userinput($_GET['eventid'], 'int');
 			$schedule = str_replace(',', '', format_userinput($_GET['schedule'], 'js'));
 
 			//Get event and check for valid one
-			if(FALSE === strpos($event_id, '-')) {  //Event ID
+			if(FALSE === strpos($event_id, '-')) {
+				//Event ID
 				$mode = 'event';
 				$event = db_select_data('ko_event', "WHERE `id` = '$event_id'", '*', '', '', TRUE);
-				if(!isset($event['id']) || $event['id'] != $event_id || $event['rota'] != 1) continue;
-			} else {  //Week ID
-				$mode = 'week';
+				if(!isset($event['id']) || $event['id'] != $event_id || $event['rota'] != 1) break;
+
+				$team = db_select_data("ko_rota_teams", "WHERE id = '" . $team_id . "'", "*", "","LIMIT 1", TRUE, TRUE);
+				if($team['rotatype'] == "day") {
+					$event_id = $event['startdatum'];
+				}
+
+			} else {
+				$mode = 'day';
 				$current_schedule = db_select_data('ko_rota_schedulling', "WHERE `team_id` = '$team_id' AND `event_id` = '$event_id'", '*', '', '', TRUE);
 				if(isset($current_schedule['event_id'])) {  //Only check for status if this week has values in the db already
-					if($current_schedule['event_id'] != $event_id || $current_schedule['status'] != 1) continue;
+					if($current_schedule['event_id'] != $event_id || $current_schedule['status'] != 1) break;
 				}
 			}
 
@@ -533,27 +689,23 @@ if((isset($_GET) && isset($_GET["action"])) || (isset($_POST) && isset($_POST["a
 			}
 			db_update_data('ko_rota_schedulling', "WHERE `team_id` = '$team_id' AND `event_id` = '$event_id'", array('schedule' => implode(',', $new)));
 
-
-			//Store week entry as event
-			if(ko_get_setting('rota_export_weekly_teams') == 1 && $mode == 'week') {
-				$team = db_select_data('ko_rota_teams', "WHERE `id` = '$team_id'", '*', '', '', TRUE);
-				ko_rota_create_weekly_event($event_id, $team_id, $team['export_eg'], implode(',', $new));
-			}
-
-
 			//Make sure, the function uses all teams if called from event form
 			if($_GET['module'] == 'daten') $teams = array_keys(db_select_data('ko_rota_teams', 'WHERE 1'));
 			else $teams = '';
 
 			if($_GET['type'] == "planning") {
-				ko_rota_print_planning_code($event_id, $team_id, $schedule, $_GET['action']);
+				ko_rota_print_planning_code($event['id'], $team_id, $schedule, $_GET['action']);
 			} else {
 				print 'rota_schedule_'.$event_id.'@@@'.ko_rota_get_schedulling_code($event_id, $mode, $teams);
 			}
 
 			//Set new status
-			if($mode == 'event') $event = ko_rota_get_events('', $event_id);
-			else $event = ko_rota_get_weeks('', $event_id);
+			if($mode == 'event') {
+				$event = ko_rota_get_events('', $event_id);
+			} else {
+				$event = ko_rota_get_days('', $event_id);
+			}
+
 			if($event['_stats']['total'] == $event['_stats']['done']) {
 				$class = 'success';
 			} else if($event['_stats']['done'] == 0) {
@@ -565,7 +717,7 @@ if((isset($_GET) && isset($_GET["action"])) || (isset($_POST) && isset($_POST["a
 
 			//Log message
 			$team = db_select_data('ko_rota_teams', "WHERE `id` = '$team_id'", '*', '', '', TRUE);
-			ko_log('rota_del_schedule', $mode.($_GET['module'] == 'daten' ? ' (from event)' : '').': '.$event_id.($mode == 'event' ? (', '.$event['eventgruppen_name'].' '.$event['_date']) : '').', Team: '.$team['name'].' ('.$team_id.'), Schedule: '.$schedule.': '.implode(', ', ko_rota_schedulled_text($schedule)));
+			ko_log('rota_del_schedule', $mode.($_GET['module'] == 'daten' ? ' (from event)' : '').': '.$event_id.($mode == 'event' ? (', '.$event['eventgruppen_name'].' '.$event['_date']) : '').', Team: '.$team['name'].' ('.$team_id.'), Schedule: '.$schedule.': '.implode(', ', ko_rota_schedulled_text($schedule, 4)));
 			if($_GET['type'] !== "planning") {
 				print '<script>$(".selectpicker").selectpicker();</script>';
 				print '@@@rota_stats_' . $event['id'] . '@@@<button class="btn btn-' . $class . '" disabled>' . $event['_stats']['done'] . '/' . $event['_stats']['total'] . '</button>';
@@ -576,7 +728,7 @@ if((isset($_GET) && isset($_GET["action"])) || (isset($_POST) && isset($_POST["a
 
 
 		case 'egdoubleselect':
-			if($access['rota']['MAX'] < 5) continue;
+			if($access['rota']['MAX'] < 5) break;
 
 			//GET data
 			$id = format_userinput($_GET['gid'], 'uint', FALSE, 11, array(), '-');
@@ -606,26 +758,33 @@ if((isset($_GET) && isset($_GET["action"])) || (isset($_POST) && isset($_POST["a
 		case 'itemlistteams':
 			//ID and state of the clicked field
 			$id = format_userinput($_GET['id'], 'js');
-			if($access['rota']['ALL'] < 1 && $access['rota'][$id] < 1) continue;
+			if($access['rota']['ALL'] < 1 && $access['rota'][$id] < 1) break;
 			$state = $_GET['state'] == 'true' ? 'checked' : '';
 
+			if(substr($id,-3) == "_ro") {
+				$session_key = "rota_teams_readonly";
+				$id = substr($id,0,-3);
+			} else {
+				$session_key = "rota_teams";
+			}
+
 			if($state == 'checked') {  //Select it
-				if(!in_array($id, $_SESSION['rota_teams'])) $_SESSION['rota_teams'][] = $id;
+				if(!in_array($id, $_SESSION[$session_key])) $_SESSION[$session_key][] = $id;
 			} else {  //deselect it
-				if(in_array($id, $_SESSION['rota_teams'])) $_SESSION['rota_teams'] = array_diff($_SESSION['rota_teams'], array($id));
+				if(in_array($id, $_SESSION[$session_key])) $_SESSION[$session_key] = array_diff($_SESSION[$session_key], array($id));
 			}
 
 			//Check for valid teams and sort them
 			$new = array();
 			$all_teams = db_select_data('ko_rota_teams', 'WHERE 1', '*', 'ORDER BY name ASC');
 			foreach($all_teams as $team) {
-				if(in_array($team['id'], $_SESSION['rota_teams'])) $new[] = $team['id'];
+				if(in_array($team['id'], $_SESSION[$session_key])) $new[] = $team['id'];
 			}
-			$_SESSION['rota_teams'] = $new;
-			foreach($_SESSION['rota_teams'] as $k => $v) if($v == '') unset($_SESSION['rota_teams'][$k]);
+			$_SESSION[$session_key] = $new;
+			foreach($_SESSION[$session_key] as $k => $v) if($v == '') unset($_SESSION[$session_key][$k]);
 
 			//Save userpref
-			ko_save_userpref($_SESSION['ses_userid'], 'rota_teams', implode(',', $_SESSION['rota_teams']));
+			ko_save_userpref($_SESSION['ses_userid'], $session_key, implode(',', $_SESSION[$session_key]));
 
 			print 'main_content@@@';
 			switch($_SESSION['show']) {
@@ -641,9 +800,14 @@ if((isset($_GET) && isset($_GET["action"])) || (isset($_POST) && isset($_POST["a
 
 		case 'itemlistsaveteams':
 			//save new value
-			if($_GET['name'] == '') continue;
+			if($_GET['name'] == '') break;
 			foreach($_SESSION['rota_teams'] as $k => $v) if($v == '') unset($_SESSION['rota_teams'][$k]);
 			$new_value = implode(',', $_SESSION['rota_teams']);
+
+			foreach($_SESSION['rota_teams_readonly'] as $k => $v) if($v == '') unset($_SESSION['rota_teams_readonly'][$k]);
+			if(!empty($_SESSION['rota_teams_readonly'])) {
+				$new_value .= ",ro_" . implode(',ro_', $_SESSION['rota_teams_readonly']);
+			}
 			$user_id = ($access['rota']['MAX'] > 4 && $_GET['global'] == 'true') ? '-1' : $_SESSION['ses_userid'];
 			$name = format_userinput($_GET['name'], 'js', FALSE, 0, array('allquotes'));
 			ko_save_userpref($user_id, $name, $new_value, 'rota_itemset');
@@ -676,20 +840,38 @@ if((isset($_GET) && isset($_GET["action"])) || (isset($_POST) && isset($_POST["a
 		case 'itemlistopenteams':
 			//save new value
 			$name = format_userinput($_GET['name'], 'js', FALSE, 0, array(), '@');
-			if($name == '') continue;
+			if($name == '') break;
 
 			if($name == '_all_') {
 				$all_teams = db_select_data('ko_rota_teams');
-				$_SESSION['rota_teams'] = array_keys($all_teams);
+				$_SESSION['rota_teams'] = $_SESSION['rota_teams_readonly'] = [];
+				foreach($all_teams AS $team_id => $team) {
+					$_SESSION['rota_teams'][] = $team_id;
+					if($team['rotatype'] == "day") {
+						$_SESSION['rota_teams_readonly'][] = $team_id;
+					}
+				}
 			} else if($name == '_none_') {
 				$_SESSION['rota_teams'] = array();
+				$_SESSION['rota_teams_readonly'] = array();
 			} else {
 				if(substr($name, 0, 3) == '@G@') $value = ko_get_userpref('-1', substr($name, 3), 'rota_itemset');
 				else $value = ko_get_userpref($_SESSION['ses_userid'], $name, 'rota_itemset');
-				$_SESSION['rota_teams'] = explode(',', $value[0]['value']);
+
+				$_SESSION['rota_teams'] = [];
+				$_SESSION['rota_teams_readonly'] = [];
+				foreach(explode(',', $value[0]['value']) AS $team) {
+					if(substr($team,0,3) == "ro_") {
+						$_SESSION['rota_teams_readonly'][] = substr($team,3);
+					} else {
+						$_SESSION['rota_teams'][] = $team;
+					}
+				}
 			}
 			foreach($_SESSION['rota_teams'] as $k => $v) if($v == '') unset($_SESSION['rota_teams'][$k]);
 			ko_save_userpref($_SESSION['ses_userid'], 'rota_teams', implode(',', $_SESSION['rota_teams']));
+			foreach($_SESSION['rota_teams_readonly'] as $k => $v) if($v == '') unset($_SESSION['rota_teams_readonly'][$k]);
+			ko_save_userpref($_SESSION['ses_userid'], 'rota_teams_readonly', implode(',', $_SESSION['rota_teams_readonly']));
 
 			print 'main_content@@@';
 			switch($_SESSION['show']) {
@@ -705,7 +887,7 @@ if((isset($_GET) && isset($_GET["action"])) || (isset($_POST) && isset($_POST["a
 		case 'itemlistdeleteteams':
 			//save new value
 			$name = format_userinput($_GET['name'], 'js', FALSE, 0, array(), '@');
-			if($name == '') continue;
+			if($name == '') break;
 
 			if(substr($name, 0, 3) == '@G@') {
 				if($access['rota']['MAX'] > 4) ko_delete_userpref('-1', substr($name, 3), 'rota_itemset');
@@ -719,6 +901,8 @@ if((isset($_GET) && isset($_GET["action"])) || (isset($_POST) && isset($_POST["a
 
 		case 'itemlistegs':
 		case 'itemlistgroup':
+		case 'itemlisttaxonomy':
+		case 'itemlistroom':
 			//ID and state of the clicked field
 			$id = format_userinput($_GET['id'], 'js');
 			$state = $_GET['state'] == 'true' ? 'checked' : '';
@@ -740,6 +924,12 @@ if((isset($_GET) && isset($_GET["action"])) || (isset($_POST) && isset($_POST["a
 					}
 				}//foreach(groups)
 			}
+			else if($action == "itemlisttaxonomy") {
+				$_SESSION["daten_taxonomy_filter"] = $id;
+			}
+			else if($action == "itemlistroom") {
+				$_SESSION["daten_room_filter"] = $id;
+			}
 
 			//Get rid of invalid event group ids
 			$all_egs = array_keys(db_select_data('ko_eventgruppen', 'WHERE 1', '*'));
@@ -752,6 +942,8 @@ if((isset($_GET) && isset($_GET["action"])) || (isset($_POST) && isset($_POST["a
 			//Save userpref
 			sort($_SESSION['rota_egs']);
 			ko_save_userpref($_SESSION['ses_userid'], 'rota_egs', implode(',', $_SESSION['rota_egs']));
+			ko_save_userpref($_SESSION["ses_userid"], "daten_taxonomy_filter", $_SESSION["daten_taxonomy_filter"]);
+			ko_save_userpref($_SESSION["ses_userid"], "daten_room_filter", $_SESSION["daten_room_filter"]);
 
 			print 'main_content@@@';
 			switch($_SESSION['show']) {
@@ -784,11 +976,21 @@ if((isset($_GET) && isset($_GET["action"])) || (isset($_POST) && isset($_POST["a
 
 		case 'itemlistsaveegs':
 			//save new value
-			if($_GET['name'] == '') continue;
+			if($_GET['name'] == '') break;
+			$name = format_userinput($_GET['name'], 'js', FALSE, 0, array('allquotes'));
 			$new_value = implode(',', $_SESSION['rota_egs']);
 			$user_id = ($access['daten']['MAX'] > 3 && $_GET['global'] == 'true') ? '-1' : $_SESSION['ses_userid'];
-			ko_save_userpref($user_id, format_userinput($_GET['name'], 'js', FALSE, 0, array('allquotes')), $new_value, 'daten_itemset');
+			ko_save_userpref($user_id, $name, $new_value, 'daten_itemset');
 
+			$taxonomy_filter = $_SESSION['daten_taxonomy_filter'];
+			if(!empty($taxonomy_filter)) {
+				ko_save_userpref($user_id, $name, $taxonomy_filter, "daten_taxonomy_filter");
+			}
+			$room_filter = $_SESSION['daten_room_filter'];
+			if(!empty($room_filter)) {
+				ko_save_userpref($user_id, $name, $room_filter, "daten_room_filter");
+			}
+			
 			print submenu_rota('itemlist_eventgroups', 'open', 2);
 		break;
 
@@ -796,19 +998,35 @@ if((isset($_GET) && isset($_GET["action"])) || (isset($_POST) && isset($_POST["a
 		case 'itemlistopenegs':
 			//save new value
 			$name = format_userinput($_GET['name'], 'js', FALSE, 0, array(), '@');
-			if($name == '') continue;
+			if($name == '') break;
 
 			if($name == '_all_') {
 				ko_get_eventgruppen($grps);
 				$_SESSION['rota_egs'] = array_keys($grps);
+				$_SESSION["daten_taxonomy_filter"] = "";
+				$_SESSION["daten_room_filter"] = "";
 			} else if($name == '_none_') {
 				$_SESSION['rota_egs'] = array();
+				$_SESSION["daten_taxonomy_filter"] = "";
+				$_SESSION["daten_room_filter"] = "";
 			} else {
-				if(substr($name, 0, 3) == '@G@') $value = ko_get_userpref('-1', substr($name, 3), 'daten_itemset');
-				else $value = ko_get_userpref($_SESSION['ses_userid'], $name, 'daten_itemset');
+				if(substr($name, 0, 3) == '@G@') {
+					$value = ko_get_userpref('-1', substr($name, 3), 'daten_itemset');
+					$value_taxonomy = ko_get_userpref('-1', substr($name, 3), 'daten_taxonomy_filter');
+					$value_room = ko_get_userpref('-1', substr($name, 3), 'daten_room_filter');
+				}
+				else {
+					$value = ko_get_userpref($_SESSION['ses_userid'], $name, 'daten_itemset');
+					$value_taxonomy = ko_get_userpref($_SESSION['ses_userid'], $name, 'daten_taxonomy_filter');
+					$value_room = ko_get_userpref($_SESSION['ses_userid'], $name, 'daten_room_filter');
+				}
 				$_SESSION['rota_egs'] = explode(',', $value[0]['value']);
+				$_SESSION["daten_taxonomy_filter"] = $value_taxonomy[0]["value"];
+				$_SESSION["daten_room_filter"] = $value_room[0]["value"];
 			}
 			ko_save_userpref($_SESSION['ses_userid'], 'rota_egs', implode(',', $_SESSION['rota_egs']));
+			ko_save_userpref($_SESSION["ses_userid"], "daten_taxonomy_filter", $_SESSION["daten_taxonomy_filter"]);
+			ko_save_userpref($_SESSION["ses_userid"], "daten_room_filter", $_SESSION["daten_room_filter"]);
 
 			print 'main_content@@@';
 			switch($_SESSION['show']) {
@@ -827,11 +1045,19 @@ if((isset($_GET) && isset($_GET["action"])) || (isset($_POST) && isset($_POST["a
 		case 'itemlistdeleteegs':
 			//save new value
 			$name = format_userinput($_GET['name'], 'js', FALSE, 0, array(), '@');
-			if($name == '') continue;
+			if($name == '') break;
 
 			if(substr($name, 0, 3) == '@G@') {
-				if($access['daten']['MAX'] > 3) ko_delete_userpref('-1', substr($name, 3), 'daten_itemset');
-			} else ko_delete_userpref($_SESSION['ses_userid'], $name, 'daten_itemset');
+				if($access['daten']['MAX'] > 3) {
+					ko_delete_userpref('-1', substr($name, 3), 'daten_itemset');
+					ko_delete_userpref('-1', substr($name, 3), 'daten_taxonomy_filter');
+					ko_delete_userpref('-1', substr($name, 3), 'daten_room_filter');
+				}
+			} else {
+				ko_delete_userpref($_SESSION['ses_userid'], $name, 'daten_itemset');
+				ko_delete_userpref($_SESSION['ses_userid'], $name, 'daten_taxonomy_filter');
+				ko_delete_userpref($_SESSION['ses_userid'], $name, 'daten_room_filter');
+			}
 
 			print submenu_rota('itemlist_eventgroups', 'open', 2);
 		break;
@@ -840,14 +1066,14 @@ if((isset($_GET) && isset($_GET["action"])) || (isset($_POST) && isset($_POST["a
 
 
 		case 'export':
-			if($access['rota']['MAX'] < 2) continue;
+			if($access['rota']['MAX'] < 2) break;
 			$no_post = TRUE;
 
 			$mode = format_userinput($_GET['mode'], 'alpha');
 			switch($mode) {
 				case 'event':
 					$eventid = format_userinput($_GET['id'], 'uint');
-					if(!$eventid) continue;
+					if(!$eventid) break;
 					$filename = 'excel/'.ko_rota_export_event_xls($eventid);
 					$filetype = 'event:'.$eventid;
 				break;
@@ -868,7 +1094,7 @@ if((isset($_GET) && isset($_GET["action"])) || (isset($_POST) && isset($_POST["a
 				break;
 
 				case 'pdftable':
-					$filename = 'pdf/'.ko_rota_export_landscape_pdf($_SESSION['rota_timestart']);
+					$filename = 'pdf/'.ko_rota_export_landscape_pdf();
 					$filetype = 'landscape';
 				break;
 
@@ -897,7 +1123,7 @@ if((isset($_GET) && isset($_GET["action"])) || (isset($_POST) && isset($_POST["a
 
 
 		case 'storeinmylist':
-			if(!ko_module_installed('leute')) continue;
+			if(!ko_module_installed('leute')) break;
 
 			$no_post = TRUE;
 
@@ -910,19 +1136,39 @@ if((isset($_GET) && isset($_GET["action"])) || (isset($_POST) && isset($_POST["a
 
 
 		case 'eventmylist':
-			if(!ko_module_installed('leute')) continue;
+			if(!ko_module_installed('leute')) break;
 			$no_post = TRUE;
+			if (strstr($_GET['id'], "-")) {
+				list($year, $week_number) = explode("-", format_userinput($_GET['id'], 'text'));
+				$start_date = date('Y-m-d', strtotime($year."W".$week_number."1"));
+				$end_date = date('Y-m-d', strtotime($year."W".$week_number."7"));
+				$where = "WHERE event_id >= '" . $start_date . "' AND event_id <= '" . $end_date . "'";
+				$events = ko_rota_get_days("", $start_date, $end_date);
 
-			$eventid = format_userinput($_GET['id'], 'uint');
-			$event = ko_rota_get_events('', $eventid);
-			foreach($event['teams'] as $tid) {
-				if(!$tid) continue;
-				foreach(explode(',', $event['schedule'][$tid]) as $pid) {
-					$pid = format_userinput($pid, 'uint');
-					if(!$pid) continue;
-					$_SESSION['my_list'][$pid] = $pid;
+				foreach($events AS $event) {
+					foreach ($event['teams'] as $tid) {
+						if (!$tid) continue;
+						if (!in_array($tid, $_SESSION['rota_teams'])) continue;
+						foreach (explode(',', $event['schedule'][$tid]) as $pid) {
+							$pid = format_userinput($pid, 'uint');
+							if (!$pid) continue;
+							$_SESSION['my_list'][$pid] = $pid;
+						}
+					}
+				}
+			} else {
+				$eventid = format_userinput($_GET['id'], 'uint');
+				$event = ko_rota_get_events('', $eventid);
+				foreach($event['teams'] as $tid) {
+					if(!$tid) continue;
+					foreach(explode(',', $event['schedule'][$tid]) as $pid) {
+						$pid = format_userinput($pid, 'uint');
+						if(!$pid) continue;
+						$_SESSION['my_list'][$pid] = $pid;
+					}
 				}
 			}
+
 			$_SESSION['my_list'] = array_unique($_SESSION['my_list']);
 			ko_save_userpref($_SESSION['ses_userid'], 'leute_my_list', serialize($_SESSION['my_list']));
 
@@ -935,7 +1181,7 @@ if((isset($_GET) && isset($_GET["action"])) || (isset($_POST) && isset($_POST["a
 			$c = '';
 
 			$id = format_userinput($_GET['id'], 'js');
-			if(substr($id, 0, 7) != 'preset_') continue;
+			if(substr($id, 0, 7) != 'preset_') break;
 			$id = substr($id, 7);
 			$presets = array_merge((array)ko_get_userpref('-1', '', 'rota_emailtext_presets', 'ORDER by `key` ASC'), (array)ko_get_userpref($_SESSION['ses_userid'], '', 'rota_emailtext_presets', 'ORDER by `key` ASC'));
 
@@ -984,7 +1230,7 @@ if((isset($_GET) && isset($_GET["action"])) || (isset($_POST) && isset($_POST["a
 
 		case 'filesendpreviewrecs':
 			array_walk_recursive($_POST, 'utf8_decode_array');
-			ko_rota_filesend_parse_post('PREVIEW', $text, $subject, $recipients, $eventid, $restrict_to_teams, $from, $reply_to, $send_files);
+			ko_rota_filesend_parse_post('PREVIEW', $text, $subject, $recipients, $eventid, $restrict_to_teams, $from, $send_files);
 			$mailOK = $mailNOK = array();
 			foreach ($recipients as $r) {
 				if ($r['_has_mail']) $mailOK[] = $r;
@@ -1018,12 +1264,12 @@ if((isset($_GET) && isset($_GET["action"])) || (isset($_POST) && isset($_POST["a
 
 		case 'filesendpreview':
 			array_walk_recursive($_POST, 'utf8_decode_array');
-			ko_rota_filesend_parse_post('PREVIEW', $text, $subject, $recipients, $eventid, $restrict_to_teams, $from, $reply_to, $send_files);
+			ko_rota_filesend_parse_post('PREVIEW', $text, $subject, $recipients, $eventid, $restrict_to_teams, $from, $send_files);
 			$recipient = NULL;
 			foreach ($recipients as $r) {
 				if ($r['id'] == $_POST['recipient_id']) $recipient = $r;
 			}
-			if ($recipient && ($ok = ko_rota_filesend_send_mail('PREVIEW', $text, $subject, $recipient, $send_files, $eventid, $from, $reply_to, $restrict_to_teams))) {
+			if ($recipient && ($ok = ko_rota_filesend_send_mail('PREVIEW', $text, $subject, $recipient, $send_files, $eventid, $from, $restrict_to_teams))) {
 				printf ("<b>%s&nbsp;</b>%s<br><b>%s&nbsp;</b>%s<br><b>%s</b><br>%s", getLL('leute_email_to'), $ok['email'], getLL('leute_email_subject'), $ok['emailSubject'], getLL('leute_email_text'), $ok['emailText']);
 			};
 		break;
@@ -1088,7 +1334,7 @@ if((isset($_GET) && isset($_GET["action"])) || (isset($_POST) && isset($_POST["a
 			$teamId = format_userinput($_GET['team'],'uint');
 			$personId = format_userinput($_GET['person'],'uint');
 
-			if(max($access['rota']['ALL'],$access['rota'][$teamId]) < 1) continue;
+			if(max($access['rota']['ALL'],$access['rota'][$teamId]) < 1) break;
 
 			$chart = ko_rota_get_participation_chart($personId, $teamId, 'all');
 
@@ -1108,5 +1354,4 @@ if((isset($_GET) && isset($_GET["action"])) || (isset($_POST) && isset($_POST["a
 	}//switch(action);
 
 	hook_ajax_post($ko_menu_akt, $action);
-}//if(GET[action])
-?>
+}

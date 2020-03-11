@@ -2,7 +2,7 @@
 /***************************************************************
 *  Copyright notice
 *
-*  (c) 2003-2017 Renzo Lauper (renzo@churchtool.org)
+*  (c) 2003-2020 Renzo Lauper (renzo@churchtool.org)
 *  All rights reserved
 *
 *  This script is part of the kOOL project. The kOOL project is
@@ -284,6 +284,9 @@ switch($do_action) {
 		ko_save_userpref($_SESSION['ses_userid'], 'show_limit_forms', format_userinput($_POST['txt_limit_forms'], 'uint'));
 
 		if($access['subscription']['MAX'] > 1) {
+			ko_set_setting('subscription_sender_email', format_userinput($_POST['txt_sender_email'], 'email'));
+			ko_set_setting('subscription_sender_name', format_userinput($_POST['txt_sender_name'], 'alpha++'));
+
 			ko_set_setting('subscription_text_header', $_POST['txt_header']);
 			ko_set_setting('subscription_text_footer', $_POST['txt_footer']);
 		}

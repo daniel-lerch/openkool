@@ -6,7 +6,7 @@ Feature: Authentication
 
   Scenario: Logging in with wrong credential
     Given I log in as "root" with "WRONG PASSWORD"
-    Then I should see "Login failed. Username or password is not correct."
+    Then I should see "Login fehlgeschlagen. Benutzername oder Passwort ist falsch."
 
   Scenario: Logging in
     Given I log in as "root" with "test23"

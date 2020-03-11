@@ -2,7 +2,7 @@
 /***************************************************************
 *  Copyright notice
 *
-*  (c) 2003-2017 Renzo Lauper (renzo@churchtool.org)
+*  (c) 2003-2020 Renzo Lauper (renzo@churchtool.org)
 *  All rights reserved
 *
 *  This script is part of the kOOL project. The kOOL project is
@@ -140,7 +140,7 @@ if((isset($_GET) && isset($_GET["action"])) || (isset($_POST) && isset($_POST["a
 			} else if($_SESSION["show"] == "show_mod_res") {
 				ko_show_res_liste("mod");
 			} else if($_SESSION["show"] == "list_items") {
-				ko_show_items_liste("all");
+				ko_show_items_liste();
 			}
 		break;
 
@@ -153,7 +153,7 @@ if((isset($_GET) && isset($_GET["action"])) || (isset($_POST) && isset($_POST["a
 
 			//A single res object was selected
 			if($action == "itemlist") {
-				if(($access['reservation'][$id] < 1 && substr($id,0,7) != "absence") || (substr($id,0,7) == "absence" && $access['daten']['ABSENCE'] < 1)) continue;
+				if(($access['reservation'][$id] < 1 && substr($id,0,7) != "absence") || (substr($id,0,7) == "absence" && $access['daten']['ABSENCE'] < 1)) break;
 
 				if($state == "checked") {
 					if (substr($id,0,7) == "absence") {
@@ -173,7 +173,7 @@ if((isset($_GET) && isset($_GET["action"])) || (isset($_POST) && isset($_POST["a
 			}
 			//Resgroup selected or unselected
 			else if($action == "itemlistgroup") {
-				if($access['reservation']['grp'.$id] < 1 && $id != "absence") continue;
+				if($access['reservation']['grp'.$id] < 1 && $id != "absence") break;
 
 				if ($id == "absence" && $access['daten']["ABSENCE"] > 1) {
 					$absence_filters = array_merge((array)ko_get_userpref('-1', '', 'filterset', 'ORDER BY `key` ASC'), (array)ko_get_userpref($_SESSION['ses_userid'], '', 'filterset', 'ORDER BY `key` ASC'));
@@ -251,7 +251,7 @@ if((isset($_GET) && isset($_GET["action"])) || (isset($_POST) && isset($_POST["a
 
 		case "itemlistsave":
 			//save new value
-			if($_GET["name"] == "") continue;
+			if($_GET["name"] == "") break;
 			$new_value = implode(",", $_SESSION["show_items"]);
 			$user_id = $access['reservation']['MAX'] > 3 && $_GET['global'] == 'true' ? '-1' : $_SESSION['ses_userid'];
 			$name = format_userinput($_GET["name"], "js", FALSE, 0, array("allquotes"));
@@ -293,7 +293,7 @@ if((isset($_GET) && isset($_GET["action"])) || (isset($_POST) && isset($_POST["a
 		case "itemlistopen":
 			//save new value
 			$name = format_userinput($_GET['name'], 'js', FALSE, 0, array(), '@');
-			if($name == "") continue;
+			if($name == "") break;
 
 			if($name == '_all_') {
 				ko_get_resitems($items);
@@ -314,8 +314,8 @@ if((isset($_GET) && isset($_GET["action"])) || (isset($_POST) && isset($_POST["a
 					$value = ko_get_userpref($_SESSION['ses_userid'], $name, 'res_itemset');
 					$value_absence = ko_get_userpref($_SESSION['ses_userid'], $name, 'res_absence_filter');
 				}
-				$_SESSION["show_items"] = explode(",", $value[0]["value"]);
-				$_SESSION["show_absences_res"] = explode(",",$value_absence[0]["value"]);
+				$_SESSION["show_items"] = array_filter(explode(",", $value[0]["value"]));
+				$_SESSION["show_absences_res"] = array_filter(explode(",",$value_absence[0]["value"]));
 			}
 			ko_save_userpref($_SESSION['ses_userid'], 'show_res_items', implode(',', $_SESSION['show_items']));
 			ko_save_userpref($_SESSION["ses_userid"], "res_absence_filter", implode(",", $_SESSION["show_absences_res"]));
@@ -339,7 +339,7 @@ if((isset($_GET) && isset($_GET["action"])) || (isset($_POST) && isset($_POST["a
 		case "itemlistdelete":
 			//save new value
 			$name = format_userinput($_GET['name'], 'js', FALSE, 0, array(), '@');
-			if($name == "") continue;
+			if($name == "") break;
 
 			if(substr($name, 0, 3) == '@G@') {
 				if($access['reservation']['MAX'] > 3) {
@@ -358,7 +358,7 @@ if((isset($_GET) && isset($_GET["action"])) || (isset($_POST) && isset($_POST["a
 
 
 		case "resgroupselect":
-			if($access['reservation']['MAX'] < 2) continue;
+			if($access['reservation']['MAX'] < 2) break;
 
 			//GET data
 			$gid = format_userinput($_GET["gid"], "uint", FALSE, 11, array(), "-");
@@ -445,6 +445,11 @@ if((isset($_GET) && isset($_GET["action"])) || (isset($_POST) && isset($_POST["a
 					}
 
 					ko_get_reservationen($reservations, $mod_where, '', 'mod', 'ORDER BY startdatum,startzeit,item_name ASC');
+
+					$mod_res = ko_get_reservations_from_events_mod(date("Y-m-d", $start), date("Y-m-d", $end));
+
+					$reservations = array_merge($reservations, $mod_res);
+
 				}
 
 				$done_res = array();
@@ -482,7 +487,8 @@ if((isset($_GET) && isset($_GET["action"])) || (isset($_POST) && isset($_POST["a
 							//Reset color and name according to event group
 							$res['item_farbe'] = $event['eventgruppen_farbe'];
 							if($event['kommentar']) {
-								$res['zweck'] = $event['kommentar'].' ('.$event['eventgruppen_name'].')';
+								$htmlKommentar = html_entity_decode(strip_tags($event['kommentar']), ENT_COMPAT | ENT_HTML401, 'iso-8859-1');
+								$res['zweck'] = $htmlKommentar.' ('.$event['eventgruppen_name'].')';
 								$res['item_name'] = $event_items;
 							} else {
 								$res['zweck'] = getLL('res_cal_combined').' '.$event['eventgruppen_name'];
@@ -620,6 +626,12 @@ if((isset($_GET) && isset($_GET["action"])) || (isset($_POST) && isset($_POST["a
 					} else {
 						$endT = $res['enddatum'].'T'.$res['endzeit'];
 					}
+
+					if($res['prov_event']) {
+						$editable = FALSE;
+						$editIcons = "";
+					}
+
 					$data[] = array('id' => $res['id'],
 						'start' => $res['startdatum'].'T'.$res['startzeit'],
 						'end' => $endT,
@@ -698,7 +710,7 @@ if((isset($_GET) && isset($_GET["action"])) || (isset($_POST) && isset($_POST["a
 
 		case 'fcdelres':
 			$id = format_userinput($_GET['id'], 'uint');
-			if(!$id) continue;
+			if(!$id) break;
 			$serie = ($_GET['serie'] == 'true');
 			$event = $_GET['delevent'] == 'true';
 
@@ -769,6 +781,7 @@ if((isset($_GET) && isset($_GET["action"])) || (isset($_POST) && isset($_POST["a
 						|| ($res['user_id'] == $_SESSION['ses_userid'] && ($access['reservation'][$newItem] > 2 && $access['reservation'][$res['item_id']] > 2))) {
 						//Editing for both items allowed without moderation
 						$new['item_id'] = $newItem;
+						$new['linked_items'] = $resitem['linked_items'];
 					} else {
 						$noaccess = TRUE;
 					}
@@ -791,6 +804,7 @@ if((isset($_GET) && isset($_GET["action"])) || (isset($_POST) && isset($_POST["a
 				print FALSE;
 			} else {
 				$new['last_change'] = date('Y-m-d H:i:s');
+				$new['lastchange_user'] = $_SESSION['ses_userid'];
 				$table = $isMod ? 'ko_reservation_mod' : 'ko_reservation';
 				db_update_data($table, 'WHERE `id` = \''.$id.'\'', $new);
 				ko_log_diff($isMod ? 'edit_res_mod' : 'edit_res', $new, $res);
@@ -810,7 +824,7 @@ if((isset($_GET) && isset($_GET["action"])) || (isset($_POST) && isset($_POST["a
 			if($_GET['view']) $_SESSION['cal_view'] = format_userinput($_GET['view'], 'alpha');
 
 			//Redraw mwselect box
-			$sel = ko_calendar_mwselect($_SESSION['cal_view']);
+			$sel = ko_calendar_mwselect();
 			print 'mwselect@@@'.$sel;
 		break;
 
@@ -822,7 +836,7 @@ if((isset($_GET) && isset($_GET["action"])) || (isset($_POST) && isset($_POST["a
 			if($koi["enddatum"] == "0000-00-00" || trim($koi["enddatum"]) == "") $koi["enddatum"] = $koi["startdatum"];
 
 			$err = check_entries($koi);
-			if($err > 0) continue;
+			if($err > 0) break;
 
 			$itemIds = explode(',', $koi["item_id"]);
 
@@ -863,7 +877,7 @@ if((isset($_GET) && isset($_GET["action"])) || (isset($_POST) && isset($_POST["a
 			} else { // edit
 				ko_get_res_by_id($id, $res);
 				$res = $res[$id];
-				if ($res['id'] != $id) continue;
+				if ($res['id'] != $id) break;
 
 				$allRes[] = array(
 					'id' => $id,

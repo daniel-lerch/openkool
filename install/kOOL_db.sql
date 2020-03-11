@@ -17,8 +17,8 @@ CREATE TABLE `ko_admin` (
   `groups_admin` text NOT NULL,
   `donations_admin` text NOT NULL,
   `tracking_admin` text NOT NULL,
-	`crm_admin` text NOT NULL,
-	`vesr_admin` text NOT NULL,
+  `crm_admin` text NOT NULL,
+  `vesr_admin` text NOT NULL,
   `modules` text NOT NULL,
   `last_login` datetime NOT NULL DEFAULT '0000-00-00 00:00:00',
   `disabled` varchar(32) NOT NULL,
@@ -31,10 +31,12 @@ CREATE TABLE `ko_admin` (
 	`event_force_global` tinyint(3) unsigned NOT NULL DEFAULT '0',
 	`event_reminder_rights` tinyint(3) unsigned NOT NULL DEFAULT '0',
 	`event_absence_rights` tinyint(3) unsigned NOT NULL DEFAULT '0',
+	`groups_terms_rights` text NOT NULL,
 	`disable_password_change` tinyint(3) unsigned NOT NULL DEFAULT '0',
 	`subscription_admin` text NOT NULL,
 	`taxonomy_admin` text NOT NULL,
 	`ical_hash` varchar(32) NOT NULL,
+	`allow_bypass_information_lock` tinyint(3) unsigned NOT NULL DEFAULT '0',
   PRIMARY KEY (`id`)
 ) ENGINE=MyISAM  DEFAULT CHARSET=latin1 COLLATE latin1_german1_ci;
 
@@ -59,18 +61,20 @@ CREATE TABLE `ko_admingroups` (
   `groups_admin` text NOT NULL,
   `donations_admin` text NOT NULL,
   `tracking_admin` text NOT NULL,
-	`crm_admin` text NOT NULL,
+  `crm_admin` text NOT NULL,
   `vesr_admin` text NOT NULL,
   `modules` text NOT NULL,
-	`kota_columns_ko_kleingruppen` text NOT NULL,
-	`kota_columns_ko_event` text NOT NULL,
+  `kota_columns_ko_kleingruppen` text NOT NULL,
+  `kota_columns_ko_event` text NOT NULL,
   `res_force_global` tinyint(3) unsigned NOT NULL DEFAULT '0',
   `event_force_global` tinyint(3) unsigned NOT NULL DEFAULT '0',
-	`event_reminder_rights` tinyint(3) unsigned NOT NULL DEFAULT '0',
-	`event_absence_rights` tinyint(3) unsigned NOT NULL DEFAULT '0',
+  `event_reminder_rights` tinyint(3) unsigned NOT NULL DEFAULT '0',
+  `event_absence_rights` tinyint(3) unsigned NOT NULL DEFAULT '0',
+  `groups_terms_rights` text NOT NULL,
   `disable_password_change` tinyint(3) unsigned NOT NULL DEFAULT '0',
-	`subscription_admin` text NOT NULL,
+  `subscription_admin` text NOT NULL,
   `taxonomy_admin` text NOT NULL,
+  `allow_bypass_information_lock` tinyint(3) unsigned NOT NULL DEFAULT '0',
   PRIMARY KEY (`id`)
 ) ENGINE=MyISAM DEFAULT CHARSET=latin1 COLLATE latin1_german1_ci;
 
@@ -150,32 +154,34 @@ CREATE TABLE `ko_labels` (
 	`page_orientation` varchar(30) NOT NULL,
 	`per_row` mediumint(9) NOT NULL,
 	`per_col` mediumint(9) NOT NULL,
-	`border_top` float NOT NULL,
-	`border_right` float NOT NULL,
-	`border_bottom` float NOT NULL,
-	`border_left` float NOT NULL,
-	`spacing_horiz` float NOT NULL,
-	`spacing_vert` float NOT NULL,
+	`border_top` smallint NOT NULL,
+	`border_right` smallint NOT NULL,
+	`border_bottom` smallint NOT NULL,
+	`border_left` smallint NOT NULL,
+	`spacing_horiz` smallint NOT NULL,
+	`spacing_vert` smallint NOT NULL,
 	`align_horiz` varchar(30) NOT NULL,
 	`align_vert` varchar(30) NOT NULL,
 	`font` varchar(100) NOT NULL,
 	`textsize` mediumint(9) NOT NULL,
-	`ra_margin_top` float NOT NULL,
-	`ra_margin_left` float NOT NULL,
+	`ra_margin_top` smallint NOT NULL,
+	`ra_margin_left` smallint NOT NULL,
 	`ra_font` varchar(100) NOT NULL,
 	`ra_textsize` mediumint(9) NOT NULL,
 	`pp_position` varchar(20) NOT NULL,
 	`pic_file` text NOT NULL,
-	`pic_w` float NOT NULL,
-	`pic_x` float NOT NULL,
-	`pic_y` float NOT NULL,
+	`pic_w` smallint NOT NULL,
+	`pic_x` smallint NOT NULL,
+	`pic_y` smallint NOT NULL,
 	`crdate` DATETIME NOT NULL,
 	`cruser` mediumint(9) NOT NULL,
+  `lastchange` datetime NOT NULL,
+  `lastchange_user` mediumint(8) unsigned NOT NULL,
 	PRIMARY KEY (`id`)
 ) ENGINE=MyISAM DEFAULT CHARSET=latin1 COLLATE latin1_german1_ci;
 
-INSERT INTO `ko_labels` VALUES (NULL, '3x8', 'A4', 'P', '3', '8', '2', '2', '2', '2', '5', '2', 'L', 'T', 'arial', '11', '5', '3', 'arial', '7', 'address', '', '', '', '', NOW(), 1);
-INSERT INTO `ko_labels` VALUES(NULL, 'Couverts C5', 'C5', 'L', 1, 1, 100, 10, 10, 120, 0, 0, 'L', 'T', 'arial', 11, 0, 0, 'arial', 9, 'stamp', '', 0, 0, 0, NOW(), 1);
+INSERT INTO `ko_labels` VALUES (NULL, '3x8', 'A4', 'P', '3', '8', '2', '2', '2', '2', '5', '2', 'L', 'T', 'arial', '11', '5', '3', 'arial', '7', 'address', '', '', '', '', NOW(), 1, NOW(), 1);
+INSERT INTO `ko_labels` VALUES(NULL, 'Couverts C5', 'C5', 'L', 1, 1, 100, 10, 10, 120, 0, 0, 'L', 'T', 'arial', 11, 0, 0, 'arial', 9, 'stamp', '', 0, 0, 0, NOW(), 1, NOW(), 1);
 
 
 CREATE TABLE `ko_detailed_person_exports` (
@@ -205,6 +211,10 @@ CREATE TABLE `ko_donations` (
   `thanked` tinyint(4) NOT NULL,
   `camt_uid` varchar(100) NOT NULL,
   `crm_project_id` int(10) NOT NULL,
+  `crdate` datetime NOT NULL,
+  `cruser` mediumint(8) unsigned NOT NULL,
+  `lastchange` datetime NOT NULL,
+  `lastchange_user` mediumint(8) unsigned NOT NULL,
   PRIMARY KEY (`id`),
   KEY `source` (`source`),
   KEY `date` (`date`),
@@ -249,8 +259,23 @@ CREATE TABLE `ko_donations_accounts` (
   `number` varchar(50) NOT NULL,
   `comment` varchar(255) NOT NULL,
 	`group_id` text NOT NULL,
-	`account_group` text NOT NULL,
+	`accountgroup_id` mediumint(8) unsigned NOT NULL DEFAULT '0',
   `archived` tinyint(3) NOT NULL,
+  `crdate` datetime NOT NULL,
+  `cruser` mediumint(8) unsigned NOT NULL,
+  `lastchange` datetime NOT NULL,
+  `lastchange_user` mediumint(8) unsigned NOT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1 COLLATE latin1_german1_ci;
+
+CREATE TABLE `ko_donations_accountgroups` (
+  `id` mediumint(8) unsigned NOT NULL AUTO_INCREMENT,
+  `title` varchar(100) NOT NULL,
+  `archived` tinyint(3) NOT NULL,
+	`crdate` datetime NOT NULL,
+	`cruser` mediumint(8) unsigned NOT NULL,
+  `lastchange` datetime NOT NULL,
+  `lastchange_user` int NOT NULL DEFAULT '0',
   PRIMARY KEY (`id`)
 ) ENGINE=MyISAM DEFAULT CHARSET=latin1 COLLATE latin1_german1_ci;
 
@@ -270,6 +295,8 @@ CREATE TABLE `ko_reminder` (
 	`replyto_email` VARCHAR(250) NOT NULL,
 	`crdate` DATETIME NOT NULL,
 	`cruser` mediumint(9) NOT NULL,
+  `lastchange` datetime NOT NULL,
+  `lastchange_user` int NOT NULL DEFAULT '0',
 	PRIMARY KEY (`id`)
 ) ENGINE=MyISAM DEFAULT CHARSET=latin1 COLLATE latin1_german1_ci;
 
@@ -298,6 +325,7 @@ CREATE TABLE `ko_event` (
   `url` tinytext NOT NULL,
   `gs_gid` varchar(20) NOT NULL,
   `do_notify` tinyint(3) NOT NULL DEFAULT '1',
+	`slug` varchar(255) NOT NULL,
   `cdate` datetime NOT NULL,
   `user_id` mediumint(9) NOT NULL DEFAULT '0',
   `last_change` datetime NOT NULL,
@@ -349,6 +377,10 @@ CREATE TABLE `ko_eventgruppen` (
   `update` int(11) NOT NULL,
   `last_update` datetime NOT NULL,
 	`responsible_for_res` mediumint(9) NOT NULL,
+	`crdate` DATETIME NOT NULL,
+	`cruser` mediumint(9) NOT NULL,
+  `lastchange` datetime NOT NULL,
+  `lastchange_user` int NOT NULL DEFAULT '0',
   UNIQUE KEY `id` (`id`),
   KEY `calendar_id` (`calendar_id`),
   KEY `type` (`type`)
@@ -397,6 +429,7 @@ CREATE TABLE `ko_event_mod` (
   `responsible_for_res` mediumint(9) NOT NULL,
   `url` tinytext NOT NULL,
   `gs_gid` varchar(20) NOT NULL,
+	`slug` varchar(255) NOT NULL,
   `user_id` mediumint(9) NOT NULL DEFAULT '0',
   `_res_mod_on_conflict` tinyint(3) NOT NULL,
   `_event_id` mediumint(9) NOT NULL DEFAULT '0',
@@ -406,6 +439,21 @@ CREATE TABLE `ko_event_mod` (
   `cdate` datetime NOT NULL,
   `last_change` datetime NOT NULL,
   UNIQUE KEY `id` (`id`)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1 COLLATE latin1_german1_ci;
+
+CREATE TABLE `ko_event_rooms` (
+  `id` mediumint(9) NOT NULL AUTO_INCREMENT,
+  `title` varchar(150) NOT NULL DEFAULT '',
+  `title_short` varchar(50) NOT NULL DEFAULT '',
+  `address` varchar(100) DEFAULT '',
+  `coordinates` varchar(30) DEFAULT '',
+  `url` varchar(200) DEFAULT '',
+  `crdate` datetime NOT NULL,
+  `cruser` mediumint(8) unsigned NOT NULL,
+  `lastchange` datetime NOT NULL,
+  `lastchange_user` int NOT NULL DEFAULT '0',
+  `hidden` tinyint(4) NOT NULL DEFAULT '0',
+   UNIQUE KEY `id` (`id`)
 ) ENGINE=MyISAM DEFAULT CHARSET=latin1 COLLATE latin1_german1_ci;
 
 CREATE TABLE `ko_familie` (
@@ -472,8 +520,8 @@ INSERT INTO `ko_filter` VALUES(NULL, 'leute', 'memo2', 'memo2', 'misc', 1, 'memo
 INSERT INTO `ko_filter` VALUES(NULL, 'leute', '', 'group', 'groups', 1, 'groups REGEXP ''[VAR1][g:0-9]*[VAR2]''', '', '', 2, 'group', '<input type="hidden" name="var1"><div class="groupfilter" name="sel1-var1" size="6" data-select="single"></div>', 'role', '<select class="input-sm form-control" name="var2" size="0"></select>', '', '', 0);
 INSERT INTO `ko_filter` VALUES(NULL, 'leute', 'geburtsdatum', 'year', 'status', 0, 'YEAR(geburtsdatum) >= [VAR1] && `geburtsdatum` != ''0000-00-00''', 'YEAR(geburtsdatum) <= [VAR2]', '', 2, 'lower limit', '<input class="input-sm form-control" type="text" name="var1" maxlength="4" onkeydown="if ((event.which == 13) || (event.keyCode == 13)) { this.form.submit_filter.click(); return false;} else return true;" />', 'upper limit', '<input class="input-sm form-control" type="text" name="var2" maxlength="4" onkeydown="if ((event.which == 13) || (event.keyCode == 13)) { this.form.submit_filter.click(); return false;} else return true;" />', '', '', 0);
 INSERT INTO `ko_filter` VALUES(NULL, 'leute', '', 'role', 'groups', 1, 'groups REGEXP ''[VAR1]''', '', '', 1, 'role', '<select class="input-sm form-control" name="var1" size="0"><option value="0"></option></select>', '', '', '', '', 0);
-INSERT INTO `ko_filter` VALUES(NULL, 'leute', 'kinder', 'children', 'family', 1, 'kinder REGEXP ''[VAR1]''', '', '', 1, 'number of children', '<input class="input-sm form-control" type="text" name="var1" maxlength="50" onkeydown="if ((event.which == 13) || (event.keyCode == 13)) { this.form.submit_filter.click(); return false;} else return true;" />', '', '', '', '', 1);
-INSERT INTO `ko_filter` VALUES(NULL, 'leute', 'famid', 'family', 'family', 1, 'famid LIKE ''[VAR1]''', '', '', 1, 'family', 'FCN:ko_specialfilter_families', '', '', '', '', 1);
+INSERT INTO `ko_filter` VALUES(NULL, 'leute', 'kinder', 'children', 'family', 1, 'kinder REGEXP ''[VAR1]''', '', '', 1, 'number of children', '<input class="input-sm form-control" type="text" name="var1" maxlength="50" onkeydown="if ((event.which == 13) || (event.keyCode == 13)) { this.form.submit_filter.click(); return false;} else return true;" />', '', '', '', '', 0);
+INSERT INTO `ko_filter` VALUES(NULL, 'leute', 'famid', 'family', 'family', 1, 'famid LIKE ''[VAR1]''', '', '', 1, 'family', 'FCN:ko_specialfilter_families', '', '', '', '', 0);
 INSERT INTO `ko_filter` VALUES(NULL, 'leute', 'famfunction', 'family role', 'family', 1, 'kota_filter', '', '', 1, 'family role', 'FCN:ko_specialfilter_kota:ko_leute:famfunction', '', '', '', '', 0);
 INSERT INTO `ko_filter` VALUES(NULL, 'leute', 'ko_rota_schedulling.event_id', 'rota', 'groups', 1, '`event_id` IN ([VAR1])', '', '', 2, 'rota event', 'FCN:ko_specialfilter_rota', 'teams', 'FCN:ko_specialfilter_rota_teams', '', '', 0);
 INSERT INTO `ko_filter` VALUES(NULL, 'leute', 'lastchange', 'last change', 'misc', 1, 'DATE_FORMAT(`lastchange`, ''%Y-%m-%d'') >= ''[VAR1]''', 'DATE_FORMAT(`lastchange`, ''%Y-%m-%d'') <= ''[VAR2]''', '', 2, 'Created after (YYYY-MM-DD)', 'FCN:ko_specialfilter_lastchange:1', 'Created before (YYYY-MM-DD)', 'FCN:ko_specialfilter_lastchange:2', '', '', 0);
@@ -481,16 +529,16 @@ INSERT INTO `ko_filter` VALUES(NULL, 'leute', 'geburtsdatum', 'age', 'status', 0
 INSERT INTO `ko_filter` VALUES(NULL, 'leute', 'firm', 'firm', 'person', 1, 'firm REGEXP ''[VAR1]''', '', '', 1, 'firm', '<input class="input-sm form-control" type="text" name="var1" maxlength="200" onkeydown="if ((event.which == 13) || (event.keyCode == 13)) { this.form.submit_filter.click(); return false;} else return true;" />', '', '', '', '', 1);
 INSERT INTO `ko_filter` VALUES(NULL, 'leute', 'department', 'department', 'person', 1, 'department REGEXP ''[VAR1]''', '', '', 1, 'department', '<input class="input-sm form-control" type="text" name="var1" maxlength="200" onkeydown="if ((event.which == 13) || (event.keyCode == 13)) { this.form.submit_filter.click(); return false;} else return true;" />', '', '', '', '', 1);
 INSERT INTO `ko_filter` VALUES(NULL, 'leute', 'ko_groups_datafields_data.value', 'grp data', 'groups', 1, 'datafield_id = ''[VAR1]''', 'value LIKE ''%[VAR2]%''', '', 2, 'group datafield', 'FCN:ko_specialfilter_groupdatafields', 'value', '<div name="groups_datafields_filter">\r\n<input class="input-sm form-control" type="text" name="var2" maxlength="200" onkeydown="if ((event.which == 13) || (event.keyCode == 13)) { this.form.submit_filter.click(); return false;} else return true;" />\r\n</div>', '', '', 0);
-INSERT INTO `ko_filter` VALUES(NULL, 'leute', 'ko_kleingruppen.region', 'sg region', 'smallgroup', 1, 'region REGEXP ''[VAR1]''', '', '', 1, 'small group region', 'FCN:ko_specialfilter_kleingruppen_region', '', '', '', '', 1);
-INSERT INTO `ko_filter` VALUES(NULL, 'leute', 'ko_kleingruppen.type', 'sg type', 'smallgroup', 1, 'type REGEXP ''[VAR1]''', '', '', 1, 'small group type', 'FCN:ko_specialfilter_kleingruppen_type', '', '', '', '', 1);
-INSERT INTO `ko_filter` VALUES(NULL, 'leute', 'ko_kleingruppen.wochentag', 'sg day', 'smallgroup', 1, 'wochentag REGEXP ''[VAR1]''', '', '', 1, 'small group day', 'FCN:ko_specialfilter_select_ll:ko_kleingruppen:wochentag', '', '', '', '', 1);
+INSERT INTO `ko_filter` VALUES(NULL, 'leute', 'ko_kleingruppen.region', 'sg region', 'smallgroup', 1, 'region REGEXP ''[VAR1]''', '', '', 1, 'small group region', 'FCN:ko_specialfilter_kleingruppen_region', '', '', '', '', 0);
+INSERT INTO `ko_filter` VALUES(NULL, 'leute', 'ko_kleingruppen.type', 'sg type', 'smallgroup', 1, 'type REGEXP ''[VAR1]''', '', '', 1, 'small group type', 'FCN:ko_specialfilter_kleingruppen_type', '', '', '', '', 0);
+INSERT INTO `ko_filter` VALUES(NULL, 'leute', 'ko_kleingruppen.wochentag', 'sg day', 'smallgroup', 1, 'wochentag REGEXP ''[VAR1]''', '', '', 1, 'small group day', 'FCN:ko_specialfilter_select_ll:ko_kleingruppen:wochentag', '', '', '', '', 0);
 INSERT INTO `ko_filter` VALUES(NULL, 'leute', '', 'crdate', 'misc', 0, '`crdate` >= ''[VAR1]''', 'DATE_FORMAT(`crdate`, ''%Y-%m-%d'') <= ''[VAR2]''', '', 2, 'Created after (YYYY-MM-DD)', 'FCN:ko_specialfilter_crdate:1', 'Created before (YYYY-MM-DD)', 'FCN:ko_specialfilter_crdate:2', '', '', 0);
 INSERT INTO `ko_filter` VALUES(NULL, 'leute', 'ko_donations.date', 'donation', 'misc', 1, '', '', '', 2, 'year', 'FCN:ko_specialfilter_donation', 'account', 'FCN:ko_specialfilter_donation_account', '', '', 0);
 INSERT INTO `ko_filter` VALUES(NULL, 'leute', 'famid', 'addchildren', 'family', 0, 'YEAR(CURDATE())-YEAR(`geburtsdatum`) >= ''[VAR1]''', 'YEAR(CURDATE())-YEAR(`geburtsdatum`) <= ''[VAR2]''', '', 3, 'age_min', '<input class="input-sm form-control" type="text" name="var1" maxlength="3" onkeydown="if ((event.which == 13) || (event.keyCode == 13)) { this.form.submit_filter.click(); return false;} else return true;" />', 'age_max', '<input class="input-sm form-control" type="text" name="var2" maxlength="3" onkeydown="if ((event.which == 13) || (event.keyCode == 13)) { this.form.submit_filter.click(); return false;} else return true;" />', 'only_children', '<input class="input-sm form-control" type="checkbox" name="var3" value="1" />', 0);
-INSERT INTO `ko_filter` VALUES(NULL, 'leute', 'famid', 'addparents', 'family', 0, '', '', '', 1, 'only_parents', '<input class="input-sm form-control" type="checkbox" name="var1" value="1" />', '', '', '', '', 0);
+INSERT INTO `ko_filter` VALUES(NULL, 'leute', 'famid', 'addparents', 'family', 0, '', '', '', 1, 'only_parents', 'FCN:ko_specialfilter_addparents', '', '', '', '', 0);
 INSERT INTO `ko_filter` VALUES(NULL, 'leute', 'famid', 'childrencount', 'family', 0, '', '', '', 1, 'childrencount', 'FCN:ko_specialfilter_childrencount', '', '', '', '', 0);
-INSERT INTO `ko_filter` VALUES(NULL, 'leute', '', 'smallgrouproles', 'smallgroup', 1, 'smallgroups REGEXP '':[VAR1]''', '', '', 1, 'smallgroup role', 'FCN:ko_specialfilter_smallgrouproles', '', '', '', '', 1);
-INSERT INTO `ko_filter` VALUES(NULL, 'leute', 'ko_admin.leute_id', 'logins', 'misc', 0, '`admingroups` REGEXP ''(^|,)[VAR1](,|$)'' AND `disabled` = ''''', '', '', 1, 'usergroup', 'FCN:ko_specialfilter_logins', '', '', '', '', 1);
+INSERT INTO `ko_filter` VALUES(NULL, 'leute', '', 'smallgrouproles', 'smallgroup', 1, 'smallgroups REGEXP '':[VAR1]''', '', '', 1, 'smallgroup role', 'FCN:ko_specialfilter_smallgrouproles', '', '', '', '', 0);
+INSERT INTO `ko_filter` VALUES(NULL, 'leute', 'ko_admin.leute_id', 'logins', 'misc', 0, '`admingroups` REGEXP ''(^|,)[VAR1](,|$)'' AND `disabled` = ''''', '', '', 1, 'usergroup', 'FCN:ko_specialfilter_logins', '', '', '', '', 0);
 INSERT INTO `ko_filter` VALUES(NULL, 'leute', 'geburtsdatum', 'dobrange', 'status', 1, '`geburtsdatum` >= \'[VAR1]\'', '`geburtsdatum` <= \'[VAR2]\'', '', 2, 'lower', 'FCN:ko_specialfilter_dobrange:1', 'upper', 'FCN:ko_specialfilter_dobrange:2', '', '', 0);
 INSERT INTO `ko_filter` VALUES(NULL, 'leute', 'id', 'id', 'misc', 0, 'id = ''[VAR1]''', '', '', 1, 'id', '<input class="input-sm form-control" type="text" name="var1" maxlength="11" onkeydown="if ((event.which == 13) || (event.keyCode == 13)) { this.form.submit_filter.click(); return false;} else return true;" />', '', '', '', '', 1);
 INSERT INTO `ko_filter` VALUES(NULL, 'leute', 'hidden', 'hidden', 'status', 0, '`hidden` = ''1''', '', '', 1, 'hidden', '<input class="input-sm form-control" type="checkbox" name="var1" checked="checked" value="1" disabled="disabled" />', '', '', '', '', 0);
@@ -501,17 +549,22 @@ INSERT INTO `ko_filter` VALUES(NULL, 'leute', '', 'fastfilter', 'person', 0, '',
 INSERT INTO `ko_filter` VALUES(NULL, 'leute', '', 'candidateadults', 'family', 0, '', '', '', 1, 'dummy', 'FCN:ko_specialfilter_candidateadults', '', '', '', '', 0);
 INSERT INTO `ko_filter` VALUES(NULL, 'leute', '', 'groupshistory', 'groups', 0, '', '', '', 4, 'id', 'FCN:ko_specialfilter_groupshistory', '', '', '', '', 0);
 INSERT INTO `ko_filter` VALUES(NULL, 'leute', '', 'groupsanniversary', 'groups', 0, '', '', '', 4, 'id', 'FCN:ko_specialfilter_groupsanniversary', '', '', '', '', 0);
-INSERT INTO `ko_filter` VALUES(NULL, 'leute', 'geburtsdatum', 'jubilee', 'status', 0, '', '', '', 3, 'minage', 'FCN:ko_specialfilter_text:var1', 'step', 'FCN:ko_specialfilter_jubilee_step', 'yearoffset', 'FCN:ko_specialfilter_jubilee_yearoffset', 1);
+INSERT INTO `ko_filter` VALUES(NULL, 'leute', 'geburtsdatum', 'jubilee', 'status', 0, '', '', '', 3, 'minage', 'FCN:ko_specialfilter_text:var1', 'step', 'FCN:ko_specialfilter_jubilee_step', 'yearoffset', 'FCN:ko_specialfilter_jubilee_yearoffset', 0);
 INSERT INTO `ko_filter` VALUES(NULL, 'leute', 'confession', 'mixedhousehold', 'family', 0, '', '', '', 1, 'mode', 'FCN:ko_specialfilter_mixedhousehold', '', '', '', '', 0);
-INSERT INTO `ko_filter` VALUES(NULL, 'leute', 'geburtsdatum', 'yearage', 'status', 0, '', '', '', 2, 'lower limit', '<input class="input-sm form-control" type="text" name="var1" maxlength="3" onkeydown="if ((event.which == 13) || (event.keyCode == 13)) { this.form.submit_filter.click(); return false;} else return true;" />', 'upper limit', '<input class="input-sm form-control" type="text" name="var2" maxlength="3" onkeydown="if ((event.which == 13) || (event.keyCode == 13)) { this.form.submit_filter.click(); return false;} else return true;" />', '', '', 1);
+INSERT INTO `ko_filter` VALUES(NULL, 'leute', 'geburtsdatum', 'yearage', 'status', 0, '', '', '', 2, 'lower limit', '<input class="input-sm form-control" type="text" name="var1" maxlength="3" onkeydown="if ((event.which == 13) || (event.keyCode == 13)) { this.form.submit_filter.click(); return false;} else return true;" />', 'upper limit', '<input class="input-sm form-control" type="text" name="var2" maxlength="3" onkeydown="if ((event.which == 13) || (event.keyCode == 13)) { this.form.submit_filter.click(); return false;} else return true;" />', '', '', 0);
 INSERT INTO `ko_filter` VALUES(NULL, 'leute', 'ko_tracking_entries.value', 'trackingentries', 'misc', 0, '', '', '', 5, 'tracking_id', 'FCN:ko_specialfilter_trackingentries', '', '', '', '', 0);
 INSERT INTO `ko_filter` VALUES(NULL, 'leute', 'ko_taxonomy_terms.id', 'taxonomy', 'groups', 0, '', '', '', 2, 'taxonomy', 'FCN:ko_specialfilter_taxonomy_term:taxonomy', 'role', '', '', '', 0);
+INSERT INTO `ko_filter` VALUES(NULL, 'leute', 'information_lock', 'information_lock', 'status', 0, 'kota_filter', '', '', 1, 'information_lock', 'FCN:ko_specialfilter_kota:ko_leute:information_lock', '', '', '', '', 0);
 
 
 
 CREATE TABLE `ko_grouproles` (
   `id` mediumint(6) unsigned zerofill NOT NULL AUTO_INCREMENT,
   `name` varchar(200) NOT NULL,
+  `crdate` datetime NOT NULL,
+  `cruser` mediumint(8) unsigned NOT NULL,
+  `lastchange` datetime NOT NULL,
+  `lastchange_user` int NOT NULL DEFAULT '0',
   PRIMARY KEY (`id`)
 ) ENGINE=MyISAM DEFAULT CHARSET=latin1 COLLATE latin1_german1_ci;
 
@@ -547,6 +600,9 @@ CREATE TABLE `ko_groups` (
 	`mailing_rectype` varchar(10) NOT NULL,
 	`mailing_crm_project_id` mediumint(6) unsigned NOT NULL,
   `linked_group` mediumint(6) unsigned zerofill DEFAULT NULL,
+  `cruser` mediumint(8) unsigned NOT NULL,
+  `lastchange` datetime NOT NULL,
+  `lastchange_user` int NOT NULL DEFAULT '0',
   PRIMARY KEY (`id`),
   KEY `start` (`start`),
   KEY `stop` (`stop`),
@@ -564,6 +620,10 @@ CREATE TABLE `ko_groups_datafields` (
   `reusable` tinyint(2) NOT NULL DEFAULT '0',
   `private` tinyint(2) NOT NULL,
   `preset` tinyint(2) NOT NULL,
+  `crdate` datetime NOT NULL,
+  `cruser` mediumint(8) unsigned NOT NULL,
+  `lastchange` datetime NOT NULL,
+  `lastchange_user` int NOT NULL DEFAULT '0',
   PRIMARY KEY (`id`),
   KEY `reusable` (`reusable`)
 ) ENGINE=MyISAM DEFAULT CHARSET=latin1 COLLATE latin1_german1_ci;
@@ -653,6 +713,10 @@ INSERT INTO `ko_help` VALUES(NULL, 'daten', 'submenu_export', 'de', 0, 0, '', 'h
 INSERT INTO `ko_help` VALUES(NULL, 'daten', 'daten_settings', 'de', 0, 0, '', 'http://kool.help/module/termine#einstellungen');
 INSERT INTO `ko_help` VALUES(NULL, 'daten', 'list_events_mod', 'de', 0, 0, '', 'http://kool.help/module/termine#termin-moderation');
 INSERT INTO `ko_help` VALUES(NULL, 'daten', 'ical_links', 'de', 0, 0, '', 'http://kool.help/module/termine#ical_import_und_export');
+INSERT INTO `ko_help` VALUES(NULL, 'daten', 'list_absence', 'de', 0, 0, '', 'https://kool.help/module/termine#absenzenferien');
+INSERT INTO `ko_help` VALUES(NULL, 'daten', 'list_rooms', 'de', 0, 0, '', 'https://kool.help/module/termine#veranstaltungsorte');
+INSERT INTO `ko_help` VALUES(NULL, 'daten', 'list_reminders', 'de', 0, 0, '', 'https://kool.help/module/termine#erinnerungen');
+INSERT INTO `ko_help` VALUES(NULL, 'daten', 'ical_links_absence', 'de', 0, 0, '', 'https://kool.help/module/termine#absenzen_aus_outlook_importieren');
 INSERT INTO `ko_help` VALUES(NULL, 'groups', 'groups_settings', 'de', 0, 0, '', 'http://kool.help/module/gruppen#einstellungen');
 INSERT INTO `ko_help` VALUES(NULL, 'groups', 'submenu_groups', 'de', 0, 0, '', 'http://kool.help/module/gruppen');
 INSERT INTO `ko_help` VALUES(NULL, 'groups', 'submenu_roles', 'de', 0, 0, '', 'http://kool.help/module/gruppen#rollen');
@@ -745,6 +809,10 @@ CREATE TABLE `ko_kleingruppen` (
   `url` tinytext NOT NULL,
   `eventGroupID` mediumint(9) NOT NULL,
   `mailing_alias` varchar(50) NOT NULL,
+  `crdate` datetime NOT NULL,
+  `cruser` mediumint(9) NOT NULL,
+  `lastchange` datetime NOT NULL,
+  `lastchange_user` mediumint(8) unsigned NOT NULL,
   PRIMARY KEY (`id`),
   KEY `type` (`type`,`region`,`eventGroupID`),
   KEY `mailing_alias` (`mailing_alias`)
@@ -767,6 +835,7 @@ CREATE TABLE `ko_leute` (
   `telg` varchar(30) NOT NULL,
   `natel` varchar(30) NOT NULL,
   `fax` varchar(30) NOT NULL,
+  `telegram_id` int(10) NOT NULL DEFAULT '-1',
   `email` varchar(100) NOT NULL,
   `web` varchar(250) NOT NULL,
   `geburtsdatum` date NOT NULL,
@@ -788,6 +857,7 @@ CREATE TABLE `ko_leute` (
   `crdate` datetime NOT NULL,
   `cruserid` mediumint(9) NOT NULL,
   `rectype` varchar(10) NOT NULL,
+  `information_lock` tinyint(4) NOT NULL DEFAULT '0',
   PRIMARY KEY (`id`),
   KEY `nachname` (`nachname`),
   KEY `geburtsdatum` (`geburtsdatum`),
@@ -861,6 +931,7 @@ CREATE TABLE `ko_leute_revisions` (
   `crdate` datetime NOT NULL,
   `cruser` mediumint(9) unsigned NOT NULL,
   `group_id` text NOT NULL,
+	`force_keep` tinyint(2) NOT NULL,
 	PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE latin1_german1_ci;
 
@@ -882,6 +953,7 @@ CREATE TABLE `ko_event_absence` (
   `description` text NOT NULL,
   `from_date` datetime NOT NULL,
   `to_date` datetime NOT NULL,
+  `ical_id` varchar(200) NOT NULL,
   `crdate` datetime NOT NULL,
   `cruser` mediumint(9) unsigned NOT NULL,
   PRIMARY KEY (`id`)
@@ -956,9 +1028,13 @@ CREATE TABLE `ko_news` (
   `title` varchar(255) NOT NULL DEFAULT '',
   `subtitle` varchar(255) NOT NULL DEFAULT '',
   `text` longtext NOT NULL,
-  `cdate` date NOT NULL DEFAULT '0000-00-00',
+	`category` varchar(100) NOT NULL DEFAULT '',
   `author` varchar(255) NOT NULL DEFAULT '',
   `link` varchar(255) NOT NULL,
+  `cdate` date NOT NULL DEFAULT '0000-00-00',
+  `cruser` mediumint(9) NOT NULL,
+  `lastchange` datetime NOT NULL,
+  `lastchange_user` mediumint(8) unsigned NOT NULL,
   UNIQUE KEY `id` (`id`),
   KEY `type` (`type`)
 ) ENGINE=MyISAM DEFAULT CHARSET=latin1 COLLATE latin1_german1_ci;
@@ -968,10 +1044,14 @@ CREATE TABLE `ko_pdf_layout` (
   `type` varchar(50) NOT NULL,
   `name` varchar(100) NOT NULL,
   `data` text NOT NULL,
+  `crdate` datetime NOT NULL,
+  `cruser` mediumint(9) NOT NULL,
+  `lastchange` datetime NOT NULL,
+  `lastchange_user` mediumint(8) unsigned NOT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=MyISAM  DEFAULT CHARSET=latin1 COLLATE latin1_german1_ci;
 
-INSERT INTO `ko_pdf_layout` VALUES(1, 'leute', 'Layout 1', 'a:8:{s:4:"page";a:5:{s:11:"orientation";s:1:"L";s:11:"margin_left";s:2:"10";s:10:"margin_top";s:2:"15";s:12:"margin_right";s:2:"10";s:13:"margin_bottom";s:2:"10";}s:6:"header";a:3:{s:4:"left";a:3:{s:4:"font";s:6:"arialb";s:8:"fontsize";s:2:"12";s:4:"text";s:22:"kOOL - the church tool";}s:6:"center";a:3:{s:4:"font";s:6:"arialb";s:8:"fontsize";s:2:"12";s:4:"text";s:0:"";}s:5:"right";a:3:{s:4:"font";s:6:"arialb";s:8:"fontsize";s:2:"12";s:4:"text";s:0:"";}}s:6:"footer";a:3:{s:4:"left";a:3:{s:4:"font";s:5:"arial";s:8:"fontsize";s:2:"11";s:4:"text";s:0:"";}s:6:"center";a:3:{s:4:"font";s:5:"arial";s:8:"fontsize";s:2:"11";s:4:"text";s:18:"- [[PageNumber]] -";}s:5:"right";a:3:{s:4:"font";s:5:"arial";s:8:"fontsize";s:2:"11";s:4:"text";s:46:"[[Day]].[[Month]].[[Year]] [[Hour]]:[[Minute]]";}}s:9:"headerrow";a:3:{s:4:"font";s:6:"arialb";s:8:"fontsize";s:2:"11";s:9:"fillcolor";s:3:"204";}s:18:"columns_datafields";b:0;s:4:"sort";s:8:"nachname";s:10:"sort_order";s:3:"ASC";s:12:"col_template";a:1:{s:8:"_default";a:2:{s:4:"font";s:5:"arial";s:8:"fontsize";s:2:"11";}}}');
+INSERT INTO `ko_pdf_layout` VALUES(1, 'leute', 'Layout 1', 'a:8:{s:4:"page";a:5:{s:11:"orientation";s:1:"L";s:11:"margin_left";s:2:"10";s:10:"margin_top";s:2:"15";s:12:"margin_right";s:2:"10";s:13:"margin_bottom";s:2:"10";}s:6:"header";a:3:{s:4:"left";a:3:{s:4:"font";s:6:"arialb";s:8:"fontsize";s:2:"12";s:4:"text";s:22:"kOOL - the church tool";}s:6:"center";a:3:{s:4:"font";s:6:"arialb";s:8:"fontsize";s:2:"12";s:4:"text";s:0:"";}s:5:"right";a:3:{s:4:"font";s:6:"arialb";s:8:"fontsize";s:2:"12";s:4:"text";s:0:"";}}s:6:"footer";a:3:{s:4:"left";a:3:{s:4:"font";s:5:"arial";s:8:"fontsize";s:2:"11";s:4:"text";s:0:"";}s:6:"center";a:3:{s:4:"font";s:5:"arial";s:8:"fontsize";s:2:"11";s:4:"text";s:18:"- [[PageNumber]] -";}s:5:"right";a:3:{s:4:"font";s:5:"arial";s:8:"fontsize";s:2:"11";s:4:"text";s:46:"[[Day]].[[Month]].[[Year]] [[Hour]]:[[Minute]]";}}s:9:"headerrow";a:3:{s:4:"font";s:6:"arialb";s:8:"fontsize";s:2:"11";s:9:"fillcolor";s:3:"204";}s:18:"columns_datafields";b:0;s:4:"sort";s:8:"nachname";s:10:"sort_order";s:3:"ASC";s:12:"col_template";a:1:{s:8:"_default";a:2:{s:4:"font";s:5:"arial";s:8:"fontsize";s:2:"11";}}}', NOW(), 1, NOW(), 1);
 
 CREATE TABLE `ko_reservation` (
   `id` mediumint(9) NOT NULL AUTO_INCREMENT,
@@ -988,6 +1068,7 @@ CREATE TABLE `ko_reservation` (
   `code` varchar(32) NOT NULL DEFAULT '',
   `cdate` datetime NOT NULL DEFAULT '0000-00-00 00:00:00',
   `last_change` datetime NOT NULL DEFAULT '0000-00-00 00:00:00',
+  `lastchange_user` mediumint(8) unsigned NOT NULL,
   `user_id` mediumint(6) NOT NULL DEFAULT '0',
   `serie_id` mediumint(9) NOT NULL,
   `linked_items` text NOT NULL,
@@ -1014,6 +1095,7 @@ CREATE TABLE `ko_reservation_mod` (
   `code` varchar(32) NOT NULL DEFAULT '',
   `cdate` datetime NOT NULL DEFAULT '0000-00-00 00:00:00',
   `last_change` datetime NOT NULL DEFAULT '0000-00-00 00:00:00',
+  `lastchange_user` mediumint(8) unsigned NOT NULL,
   `user_id` mediumint(6) NOT NULL DEFAULT '0',
   `serie_id` mediumint(9) NOT NULL,
   `linked_items` text NOT NULL,
@@ -1038,14 +1120,18 @@ CREATE TABLE `ko_resitem` (
   `gruppen_id` smallint(4) NOT NULL DEFAULT '0',
   `moderation` smallint(4) NOT NULL DEFAULT '0',
   `linked_items` text NOT NULL,
-	`email_recipient` varchar(255) NOT NULL,
-	`email_text` TEXT NOT NULL,
+  `email_recipient` varchar(255) NOT NULL,
+  `email_text` TEXT NOT NULL,
+  `crdate` datetime NOT NULL,
+  `cruser` mediumint(9) NOT NULL,
+  `lastchange` datetime NOT NULL,
+  `lastchange_user` mediumint(8) unsigned NOT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=MyISAM DEFAULT CHARSET=latin1 COLLATE latin1_german1_ci;
 
 CREATE TABLE `ko_rota_schedulling` (
   `team_id` mediumint(8) unsigned NOT NULL,
-  `event_id` varchar(8) NOT NULL,
+  `event_id` varchar(11) NOT NULL,
   `schedule` text NOT NULL,
   `status` tinyint(4) NOT NULL DEFAULT '1',
   KEY `dienst` (`team_id`,`event_id`),
@@ -1067,19 +1153,25 @@ CREATE TABLE `ko_rota_teams` (
   `group_id` text NOT NULL,
   `eg_id` text NOT NULL,
   `export_eg` mediumint(9) NOT NULL,
-	`sort` int(11) NOT NULL,
-	`schedule_subgroup_members` tinyint(1) NOT NULL,
+  `sort` int(11) NOT NULL,
+  `schedule_subgroup_members` tinyint(1) NOT NULL,
   `allow_consensus` tinyint(4) NOT NULL DEFAULT '0',
-	`consensus_description` text NOT NULL,
-	`consensus_disable_maybe_option` tinyint(3) NOT NULL,
-	`consensus_max_promises` mediumint(8) NOT NULL,
+  `consensus_description` text NOT NULL,
+  `consensus_disable_maybe_option` tinyint(3) NOT NULL,
+  `consensus_max_promises` mediumint(8) NOT NULL,
+  `days_range` varchar(20) NOT NULL DEFAULT '0,1,2,3,4,5,6',
+  `farbe` varchar(6) NOT NULL DEFAULT '',
+  `crdate` datetime NOT NULL,
+  `cruser` mediumint(8) unsigned NOT NULL,
+  `lastchange` datetime NOT NULL,
+  `lastchange_user` mediumint(8) unsigned NOT NULL,
   PRIMARY KEY (`id`),
   KEY `rotatype` (`rotatype`)
 ) ENGINE=MyISAM DEFAULT CHARSET=latin1 COLLATE latin1_german1_ci;
 
 CREATE TABLE `ko_rota_consensus` (
   `team_id` mediumint(8) unsigned NOT NULL,
-  `event_id` varchar(8) NOT NULL,
+  `event_id` varchar(11) NOT NULL,
   `person_id` mediumint(8) NOT NULL,
   `answer` tinyint(4) NOT NULL,
   `status` tinyint(4) NOT NULL DEFAULT '1',
@@ -1175,9 +1267,7 @@ INSERT INTO `ko_settings` VALUES('mailing_max_attempts', '5');
 INSERT INTO `ko_settings` VALUES('mailing_only_alias', '0');
 INSERT INTO `ko_settings` VALUES('daten_gs_pid', '');
 INSERT INTO `ko_settings` VALUES('daten_gs_role', '');
-INSERT INTO `ko_settings` VALUES('rota_weekstart', '0');
 INSERT INTO `ko_settings` VALUES('default_view_rota', 'schedule');
-INSERT INTO `ko_settings` VALUES('rota_export_weekly_teams', '0');
 INSERT INTO `ko_settings` VALUES('typo3_host', '');
 INSERT INTO `ko_settings` VALUES('typo3_db', '');
 INSERT INTO `ko_settings` VALUES('typo3_user', '');
@@ -1194,6 +1284,7 @@ INSERT INTO `ko_settings` VALUES('leute_allow_moderation', '1');
 INSERT INTO `ko_settings` VALUES('checkin_display_leute_fields', 'vorname,nachname,geburtsdatum');
 INSERT INTO `ko_settings` VALUES('checkin_max_results', '50');
 INSERT INTO `ko_settings` VALUES('leute_allow_import', '1');
+INSERT INTO `ko_settings` VALUES('consensus_ongoing_cal_timespan', '1m');
 
 CREATE TABLE `ko_statistics` (
 	`id` bigint unsigned NOT NULL AUTO_INCREMENT,
@@ -1225,6 +1316,10 @@ CREATE TABLE `ko_tracking` (
 	`enable_checkin` tinyint(4) NOT NULL,
 	`checkin_guest_pass` varchar(40) NOT NULL,
 	`checkin_admin_pass` varchar(40) NOT NULL,
+  `crdate` datetime NOT NULL,
+  `cruser` mediumint(9) NOT NULL,
+  `lastchange` datetime NOT NULL,
+  `lastchange_user` mediumint(8) unsigned NOT NULL,
   PRIMARY KEY (`id`),
   KEY `group_id` (`group_id`)
 ) ENGINE=MyISAM DEFAULT CHARSET=latin1 COLLATE latin1_german1_ci;
@@ -1263,6 +1358,21 @@ CREATE TABLE `ko_google_cloud_printers` (
   PRIMARY KEY (`id`),
   KEY `google_id` (`google_id`)
 ) ENGINE=MyISAM DEFAULT CHARSET=latin1 COLLATE latin1_german1_ci;
+
+CREATE TABLE `ko_updates` (
+  `id` mediumint(11) UNSIGNED NOT NULL AUTO_INCREMENT,
+  `name` varchar(200) NOT NULL,
+  `description` text NOT NULL,
+  `crdate` datetime NOT NULL,
+  `version` varchar(10) NOT NULL,
+  `optional` tinyint(1) NOT NULL,
+  `status` tinyint(1) NOT NULL,
+  `done_date` datetime NOT NULL,
+  `module` varchar(100) NOT NULL,
+  `plugin` varchar(100) NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `name` (`name`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE latin1_german1_ci;
 
 CREATE TABLE `ko_userprefs` (
   `id` mediumint(8) unsigned NOT NULL AUTO_INCREMENT,
@@ -1329,6 +1439,8 @@ CREATE TABLE `ko_crm_projects` (
 	`project_status` text NOT NULL,
 	`crdate` datetime NOT NULL,
 	`cruser` mediumint(8) NOT NULL,
+  `lastchange` datetime NOT NULL,
+  `lastchange_user` mediumint(8) unsigned NOT NULL,
 	PRIMARY KEY (`id`)
 ) ENGINE=MyISAM DEFAULT CHARSET=latin1 COLLATE latin1_german1_ci;
 
@@ -1338,6 +1450,8 @@ CREATE TABLE `ko_crm_status` (
 	`default_deadline` smallint(4) NOT NULL,
 	`crdate` datetime NOT NULL,
 	`cruser` mediumint(8) NOT NULL,
+  `lastchange` datetime NOT NULL,
+  `lastchange_user` mediumint(8) unsigned NOT NULL,
 	PRIMARY KEY (`id`)
 ) ENGINE=MyISAM DEFAULT CHARSET=latin1 COLLATE latin1_german1_ci;
 
@@ -1354,6 +1468,8 @@ CREATE TABLE `ko_crm_contacts` (
 	`reference` varchar(255) NOT NULL,
 	`crdate` datetime NOT NULL,
 	`cruser` mediumint(8) NOT NULL,
+  `lastchange` datetime NOT NULL,
+  `lastchange_user` mediumint(8) unsigned NOT NULL,
 	PRIMARY KEY (`id`)
 ) ENGINE=MyISAM DEFAULT CHARSET=latin1 COLLATE latin1_german1_ci;
 
@@ -1369,6 +1485,8 @@ CREATE TABLE `ko_subscription_forms` (
 	`id` mediumint(8) unsigned NOT NULL AUTO_INCREMENT,
 	`crdate` datetime NOT NULL,
 	`cruser` mediumint(8) NOT NULL,
+  `lastchange` datetime NOT NULL,
+  `lastchange_user` mediumint(8) unsigned NOT NULL,
 	`form_group` mediumint(8) NOT NULL,
 	`title` varchar(255) NOT NULL,
 	`fields` text NOT NULL,
@@ -1441,3 +1559,19 @@ CREATE TABLE `ko_taxonomy_index` (
   `cruser` int(11) NOT NULL,
   PRIMARY KEY (`id`, `node_id`, `table`)
 ) ENGINE=MyISAM DEFAULT CHARSET=latin1 COLLATE latin1_german1_ci;
+
+CREATE TABLE `ko_payment_transaction` (
+	`id` mediumint unsigned NOT NULL AUTO_INCREMENT,
+	`provider` varchar(100) NOT NULL,
+	`provider_id` varchar(100) NOT NULL DEFAULT '',
+	`status` tinyint DEFAULT 0 NOT NULL,
+	`user_status` tinyint DEFAULT 0 NOT NULL,
+	`crdate` datetime NOT NULL,
+	`completion_date` datetime DEFAULT NULL,
+	`order` text NOT NULL,
+	`order_type` varchar(100) NOT NULL,
+	`errors` text NULL,
+	`user_language` char(2) NOT NULL DEFAULT '',
+
+	PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE latin1_german1_ci;

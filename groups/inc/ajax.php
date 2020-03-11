@@ -2,7 +2,7 @@
 /***************************************************************
 *  Copyright notice
 *
-*  (c) 2003-2017 Renzo Lauper (renzo@churchtool.org)
+*  (c) 2003-2020 Renzo Lauper (renzo@churchtool.org)
 *  All rights reserved
 *
 *  This script is part of the kOOL project. The kOOL project is
@@ -160,15 +160,13 @@ if(isset($_GET) && isset($_GET["action"])) {
 		case "adddatafield":
 			if($access['groups']['MAX'] < 2) break;
 
-			//JS encodeURIComponent() always encodes in UTF-8
-			$description = format_userinput(utf8_decode(rawurldecode($_GET['descr'])), 'text', FALSE, 0, array('allquotes'));
-
+			$description = format_userinput(urldecode($_GET['descr']), 'text', FALSE, 0, array('allquotes' => TRUE));
 			$type = format_userinput(urldecode($_GET['type']), 'alpha');
 			$reusable = format_userinput($_GET['reusable'], 'uint');
 			$private = format_userinput($_GET['private'], 'uint');
 			$preset = format_userinput($_GET['preset'], 'uint');
 			if($type == 'select' || $type == 'multiselect') {
-				$options = explode("\n", utf8_decode(rawurldecode($_GET['options'])));
+				$options = explode("\n", urldecode($_GET['options']));
 				$save_options = NULL;
 				foreach($options as $o) $save_options[] = trim($o);
 				$options = serialize($save_options);

@@ -195,7 +195,7 @@
 			{if $edit_cols.tracking_add || $edit_cols.tracking_show}
 				{if $list.meta.$row.tracking_show}
 					<li class="list-tracking list-action-header">
-						<input type="image" src="{$ko_path}images/tracking_show.png" alt="{$label.alt_tracking_show}" title="{$label.alt_tracking_show}" onclick="jumpToUrl('{$ko_path}tracking/index.php?action=enter_tracking&amp;id={$list.meta.$row.tracking_id}'); return false;" />
+						<input type="image" src="{$ko_path}images/tracking_show.png" alt="{$label.alt_tracking_show}" title="{$label.alt_tracking_show}" onclick="jumpToUrl('{$ko_path}tracking/index.php?action=select_tracking&amp;id={$list.meta.$row.tracking_id}'); return false;" />
 					</li>
 				{elseif $list.meta.$row.tracking_add}
 					<li class="list-tracking list-action-header">

@@ -2,7 +2,7 @@
 /***************************************************************
 *  Copyright notice
 *
-*  (c) 2003-2017 Renzo Lauper (renzo@churchtool.org)
+*  (c) 2003-2020 Renzo Lauper (renzo@churchtool.org)
 *  All rights reserved
 *
 *  This script is part of the kOOL project. The kOOL project is
@@ -94,6 +94,7 @@ if(!ko_module_installed("daten")) {
 
 //Get access rights
 ko_get_access('daten', $_SESSION['ses_userid'], TRUE);
+ko_get_access('reservation', $_SESSION['ses_userid'], TRUE);
 ko_include_kota(array('ko_event'));
 
 //Set event groups to be shown set by GET or preset named ical
@@ -187,6 +188,7 @@ if(!empty($_GET['terms']) && ko_module_installed("taxonomy")) {
 	$eventIds_filter_by_term = [];
 
 	foreach($terms AS $term) {
+		if(!is_numeric($term)) continue;
 		$child_terms = ko_taxonomy_get_terms_by_parent($term);
 		$child_terms[]['id'] = $term;
 
@@ -196,12 +198,14 @@ if(!empty($_GET['terms']) && ko_module_installed("taxonomy")) {
 	}
 
 	if(isset($eventIds_filter_by_term)) {
-		$z_where .= " AND ko_event.id IN (". implode(",", array_column($eventIds_filter_by_term,"id")) . ")";
+		$z_where .= " AND ko_event.id IN ('". implode("','", array_column($eventIds_filter_by_term,"id")) . "')";
 	}
 }
 
 if(!empty($_GET['absences'])) {
-	$absences = ko_daten_get_absence_by_date(date("Y-m-d"), "2200-01-01");
+	if($ical_deadline == 'today') $startDate = date('Y-m-d');
+	else $startDate = date('Y-m-d', strtotime($ical_deadline.' months'));
+	$absences = ko_daten_get_absence_by_date($startDate, "2200-01-01");
 
 	$loggedin_user = ko_get_logged_in_id();
 	if($_GET['absences'] == "preset") {
@@ -266,6 +270,7 @@ if($_GET['absences']) {
 		$ical .= 'DESCRIPTION:'.strtr(trim($description_plain), $mapping).CRLF;
 
 		$ical .= 'X-ALT-DESC;FMTTYPE=text/html:<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2//E"><HTML><BODY>'.$description.'</BODY></HTML>' . CRLF;
+		$ical .= "X-MICROSOFT-CDO-BUSYSTATUS:OOF" . CRLF;
 		$ical .= "END:VEVENT".CRLF;
 	}
 } else {
@@ -316,8 +321,11 @@ if($_GET['absences']) {
 			}
 			$event2 = $event;
 			//Set keys so kota_process_data() can e.g. process rotateam columns
-			foreach ($desc_fields as $dk) {
+			foreach ($desc_fields as $dkk => $dk) {
 				if (!$dk) continue;
+				if($dk == 'reservationen' && (!ko_module_installed('reservation') || $access['reservation']['MAX'] < 1)) {
+					unset($desc_fields[$dkk]);
+				}
 
 				if (substr($dk, 0, 9) == "rotateam_") {
 					$rota_id = substr($dk, 9);
@@ -360,7 +368,10 @@ if($_GET['absences']) {
 		$ical .= 'DESCRIPTION:' . strtr(trim($description_plain), $mapping) . CRLF;
 		$ical .= 'X-ALT-DESC;FMTTYPE=text/html:<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2//E"><HTML><BODY>' . $description . '</BODY></HTML>' . CRLF;
 
-		$ical .= 'LOCATION:' . strtr(trim($event['room']), $mapping) . CRLF;
+		$room_mapping = ['room' => $event['room']];
+		kota_process_data("ko_event", $room_mapping, "list");
+		$ical .= 'LOCATION:' . strtr(trim($room_mapping['room']), $mapping) . CRLF;
+
 		if ($url) $ical .= 'URL:' . $url . CRLF;
 		$ical .= "END:VEVENT" . CRLF;
 	}

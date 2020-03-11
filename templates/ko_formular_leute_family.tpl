@@ -102,6 +102,39 @@
 	{if $counter%2==1}</div>{/if}
 </div>
 
+{if count($householdmembers) > 0}
+<div class="row">
+	<div class="col-md-12 formular-cell">
+		<div class="formular_header">
+			<label>{ll key="family_all_persons"}</label>
+		</div>
+		<div class="formular_content">
+			<table class=" table table-alternating table-bordered table-hover tablesaw tablesaw-stack" data-tablesaw-mode="stack">
+				<thead>
+				<tr class="row-info no-hover">
+					<th class="ko_list">{ll key="kota_ko_leute_vorname"}</th>
+					<th class="ko_list">{ll key="kota_ko_leute_nachname"}</th>
+					<th class="ko_list">{ll key="kota_ko_leute_famfunction"}</th>
+					<th class="ko_list">{ll key="kota_ko_leute_geburtsdatum"}</th>
+					<th class="ko_list">{ll key="kota_ko_leute_zivilstand"}</th>
+				</tr>
+				</thead>
+				<tbody>
+				{foreach item=householdmember from=$householdmembers}
+				<tr class="{cycle values="row-even, row-odd"}{if $l.rowclass} {$l.rowclass}{/if}">
+					<td>{$householdmember.vorname}</td>
+					<td>{$householdmember.nachname}</td>
+					<td>{$householdmember.famfunction}</td>
+					<td>{$householdmember.geburtsdatum}</td>
+					<td>{$householdmember.zivilstand}</td>
+				</tr>
+				{/foreach}
+				</tbody>
+			</table>
+		</div>
+	</div>
+</div>
+{/if}
 
 <script>
 	var leute_warning_family_fields_changed = '{ll key="leute_warning_family_fields_changed"}';

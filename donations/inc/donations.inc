@@ -2,7 +2,7 @@
 /***************************************************************
 *  Copyright notice
 *
-*  (c) 2003-2017 Renzo Lauper (renzo@churchtool.org)
+*  (c) 2003-2020 Renzo Lauper (renzo@churchtool.org)
 *  All rights reserved
 *
 *  This script is part of the kOOL project. The kOOL project is
@@ -64,6 +64,7 @@ function ko_list_donations($mode="html", $dontApplyLimit=FALSE) {
 
 	$list->init("donations", "ko_donations", $icons, $_SESSION["show_start"], $_SESSION["show_limit"]);
 	$list->setTitle(getLL("donations_list_title"));
+	$list->showColItemlist();
 	$list->setAccessRights(array('edit' => 3, 'delete' => 3), $access['donations']);
 	$list->setActions($actions);
 	if ($access['donations']['MAX'] > 1 && db_get_count("ko_donations_accounts") > 0) $list->setActionNew('new_donation');
@@ -131,7 +132,7 @@ function ko_list_donations($mode="html", $dontApplyLimit=FALSE) {
 
 
 function ko_list_donations_mod() {
-	global $smarty, $ko_path, $access, $DATETIME, $js_calendar;
+	global $smarty, $ko_path, $access, $DATETIME;
 
 	$counter=0;
 	ko_get_logins($logins);
@@ -355,6 +356,9 @@ function ko_list_accounts() {
 	if($_SESSION['show_start'] > $rows) $_SESSION['show_start'] = 1;
   $z_limit = 'LIMIT '.($_SESSION['show_start']-1).', '.$_SESSION['show_limit'];
 	$es = db_select_data('ko_donations_accounts', '', '*', 'ORDER BY number ASC, name ASC', $z_limit);
+	foreach($es as $k => $v) {
+		if($access['donations'][$k] < 1) unset($es[$k]);
+	}
 
 	$list = new kOOL_listview();
 
@@ -371,6 +375,36 @@ function ko_list_accounts() {
 	//Output the list
 	$list->render($es);
 }//ko_list_accounts()
+
+
+
+
+function ko_list_accountgroups() {
+	global $smarty;
+	global $access;
+
+	if($access['donations']['ALL'] < 4) return;
+
+	$rows = db_get_count('ko_donations_accountgroups', 'id');
+	if($_SESSION['show_start'] > $rows) $_SESSION['show_start'] = 1;
+  $z_limit = 'LIMIT '.($_SESSION['show_start']-1).', '.$_SESSION['show_limit'];
+	$es = db_select_data('ko_donations_accountgroups', '', '*', 'ORDER BY `title` ASC', $z_limit);
+
+	$list = new kOOL_listview();
+
+	$list->init("donations", "ko_donations_accountgroups", array("chk", "edit", "delete"), $_SESSION["show_start"], $_SESSION["show_limit"]);
+	$list->setTitle(getLL("donations_accountgroups_list_title"));
+	$list->setAccessRights(array('edit' => 4, 'delete' => 4), $access['donations'], 'id');
+	$list->setActions(array("edit" => array("action" => "edit_accountgroup"),
+													"delete" => array("action" => "delete_accountgroup", "confirm" => TRUE))
+										);
+	$list->setActionNew('new_accountgroup');
+	$list->setStats($rows);
+	$list->setSort(FALSE);
+
+	//Output the list
+	$list->render($es);
+}//ko_list_accountgroups()
 
 
 
@@ -512,6 +546,28 @@ function ko_formular_account($mode, $id="") {
 
 	ko_multiedit_formular("ko_donations_accounts", "", $id, "", $form_data);
 }//ko_formular_account()
+
+
+
+
+function ko_formular_accountgroup($mode, $id="") {
+	global $KOTA;
+
+	if($mode == 'new') {
+		$id = 0;
+	} else if($mode == 'edit') {
+		if(!$id) return FALSE;
+	} else {
+		return FALSE;
+	}
+
+	$form_data['title'] =  $mode == 'new' ? getLL('form_donation_title_new_accountgroup') : getLL('form_donation_title_edit_accountgroup');
+	$form_data['submit_value'] = getLL('save');
+	$form_data['action'] = $mode == 'new' ? 'submit_new_accountgroup' : 'submit_edit_accountgroup';
+	$form_data['cancel'] = 'list_accountgroups';
+
+	ko_multiedit_formular('ko_donations_accountgroups', '', $id, '', $form_data);
+}//ko_formular_accountgroup()
 
 
 
@@ -830,6 +886,8 @@ function ko_donations_export_person($mode) {
 	//Handle every single donator
 	$rowcounter = 0;
 	$done_famids = array();
+
+	$restricted_leute_ids = ko_apply_leute_information_lock();
 	foreach($donators as $pid) {
 		//Address data
 		ko_get_person_by_id($pid, $person, TRUE);  //Include deleted addresses
@@ -888,6 +946,15 @@ function ko_donations_export_person($mode) {
 
 		//Sort key
 		$sort_key = $person['nachname'].$person['vorname'].'_'.$rowcounter;
+
+		if(!empty($restricted_leute_ids)) {
+			if (in_array($pid, $restricted_leute_ids)) {
+				$data[$sort_key][] = getLL("yes");
+			} else {
+				$data[$sort_key][] = getLL("no");
+			}
+		}
+
 		foreach($address_columns as $col) {
 			if($col == 'deleted') {
 				$data[$sort_key][] = $person[$col] == 1 ? getLL('yes') : getLL('no');
@@ -945,6 +1012,10 @@ function ko_donations_export_person($mode) {
 	}
 
 	//prepare header
+	if(!empty($restricted_leute_ids)) {
+		$header[] = getLL('kota_ko_leute_information_lock');
+	}
+
 	foreach($address_columns as $col) {
 		$header[] = getLL('kota_ko_leute_'.$col);
 	}
@@ -1028,11 +1099,22 @@ function ko_donations_export_monthly() {
 
 	//Handle every single donator
 	$rowcounter = 0;
+
+	$restricted_leute_ids = ko_apply_leute_information_lock();
 	foreach($donators as $pid) {
 		//Address data
 		$person = db_select_data('ko_leute', "WHERE `id` = '$pid'", '*', '', '', TRUE);
 		//Sort key
 		$sort_key = $person["nachname"].$person["vorname"]."_".$rowcounter;
+
+		if(ko_get_setting('leute_information_lock')) {
+			if (in_array($pid, $restricted_leute_ids)) {
+				$data[$sort_key][] = getLL("yes");
+			} else {
+				$data[$sort_key][] = getLL("no");
+			}
+		}
+
 		foreach($address_columns as $col) {
 			$data[$sort_key][] = $person[$col];
 		}
@@ -1076,11 +1158,13 @@ function ko_donations_export_monthly() {
 		$rowcounter++;
 	}//foreach(donators as pid)
 
-
-
 	ksort($data, SORT_LOCALE_STRING);
 
 	//prepare header
+	if(!empty($restricted_leute_ids)) {
+		$header1[] = getLL('kota_ko_leute_information_lock');
+	}
+
 	foreach($address_columns as $col) {
 		$header1[] = getLL("kota_ko_leute_".$col);
 	}
@@ -1320,11 +1404,21 @@ function ko_donations_settings() {
 	$frmgroup[$gc]['titel'] = getLL('settings_title_user');
 	$frmgroup[$gc]['tab'] = true;
 
+	$values = array('list_donations');
+	$descs = array(getLL('submenu_donations_list_donations'));
+	if($access['donations']['MAX'] > 3) {
+		$values[] = 'list_accounts';
+		$descs[] = getLL('submenu_donations_list_accounts');
+	}
+	if(ko_get_setting('donations_use_repetition')) {
+		$values[] = 'list_reoccuring_donations';
+		$descs[] = getLL('submenu_donations_list_reoccuring_donations');
+	}
 	$frmgroup[$gc]['row'][$rowcounter]['inputs'][0] = array('desc' => getLL('donations_settings_default_view'),
 		'type' => 'select',
 		'name' => 'sel_donations',
-		'values' => array('list_donations', 'list_accounts', 'list_reoccuring_donations'),
-		'descs' => array(getLL('submenu_donations_list_donations'), getLL('submenu_donations_list_accounts'), getLL('submenu_donations_list_reoccuring_donations')),
+		'values' => $values,
+		'descs' => $descs,
 		'value' => ko_html(ko_get_userpref($_SESSION['ses_userid'], 'default_view_donations'))
 	);
 	$frmgroup[$gc]['row'][$rowcounter++]['inputs'][1] = array('desc' => getLL('admin_settings_limits_numberof_donations'),
@@ -1351,14 +1445,16 @@ function ko_donations_settings() {
 		'value' => $value == '' ? 0 : $value,
 	);
 
-	$value = ko_get_userpref($_SESSION['ses_userid'], 'donations_recurring_prompt');
-	$frmgroup[$gc]['row'][$rowcounter]['inputs'][0] = array('desc' => getLL('donations_settings_recurring_prompt'),
-		'type' => 'switch',
-		'label_0' => getLL('no'),
-		'label_1' => getLL('yes'),
-		'name' => 'chk_recurring_prompt',
-		'value' => $value == '' ? 0 : $value,
-	);
+	if(ko_get_setting('donations_use_repetition')) {
+		$value = ko_get_userpref($_SESSION['ses_userid'], 'donations_recurring_prompt');
+		$frmgroup[$gc]['row'][$rowcounter]['inputs'][0] = array('desc' => getLL('donations_settings_recurring_prompt'),
+			'type' => 'switch',
+			'label_0' => getLL('no'),
+			'label_1' => getLL('yes'),
+			'name' => 'chk_recurring_prompt',
+			'value' => $value == '' ? 0 : $value,
+		);
+	}
 	$value = ko_get_userpref($_SESSION['ses_userid'], 'donations_date_field');
 	$frmgroup[$gc]['row'][$rowcounter++]['inputs'][1] = array('desc' => getLL('donations_settings_date_field'),
 		'type' => 'select',
@@ -1401,25 +1497,32 @@ function ko_donations_settings() {
 			'descs' => $descs,
 			'value' => $sel_value,
 		);
-
-
-		$value = ko_get_setting('donations_use_promise');
-		$frmgroup[$gc]['row'][$rowcounter++]['inputs'][1] = array('desc' => getLL('donations_settings_use_promise'),
-			'type' => 'switch',
-			'label_0' => getLL('no'),
-			'label_1' => getLL('yes'),
-			'name' => 'chk_use_promise',
-			'value' => $value == '' ? 0 : $value,
-		);
-
 		$value = ko_get_setting('donations_show_export_page');
-		$frmgroup[$gc]['row'][$rowcounter]['inputs'][0] = array('desc' => getLL('donations_settings_show_intermediate_export_page'),
+		$frmgroup[$gc]['row'][$rowcounter++]['inputs'][1] = array('desc' => getLL('donations_settings_show_intermediate_export_page'),
 			'type' => 'switch',
 			'label_0' => getLL('no'),
 			'label_1' => getLL('yes'),
 			'name' => 'chk_show_export_page',
 			'value' => $value == '' ? 0 : $value,
 		);
+
+		$value = ko_get_setting('donations_use_promise');
+		$frmgroup[$gc]['row'][$rowcounter]['inputs'][0] = array('desc' => getLL('donations_settings_use_promise'),
+			'type' => 'switch',
+			'label_0' => getLL('no'),
+			'label_1' => getLL('yes'),
+			'name' => 'chk_use_promise',
+			'value' => $value == '' ? 0 : $value,
+		);
+		$value = ko_get_setting('donations_use_repetition');
+		$frmgroup[$gc]['row'][$rowcounter++]['inputs'][1] = array('desc' => getLL('donations_settings_use_repetition'),
+			'type' => 'switch',
+			'label_0' => getLL('no'),
+			'label_1' => getLL('yes'),
+			'name' => 'chk_use_repetition',
+			'value' => $value == '' ? 0 : $value,
+		);
+
 	}
 
 	//Allow plugins to add further settings

@@ -60,6 +60,12 @@
 		</div>
 	{/if}
 
+	{if $room_filter}
+		<div class="submenu__room_filter">
+			{$room_filter}
+		</div>
+	{/if}
+
 	{if $show_sort_cols}
 		<input type="checkbox" name="chk_sort_cols" id="chk_sort_cols" value="1" {$sort_cols_checked} onclick="sendReq('../{$sm.mod}/inc/ajax.php', ['action','state','sesid'], ['itemlistsort',this.checked,'{$sm.sesid}'], do_element);" /><label for="chk_sort_cols">{$itemlist_sortcols}</label><br />
 	{/if}
@@ -72,7 +78,7 @@
 		<div class="input-group input-group-sm">
 			<input type="text"  class="form-control" name="txt_itemlist_new{$action_suffix}">
 			<div class="input-group-btn">
-				<button class="btn btn-default" type="button" id="save_itemlist_{$action_suffix}" alt="{$itemlist_save_preset}" title="{$itemlist_save_preset}" onclick="sendReq('../{$sm.mod}/inc/ajax.php', ['action','name','logins'{if $allow_global},'global'{/if},'sesid'], ['itemlistsave{$action_suffix}',document.getElementsByName('txt_itemlist_new{$action_suffix}')[0].value,document.getElementsByName('{$uniqueId}-chk-filter-for-logins')[0].value{if $allow_global},document.getElementsByName('chk_itemlist_global{$action_suffix}')[0].checked{/if},'{$sm.sesid}'], do_element); return false;">
+				<button class="btn btn-default" type="button" id="save_itemlist_{$action_suffix}" alt="{$itemlist_save_preset}" title="{$itemlist_save_preset}" onclick="sendReq('../{$sm.mod}/inc/ajax.php', ['action','name'{if $action_suffix != 'egs'},'logins'{/if}{if $allow_global},'global'{/if},'sesid'], ['itemlistsave{$action_suffix}',document.getElementsByName('txt_itemlist_new{$action_suffix}')[0].value{if $action_suffix != 'egs'},document.getElementsByName('{$uniqueId}-chk-filter-for-logins')[0].value{/if}{if $allow_global},document.getElementsByName('chk_itemlist_global{$action_suffix}')[0].checked{/if},'{$sm.sesid}'], do_element); return false;">
 					<i class="fa fa-save"></i>
 				</button>
 			</div>

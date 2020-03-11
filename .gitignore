@@ -1,0 +1,9 @@
+.*.swp
+*.DS_Store
+.idea/
+.vimrc
+cscope.out
+.sass-cache/
+tests/screenshots/
+tests/reports/
+vendor/*

@@ -2,7 +2,7 @@
 /***************************************************************
 *  Copyright notice
 *
-*  (c) 2003-2017 Renzo Lauper (renzo@churchtool.org)
+*  (c) 2003-2020 Renzo Lauper (renzo@churchtool.org)
 *  All rights reserved
 *
 *  This script is part of the kOOL project. The kOOL project is
@@ -790,7 +790,7 @@ $LL["nl"] = array(
 'leute_email_subject' => "Onderwerp:",
 'leute_email_text' => "Tekst:",
 'leute_email_send' => "Verzenden",
-'leute_sms_send' => "Tekstbericht verzenden",
+'leute_mobilemessage_send' => "Tekstbericht verzenden",
 'leute_sms_balance' => "Rekeningsaldo:",
 'leute_sms_receiver' => "Ontvangers:",
 'leute_sms_add_receiver' => "Extra ontvangers:",
@@ -1495,7 +1495,6 @@ $LL["nl"] = array(
 'res_items_list_title' => "Reserveringsitems",
 'res_mod_list_title' => "Reserveringen die nog goedgekeurd moeten worden:",
 'children' => "Getoond + gegevens ouders",
-'leute_export_pdf_show_children' => "Voeg bij kinderen kolommen bij met gegevens van de ouders",
 'dp_misc_group_commentrow' => "Toon een rij met commentaar en gebruik daarvoor het volgende veld van de Activiteiten",
 'kota_formlegend_ko_eventgruppen_icon' => "bullet_star.png",
 'kota_formlegend_ko_eventgruppen' => "Deze velden zullen gebruikt worden als standaardwaarden bij het toevoegen van nieuwe Activiteiten.",

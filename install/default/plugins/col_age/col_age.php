@@ -4,6 +4,7 @@ function my_leute_add_column_col_age(&$r) {
 	if($las === FALSE || (is_array($las['view']) && in_array('geburtsdatum', $las['view'])) || !isset($las['view'])) {
 		$r['MODULEplugincol_age_age'] = getLL('my_col_age_age');
 		$r['MODULEplugincol_age_ageendofyear'] = getLL('my_col_age_ageendofyear');
+		$r['MODULEplugincol_age_agenextyear'] = getLL('my_col_age_agenextyear');
 	}
 }//my_leute_add_column()
 
@@ -59,6 +60,17 @@ function my_leute_column_map_col_age_ageendofyear($data, $col, &$p) {
   $age += $ageCorrection;
 
 	return $age.$suffix;
+}//my_leute_column_map()
+
+
+
+
+function my_leute_column_map_col_age_agenextyear($data, $col, &$p) {
+	$age = my_leute_column_map_col_age_ageendofyear($data, $col, $p);
+	if($age == '') return $age;
+
+	if(FALSE === strpos($age, '&')) return ($age+1);
+	else return $age;
 }//my_leute_column_map()
 
 

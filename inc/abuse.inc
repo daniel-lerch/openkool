@@ -2,7 +2,7 @@
 /***************************************************************
 *  Copyright notice
 *
-*  (c) 2003-2017 Renzo Lauper (renzo@churchtool.org)
+*  (c) 2003-2020 Renzo Lauper (renzo@churchtool.org)
 *  All rights reserved
 *
 *  This script is part of the kOOL project. The kOOL project is
@@ -24,7 +24,10 @@
 *  This copyright notice MUST APPEAR in all copies of the script!
 ***************************************************************/
 
-if($do_action && defined('WARRANTY_EMAIL') && WARRANTY_EMAIL != "") {
+//Old actions that don't exist anymore but should not trigger abuse message:
+$oldActions = array('move_sm_left', 'move_sm_right');
+
+if($do_action && !in_array($do_action, $oldActions) && defined('WARRANTY_EMAIL') && WARRANTY_EMAIL != "") {
 	$message  = getLL("abuse_invalid_action")." $do_action\n";
 	$message .= getLL("abuse_date")." ".strftime($GLOBALS["DATETIME"]["dmY"]." %H:%M:%S", time())."\n";
 	$message .= "IP: ".ko_get_user_ip()."\n";
@@ -43,4 +46,3 @@ if($do_action && defined('WARRANTY_EMAIL') && WARRANTY_EMAIL != "") {
 																																																			 
 	ko_send_mail(WARRANTY_EMAIL, WARRANTY_EMAIL, "[kOOL Abuse] $do_action", $message);
 }//if($do_action)
-?>

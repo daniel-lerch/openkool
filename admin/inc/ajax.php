@@ -2,7 +2,7 @@
 /***************************************************************
 *  Copyright notice
 *
-*  (c) 2003-2017 Renzo Lauper (renzo@churchtool.org)
+*  (c) 2003-2020 Renzo Lauper (renzo@churchtool.org)
 *  All rights reserved
 *
 *  This script is part of the kOOL project. The kOOL project is
@@ -43,7 +43,7 @@ array_walk_recursive($_GET,'utf8_decode_array');
 ko_get_access('admin');
 
 //Include KOTA for sms log
-ko_include_kota(array('_ko_sms_log', 'ko_log', 'ko_admin', 'ko_labels', 'ko_pdf_layout', 'ko_vesr', 'ko_detailed_person_exports'));
+ko_include_kota(array('_ko_sms_log', '_ko_telegram_log', 'ko_log', 'ko_admin', 'ko_labels', 'ko_pdf_layout', 'ko_vesr', 'ko_detailed_person_exports'));
 
 // Plugins einlesen:
 $hooks = hook_include_main("admin");
@@ -77,7 +77,7 @@ if(isset($_GET) && isset($_GET["action"])) {
 		break;
 
 		case 'setsortlogins':
-			if($access['admin']['MAX'] < 5) continue;
+			if($access['admin']['MAX'] < 5) break;
 
 			$_SESSION['sort_logins'] = format_userinput($_GET['sort'], 'alphanum+', TRUE, 30);
 			$_SESSION['sort_logins_order'] = format_userinput($_GET['sort_order'], 'alpha', TRUE, 4);
@@ -87,7 +87,7 @@ if(isset($_GET) && isset($_GET["action"])) {
 		break;
 
 		case "setsortlog":
-			if($access['admin']['MAX'] < 4) continue;
+			if($access['admin']['MAX'] < 4) break;
 
 			$_SESSION["sort_logs"] = format_userinput($_GET["sort"], "alphanum+", TRUE, 30);
 			$_SESSION["sort_logs_order"] = format_userinput($_GET["sort_order"], "alpha", TRUE, 4);
@@ -98,8 +98,8 @@ if(isset($_GET) && isset($_GET["action"])) {
 
 
 		case "setstart":
-			if($_SESSION['show'] == 'show_logins' || $_SESSION['show'] == 'show_sms_log') {
-				if($access['admin']['MAX'] < 5) continue;
+			if($_SESSION['show'] == 'show_logins' || $_SESSION['show'] == 'show_sms_log' || $_SESSION['show'] == 'show_telegram_log') {
+				if($access['admin']['MAX'] < 5) break;
 
 				//Set list start
 				if(isset($_GET['set_start'])) {
@@ -114,12 +114,14 @@ if(isset($_GET) && isset($_GET["action"])) {
 				print "main_content@@@";
 				if($_SESSION['show'] == 'show_sms_log') {
 					ko_show_sms_log();
+				} else if($_SESSION['show'] == 'show_telegram_log') {
+						ko_show_telegram_log();
 				} else {
 					ko_set_logins_list();
 				}
 			}
 			else if($_SESSION['show'] == 'show_logs') {
-				if($access['admin']['MAX'] < 4) continue;
+				if($access['admin']['MAX'] < 4) break;
 
 				//Set list start
 				if(isset($_GET['set_start'])) {
@@ -138,20 +140,20 @@ if(isset($_GET) && isset($_GET["action"])) {
 
 
 		case "ablelogin":
-			if($access['admin']['MAX'] < 4) continue;
+			if($access['admin']['MAX'] < 4) break;
 
 			$id = format_userinput($_GET["id"], "uint");
 			if($id == ko_get_root_id()) {
 				print 'ERROR@@@'.getLL('error_admin_disable_root');
-				continue;
+				break;
 			}
 			if($id == ko_get_guest_id()) {
 				print 'ERROR@@@'.getLL('error_admin_disable_guest');
-				continue;
+				break;
 			}
 			if($id == $_SESSION['ses_userid']) {
 				print 'ERROR@@@'.getLL('error_admin_disable_self');
-				continue;
+				break;
 			}
 
 			if($_GET["mode"] == "enabled") {
@@ -162,7 +164,7 @@ if(isset($_GET) && isset($_GET["action"])) {
 				$orig_hash = db_select_data("ko_admin", "WHERE `id` = '$id'", "login,password", "", "", TRUE);
 				$data = array("password" => md5($orig_hash), "disabled" => $orig_hash["password"]);
 				ko_log('disable_login', 'ID: '.$id.', '.$orig_hash['login']);
-			} else continue;
+			} else break;
 
 			db_update_data("ko_admin", "WHERE `id` = '$id'", $data);
 

@@ -1,0 +1,53 @@
+.daysrange {
+	padding-left: 0;
+	margin-bottom: 0;
+
+	li {
+		width: 42px;
+		font-weight: bold;
+
+		&.disabled {
+			cursor: not-allowed;
+			opacity: 0.45;
+		}
+
+		&.absence:after {
+			position: absolute;
+			left: 0;
+			top: 50%;
+			height: 2px;
+			background: #c00;
+			content: "";
+			width: 100%;
+			display: block;
+			transform: rotate(45deg);
+		}
+	}
+
+	.ui-selecting {
+		background: #337ab7;
+		color: white;
+
+		&.btn-primary:hover, &.btn-primary:focus, &.btn-primary.focus, &.btn-primary:active, &.btn-primary.active, &.btn-primary, &.disabled {
+			background: white !important;
+			color: #333;
+		}
+	}
+	.ui-selected {
+		background: #337ab7;
+		color: white;
+
+		&.disabled {
+			background: white !important;
+			color: #333;
+		}
+	}
+	.ui-unselected {
+		background: white;
+	}
+
+	width: 294px;
+}
+
+
+

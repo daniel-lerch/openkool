@@ -2,7 +2,7 @@
 /***************************************************************
 *  Copyright notice
 *
-*  (c) 2003-2017 Renzo Lauper (renzo@churchtool.org)
+*  (c) 2003-2020 Renzo Lauper (renzo@churchtool.org)
 *  All rights reserved
 *
 *  This script is part of the kOOL project. The kOOL project is
@@ -418,6 +418,7 @@ switch($do_action) {
 
 		if($data["enddatum"] == "0000-00-00" || trim($data["enddatum"]) == "") $data["enddatum"] = $data["startdatum"];
 		$data["last_change"] = strftime("%Y-%m-%d %H:%M:%S", time());
+		$data['lastchange_user'] = $_SESSION['ses_userid'];
 
 		if ($do_action == 'submit_edit_res_mod') {
 			$allowOld = $access['reservation'][$old_res['item_id']] > 1;
@@ -510,6 +511,7 @@ switch($do_action) {
 
 		if($data["enddatum"] == "0000-00-00" || trim($data["enddatum"]) == "") $data["enddatum"] = $data["startdatum"];
 		$data["last_change"] = strftime("%Y-%m-%d %H:%M:%S", time());
+		$data['lastchange_user'] = $_SESSION['ses_userid'];
 
 		//Get the old data for 'serie_id'
 		ko_get_res_by_id($id, $old_res);
@@ -1292,27 +1294,20 @@ switch($do_action) {
 
 	//Email-Versand
 	case "submit_email":
-		$p = ko_get_logged_in_person();
-		$from_name = $p['vorname'] || $p['nachname'] ? $p['vorname'].' '.$p['nachname'] : $p['firm'];
-		$headers['from'] = ko_mail_get_from($from_name);
-
-		$replyTo = check_email($p['email']) ? array($p['email'] => $from_name) : array();
-
-		if($_POST['rd_bcc_an_mich'] == 'ja' && check_email($p['email'])) {
-			$_POST['txt_bcc'] .= ($_POST['txt_bcc'] == '') ? $p['email'] : ','.$p['email'];
+		if($_POST['rd_bcc_an_mich'] == 'ja') {
+			$p = ko_get_logged_in_person();
+			if(check_email($p['email'])) {
+				$_POST['txt_bcc'] .= ($_POST['txt_bcc'] == '') ? $p['email'] : ','.$p['email'];
+			}
 		}
 
-		if($_POST["txt_cc"] != "") $headers["CC"] = explode(',', (str_replace(";", ",", $_POST["txt_cc"])));
-		if($_POST["txt_bcc"] != "") $headers["BCC"] = explode(',', nl2br(str_replace(";", ",", $_POST["txt_bcc"])));
-
 		$recipients = explode(',', str_replace(";", ",", $_POST["txt_empfaenger"]));
-		array_walk($recipients, create_function('&$val', '$val = trim($val);'));
+		if($_POST["txt_cc"] != "") $cc = explode(',', (str_replace(";", ",", $_POST["txt_cc"])));
+		if($_POST["txt_bcc"] != "") $bcc = explode(',', nl2br(str_replace(";", ",", $_POST["txt_bcc"])));
 
-		// remove trailing whitespaces
-		array_walk($headers['CC'], create_function('&$val', '$val = trim($val);'));
-
-		// remove trailing whitespaces
-		array_walk($headers['BCC'], create_function('&$val', '$val = trim($val);'));
+		foreach($recipients AS $key => $value) $recipients[$key] = trim($value);
+		foreach($cc AS $key => $value) $cc[$key] = trim($value);
+		foreach($bcc AS $key => $value) $bcc[$key] = trim($value);
 
 		$text = ko_emailtext($_POST["txt_emailtext"]);
 
@@ -1333,14 +1328,13 @@ switch($do_action) {
 		}
 
 		ko_send_mail(
-			$headers['from'],
+			'',
 			$recipients,
 			$_POST["txt_betreff"],
 			$text,
 			$file,
-			$headers['CC'],
-			$headers['BCC'],
-			$replyTo
+			$cc,
+			$bcc
 		);
 
 		if (!$notifier->hasErrors()) {
@@ -1637,8 +1631,10 @@ if($_SESSION["cal_woche_jahr"] == "") {
   $_SESSION["cal_woche_jahr"] = strftime("%Y", time());
 }
 if($_SESSION['filter_start'] === NULL) {
-	$_SESSION['filter_start'] = ko_get_userpref($_SESSION['ses_userid'], 'res_filter_start');
-	$_SESSION['filter_ende'] = ko_get_userpref($_SESSION['ses_userid'], 'res_filter_ende');
+	$_SESSION['filter_start'] = 'today';
+	$_SESSION['filter_ende'] = 'immer';
+	ko_save_userpref($_SESSION['ses_userid'], 'res_filter_start', $_SESSION['filter_start']);
+	ko_save_userpref($_SESSION['ses_userid'], 'res_filter_ende', $_SESSION['filter_ende']);
 }
 $_SESSION["show_birthdays"] = ko_get_userpref($_SESSION["ses_userid"], "show_birthdays");
 if(!isset($_SESSION["show_birthdays"])) $_SESSION["show_birthdays"] = FALSE;

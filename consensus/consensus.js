@@ -1,7 +1,7 @@
 /***************************************************************
  *  Copyright notice
  *
- *  (c) 2003-2017 Renzo Lauper (renzo@churchtool.org)
+ *  (c) 2003-2020 Renzo Lauper (renzo@churchtool.org)
  *  All rights reserved
  *
  *  This script is part of the kOOL project. The kOOL project is
@@ -44,6 +44,7 @@ function sendReq(serverFileName, variableNames, variableValues, handleResponse) 
         }
     })
         .done(function() {
+            consensus_filter();
         })
         .fail(function() {
         })
@@ -63,7 +64,12 @@ function do_element_content(data) {
     var size = ids.length;
 
     for (i = 0; i < size; i++) {
-        $(ids[i]).html(contents[i]);
+        if (ids[i].substring(0, 5) === "attr:") {
+            var event_id = ids[i].substring(5);
+            $("#" + event_id).data("filter-status", contents[i]);
+        } else {
+            $(ids[i]).html(contents[i]);
+        }
     }
 }//do_element_content()
 
@@ -107,6 +113,20 @@ $(document).ready(function(){
                 button.find("i.fa-comment").addClass('fa-comment-o').removeClass('fa-comment');
             }
             $(modal).modal("hide");
+        });
+    });
+
+    $(document).tooltip({
+        selector:'.rota-tooltip',
+        html:true,
+        container:'body',
+        title:function() {
+            return $(this).data('tooltip-code');
+        },
+    });
+    $(document).on('show.bs.tooltip','.rota-tooltip',function() {
+        $(this).on('remove',function() {
+            $(this).tooltip('destroy');
         });
     });
 });

@@ -56,6 +56,7 @@
 									{assign var="tpl_itemlist_title" value=$i.tpl_itemlist_title}
 									{assign var="tpl_itemlist_selected" value=$i.tpl_itemlist_selected}
 									{assign var="taxonomy_filter" value=$i.taxonomy_filter}
+									{assign var="room_filter" value=$i.room_filter}
 									{assign var="show_sort_cols" value=$i.show_sort_cols}
 									{assign var="sort_cols_checked" value=$i.sort_cols_checked}
 									{assign var="allow_global" value=$i.allow_global}

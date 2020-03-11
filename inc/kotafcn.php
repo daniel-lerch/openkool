@@ -2,7 +2,7 @@
 /***************************************************************
 *  Copyright notice
 *
-*  (c) 2003-2017 Renzo Lauper (renzo@churchtool.org)
+*  (c) 2003-2020 Renzo Lauper (renzo@churchtool.org)
 *  All rights reserved
 *
 *  This script is part of the kOOL project. The kOOL project is
@@ -76,6 +76,8 @@ function kota_get_form($table, $column) {
 				break; //eventgruppen_id
 
 				case "responsible_for_res":
+					$data['values'][] = '';
+					$data['descs'][] = '';
 					ko_get_logins($logins);
 					foreach ($logins as $login) {
 						if($login['id'] == ko_get_guest_id()) continue;
@@ -180,6 +182,16 @@ function kota_get_form($table, $column) {
 				break;
 			}
 		break; // ko_event_program, ko_eventgruppen_program
+		case 'ko_event_rooms':
+			$rooms = db_select_data("ko_event_rooms","WHERE 1=1", "id,title", "ORDER BY title ASC");
+			$data["values"][0] = 0;
+			$data["descs"][0] = "";
+
+			foreach($rooms as $room) {
+				$data["values"][] = $room['id'];
+				$data["descs"][] = $room['title'];
+			}
+			break;
 
 		case "ko_leute":
 			switch($column) {
@@ -329,6 +341,38 @@ function kota_get_form($table, $column) {
 								$data['descs'][] = $pre.ko_html($grp['name'].': '.$roles[$rid]['name']);
 							}
 						}
+					}
+				break;
+			}
+		break;
+
+		case 'ko_donations_accountgroups':
+			$groups = db_select_data("ko_donations_accountgroups", "WHERE 1", "id,title", "ORDER BY title ASC");
+
+			if($access['donations']['ALL'] > 3) {
+				$data["values"][0] = 0;
+				$data["descs"][0] = "";
+			}
+
+			foreach($groups as $group) {
+				if($access['donations']['ALL'] < 4 && $access['donations']['ag'.$group['id']] < 4) continue;
+
+				$data["values"][] = $group['id'];
+				$data["descs"][] = $group['title'];
+			}
+		break;
+
+
+		case 'ko_tracking_entries':
+			switch($column) {
+				case 'tid':
+					$trackings = db_select_data('ko_tracking', '', '*', 'ORDER BY `name` ASC');
+					//Add empty entry
+					$data['values'][] = '';
+					$data['descs'][] = '';
+					foreach($trackings as $id => $tracking) {
+						$data['values'][] = $id;
+						$data['descs'][] = $tracking['name'];
 					}
 				break;
 			}
@@ -1122,6 +1166,39 @@ function kota_presave_ko_event($ids, $columns, $old, $changes) {
 
 
 
+function kota_post_ko_event($ids, $columns, $old, $do_save) {
+	if(!is_array($ids)) $ids = explode(',', $ids);
+	if(!is_array($columns)) $columns = explode(',', $columns);
+
+	//Write slug (used for lpc_kool_events)
+	if(in_array('title', $columns)) {
+		foreach($ids as $id) {
+			ko_daten_set_event_slug($id);
+		}
+	}
+}//kota_post_ko_event()
+
+
+
+function kota_post_ko_reservation($ids, $columns, $old, $do_save) {
+	if(!is_array($ids)) $ids = explode(',', $ids);
+	if(!is_array($columns)) $columns = explode(',', $columns);
+
+	//Update linked_items for new object
+	if(in_array('item_id', $columns)) {
+		foreach($ids as $id) {
+			$res = db_select_data('ko_reservation', "WHERE `id` = '$id'", '*', '', '', TRUE);
+			if($res['item_id']) {
+				$resitem = db_select_data('ko_resitem', "WHERE `id` = '".$res['item_id']."'", '*', '', '', TRUE);
+				db_update_data('ko_reservation', "WHERE `id` = '$id'", array('linked_items' => $resitem['linked_items']));
+			}
+		}
+	}
+}
+
+
+
+
 
 /**
  * This method is called after the submission of a form via iframe
@@ -1353,7 +1430,7 @@ function kota_post_ko_leute($ids, $columns, $old, $do_save) {
  * ko_update_groups_and_roles() updates motherline and other things as well.
  */
 function kota_post_ko_groups($ids, $columns, $old, $do_save) {
-	global $all_groups;
+	global $all_groups, $BASE_PATH;
 
 	if(!$do_save) return;
 
@@ -1376,6 +1453,7 @@ function kota_post_ko_groups($ids, $columns, $old, $do_save) {
 
 		//Update group/role assignments of addresses if roles of the group have changed
 		if($old_roles != $new_roles) {
+			include_once($BASE_PATH.'groups/inc/groups.inc');
 			ko_update_groups_and_roles($id);
 		}
 	}
@@ -1767,21 +1845,6 @@ function kota_eventgruppen_fill_rota_teams(&$row, $col) {
 
 
 
-function kota_ko_crm_projects_fill_number(&$row, $col) {
-	//Don't do anything when editing
-	if($row['number']) return;
-
-	$last = db_select_data("ko_crm_projects", "", "*, CONVERT(SUBSTRING_INDEX(SUBSTRING(number, 4), '-', 1), UNSIGNED) AS middlenumber", "ORDER BY middlenumber DESC", "LIMIT 0,1", TRUE);
-	if($last["number"]) {
-		list($year, $pn, $sub) = explode("-", $last["number"]);
-		$row[$col] = date("y")."-".(++$pn)."-01";
-	} else {
-		$row[$col] = date("y")."-";
-	}
-}//kota_ko_crm_projects_fill_number()
-
-
-
 
 
 /**
@@ -1884,11 +1947,14 @@ function kota_listview_datecol_right(&$value, $data) {
 
 
 function kota_listview_datetimecol(&$value, $data) {
-	global $DATETIME;
+	global $DATETIME, $KOTA;
+
 	if($value == '0000-00-00' || $value == '0000-00-00 00:00:00') {
 		$value = '';
 	} else {
-		$value = strftime($DATETIME['ddmy'].' %H:%M:%S', strtotime($value));
+		$key = $KOTA[$data['table']][$data['col']]['list_options'];
+		if(!$key) $key = 'ddmy';
+		$value = strftime($DATETIME[$key].' %H:%M:%S', strtotime($value));
 	}
 }//kota_listview_datetimecol()
 
@@ -2023,10 +2089,42 @@ function kota_listview_firm(&$value, $data, $link=FALSE) {
 }//kota_listview_firm()
 
 
-function kota_listview_people_link(&$value, $data, $log, $orig_data) {
-	kota_listview_people($value, $data, $log, $orig_data, TRUE);
+function kota_listview_people_link(&$value, $data, $log, $orig_data, $link = TRUE) {
+	kota_listview_people($value, $data, $log, $orig_data, $link);
 }//kota_listview_people_link()
 
+function kota_listview_telegram_token(&$value, $data) {
+	$value = ko_create_telegram_link($data['id'], true);
+}
+
+/**
+ * If person hasn't yet a telegram_id in ko_leute,
+ * a link to send mail/sms with telegram-link to specific person will be set
+ *
+ * @param int $value telegram_id
+ * @param array $data person
+ */
+function kota_listview_telegram_registration(&$value, $data) {
+	global $MODULES;
+
+	if($value > 0) {
+		$value = getLL("yes");
+	} else {
+		if (ko_get_leute_email($data['dataset'], $email)) {
+			$link[] = "<a href='#' onclick=\"c=confirm('".sprintf(getLL('telegram_send_registration_link'), 'E-Mail')."'); if (c) {sendReq('../leute/inc/ajax.php', 'action,mode,id,sesid', 'sendtelegramlink,email,".$data['dataset']['id'].",".session_id()."', do_element); return false;}\">E-Mail</a>";
+		}
+
+		if (in_array('sms', $MODULES) && ko_get_leute_mobile($data['dataset'], $mobile)) {
+			$link[] = "<a href='#' onclick=\"c=confirm('".sprintf(getLL('telegram_send_registration_link'), 'SMS') ."'); if (c) {sendReq('../leute/inc/ajax.php', 'action,mode,id,sesid', 'sendtelegramlink,sms,".$data['dataset']['id'].",".session_id()."', do_element); return false;}\">SMS</a>";
+		}
+
+		if (count($link) > 0) {
+			$value = sprintf(getLL("telegram_send_registration_via"), implode(" / ", $link));
+		} else {
+			$value = getLL("no");
+		}
+	}
+}
 
 
 function kota_listview_father(&$value, $data, $log, $orig_data, $link=FALSE) {
@@ -2089,12 +2187,18 @@ function kota_listview_login_status(&$value, $data) {
 }//kota_listview_login_status
 
 function kota_listview_admingroups4login(&$value, $data) {
-	$id = intval($data['id']);
+	if(!isset($data['id'])) {
+		$id = $value;
+		$admingroupIds = $id;
+	} else {
+		$id = intval($data['id']);
+		$entry = $data['dataset'];
+		$admingroupIds = trim($entry['admingroups']);
+	}
+
 	if(!$id) return;
 
-	$entry = $data['dataset'];
-	$admingroupIds = trim($entry['admingroups']);
-	$admingroups = array();
+	$admingroups = [];
 	if ($admingroupIds) {
 		$admingroups = db_select_data('ko_admingroups', "WHERE `id` IN (" . $admingroupIds . ")");
 	}
@@ -2208,6 +2312,22 @@ function kota_listview_events_by_eventgroup(&$value, $data, &$log, $orig_data) {
 
 
 
+function kota_listview_ko_event_rooms_used_in(&$value, $data, &$log, $orig_data) {
+	$room = $data['dataset'];
+
+	$numEvents = db_get_count('ko_event', 'id', "AND `room` = '".$room['id']."'");
+	$numEventgroups = db_get_count('ko_eventgruppen', 'id', "AND `room` = '".$room['id']."'");
+
+	$value = '';
+	$link = '/daten/index.php?action=all_events&kota_filter=room:'.$room['id'];
+	if($numEvents > 0) $value .= '<a href="'.$link.'">'.$numEvents.' '.getLL('daten_events').'</a>';
+	if($numEventgroups > 0) $value .= ($value != '' ? '<br />' : '').$numEventgroups.' '.getLL('daten_groups_list_title');
+
+	return $value;
+}//kota_listview_ko_event_rooms_used_in()
+
+
+
 function kota_map_leute_daten(&$value, $data, &$log, $orig_data) {
 	$v = map_leute_daten('', $data['col'], $orig_data);
 	if(is_array($v)) $value = array_shift($v);
@@ -2242,8 +2362,7 @@ function kota_listview_salutation_formal(&$value, $data, $first=TRUE) {
 	if(!$gender) {
 		$r = getLL('leute_salutation_formal_');
 	} else {
-		if($gender == 'm') $selector = 'm';
-		else $selector = 'f';
+		$selector = $gender;
 
 		if (in_array($p['zivilstand'], array('married', 'widowed'))) $selector .= '_married';
 		else $selector .= '_unmarried';
@@ -2276,8 +2395,7 @@ function kota_listview_salutation_informal(&$value, $data, $first=TRUE) {
 	if(!$gender) {
 		$r = getLL('leute_salutation_informal_');
 	} else {
-		if($gender == 'm') $selector = 'm';
-		else $selector = 'f';
+		$selector = $gender;
 
 		if (in_array($p['zivilstand'], array('married', 'widowed'))) $selector .= '_married';
 		else $selector .= '_unmarried';
@@ -2352,7 +2470,11 @@ function kota_listview_reservation_event_id(&$value, $data) {
 		else $time = substr($event['startzeit'], 0, -3).' - '.substr($event['endzeit'], 0, -3);
 
 		$comment = $event['kommentar'] ? nl2br($event['kommentar']) : '';
-		$room = $event['room'] ? $event['room'] : '';
+
+		$mapping = ['room' => $event["room"]];
+		ko_include_kota(['ko_event']);
+		kota_process_data("ko_event", $mapping, "list");
+		$room = $mapping['room'];
 
 		$tooltip = '';
 
@@ -2431,10 +2553,18 @@ function kota_listview_reservation_event_id(&$value, $data) {
 }//kota_listview_reservation_event_id()
 
 
+
+
+function kota_listview_event_reservations_xls(&$value, $data) {
+	kota_listview_event_reservations($value, $data, TRUE);
+}
+
+
 /**
  * Show number of reservations for a single event in list view. Tooltip shows single reservation's details
  */
-function kota_listview_event_reservations(&$value, $data) {
+function kota_listview_event_reservations(&$value, $data, $xls=FALSE) {
+	global $ko_menu_akt;
 	$ids = explode(',', $value);
 	foreach($ids as $k => $v) {
 		if(!$v) unset($ids[$k]);
@@ -2447,24 +2577,34 @@ function kota_listview_event_reservations(&$value, $data) {
 		foreach($res as $r) {
 			//Add resitem
 			$objectNames[] = $r['resitem_name'];
-			$txt .= '<b>- '.$r['resitem_name'].'</b><br />';
+
 			//Format time
-			if($r['startzeit'] == '00:00:00' && $r['endzeit'] == '00:00:00') {
+			if ($r['startzeit'] == '00:00:00' && $r['endzeit'] == '00:00:00') {
 				$time = getLL('time_all_day');
 			} else {
 				$time = substr($r['startzeit'], 0, -3);
-				if($r['endzeit'] != '00:00:00') $time .= ' - '.substr($r['endzeit'], 0, -3);
+				if ($r['endzeit'] != '00:00:00') $time .= ' - ' . substr($r['endzeit'], 0, -3);
 			}
-			$txt .= $time.'<br />';
-			//Add purpose of reservation
-			if($r['zweck']) $txt .= strtr(trim($r['zweck']), array("\n" => "<br />", "\r" => "", "\t" => "", "'" => "\'")).'<br />';
-			$txt .= '<br />';
+
+			if ($ko_menu_akt == "ical") {
+				$txt .= "- " . $r['resitem_name'] . " (" . $time .")<br />";
+			} else {
+				$txt .= '<b>- ' . $r['resitem_name'] . '</b><br />';
+				$txt .= $time . '<br />';
+				//Add purpose of reservation
+				if ($r['zweck']) $txt .= strtr(trim($r['zweck']), ["\n" => "<br />", "\r" => "", "\t" => "", "'" => "\'"]) . '<br />';
+				$txt .= '<br />';
+			}
 		}
 		if($txt != '') {
 			//Add title
-			$txt = getLL('daten_list_reservations_title').':<br /><br />'.htmlspecialchars($txt, ENT_COMPAT | ENT_HTML401, 'ISO-8859-1');
-			$label = sizeof($ids) > 2 ? sizeof($ids) : implode(', ', $objectNames);
-			$value = '<a href="#" onclick="return false;" '.ko_get_tooltip_code($txt).'>'.$label.'</a>';
+			if ($ko_menu_akt == "ical") {
+				$value = htmlspecialchars("<br />" . $txt, ENT_COMPAT | ENT_HTML401, 'ISO-8859-1');
+			} else {
+				$txt = getLL('daten_list_reservations_title') . ':<br /><br />' . htmlspecialchars($txt, ENT_COMPAT | ENT_HTML401, 'ISO-8859-1');
+				$label = (sizeof($ids) > 2 && !$xls) ? sizeof($ids) : implode(', ', $objectNames);
+				$value = '<a href="#" onclick="return false;" ' . ko_get_tooltip_code($txt) . '>' . $label . '</a>';
+			}
 		} else {
 			$value = '';
 		}
@@ -2702,6 +2842,54 @@ function kota_listview_ko_groups_roles(&$value, $data) {
 }//kota_listview_ko_groups_roles()
 
 
+function kota_listview_ko_groups_placeholder(&$value, $data) {
+	$subgroups_count = db_get_count('ko_groups', 'id', "AND `pid` = '".$data['dataset']['id']."'");
+	if($data["dataset"]['type'] == 0 && $subgroups_count > 0) {
+		$value = "<a href='https://kool.help/module/gruppen#platzhalter-gruppen' target='_blank'><i class=\"fa fa-exclamation-triangle\" style=\"color:grey;\" data-toggle=\"tooltip\" data-placement=\"top\" title=\"".getLL("kota_listview_ko_groups_type_help")."\"></i></a>";
+	} else if($value == 1) {
+		$value = "x";
+	} else {
+		$value = "";
+	}
+}
+
+
+function kota_listview_ko_groups_mailing_mod_role(&$value, $data) {
+	$where = "WHERE id = '" . (int) $value ."'";
+	$role = db_select_data("ko_grouproles", $where, "*", "", "LIMIT 1", TRUE, TRUE);
+	$value = $role['name'];
+}
+
+function kota_listview_ko_groups_mailing_rectype(&$value, $data) {
+	$value = getLL("kota_ko_leute_rectype_" . $value);
+}
+
+function kota_listview_ko_groups_crm_project_id(&$value, $data) {
+	$where = "WHERE id = '" . $value . "'";
+	$project = db_select_data("ko_crm_projects", $where, "*", "", "LIMIT 1", TRUE, TRUE);
+	$value = $project['number'] . " " . $project['title'];
+}
+
+function kota_listview_ko_groups_linked_group(&$value, $data) {
+	$where = "WHERE id = '" . $value ."'";
+	$group = db_select_data("ko_groups", $where, "*", "", "LIMIT 1", TRUE, TRUE);
+	$value = $group['name'];
+}
+
+
+function kota_listview_groups_datafields(&$value, $data) {
+	if($value == '') return;
+
+	$gdfs = db_select_data('ko_groups_datafields', "WHERE `id` IN (".$value.")");
+	$labels = array();
+	foreach($gdfs as $gdf) {
+		$labels[] = $gdf['description'];
+	}
+	$value = implode('<br />', $labels);
+}
+
+
+
 function kota_listview_ko_taxonomy_terms(&$value, $data) {
 	$allTerms = ko_taxonomy_get_terms_by_node((int)$data['id'],$data['table']);
 
@@ -2718,8 +2906,18 @@ function kota_listview_ko_taxonomy_terms(&$value, $data) {
 	$value = implode(" ", $htmlTerms);
 }
 
+function kota_listview_ko_taxonomy_terms_filter(&$value, $data) {
+	$term = ko_taxonomy_get_term_by_id($value);
+	$value = $term['name'];
+}
+
+
 function kota_listview_ko_leute_terms(&$value, $data) {
 	global $all_groups;
+
+	if(!empty($data['dataset'])) {
+		$data = $data['dataset'];
+	}
 
 	preg_match_all('/g[0-9]{6}/m', $data['groups'], $groups, PREG_SET_ORDER, 0);
 
@@ -2823,10 +3021,45 @@ function kota_mailing_ko_leute_absence($person) {
 	return implode("<br />", $absence_html);
 }
 
+function kota_listview_ko_event_absences(&$value, $data) {
+	global $access;
+	if($access['daten']['ABSENCE'] == 0) return FALSE;
 
+	ko_get_event_by_id($data['id'], $event);
+	$absences = ko_daten_get_absence_by_date($event['startdatum'], $event['enddatum']);
+
+	$leute_ids = [];
+	if(substr($data['col'],0, 16) == "absences_filter_") {
+		$filter = substr($data['col'], 16);
+		$where = "WHERE id = '" . $filter . "'";
+		$filterset = db_select_data("ko_userprefs", $where, "*", "", "LIMIT 1", TRUE, TRUE);
+		$filter = unserialize($filterset["value"]);
+		apply_leute_filter($filter, $leute_where);
+		$leute_ids = db_select_data("ko_leute", "WHERE 1=1 " . $leute_where, "id");
+	}
+
+	$absenceList = [];
+	foreach($absences AS $absence) {
+		if($access['daten']['ABSENCE'] == 1 && $absence['leute_id'] != ko_get_logged_in_id()) continue;
+		if(!empty($filter) && empty($leute_ids[$absence['leute_id']])) continue;
+		$tooltip = "<h3>" . getLL("kota_ko_event_absence_type_" . $absence['type']) . "</h3>" .
+			prettyDateRange($absence['from_date'], $absence['to_date']) .
+			(!empty($absence['description']) ? "<br />" . $absence['description'] : "");
+
+		$absenceList[] = "<a href='index.php?action=list_absence&set_person_filter=".$absence['leute_id']."' data-toggle='tooltip' title='' data-html='true' data-original-title='".$tooltip."'>".$absence['name']."</a>";
+	}
+
+	$value = implode("<br>", $absenceList);
+	return TRUE;
+}
 
 function kota_listview_ko_event_terms(&$value, $data) {
-	$allTerms = ko_taxonomy_get_terms_by_node($data['id'], $data['table']);
+	if (!empty($data['dataset']['terms'])) {
+		$allTerms = $data['dataset']['terms'];
+	} else {
+		$allTerms = ko_taxonomy_get_terms_by_node($data['id'], $data['table']);
+	}
+
 	$htmlTerms = [];
 	if (count($allTerms) > 10) {
 		$termTitles = array();
@@ -3069,8 +3302,12 @@ function kota_listview_pdf_layout(&$value, $data) {
 
 
 function kota_listview_ko_resitem_moderation(&$value, $data) {
+	if(empty($data)) {
+		$data['id'] = $value;
+	}
+
 	$_value = $value;
-	$prefix = 'kota_'.$data['table'].'_'.$data['col'].'_';
+	$prefix = 'kota_ko_resitem_moderation_';
 	$value = $value != '' ? getLL($prefix.$value) : '';
 
 	//Add number and names of moderators if moderation is active
@@ -3095,12 +3332,30 @@ function kota_listview_ko_resitem_moderation(&$value, $data) {
 
 
 
+function kota_listview_ko_donations_account_group(&$value, $data) {
+	$donation = db_select_data('ko_donations', "WHERE `id` = '".intval($data['id'])."'", '*', '', '', TRUE);
+	$account = db_select_data('ko_donations_accounts', "WHERE `id` = '".intval($donation['account'])."'", '*', '', '', TRUE);
+	if(!$account['accountgroup_id']) return '';
 
+	$account_group = db_select_data('ko_donations_accountgroups', "WHERE `id` = '".intval($account['accountgroup_id'])."'", '*', '', '', TRUE);
+	$value = $account_group['title'];
+}
+
+
+/**
+ * @param string &$value
+ * @param array $data
+ * @param string $priority
+ */
 function kota_listview_ko_donations_person(&$value, $data, $priority='name') {
 	global $ko_path;
 
-	$v = '';
-	$id = intval($data['dataset'][$data['col']]);
+	if(!isset($data['dataset'])) {
+		$id = $value;
+	} else {
+		$id = intval($data['dataset'][$data['col']]);
+	}
+
 	$p = db_select_data('ko_leute', "WHERE `id` = '$id'", '*', '', '', TRUE);
 
 	//Mark deleted persons but still show them
@@ -3110,9 +3365,9 @@ function kota_listview_ko_donations_person(&$value, $data, $priority='name') {
 	//Add link to person
 	$link1 = '';
 	if(ko_module_installed('leute') && $p['deleted'] != 1) {
-		$link1  = '<a href="'.$ko_path.'leute/index.php?action=set_idfilter&id='.intval($p['id']).'" title="'.getLL('donations_title_pfilter').'">';
+		$link1  = '<a href="'.$ko_path.'leute/index.php?action=set_idfilter&id='.intval($p['id']).'" title="'.getLL('donations_title_pfilter').'" style="margin-right:6px;">';
 		$link1 .= '<img src="'.$ko_path.'images/external_link.png" border="0" />';
-		$link1 .= '</a>&nbsp;&nbsp;';
+		$link1 .= '</a>';
 	}
 
 	//Add link to filter for this person's donations
@@ -3258,8 +3513,9 @@ function kota_listview_file(&$value, $data) {
 		}
 		if(substr($value, 0, 1) == '/') $value = substr($value, 1);
 		$link = $BASE_URL.$value;
+		$mtime = filemtime($BASE_PATH.$value);
 
-		$value = '<a href="'.$link.'" target="_blank"><img src="'.$icon.'" border="0" /></a>';
+		$value = '<a href="'.$link.'?m='.$mtime.'" target="_blank"><img src="'.$icon.'" border="0" /></a>';
 	}
 }//kota_listview_file()
 
@@ -3397,15 +3653,12 @@ function kota_listview_crm_contacts_leute_values(&$value, $kota_data, $log, $ori
 function kota_listview_crm_project_title(&$value, $data, $link=FALSE) {
 	global $ko_path;
 
-	if(!is_array($data)) return;
-
-	$d = $data['dataset'];
-	$title = $d['title'];
-
-	$pre .= '<a href="'.$ko_path.'crm/index.php?action=set_projectfilter&id='.intval($d['id']).'">';
-	$post .= '</a>';
-
-	$value = $pre.$title.$post;
+	if(!empty($data)) {
+		$title = $data['dataset']['title'];
+		$pre = '<a href="' . $ko_path . 'crm/index.php?action=set_projectfilter&id=' . intval($data['dataset']['id']) . '">';
+		$post = '</a>';
+		$value = $pre.$title.$post;
+	}
 }//kota_listview_crm_project_title()
 
 
@@ -3453,7 +3706,10 @@ function kota_listview_checkin_links(&$value, $data) {
 	$tracking = db_select_data('ko_tracking', "WHERE `id` = {$data['id']}", '*', '', '', TRUE);
 
 	if (ko_get_setting('tracking_enable_checkin') && $tracking['enable_checkin']) {
-		$lines = array('' => '<a target="_blank" href="'.$BASE_URL.'checkin?t='.$data['id'].'">'.getLL('checkin_label_link_no_printer').'</a>');
+		$lines = array(
+			'0' => '<a target="_blank" href="'.$BASE_URL.'checkin?t='.$data['id'].'">'.getLL('checkin_label_link_no_printer').'</a>',
+			'1' => '<a target="_blank" href="'.$BASE_URL.'checkin?t='.$data['id'].'&m=1">'.getLL('checkin_label_link_open').'</a>',
+		);
 		$printers = ko_get_available_google_cloud_printers();
 		foreach ($printers as $printer) {
 			if ($printer['google_id'] != '__google__docs') {
@@ -3499,12 +3755,11 @@ function kota_assign_values($table, $cols, $pre_process=TRUE) {
 		}
 		else if($KOTA[$table][$col]['form']['type'] == 'peoplesearch') {
 			$lids = explode(',', $value);
-			list($av, $ad) = kota_peopleselect($lids, $KOTA[$table][$col]['form']['sort']);
-			$KOTA[$table][$col]['form']['avalues'] = $av;
-			$KOTA[$table][$col]['form']['adescs'] = $ad;
-
+			[$avalues, $adescs, $astatus] =  kota_peopleselect($lids, $KOTA[$table][$col]['form']['sort']);
+			$KOTA[$table][$col]["form"]["avalues"] = $avalues;
+			$KOTA[$table][$col]["form"]["adescs"] = $adescs;
+			$KOTA[$table][$col]["form"]["astatus"] = $astatus;
 			$KOTA[$table][$col]['form']['avalue'] = $value;
-
 		}
 	}
 }//kota_assign_values()
@@ -3892,12 +4147,14 @@ function kota_pre_leute_family_data(&$value, $data) {
 			$title .= $p['plz'] != '' || $p['ort'] != '' ? ' - '.$p['plz'].' '.$p['ort'] : '';
 			$title = trim(format_userinput($title, 'js'));
 			$label = trim(format_userinput($p['firm'].' '.$p['vorname'].' '.$p['nachname'], 'js'));
+			$astatus =  ($p['deleted'] == 1 ? "deleted" : ($p['hidden'] == 1 ? "hidden" : "active"));
 			$input = array(
 				'type' => 'peoplesearch',
 				'name' => 'input_'.$k,
 				'avalues' => array($p['id']),
 				'adescs' => array($label),
 				'atitles' => array($title),
+				'astatus' => array($astatus),
 				'single' => TRUE,
 				'show_add' => $famReadonly?FALSE:TRUE,
 				'disabled' => $famReadonly?TRUE:FALSE,
@@ -3914,6 +4171,7 @@ function kota_pre_leute_family_data(&$value, $data) {
 					'avalues' => array(),
 					'adescs' => array(),
 					'atitles' => array(),
+					'astatus' => array(),
 					'single' => TRUE,
 					'show_add' => $famReadonly?FALSE:TRUE,
 					'disabled' => $famReadonly?TRUE:FALSE,
@@ -3923,6 +4181,17 @@ function kota_pre_leute_family_data(&$value, $data) {
 				$family[$rel] = array('input' => $input, 'absent' => TRUE);
 			}
 		}
+
+		if($person['famid'] > 0) {
+			$where = "WHERE famid = '" . $person['famid'] . "' AND id != '" . $person['id'] . "'";
+			$householdmembers = db_select_data("ko_leute", $where);
+			foreach($householdmembers AS $key => $householdmember) {
+				kota_process_data("ko_leute", $householdmember, "list");
+				$householdmembers[$key] = $householdmember;
+			}
+			$smarty->assign('householdmembers', $householdmembers);
+		}
+
 		$smarty->assign('family', $family);
 		$smarty->assign('label_spouse', getLL('form_leute_family_spouse'));
 		$smarty->assign('label_father', getLL('form_leute_family_father'));
@@ -4239,10 +4508,25 @@ function kota_apply_filter($table, $kotaFilterData=NULL) {
 						} //Use special SQL for peoplsearch
 						else if ($type == 'peoplesearch') {
 							$filters_or[] = " $table.$col $not REGEXP '(^|,)" . $sqlval . "(,|$)'";
+						}
+						else if ($type == 'dynamicsearch') {
+							if($col == "terms") {
+								$ids = ko_taxonomy_get_nodes_by_termid($sqlval, $table);
+								$filters_or[] = $table.".id $not IN ('" . implode("','",array_column($ids,"id")) . "')";
+							}
 						} //Select and textplus: Use exact search (without %)
 						else if ($type == 'select' || $type == 'textplus') {
 							$filters_or[] = " $table.$col $not LIKE '" . $sqlval . "'";
 						} else if ($type == 'selectplus') {
+							if($col=="room") {
+								$filters_or[] = " $table.$col $not LIKE '".$sqlval."'";
+							}
+						} else if ($type == "switch") {
+							if ($sqlval == 1) {
+								$filters_or[] = " $table.$col = '1'";
+							} else {
+								$filters_or[] = " ($table.$col = '0' OR $table.$col = '')";
+							}
 						} //Default SQL: LIKE %v%
 						else {
 							if ($sqlval) $sqlval = '%' . $sqlval . '%';
@@ -4280,13 +4564,35 @@ function kota_filter_get_warntext($table) {
 						$fcn = substr($KOTA[$table][$colname]['filter']['list'], 4);
 						if (function_exists($fcn)) {
 							$ll = $filteritem;
-							$fcn($ll, [], [], []);
+							if($fcn == "kota_listview_ll") {
+								$data = [
+									"table" => $table,
+									"col" => $colname,
+									"dataset"=> [
+										$colname => $ll,
+									]
+								];
+								$fcn($ll, $data, [], []);
+							} else {
+								$fcn($ll, [], [], []);
+							}
 						}
 					} else if (substr($KOTA[$table][$colname]['list'], 0, 4) == "FCN:" && !is_array($filteritem)) {
 						$fcn = substr($KOTA[$table][$colname]['list'], 4);
 						if (function_exists($fcn)) {
 							$ll = $filteritem;
-							$fcn($ll, [], [], []);
+							if($fcn == "kota_listview_ll" || $fcn == "kota_listview_people_link") {
+								$data = [
+									"table" => $table,
+									"col" => $colname,
+									"dataset"=> [
+										$colname => $ll,
+									]
+								];
+								$fcn($ll, $data, [], []);
+							} else {
+								$fcn($ll, [], [], []);
+							}
 						}
 					} else if (substr($KOTA[$table][$colname]['list'], 0, 13) == "db_get_column" && !is_array($filteritem)) {
 						$ll = $filteritem;
@@ -4642,6 +4948,59 @@ function kota_listview_eventgroup_color_xls(&$value, $data, $log, $orig_data) {
 }
 
 
+function kota_listview_ko_event_rooms(&$value, $data) {
+	if(isset($data['dataset']['room'])) {
+		$search = $data['dataset']['room'];
+	} else {
+		if(substr($value,0,1) == "!") {
+			$search = substr($value,1);
+		} else {
+			$search = $value;
+		}
+	}
+	if($search == "0") {
+		$value = '';
+	} else if(is_numeric($search)) {
+		$where = "WHERE id = " . $search;
+		$room = db_select_data("ko_event_rooms",$where,"title", "", "LIMIT 1", TRUE, TRUE);
+		if(!empty($room['title'])) {
+			if(substr($value,0,1) == "!") {
+				$value = "!" . $room['title'];
+			} else {
+				$value = $room['title'];
+			}
+		}
+	}
+}
+
+
+
+
+function kota_listview_ko_donations_accountgroups(&$value, $data) {
+	if(isset($data['dataset']['accountgroup_id'])) {
+		$search = $data['dataset']['accountgroup_id'];
+	} else {
+		if(substr($value,0,1) == "!") {
+			$search = substr($value,1);
+		} else {
+			$search = $value;
+		}
+	}
+	if($search == "0") {
+		$value = '';
+	} else if(is_numeric($search)) {
+		$where = "WHERE `id` = '".$search."'";
+		$group = db_select_data("ko_donations_accountgroups", $where, "id,title", "", "LIMIT 1", TRUE, TRUE);
+		if(!empty($group['title'])) {
+			if(substr($value,0,1) == "!") {
+				$value = "!".$group['title'];
+			} else {
+				$value = $group['title'];
+			}
+		}
+	}
+}
+
 
 function kota_listview_ko_mailing_mails_size(&$value, $data, $log, $orig_data) {
 	if(!$value) {
@@ -4824,16 +5183,23 @@ function kota_pre_detailed_person_exports_instructions(&$value, $kota_data, $log
 	$person = ko_get_logged_in_person();
 
 	$html = '<div class="panel panel-default"><div class="panel-body"><table class="full-width table-striped"><thrad><tr></tr>';
+	$html .= '<th style="padding-right:10px;">'.getLL('admin_detailed_person_export_label_colname').'</th>';
 	$html .= '<th style="padding-right:10px;">'.getLL('admin_detailed_person_export_label_placeholder').'</th>';
 	$html .= '<th>'.sprintf(getLL('admin_detailed_person_export_label_example_value'), "<i>{$person['vorname']} {$person['nachname']}</i>").'</th>';
 	$html .= '</tr></thead><tbody>';
 
 	$map = ko_word_person_array($person);
 
+	$allCols = ko_get_leute_col_name();
+	foreach($allCols as $k => $v) {
+		$allCols['${address_'.strtolower($k).'}'] = $v;
+	}
+
 	ksort($map);
 	$cnt = 0;
 	foreach ($map as $placeholder => $value) {
 		$html .= '<tr>';
+		$html .= '<td style="padding-right:10px;">'.$allCols[$placeholder].'</td>';
 		$html .= '<td style="padding-right:10px;">'.$placeholder.'</td>';
 		$html .= '<td>'.(strlen($value)>30?(substr($value, 0, 30).'...'):$value).'</td>';
 		$html .= '</tr>';
@@ -5379,10 +5745,8 @@ function kota_pre_ko_leute_info_rota_1(&$value, $data) {
 
 	$lid = $data['id'];
 
-
 	$teamRole = ko_get_setting('rota_teamrole');
 	$roleWhere = $teamRole ? " AND `role_id` = '$teamRole' " : '';
-
 
 	//Check access to rota teams
 	$accessWhere = '';
@@ -5398,7 +5762,6 @@ function kota_pre_ko_leute_info_rota_1(&$value, $data) {
 			return FALSE;
 		}
 	}
-
 
 	//Get old groups for this person
 	$oldGroups = array();
@@ -5445,13 +5808,10 @@ function kota_pre_ko_leute_info_rota_1(&$value, $data) {
 		}
 	}
 
-
-
-	$table  = '<table class="table">';
-	$table .= '<tr><th>'.getLL('leute_info_rota_team').'</th><th>'.getLL('leute_info_rota_membership').'</th><th>'.getLL('leute_info_rota_chart').'</th></tr>';
+	$table  = '<table class="table">
+	<tr><th>'.getLL('leute_info_rota_team').'</th><th>'.getLL('leute_info_rota_membership').'</th><th>'.getLL('leute_info_rota_chart').'</th></tr>';
 	foreach($teams as $team) {
 		$table .= '<tr><th>'.$team['name'].'</th>';
-		$groupLabels = array();
 		$table .= '<td>'.implode('<br />', $historyData[$team['id']]).'</td>';
 		$chart = str_replace('<svg ', '<svg style="background: black;" ', ko_rota_get_participation_chart($lid, $team['id'], 'team'));
 		$table .= '<td>'.$chart.'</td>';
@@ -5459,7 +5819,6 @@ function kota_pre_ko_leute_info_rota_1(&$value, $data) {
 	}
 	foreach($oldTeams as $team) {
 		$table .= '<tr><th>('.$team['name'].')</th>';
-		$groupLabels = array();
 		$table .= '<td>'.implode('<br />', $historyData[$team['id']]).'</td>';
 		$table .= '<td>&nbsp;</td>';
 		$table .= '</tr>';
@@ -5482,9 +5841,7 @@ function kota_pre_ko_leute_info_rota_2(&$value, $data) {
 	$lid = $data['id'];
 	$allTeams = ko_rota_get_all_teams();
 
-
-	$max = 5;
-	$counter = 0;
+	$max = 10; $c = 0;
 	$schedule_ = ko_rota_get_scheduled_events($lid);
 	$schedule = array();
 	foreach ($schedule_ as $eventId => $s_) {
@@ -5506,8 +5863,8 @@ function kota_pre_ko_leute_info_rota_2(&$value, $data) {
 	}
 
 	
-	$next  = '<table class="table">';
-	$next .= '<tr><th>'.getLL('kota_listview_ko_event_startdatum').'</th><th>'.getLL('kota_listview_ko_event_startzeit').'</th><th>'.getLL('kota_listview_ko_event_title').'</th><th>'.getLL('leute_info_rota_helpers').'</th></tr>';
+	$next  = '<table class="table">
+	<tr><th>'.getLL('kota_listview_ko_event_startdatum').'</th><th>'.getLL('kota_listview_ko_event_startzeit').'</th><th>'.getLL('kota_listview_ko_event_title').'</th><th>'.getLL('leute_info_rota_helpers').'</th></tr>';
 	foreach($schedule as $s) {
 		$next .= '<tr>';
 		$next .= '<td>'.strftime($DATETIME['DdmY'], strtotime($s['event']['startdatum'])).'</td>';

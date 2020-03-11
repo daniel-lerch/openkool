@@ -2,7 +2,7 @@
 /***************************************************************
  *  Copyright notice
  *
- *  (c) 2003-2017 Renzo Lauper (renzo@churchtool.org)
+ *  (c) 2003-2020 Renzo Lauper (renzo@churchtool.org)
  *  All rights reserved
  *
  *  This script is part of the kOOL project. The kOOL project is
@@ -65,11 +65,11 @@ class kOOL_listview {
 
 	/**
 	 * Initialise the list with some base informations
-	 * @param module: The kOOL module in which this list is used
-	 * @param table: Database table as defined in $KOTA
-	 * @param editColumns: Which action columns (edit, delete, etc) should be shown
-	 * @param start: Set the first element to be shown in a paged view
-	 * @param limit: Set the limit of items to be shown on one page
+	 * @param string $module: The kOOL module in which this list is used
+	 * @param string $table: Database table as defined in $KOTA
+	 * @param array $editColumns: Which action columns (edit, delete, etc) should be shown
+	 * @param string $start: Set the first element to be shown in a paged view
+	 * @param string $limit: Set the limit of items to be shown on one page
 	 */
 	function init($module, $table, $editColumns="", $start="", $limit="") {
 		global $KOTA;

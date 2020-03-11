@@ -2,7 +2,7 @@
 /***************************************************************
 *  Copyright notice
 *
-*  (c) 2003-2017 Renzo Lauper (renzo@churchtool.org)
+*  (c) 2003-2020 Renzo Lauper (renzo@churchtool.org)
 *  All rights reserved
 *
 *  This script is part of the kOOL project. The kOOL project is
@@ -50,15 +50,9 @@ if(sizeof($hooks) > 0) foreach($hooks as $hook) include_once($hook);
 /**
 	* Aktionen von Frontmodulen behandeln
 	*/
-if(isset($_POST["action"]) && $_POST["action"] != "") $do_action = $_POST["action"];
-else if(isset($_GET["action"])) {
-	if($_GET["action"] == "show_adressaenderung_fields") $do_action = "show_adressaenderung_fields";
-	else if($_GET["action"] == "submit_aa") $do_action = "submit_aa";
-	else if($_GET["action"] == "show_single_news") $do_action = "show_single_news";
-	else if($_GET["action"] == "delete_absence_cookie") $do_action = "delete_absence_cookie";
-	else $do_action = "";
-}
-else $do_action = "";
+if(isset($_POST['action']) && $_POST['action'] != '') $do_action = $_POST['action'];
+else if(isset($_GET['action']) && $_GET['action'] != '') $do_action = $_GET['action'];
+else $do_action = '';
 
 if(FALSE === format_userinput($do_action, "alpha+", TRUE, 50)) trigger_error("invalid action: ".$do_action, E_USER_ERROR);
 
@@ -74,7 +68,17 @@ switch($do_action) {
 			$notifier->addTextInfo(getLL('fm_absence_select_person_logout'));
 		}
 		$do_action = 'list_absence';
-		break;
+	break;
+
+	case 'news_status':
+		$newsID = format_userinput($_GET['id'], 'uint');
+		if(!$newsID) break;
+		$status = format_userinput($_GET['status'], 'uint');
+		
+		$newsStatus = json_decode(ko_get_userpref($_SESSION['ses_userid'], 'news_status'), TRUE);
+		$newsStatus[$newsID] = $status == 1 ? 1 : 0;
+		ko_save_userpref($_SESSION['ses_userid'], 'news_status', json_encode($newsStatus));
+	break;
 }//switch(do_action)
 
 
@@ -326,7 +330,7 @@ switch($do_action) {
 				$subject = getLL('fm_absence_email_title');
 				$message = $salut . "\n\n" . sprintf(getLL('fm_absence_email_text'), $absence_url);
 				$message.= ko_email_signature('text');
-				ko_send_mail(ko_mail_get_from(), $recipient_email, $subject, $message);
+				ko_send_mail('', $recipient_email, $subject, $message);
 				$notifier->addTextInfo(getLL('ko_event_absence_info_mailsent'));
 			} else {
 				$notifier->addTextWarning(getLL('ko_event_absence_info_mailwarning'));
@@ -351,6 +355,15 @@ switch($do_action) {
 			$notifier->addTextError(getLL('ko_event_absence_info_error'));
 		}
 		break;
+
+	case 'news_status':
+		//Handled above
+	break;
+
+	case 'logout':
+	case 'login':
+		//Handled in ko_check_login();
+	break;
 
 	//Default:
 	default:

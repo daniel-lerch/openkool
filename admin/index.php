@@ -2,7 +2,7 @@
 /***************************************************************
 *  Copyright notice
 *
-*  (c) 2003-2017 Renzo Lauper (renzo@churchtool.org)
+*  (c) 2003-2020 Renzo Lauper (renzo@churchtool.org)
 *  All rights reserved
 *
 *  This script is part of the kOOL project. The kOOL project is
@@ -57,7 +57,7 @@ if (ko_module_installed('vesr')) {
 }
 
 //kOOL Table Array
-ko_include_kota(array('ko_news', '_ko_sms_log', 'ko_log', 'ko_admingroups', 'ko_admin', 'ko_labels', 'ko_pdf_layout', 'ko_vesr', 'ko_vesr_camt', 'ko_google_cloud_printers', 'ko_detailed_person_exports'));
+ko_include_kota(array('ko_news', '_ko_sms_log', '_ko_telegram_log', 'ko_log', 'ko_admingroups', 'ko_admin', 'ko_labels', 'ko_pdf_layout', 'ko_vesr', 'ko_vesr_camt', 'ko_google_cloud_printers', 'ko_detailed_person_exports'));
 
 //*** Plugins einlesen:
 $hooks = hook_include_main("admin");
@@ -68,7 +68,32 @@ if($_SERVER['HTTP_REFERER'] != '' && FALSE === strpos($_SERVER['HTTP_REFERER'], 
 
 switch($do_action) {
 
+
+	case 'telegram_create_webhook':
+		if($_SESSION['ses_userid'] != ko_get_root_id()) break;
+
+		$url = 'https://api.telegram.org/bot'.ko_get_setting('telegram_token').'/setWebhook';
+		$webhook = $BASE_URL.'webhook/telegram.php?h='.md5(KOOL_ENCRYPTION_KEY);
+		$ch = curl_init($url);
+		curl_setopt($ch, CURLOPT_POST, 1);
+		curl_setopt($ch, CURLOPT_POSTFIELDS, array('url' => $webhook));
+		curl_setopt($ch, CURLOPT_FOLLOWLOCATION, 1);
+		curl_setopt( $ch, CURLOPT_RETURNTRANSFER, 1);
+
+		$response = curl_exec($ch);
+		$result = json_decode($response, TRUE);
+		if($result['ok']) {
+			$notifier->addInfo(12, $do_action);
+		} else {
+			$notifier->addError(25, $do_action);
+			$notifier->addTextError(' '.$response, $do_action);
+		}
+		//var_dump($response);
+		//var_dump(curl_error($ch));
+	break;
+
 	//Anzeigen
+	case 'set_layout':  //Backwards compatibility (might still be set as default view in userprefs)
 	case "admin_settings":
 		if($access['admin']['MAX'] < 1) break;
 		$_SESSION["show"] = "admin_settings";
@@ -96,7 +121,14 @@ switch($do_action) {
 		if(!ko_module_installed('sms')) break;
 		$_SESSION['show'] = 'show_sms_log';
 		$_SESSION['show_start'] = 1;
-	break;
+		break;
+
+	case 'show_telegram_log':
+		if($access['admin']['MAX'] < 1) break;
+		if(!ko_module_installed('telegram')) break;
+		$_SESSION['show'] = 'show_telegram_log';
+		$_SESSION['show_start'] = 1;
+		break;
 
 	case "submit_log_filter":
 		if($access['admin']['MAX'] < 4) break;
@@ -173,13 +205,17 @@ switch($do_action) {
 				ko_set_setting("sms_country_code", $sms_country_code);
 			}
 
+			if(in_array('telegram', $MODULES) && $_SESSION["ses_username"] == "root") {
+				ko_set_setting("telegram_botname", format_userinput($_POST["txt_telegram_botname"], "text"));
+				ko_set_setting("telegram_botid", format_userinput($_POST["txt_telegram_botid"], "text"));
+				ko_set_setting("telegram_token", format_userinput($_POST["txt_telegram_token"], "text"));
+			}
+
 			if(in_array('mailing', $MODULES) && is_array($MAILING_PARAMETER) && $MAILING_PARAMETER['domain'] != '') {
 				ko_set_setting('mailing_mails_per_cycle', format_userinput($_POST['txt_mailing_mails_per_cycle'], 'uint'));
 				ko_set_setting('mailing_max_recipients', format_userinput($_POST['txt_mailing_max_recipients'], 'uint'));
 				ko_set_setting('mailing_only_alias', format_userinput($_POST['chk_mailing_only_alias'], 'uint'));
 				ko_set_setting('mailing_allow_double', format_userinput($_POST['chk_mailing_allow_double'], 'uint'));
-				ko_set_setting('mailing_from_email', format_userinput($_POST['txt_mailing_from_email'], 'email'));
-				ko_set_setting('force_mail_from', format_userinput($_POST['chk_force_mail_from'], 'uint'));
 				$max_attempts = (!is_numeric($_POST['txt_mailing_max_attempts']) ? 10 : $_POST['txt_mailing_max_attempts']);
 				ko_set_setting('mailing_max_attempts', format_userinput($max_attempts, 'uint'));
 			}
@@ -434,6 +470,8 @@ switch($do_action) {
 		//Delete Admingroup
 		db_delete_data("ko_admingroups", "WHERE `id` = '$id'");
 
+		ko_admin_remove_groups($id, "admingroup");
+
 		//LDAP-Login
 		if(ko_do_ldap()) {
 			//Check all logins assigned to this group for ldap access
@@ -476,37 +514,68 @@ switch($do_action) {
 	case "submit_new_admingroup":
 		if($access['admin']['MAX'] < 5) break;
 
-		//Gruppenname verlangen
 		$txt_name = format_userinput($_POST["txt_name"], "text");
-		if(!$txt_name) $notifier->addError(12, $do_action);
-		//Gruppenname darf nicht schon existieren
+		if(empty($txt_name)) {
+			$notifier->addError(12, $do_action);
+		}
+
 		$admingroups = ko_get_admingroups();
 		foreach($admingroups as $ag) {
-			if($ag["name"] == $txt_name) $notifier->addError(13, $do_action);
+			if($ag["name"] == $txt_name) {
+				$notifier->addError(13, $do_action);
+			}
 		}
 
 		if(!$notifier->hasErrors()) {
-			$save_modules = explode(",", format_userinput($_POST["sel_modules"], "alphanumlist"));
-			foreach($save_modules as $m_i => $m) {
-				if(!in_array($m, $MODULES)) unset($save_modules[$m_i]);
-				if($m == 'tools') unset($save_modules[$m_i]);
+			$log_message = [];
+			$type = "admingroup";
+
+			$login_dummy = ["name" => $txt_name];
+			$log_message[] = $login_dummy;
+			$id = db_insert_data("ko_admingroups", $login_dummy);
+			$log_message[] = ['id' => $id];
+
+			foreach($_POST["module_install_status"] AS $installed_module => $status) {
+				$save_modules[] = format_userinput($installed_module, "text");
 			}
-			$data["modules"] = implode(",", $save_modules);
 
-			$data["disable_password_change"] = ($_POST["chk_disable_password_change"] ? 1 : 0);
+			$_old_admingroup = ko_get_admingroups();
+			$old_login = $_old_admingroup[$id];
 
-			//Gruppen-Daten speichern
-			$data["name"] = $txt_name;
-			$id = db_insert_data("ko_admingroups", $data);
+			foreach ($save_modules as $key => $module_name) {
+				if (!in_array($module_name, $MODULES)) unset($save_modules[$key]);
+				if ($module_name == 'tools' && $id != ko_get_root_id()) unset($save_modules[$key]);
+			}
 
-			//Log
-			$logData = $data;
-			$logData = array_merge(array('id' => $id), $logData);
-			ko_log_diff('new_admingroup', $logData);
-		}//if(!error)
+			if(ko_admin_save_general($id, $type) === FALSE) break;
 
-		$edit_id = $id;
-		$_SESSION["show"] = $notifier->hasErrors() ? "new_admingroup" : "edit_admingroup";
+			$done_modules = [];
+			$done_modules[] = 'tools';
+
+			ko_admin_update_module("leute", $id, $type);
+			ko_admin_update_module("groups", $id, $type);
+
+			foreach ($MODULES_GROUP_ACCESS as $module) {
+				if(ko_admin_update_groupaccess($module, $type) === FALSE) continue;
+			}
+
+			foreach ($MODULES as $module) {
+				if (in_array($module, $done_modules)) continue;
+				ko_admin_update_rights($module, $type);
+			}
+
+			$logTexts = [];
+			foreach($log_message as $lMessages) {
+				foreach($lMessages as $lKey => $lMessage) {
+					$logTexts[] = $lKey.': '.trim($lMessage);
+				}
+			}
+			ko_log('new_admingroup', implode(', ', $logTexts));
+			$notifier->addInfo(1, $do_action);
+			$edit_id = $id;
+		}
+
+		$_SESSION["show"] = ($notifier->hasErrors() || empty($edit_id)) ? "new_admingroup" : "edit_admingroup";
 	break;
 
 
@@ -514,305 +583,45 @@ switch($do_action) {
 	case "submit_edit_admingroup":
 		if($access['admin']['MAX'] < 5) break;
 
-		$log_message = array();
+		$log_message = [];
+		$type = "admingroup";
 
-		$data = array();
 		if(FALSE === ($id = format_userinput($_POST["id"], "uint", TRUE))) {
-		    trigger_error("Not allowed id: ".$id, E_USER_ERROR);
-    	}
-
-		$log_message[] = array('id' => $id);
-
-		//Gruppen-Name speichern
-		$name = format_userinput($_POST["txt_name"], "js");
-		if($_POST["txt_name"] != "") {
-			$log_message[] = ko_save_admin("name", $id, $name, "admingroup");
-		} else {
-			$notifier->addError(12, $do_action);
-			break;
-		}
-		$_old_admingroup = ko_get_admingroups($id);
-		$old_admingroup = $_old_admingroup[$id];
-
-		$log_message[] = ko_save_admin("disable_password_change", $id, $_POST["chk_disable_password_change"], "admingroup");
-
-		//Module speichern
-		$save_modules = explode(",", format_userinput($_POST["sel_modules"], "alphanumlist"));
-		foreach($save_modules as $m_i => $m) {
-			if(!in_array($m, $MODULES)) unset($save_modules[$m_i]);
-			if($m == 'tools') unset($save_modules[$m_i]);
-		}
-		foreach($MODULES as $m) {
-      if(!in_array($m, $save_modules)) {
-				$log_message[] = ko_save_admin($m, $id, "0", "admingroup");
-				if($m == "leute") {
-					$log_message[] = ko_save_admin("leute_filter", $id, "0", "admingroup");
-					$log_message[] = ko_save_admin("leute_spalten", $id, "0", "admingroup");
-				}
-			}
-		}
-		$log_message[] = ko_save_admin("modules", $id, implode(",", $save_modules), "admingroup");
-
-
-		//Rechte speichern
-		$done_modules = array();
-		if(in_array("leute", $save_modules)) {  //Leute-Rechte
-			$done_modules[] = 'leute';
-			$leute_save_string = format_userinput($_POST["sel_rechte_leute"], "uint", FALSE, 1);
-			$log_message[] = ko_save_admin("leute", $id, $leute_save_string, "admingroup");
-
-			//Filter für Stufen
-			$save_filter = ko_get_leute_admin_filter($id, "admingroup");
-			if(!$save_filter) $save_filter = array();
-			$filterset = array_merge((array)ko_get_userpref('-1', '', 'filterset'), (array)ko_get_userpref($_SESSION['ses_userid'], '', 'filterset'));
-			for($i=1; $i < 4; $i++) {
-				$filter = format_userinput($_POST["sel_rechte_leute_$i"], "js");
-				if($filter == -1) {
-					continue;
-				} else if($filter == "") {
-					unset($save_filter[$i]);
-				} else {
-					//A new filter has been selected
-					if(preg_match('/sg[0-9]{4}/', $filter) == 1) {  //small group
-						$sg = db_select_data('ko_kleingruppen', "WHERE `id` = '".format_userinput($filter, 'uint')."'", '*', '', '', TRUE);
-						$sgFilter = db_select_data('ko_filter', "WHERE `typ` = 'leute' AND `name` = 'smallgroup'", 'id', '', '', TRUE);
-						$save_filter[$i]['value'] = $filter;
-						$save_filter[$i]['name'] = $sg['name'];
-						$save_filter[$i]['filter'] = array('link' => 'and', 0 => array(0 => $sgFilter['id'], 1 => array(1 => $sg['id']), 2 => 0));
-					} else if(preg_match('/g[0-9]{6}/', $filter) == 1) {  //group
-						$gid = substr($filter, -6);
-						$gr = db_select_data('ko_groups', "WHERE `id` = '$gid'", '*', '', '', TRUE);
-						$grFilter = db_select_data('ko_filter', "WHERE `typ` = 'leute' AND `name` = 'group'", 'id', '', '', TRUE);
-						$save_filter[$i]['value'] = $filter;
-						$save_filter[$i]['name'] = $gr['name'];
-						$save_filter[$i]['filter'] = array('link' => 'and', 0 => array(0 => $grFilter['id'], 1 => array(1 => $filter, 2 => ''), 2 => 0));
-					} else {  //filter preset
-						$save_filter[$i]["name"] = $filter;
-						$save_filter[$i]['value'] = $filter;
-						//Filter-Infos aus Filterset lesen
-						foreach($filterset as $set) {
-							if($set["key"] == $filter) {
-								$save_filter[$i]["filter"] = unserialize($set["value"]);
-							}
-						}
-					}
-				}
-			}//for(i=1..3)
-			$log_message[] = ko_save_admin("leute_filter", $id, serialize($save_filter), "admingroup");
-
-			//Spaltenvorlagen
-			$save_preset = ko_get_leute_admin_spalten($id, "admingroup");
-			if(!$save_preset) $save_preset = array();
-			$presets = array_merge((array)ko_get_userpref('-1', '', 'leute_itemset', 'ORDER BY `key` ASC'), (array)ko_get_userpref($_SESSION['ses_userid'], '', 'leute_itemset', 'ORDER BY `key` ASC'));
-			//view
-			$preset = format_userinput($_POST["sel_leute_cols_view"], "js");
-			if($preset == -1) {
-			} else if($preset == "") {
-				unset($save_preset["view"]);
-				unset($save_preset["view_name"]);
-			} else {
-				$save_preset["view_name"] = $preset;
-				foreach($presets as $p) {
-					if($p["key"] == $preset) {
-						$save_preset["view"] = explode(",", $p["value"]);
-					}
-				}//foreach(presets as p)
-			}//if..elseif..else()
-			//edit
-			$preset = format_userinput($_POST["sel_leute_cols_edit"], "js");
-			if($preset == -1) {
-			} else if($preset == "") {
-				unset($save_preset["edit"]);
-				unset($save_preset["edit_name"]);
-			} else {
-				$save_preset["edit_name"] = $preset;
-				foreach($presets as $p) {
-					if($p["key"] == $preset) {
-						$save_preset["edit"] = explode(",", $p["value"]);
-					}
-				}//foreach(presets as p)
-			}//if..elseif..else()
-			if(sizeof($save_preset) == 0) {
-				$save_preset = 0;
-			} else {
-				//Add edit preset to view as edit also means view
-				if($save_preset["view"]) $save_preset["view"] = array_unique(array_merge((array)$save_preset["view"], (array)$save_preset["edit"]));
-			}
-			$log_message[] = ko_save_admin("leute_spalten", $id, serialize($save_preset), "admingroup");
-			if(sizeof($save_preset['view']) > 0) $log_message[] = 'leute_spalten view: '.implode(', ', $save_preset['view']);
-			if(sizeof($save_preset['edit']) > 0) $log_message[] = 'leute_spalten edit: '.implode(', ', $save_preset['edit']);
-
-			//Admin groups
-			$lag = format_userinput($_POST['sel_leute_admin_group'], 'alphanum', FALSE, 0, array(), ':');
-			$log_message[] = ko_save_admin('leute_groups', $id, $lag, 'admingroup');
-
-			//Group subscriptions
-			$gs = format_userinput($_POST['chk_leute_admin_gs'], 'uint');
-			$log_message[] = ko_save_admin('leute_gs', $id, $gs, 'admingroup');
-
-			//Allow user to assign people to own group
-			//Only store if $lag is set
-			if($lag) {
-				$assign = format_userinput($_POST['chk_leute_admin_assign'], 'uint');
-				$log_message[] = ko_save_admin('leute_assign', $id, $assign, 'admingroup');
-			} else {
-				$log_message[] = ko_save_admin('leute_assign', $id, 0, 'admingroup');
-			}
-
-		}//if(leute_module)
-		else if(in_array('leute', explode(',', $old_admingroup['modules']))) {
-			//If leute module is removed from admingroup, then also set all leute_admin fields to 0
-			$log_message[] = ko_save_admin('leute_assign', $id, 0, 'admingroup');
-			$log_message[] = ko_save_admin('leute_gs', $id, 0, 'admingroup');
-			$log_message[] = ko_save_admin('leute_groups', $id, '', 'admingroup');
+			trigger_error("Not allowed id: ".$id, E_USER_ERROR);
 		}
 
+		$log_message[] = ['id' => $id];
 
-		if(in_array('groups', $save_modules)) {
-			$done_modules[] = 'groups';
-			$groups_save_string = format_userinput($_POST['sel_rechte_groups'], 'uint', FALSE, 1);
-			$log_message[] = ko_save_admin('groups', $id, $groups_save_string, 'admingroup');
-
-			//Loop über die drei Rechte-Stufen
-			$mode = array('', 'view', 'new', 'edit', 'del');
-			for($i=4; $i>0; $i--) {
-				if(isset($_POST["sel_groups_rights_".$mode[$i]])) {
-					//Nur Änderungen bearbeiten
-					$old = explode(",", format_userinput($_POST["old_sel_groups_rights_".$mode[$i]], "intlist", FALSE, 0, array(), ":"));
-					$new = explode(",", format_userinput($_POST["sel_groups_rights_".$mode[$i]], "intlist", FALSE, 0, array(), ":"));
-					$deleted = array_diff($old, $new);
-					$added = array_diff($new, $old);
-				
-					//Login aus gelöschten Gruppen entfernen
-					foreach($deleted as $gid) {
-						$gid = substr($gid, -6);  //Nur letzte ID verwenden, davor steht die Motherline
-						//bisherige Rechte auslesen
-						$group = db_select_data("ko_groups", "WHERE `id` = '$gid'", "id,rights_".$mode[$i]);
-						$rights_array = explode(",", $group[$gid]["rights_".$mode[$i]]);
-						//Zu löschendes Login finden und entfernen
-						foreach($rights_array as $index => $right) if($right == 'g'.$id) unset($rights_array[$index]);
-						foreach($rights_array as $a => $b) if(!$b) unset($rights_array[$a]);  //Leere Einträge löschen
-						//Neuer Eintrag in Gruppe speichern
-						db_update_data("ko_groups", "WHERE `id` = '$gid'", array("rights_".$mode[$i] => implode(",", $rights_array)));
-						$all_groups[$gid]['rights_'.$mode[$i]] = implode(',', $rights_array);
-					}
-
-					//Login in neu hinzugefügten Gruppen hinzufügen
-					foreach($added as $gid) {
-						$gid = substr($gid, -6);  //Nur letzte ID verwenden, davor steht die Motherline
-						//Bestehende Rechte auslesen
-						$group = db_select_data("ko_groups", "WHERE `id` = '$gid'", "id,rights_".$mode[$i]);
-						$rights_array = explode(",", $group[$gid]["rights_".$mode[$i]]);
-						//Überprüfen, ob Login schon vorhanden ist (sollte nicht)
-						$add = TRUE;
-						foreach($rights_array as $right) if($right == 'g'.$id) $add = FALSE;
-						if($add) $rights_array[] = 'g'.$id;
-						foreach($rights_array as $a => $b) if(!$b) unset($rights_array[$a]);  //Leere Einträge löschen
-						//Neue Liste der Logins in Gruppe speichern
-						db_update_data("ko_groups", "WHERE `id` = '$gid'", array("rights_".$mode[$i] => implode(",", $rights_array)));
-						$all_groups[$gid]['rights_'.$mode[$i]] = implode(',', $rights_array);
-					}
-				}//if(isset(_POST[sel_groups_rights_*]))
-			}//for(i=1..3)
-		}//if(in_array(groups, save_modules))
-		else if(in_array('groups', explode(',', $old_admingroup['modules']))) {
-			//If groups module has been deselected then remove all access settings from ko_groups
-			foreach(array('view', 'new', 'edit', 'del') as $amode) {
-				$granted_groups = db_select_data('ko_groups', "WHERE `rights_".$amode."` REGEXP '(^|,)g$id(,|$)'");
-				foreach($granted_groups as $gg) {
-					$granted_logins = explode(',', $gg['rights_'.$amode]);
-					foreach($granted_logins as $k => $v) {
-						if($v == 'g'.$id) unset($granted_logins[$k]);
-					}
-					db_update_data('ko_groups', "WHERE `id` = '".$gg['id']."'", array('rights_'.$amode => implode(',', $granted_logins)));
-					$all_groups[$gg['id']]['rights_'.$amode] = implode(',', $granted_logins);
-				}
-			}
+		foreach($_POST["module_install_status"] AS $installed_module => $status) {
+			$save_modules[] = format_userinput($installed_module, "text");
 		}
 
-		foreach($MODULES_GROUP_ACCESS as $module) {
-			$done_modules[] = $module;
-			if(!in_array($module, $MODULES)) continue;
-			if(in_array($module, $save_modules)) {
-				$save_string = format_userinput($_POST['sel_rechte_'.$module.'_0'], 'uint', FALSE, 1).',';
-				unset($gruppen);
-				switch($module) {
-					case "daten":
-						if(ko_get_setting('daten_access_calendar') == 1) {
-							//First get calendars
-							$cals = db_select_data('ko_event_calendar', 'WHERE 1=1', '*', 'ORDER BY name ASC');
-							foreach($cals as $cid => $cal) $gruppen['cal'.$cid] = $cal;
-							//Then add event groups withouth calendar
-							$egs = db_select_data('ko_eventgruppen', "WHERE `calendar_id` = '0'", '*', 'ORDER BY name ASC');
-							foreach($egs as $eid => $eg) $gruppen[$eid] = $eg;
-						} else {
-							$egs = db_select_data('ko_eventgruppen', 'WHERE 1=1', '*', 'ORDER BY name ASC');
-							foreach($egs as $eid => $eg) $gruppen[$eid] = $eg;
-						}
-						$log_message[] = ko_save_admin($module . '_force_global', $id, $_POST['sel_force_global_'.$module], "admingroups");
-						$log_message[] = ko_save_admin($module . '_reminder_rights', $id, $_POST['sel_reminder_rights_'.$module], "admingroups");
-						$log_message[] = ko_save_admin($module . '_absence_rights', $id, $_POST['sel_absence_rights_'.$module], "admingroups");
+		$_old_admingroup = ko_get_admingroups();
+		$old_login = $_old_admingroup[$id];
 
-						//KOTA columns
-						$coltable = 'ko_event';
-						$savecols = format_userinput($_POST['kota_columns_'.$coltable], 'alphanumlist');
-						$log_message[] = ko_save_admin('kota_columns_'.$coltable, $id, $savecols, 'admingroups');
-					break;
-					case "reservation":
-						if(ko_get_setting('res_access_mode') == 1) {
-							ko_get_resitems($items);
-							foreach($items as $iid => $item) $gruppen[$iid] = $item;
-						} else {
-							ko_get_resgroups($resgroups);
-							foreach($resgroups as $gid => $g) $gruppen['grp'.$gid] = $g;
-						}
-						$log_message[] = ko_save_admin($module . '_force_global', $id, $_POST['sel_force_global_'.$module], "admingroups");
-					break;
-					case 'rota': $gruppen = db_select_data('ko_rota_teams', '', '*', 'ORDER BY name ASC'); break;
-					case "donations": $gruppen = db_select_data("ko_donations_accounts", "", "*", "ORDER BY number ASC, name ASC"); break;
-					case 'tracking': $gruppen = db_select_data('ko_tracking', '', '*', 'ORDER BY name ASC'); break;
-					case 'subscription': $gruppen = db_select_data('ko_subscription_form_groups','','*','ORDER BY name ASC'); break;
-
-					default:
-						$gruppen = hook_access_get_groups($module);
-				}
-				foreach($gruppen as $g_i => $g) {
-					$save_string .= format_userinput($_POST["sel_rechte_".$module."_".$g_i], "uint", FALSE, 1)."@".$g_i.",";
-				}
-			} else $save_string = "0 ";
-			$log_message[] = ko_save_admin($module, $id, substr($save_string, 0, -1), 'admingroup');
+		foreach ($save_modules as $key => $module_name) {
+			if (!in_array($module_name, $MODULES)) unset($save_modules[$key]);
+			if ($module_name == 'tools' && $id != ko_get_root_id()) unset($save_modules[$key]);
 		}
 
+		if(ko_admin_save_general($id, $type) === FALSE) break;
+
+		$done_modules = [];
 		$done_modules[] = 'tools';
-		foreach($MODULES as $module) {
-			if(in_array($module, $done_modules)) continue;
-			$done_modules[] = $module;
 
-			if(in_array($module, $save_modules)) {
-				$save_string = format_userinput($_POST['sel_rechte_'.$module], 'uint', FALSE, 1);
-			} else $save_string = '0';
-			$log_message[] = ko_save_admin($module, $id, $save_string, "admingroup");
+		ko_admin_update_module("leute", $id, $type);
+		ko_admin_update_module("groups", $id, $type);
 
-			//KOTA columns
-			if($module == 'kg') {
-				$coltable = 'ko_kleingruppen';
-				$savecols = format_userinput($_POST['kota_columns_'.$coltable], 'alphanumlist');
-				$log_message[] = ko_save_admin('kota_columns_'.$coltable, $id, $savecols, 'admingroups');
-			}
+		foreach ($MODULES_GROUP_ACCESS as $module) {
+			if(ko_admin_update_groupaccess($module, $type) === FALSE) continue;
 		}
 
+		foreach ($MODULES as $module) {
+			if (in_array($module, $done_modules)) continue;
+			ko_admin_update_rights($module, $type);
+		}
 
-		//LDAP-Login
-		if(ko_do_ldap()) {
-			//Check all logins assigned to this group for ldap access
-			$logins = db_select_data("ko_admin", "WHERE `admingroups` REGEXP '(^|,)$id($|,)' AND `disabled` = ''", "*");
-			foreach($logins as $login) {
-				ko_admin_check_ldap_login($login);
-			}
-		}//if(ko_do_ldap())
-
-
-		$logTexts = array();
+		$logTexts = [];
 		foreach($log_message as $lMessages) {
 			foreach($lMessages as $lKey => $lMessage) {
 				$logTexts[] = $lKey.': '.trim($lMessage);
@@ -821,365 +630,62 @@ switch($do_action) {
 		ko_log('edit_admingroup', implode(', ', $logTexts));
 		$notifier->addInfo(1, $do_action);
 
-		$edit_id = $id;
-		//$_SESSION["show"] = "show_admingroups";
+		$_SESSION['show'] = 'show_admingroups';
 	break;
 
 
 	case "submit_edit_login":
 		if($access['admin']['MAX'] < 5) break;
 
-		$log_message = array();
+		$log_message = [];
 
-		if(FALSE === ($id = format_userinput($_POST["id"], "uint", TRUE))) {
-			trigger_error("Not allowed id: ".$id, E_USER_ERROR);
+		if (FALSE === ($id = format_userinput($_POST["id"], "uint", TRUE))) {
+			trigger_error("Not allowed id: " . $id, E_USER_ERROR);
 		}
 		//root darf nur von root bearbeitet werden
-		if($id == ko_get_root_id() && $_SESSION["ses_username"] != "root") break;
+		if ($id == ko_get_root_id() && $_SESSION["ses_username"] != "root") break;
 
-		$log_message[] = array('id' => $id);
-
-		//Altes Login speichern (für LDAP)
+		$log_message[] = ['id' => $id];
 		ko_get_login($id, $old_login);
-	
-		//Login-Name speichern
-		$login_name = format_userinput($_POST["txt_name"], "js");
-		if($_POST["txt_name"] != "") {
-			//Changing the name of ko_guest and root is not allowed
-			if($id != ko_get_guest_id() && $id != ko_get_root_id()) $log_message[] = ko_save_admin("login", $id, $login_name);
-		} else {
-			$notifier->addError(1, $do_action);
-			break;
+		$save_modules = [];
+
+		foreach($_POST["module_install_status"] AS $installed_module => $status) {
+			$save_modules[] = format_userinput($installed_module, "text");
 		}
 
-		//Passwort neu setzen
-		if($_POST["txt_pwd1"] != "") {
-			if($_POST["txt_pwd1"] == $_POST["txt_pwd2"]) {
-				$log_message[] = ko_save_admin("password", $id, md5($_POST["txt_pwd1"]));
-			} else {
-				$notifier->addError(2, $do_action);
-				break;
-			}
+		if($id == ko_get_root_id()) $save_modules[] = "tools";
+		foreach ($save_modules as $key => $module_name) {
+			if (!in_array($module_name, $MODULES)) unset($save_modules[$key]);
+			if ($module_name == 'tools' && $id != ko_get_root_id()) unset($save_modules[$key]);
 		}
 
-		$log_message[] = ko_save_admin("disable_password_change", $id, $_POST["chk_disable_password_change"]);
+		if(ko_admin_save_general($id) === FALSE) break;
 
-		//Module speichern
-		$save_modules = explode(",", format_userinput($_POST["sel_modules"], "alphanumlist"));
-		foreach($save_modules as $m_i => $m) {
-			if(!in_array($m, $MODULES)) unset($save_modules[$m_i]);
-			if($m == 'tools' && $id != ko_get_root_id()) unset($save_modules[$m_i]);
-		}
-		foreach($MODULES as $m) {
-		if(!in_array($m, $save_modules)) {
-				$log_message[] = ko_save_admin($m, $id, "0");
-				if($m == "leute") {
-					$log_message[] = ko_save_admin("leute_filter", $id, "0");
-					$log_message[] = ko_save_admin("leute_spalten", $id, "0");
-				}
-			}
-		}
-		$log_message[] = ko_save_admin("modules", $id, implode(",", $save_modules));
-
-
-		//Admingroups speichern
-		$save_admingroups = explode(",", format_userinput($_POST["sel_admingroups"], "intlist"));
-		$admingroups = ko_get_admingroups();
-		foreach($save_admingroups as $m_i => $m) {
-			if(!in_array($m, array_keys($admingroups))) unset($save_admingroups[$m_i]);
-		}
-		$log_message[] = ko_save_admin("admingroups", $id, implode(",", $save_admingroups));
-
-
-		//Assigned person from DB
-		$leute_id = format_userinput($_POST["sel_leute_id"], "uint");
-		db_update_data("ko_admin", "WHERE `id` = '$id'", array("leute_id" => $leute_id));
-		$log_message[] = array('leute_id' => $leute_id);
-		//Admin email
-		$email = format_userinput($_POST['txt_email'], 'email');
-		db_update_data('ko_admin', 'WHERE `id` = \''.$id.'\'', array('email' => $email));
-		$log_message[] = array('email' => $email);
-		//Admin mobile
-		$mobile = format_userinput($_POST['txt_mobile'], 'alphanum++');
-		db_update_data('ko_admin', 'WHERE `id` = \''.$id.'\'', array('mobile' => $mobile));
-		$log_message[] = array('mobile' => $mobile);
-
-
-		//Rechte speichern
-		$done_modules = array();
-		if(in_array("leute", $save_modules)) {  //Leute-Rechte
-			$done_modules[] = 'leute';
-			$leute_save_string = format_userinput($_POST["sel_rechte_leute"], "uint", FALSE, 1);
-			$log_message[] = ko_save_admin("leute", $id, $leute_save_string);
-
-			//Filter für Stufen
-			$save_filter = ko_get_leute_admin_filter($id, "login");
-			$filterset = array_merge((array)ko_get_userpref('-1', '', 'filterset'), (array)ko_get_userpref($_SESSION['ses_userid'], '', 'filterset'));
-			for($i=1; $i < 4; $i++) {
-				$filter = format_userinput($_POST["sel_rechte_leute_$i"], "js");
-				if($filter == -1) {
-					continue;
-				} else if($filter == "") {
-					unset($save_filter[$i]);
-				} else {
-					//A new filter has been selected
-					if(preg_match('/sg[0-9]{4}/', $filter) == 1) {  //small group
-						$sg = db_select_data('ko_kleingruppen', "WHERE `id` = '".format_userinput($filter, 'uint')."'", '*', '', '', TRUE);
-						$sgFilter = db_select_data('ko_filter', "WHERE `typ` = 'leute' AND `name` = 'smallgroup'", 'id', '', '', TRUE);
-						$save_filter[$i]['value'] = $filter;
-						$save_filter[$i]['name'] = $sg['name'];
-						$save_filter[$i]['filter'] = array('link' => 'and', 0 => array(0 => $sgFilter['id'], 1 => array(1 => $sg['id']), 2 => 0));
-					} else if(preg_match('/g[0-9]{6}/', $filter) == 1) {  //group
-						$gid = substr($filter, -6);
-						$gr = db_select_data('ko_groups', "WHERE `id` = '$gid'", '*', '', '', TRUE);
-						$grFilter = db_select_data('ko_filter', "WHERE `typ` = 'leute' AND `name` = 'group'", 'id', '', '', TRUE);
-						$save_filter[$i]['value'] = $filter;
-						$save_filter[$i]['name'] = $gr['name'];
-						$save_filter[$i]['filter'] = array('link' => 'and', 0 => array(0 => $grFilter['id'], 1 => array(1 => $filter, 2 => ''), 2 => 0));
-					} else {  //filter preset
-						$save_filter[$i]["name"] = $filter;
-						$save_filter[$i]['value'] = $filter;
-						//Filter-Infos aus Filterset lesen
-						foreach($filterset as $set) {
-							if($set["key"] == $filter) {
-								$save_filter[$i]["filter"] = unserialize($set["value"]);
-							}
-						}
-					}
-				}
-			}//for(i=1..3)
-			$log_message[] = ko_save_admin("leute_filter", $id, serialize($save_filter));
-
-			//Spaltenvorlagen
-			$save_preset = ko_get_leute_admin_spalten($id, "login");
-			if(!$save_preset) $save_preset = array();
-			$presets = array_merge((array)ko_get_userpref('-1', '', 'leute_itemset', 'ORDER BY `key` ASC'), (array)ko_get_userpref($_SESSION['ses_userid'], '', 'leute_itemset', 'ORDER BY `key` ASC'));
-			//view
-			$preset = format_userinput($_POST["sel_leute_cols_view"], "js");
-			if($preset == -1) {
-			} else if($preset == "") {
-				unset($save_preset["view"]);
-				unset($save_preset["view_name"]);
-			} else {
-				$save_preset["view_name"] = $preset;
-				foreach($presets as $p) {
-					if($p["key"] == $preset) {
-						$save_preset["view"] = explode(",", $p["value"]);
-					}
-				}//foreach(presets as p)
-			}//if..elseif..else()
-			//edit
-			$preset = format_userinput($_POST["sel_leute_cols_edit"], "js");
-			if($preset == -1) {
-			} else if($preset == "") {
-				unset($save_preset["edit"]);
-				unset($save_preset["edit_name"]);
-			} else {
-				$save_preset["edit_name"] = $preset;
-				foreach($presets as $p) {
-					if($p["key"] == $preset) {
-						$save_preset["edit"] = explode(",", $p["value"]);
-					}
-				}//foreach(presets as p)
-			}//if..elseif..else()
-			if(sizeof($save_preset) == 0) {
-				$save_preset = 0;
-			} else {
-				//Add edit preset to view as edit also means view
-				if($save_preset["view"]) $save_preset["view"] = array_unique(array_merge((array)$save_preset["view"], (array)$save_preset["edit"]));
-			}
-			$log_message[] = ko_save_admin("leute_spalten", $id, serialize($save_preset));
-
-			//Admin groups
-			$lag = format_userinput($_POST["sel_leute_admin_group"], "alphanum", FALSE, 0, array(), ":");
-			$log_message[] = ko_save_admin("leute_groups", $id, $lag);
-
-			//Group subscriptions
-			$gs = format_userinput($_POST["chk_leute_admin_gs"], "uint");
-			$log_message[] = ko_save_admin("leute_gs", $id, $gs);
-
-			//Assign people to own group
-			//Only store if $gs is set
-			if($lag) {
-				$assign = format_userinput($_POST["chk_leute_admin_assign"], "uint");
-				$log_message[] = ko_save_admin("leute_assign", $id, $assign);
-			} else {
-				$log_message[] = ko_save_admin('leute_assign', $id, 0);
-			}
-		}//if(in_array(leute, $save_modules))
-		else if(in_array('leute', explode(',', $old_login['modules']))) {
-			//If leute module is removed from login, then also set all leute_admin fields to 0
-			$log_message[] = ko_save_admin('leute_assign', $id, 0);
-			$log_message[] = ko_save_admin('leute_gs', $id, 0);
-			$log_message[] = ko_save_admin('leute_groups', $id, '');
-		}
-
-
-		if(in_array('groups', $save_modules)) {
-			$done_modules[] = 'groups';
-			$groups_save_string = format_userinput($_POST['sel_rechte_groups'], 'uint', FALSE, 1);
-			$log_message[] = ko_save_admin('groups', $id, $groups_save_string);
-
-			//Loop über die drei Rechte-Stufen
-			$mode = array('', 'view', 'new', 'edit', 'del');
-			for($i=4; $i>0; $i--) {
-				if(isset($_POST["sel_groups_rights_".$mode[$i]])) {
-					//Nur Änderungen bearbeiten
-					$old = explode(",", format_userinput($_POST["old_sel_groups_rights_".$mode[$i]], "intlist", FALSE, 0, array(), ":"));
-					$new = explode(",", format_userinput($_POST["sel_groups_rights_".$mode[$i]], "intlist", FALSE, 0, array(), ":"));
-					$deleted = array_diff($old, $new);
-					$added = array_diff($new, $old);
-				
-					//Login aus gelöschten Gruppen entfernen
-					foreach($deleted as $gid) {
-						$gid = substr($gid, -6);  //Nur letzte ID verwenden, davor steht die Motherline
-						//bisherige Rechte auslesen
-						$group = db_select_data("ko_groups", "WHERE `id` = '$gid'", "id,rights_".$mode[$i]);
-						$rights_array = explode(",", $group[$gid]["rights_".$mode[$i]]);
-						//Zu löschendes Login finden und entfernen
-						foreach($rights_array as $index => $right) if($right == $id) unset($rights_array[$index]);
-						foreach($rights_array as $a => $b) if(!$b) unset($rights_array[$a]);  //Leere Einträge löschen
-						//Neuer Eintrag in Gruppe speichern
-						db_update_data("ko_groups", "WHERE `id` = '$gid'", array("rights_".$mode[$i] => implode(",", $rights_array)));
-						$all_groups[$gid]['rights_'.$mode[$i]] = implode(',', $rights_array);
-					}
-
-					//Login in neu hinzugefügten Gruppen hinzufügen
-					foreach($added as $gid) {
-						$gid = substr($gid, -6);  //Nur letzte ID verwenden, davor steht die Motherline
-						//Bestehende Rechte auslesen
-						$group = db_select_data("ko_groups", "WHERE `id` = '$gid'", "id,rights_".$mode[$i]);
-						$rights_array = explode(",", $group[$gid]["rights_".$mode[$i]]);
-						//Überprüfen, ob Login schon vorhanden ist (sollte nicht)
-						$add = TRUE;
-						foreach($rights_array as $right) if($right == $id) $add = FALSE;
-						if($add) $rights_array[] = $id;
-						foreach($rights_array as $a => $b) if(!$b) unset($rights_array[$a]);  //Leere Einträge löschen
-						//Neue Liste der Logins in Gruppe speichern
-						db_update_data("ko_groups", "WHERE `id` = '$gid'", array("rights_".$mode[$i] => implode(",", $rights_array)));
-						$all_groups[$gid]['rights_'.$mode[$i]] = implode(',', $rights_array);
-					}
-				}//if(isset(_POST[sel_groups_rights_*]))
-			}//for(i=1..3)
-		}//if(in_array(groups, save_modules))
-		else if(in_array('groups', explode(',', $old_login['modules']))) {
-			//If groups module has been deselected then remove all access settings from ko_groups
-			foreach(array('view', 'new', 'edit', 'del') as $amode) {
-				$granted_groups = db_select_data('ko_groups', "WHERE `rights_".$amode."` REGEXP '(^|,)$id(,|$)'");
-				foreach($granted_groups as $gg) {
-					$granted_logins = explode(',', $gg['rights_'.$amode]);
-					foreach($granted_logins as $k => $v) {
-						if($v == $id) unset($granted_logins[$k]);
-					}
-					db_update_data('ko_groups', "WHERE `id` = '".$gg['id']."'", array('rights_'.$amode => implode(',', $granted_logins)));
-					$all_groups[$gg['id']]['rights_'.$amode] = implode(',', $granted_logins);
-				}
-			}
-		}
-
-		foreach($MODULES_GROUP_ACCESS as $module) {
-			$done_modules[] = $module;
-			if(!in_array($module, $MODULES)) continue;
-			if(in_array($module, $save_modules)) {
-				$save_string = format_userinput($_POST["sel_rechte_".$module."_0"], "uint", FALSE, 1) . ",";
-				unset($gruppen);
-				switch($module) {
-					case "daten":
-						if(ko_get_setting('daten_access_calendar') == 1) {
-							//First get calendars
-							$cals = db_select_data('ko_event_calendar', 'WHERE 1=1', '*', 'ORDER BY name ASC');
-							foreach($cals as $cid => $cal) $gruppen['cal'.$cid] = $cal;
-							//Then add event groups withouth calendar
-							$egs = db_select_data('ko_eventgruppen', "WHERE `calendar_id` = '0'", '*', 'ORDER BY name ASC');
-							foreach($egs as $eid => $eg) $gruppen[$eid] = $eg;
-						} else {
-							$egs = db_select_data('ko_eventgruppen', 'WHERE 1=1', '*', 'ORDER BY name ASC');
-							foreach($egs as $eid => $eg) $gruppen[$eid] = $eg;
-						}
-						$log_message[] = ko_save_admin($module . '_force_global', $id, $_POST['sel_force_global_'.$module], "login");
-						$log_message[] = ko_save_admin($module . '_reminder_rights', $id, $_POST['sel_reminder_rights_'.$module], "login");
-						if($id != ko_get_guest_id()) {
-							$log_message[] = ko_save_admin($module . '_absence_rights', $id, $_POST['sel_absence_rights_'.$module], "login");
-						} else {
-							ko_save_admin($module . '_absence_rights', $id, 0, "login");
-						}
-
-						//KOTA columns
-						$coltable = 'ko_event';
-						$savecols = format_userinput($_POST['kota_columns_'.$coltable], 'alphanumlist');
-						$log_message[] = ko_save_admin('kota_columns_'.$coltable, $id, $savecols);
-					break;
-					case "reservation":
-						if(ko_get_setting('res_access_mode') == 1) {
-							ko_get_resitems($items);
-							foreach($items as $iid => $item) $gruppen[$iid] = $item;
-						} else {
-							ko_get_resgroups($resgroups);
-							foreach($resgroups as $gid => $g) $gruppen['grp'.$gid] = $g;
-						}
-						$log_message[] = ko_save_admin($module . '_force_global', $id, $_POST['sel_force_global_'.$module], "login");
-					break;
-					case 'rota': $gruppen = db_select_data('ko_rota_teams', '', '*', 'ORDER BY name ASC'); break;
-					case "donations": $gruppen = db_select_data("ko_donations_accounts", "", "*", "ORDER BY number ASC, name ASC"); break;
-					case 'tracking': $gruppen = db_select_data('ko_tracking', '', '*', 'ORDER BY name ASC'); break;
-					case 'crm': ko_get_crm_projects($gruppen, '', '', 'ORDER BY `title` ASC'); break;
-					case 'subscription': $gruppen = db_select_data('ko_subscription_form_groups','','*','ORDER BY name ASC'); break;
-
-					default:
-						$gruppen = hook_access_get_groups($module);
-				}
-				foreach($gruppen as $g_i => $g) {
-					$save_string .= format_userinput($_POST["sel_rechte_".$module."_".$g_i], "uint", FALSE, 1)."@".$g_i.",";
-				}
-			} else $save_string = "0 ";
-			$log_message[] = ko_save_admin($module, $id, substr($save_string, 0, -1));
-		}
-
+		$done_modules = [];
 		$done_modules[] = 'tools';
-		foreach($MODULES as $module) {
-			if(in_array($module, $done_modules)) continue;
-			$done_modules[] = $module;
 
-			if(in_array($module, $save_modules)) {
-				$save_string = format_userinput($_POST["sel_rechte_".$module], "uint", FALSE, 1);
-			} else $save_string = "0";
-			$log_message[] = ko_save_admin($module, $id, $save_string);
+		ko_admin_update_module("leute", $id);
+		ko_admin_update_module("groups", $id);
 
-			//KOTA columns
-			if($module == 'kg') {
-				$coltable = 'ko_kleingruppen';
-				$savecols = format_userinput($_POST['kota_columns_'.$coltable], 'alphanumlist');
-				$log_message[] = ko_save_admin('kota_columns_'.$coltable, $id, $savecols);
-			}
+		foreach ($MODULES_GROUP_ACCESS as $module) {
+			if(ko_admin_update_groupaccess($module) === FALSE) continue;
 		}
 
+		foreach ($MODULES as $module) {
+			if (in_array($module, $done_modules)) continue;
+			ko_admin_update_rights($module);
+		}
 
-		$logTexts = array();
-		foreach($log_message as $lMessages) {
-			foreach($lMessages as $lKey => $lMessage) {
-				$logTexts[] = $lKey.': '.trim($lMessage);
+		$logTexts = [];
+		foreach ($log_message as $lMessages) {
+			foreach ($lMessages as $lKey => $lMessage) {
+				$logTexts[] = $lKey . ': ' . trim($lMessage);
 			}
 		}
 		ko_log('edit_login', implode(', ', $logTexts));
 		$notifier->addInfo(1, $do_action);
 
-
-		//LDAP-Login
-		if(ko_do_ldap()) {
-			$ldap = ko_ldap_connect();
-			if($old_login['login'] != $login_name) {
-				//Delete old login if login name has changed
-				if(ko_ldap_check_login($ldap, $old_login['login'])) {
-					ko_ldap_del_login($ldap, $old_login['login']);
-				}
-			}
-			ko_ldap_close($ldap);
-			//Check the current login for access rights and add an LDAP login if needed
-			ko_admin_check_ldap_login($id);
-		}//if(ko_do_ldap())
-
-		//Go back to list of logins if no modules have changed
-		if($old_login['modules'] == implode(',', $save_modules)) $_SESSION['show'] = 'show_logins';
+		$_SESSION['show'] = 'show_logins';
 	break;
 
 
@@ -1188,57 +694,74 @@ switch($do_action) {
 		if($access['admin']['MAX'] < 5) break;
 
 		$txt_name = format_userinput($_POST["txt_name"], "js");
-	
-		//Loginname verlangen
-		if(!$txt_name) $notifier->addError(1, $do_action);
-		//Passwörter müssen übereinstimmen
-		if($_POST["txt_pwd1"] == "" || $_POST["txt_pwd1"] != $_POST["txt_pwd2"]) $notifier->addError(2, $do_action);
-		//Loginname darf nicht ko_guest sein
-		if($txt_name == "ko_guest" || strlen($_POST["txt_name"]) >= 50) $notifier->addError(3, $do_action);
-		if($txt_name == "root") $notifier->addError(10, $do_action);
-		//Loginname darf nicht schon existieren
+		if(empty($txt_name)) {
+			$notifier->addError(1, $do_action);
+		}
+
+		if($_POST["txt_pwd1"] == "" || $_POST["txt_pwd1"] != $_POST["txt_pwd2"]) {
+			$notifier->addError(2, $do_action);
+		}
+
+		if($txt_name == "ko_guest" || strlen($_POST["txt_name"]) >= 50) {
+			$notifier->addError(3, $do_action);
+		}
+
+		if($txt_name == "root") {
+			$notifier->addError(10, $do_action);
+		}
+
 		ko_get_logins($logins);
 		foreach($logins as $l) {
 			if($l["login"] == $txt_name) $notifier->addError(4, $do_action);
 		}
 
 		if(!$notifier->hasErrors()) {
-			//Berechtigungen von Login kopieren:
+			$log_message = [];
 			$copy_rights_id = format_userinput($_POST["sel_copy_rights"], "uint");
 			if($copy_rights_id) {
-				ko_get_login($copy_rights_id, $data);
-				unset($data["id"]);
-				unset($data["leute_id"]);
+				ko_get_login($copy_rights_id, $login_template);
+				unset($login_template["id"]);
+				unset($login_template['ical_hash']);
+				$login_template['leute_id'] = format_userinput($_POST['sel_leute_id'], 'uint');
+				$login_template['email'] = format_userinput($_POST['txt_email'], 'email');
+				$login_template['mobile'] = format_userinput($_POST['txt_mobile'], 'alphanum++');
+				$login_template["login"]      = $txt_name;
+				$login_template["password"]   = md5($_POST["txt_pwd1"]);
+				$login_template["disable_password_change"] = ($_POST["chk_disable_password_change"] ? 1 : 0);
+				$id = db_insert_data("ko_admin", $login_template);
+				$log_message[] = $login_template;
+			} else {
+				// directly create a new login, then we can just edit it with all data
+				$login_dummy = ["login" => $txt_name];
+				$log_message[] = $login_dummy;
+				$id = db_insert_data("ko_admin", $login_dummy);
+				ko_get_login($id, $old_login);
+				foreach($_POST["module_install_status"] AS $installed_module => $status) {
+					$save_modules[] = format_userinput($installed_module, "text");
+				}
+
+				foreach ($save_modules as $key => $module_name) {
+					if (!in_array($module_name, $MODULES)) unset($save_modules[$key]);
+					if ($module_name == 'tools' && $id != ko_get_root_id()) unset($save_modules[$key]);
+				}
+
+				$_POST["txt_pwd2"] = $_POST["txt_pwd1"]; // set the new password
+				ko_admin_save_general($id);
+
+				$done_modules = [];
+				$done_modules[] = 'tools';
+				ko_admin_update_module("leute", $id);
+				ko_admin_update_module("groups", $id);
+
+				foreach ($MODULES_GROUP_ACCESS as $module) {
+					if(ko_admin_update_groupaccess($module) === FALSE) continue;
+				}
+
+				foreach ($MODULES as $module) {
+					if (in_array($module, $done_modules)) continue;
+					ko_admin_update_rights($module);
+				}
 			}
-			else {  //Nicht kopieren sondern Module gemäss Auswahl übernehmen
-				$save_modules = explode(",", format_userinput($_POST["sel_modules"], "alphanumlist"));
-				foreach($save_modules as $m_i => $m) {
-					if(!in_array($m, $MODULES)) unset($save_modules[$m_i]);
-					if($m == 'tools') unset($save_modules[$m_i]);
-				}
-				$data["modules"] = implode(",", $save_modules);
-				//admingroups
-				$save_admingroups = explode(",", format_userinput($_POST["sel_admingroups"], "intlist"));
-				$admingroups = ko_get_admingroups();
-				foreach($save_admingroups as $m_i => $m) {
-					if(!in_array($m, array_keys($admingroups))) unset($save_admingroups[$m_i]);
-				}
-				$data["admingroups"] = implode(",", $save_admingroups);
-			}//if..else(copy_rights_id)
-
-			//Assigned person from DB
-			$data['leute_id'] = format_userinput($_POST['sel_leute_id'], 'uint');
-			//Admin email
-			$data['email'] = format_userinput($_POST['txt_email'], 'email');
-			//Admin mobile
-			$data['mobile'] = format_userinput($_POST['txt_mobile'], 'alphanum++');
-
-			//Login-Daten speichern
-			$data["login"]      = $txt_name;
-			$data["password"]   = md5($_POST["txt_pwd1"]);
-			$data["disable_password_change"] = ($_POST["chk_disable_password_change"] ? 1 : 0);
-
-			$id = db_insert_data("ko_admin", $data);
 
 			$notifier->addInfo(2, $do_action);
 
@@ -1274,19 +797,18 @@ switch($do_action) {
 				}
 			}
 
-			//Log
-			$logData = $data;
-			$logData = array_merge(array('id' => $id), $logData);
-			ko_log_diff('new_login', $logData);
-
-			//LDAP-Login
-			if(ko_do_ldap()) {
-				ko_admin_check_ldap_login($id);
+			$logTexts = [];
+			foreach ($log_message as $lMessages) {
+				foreach ($lMessages as $lKey => $lMessage) {
+					$logTexts[] = $lKey . ': ' . trim($lMessage);
+				}
 			}
+			ko_log('new_login', implode(', ', $logTexts));
+
+			ko_admin_check_ldap_login($id);
 		}//if(!error)
 
-		//Neues Login gleich zum Bearbeiten geben, damit Berechtigungen gesetzt werden können.
-		$_SESSION["show"] = $notifier->hasErrors() ? "new_login" : "edit_login";
+		$_SESSION['show'] = $notifier->hasErrors() ? 'new_login' : 'show_logins';
 	break;
 
 
@@ -1302,8 +824,9 @@ switch($do_action) {
 	case "edit_login":
 		if($access['admin']['MAX'] < 5) break;
 		if(FALSE === ($id = format_userinput($_POST["id"], "uint", TRUE))) {
-	    trigger_error("Not allowed id: ".$id, E_USER_ERROR);
-    }
+	    	trigger_error("Not allowed id: ".$id, E_USER_ERROR);
+    	}
+
 		//root darf nur von root bearbeitet werden
 		if($id == ko_get_root_id() && $_SESSION["ses_username"] != "root") break;
 
@@ -1317,8 +840,9 @@ switch($do_action) {
 		if($access['admin']['MAX'] < 5) break;
 
 		if(FALSE === ($id = format_userinput($_POST["id"], "uint", TRUE))) {
-	    trigger_error("Not allowed id: ".$id, E_USER_ERROR);
-    }
+		    trigger_error("Not allowed id: ".$id, E_USER_ERROR);
+    	}
+
 		if((int)$id == (int)ko_get_guest_id()) break;  //ko_guest may not be deleted
 		if((int)$id == (int)ko_get_root_id()) break;   //root may not be deleted
 
@@ -1330,6 +854,8 @@ switch($do_action) {
 	
 		//Delete login
 		db_delete_data("ko_admin", "WHERE `id` = '$id'");
+
+		ko_admin_remove_groups($id, "login");
 
 		//Delete all userprefs for this user
 		db_delete_data("ko_userprefs", "WHERE `user_id` = '$id'");
@@ -1959,8 +1485,8 @@ switch($do_action) {
 		ko_set_setting('vesr_import_email_host', format_userinput($_POST['txt_vesr_import_email_host'], 'text'));
 		ko_set_setting('vesr_import_email_user', format_userinput($_POST['txt_vesr_import_email_user'], 'text'));
 		// encrypt password
-		include_once($BASE_PATH.'inc/class.mcrypt.php');
-		$crypt = new mcrypt('aes');
+		require_once($BASE_PATH.'inc/class.openssl.php');
+		$crypt = new openssl('AES-256-CBC');
 		$crypt->setKey(KOOL_ENCRYPTION_KEY);
 		$value = trim($crypt->encrypt(format_userinput($_POST['txt_vesr_import_email_pass'], 'text')));
 		ko_set_setting('vesr_import_email_pass', $value);
@@ -2011,8 +1537,9 @@ switch($do_action) {
 
 	//Default:
   default:
-	if(!hook_action_handler($do_action))
-    include($ko_path."inc/abuse.inc");
+		if(!hook_action_handler($do_action)) {
+			include($ko_path."inc/abuse.inc");
+		}
   break;
 
 
@@ -2067,7 +1594,7 @@ print ko_include_css();
 $js_files = array();
 $js_files[] = $ko_path.'inc/ckeditor/ckeditor.js';
 $js_files[] = $ko_path.'inc/ckeditor/adapters/jquery.js';
-if(in_array($_SESSION['show'], array('edit_login', 'edit_admingroup'))) $js_files[] = $ko_path.'inc/selectmenu.js';
+if(in_array($_SESSION['show'], array('new_login',  'new_admingroup', 'edit_login', 'edit_admingroup'))) $js_files[] = $ko_path.'inc/selectmenu.js';
 $js_files[] = $ko_path.'inc/ckeditor/ckeditor.js';
 $js_files[] = $ko_path.'inc/ckeditor/adapters/jquery.js';
 print ko_include_js($js_files);
@@ -2075,10 +1602,9 @@ print ko_include_js($js_files);
 include($ko_path.'admin/inc/js-admin.inc');
 include($ko_path.'inc/js-sessiontimeout.inc');
 include("inc/js-admin.inc");
-$js_calendar->load_files();
 
 //Prepare group double selects when editing a login
-if(in_array($_SESSION['show'], array('edit_login', 'edit_admingroup'))) {
+if(in_array($_SESSION['show'], array('new_login', 'new_admingroup', 'edit_login', 'edit_admingroup'))) {
 	//Show dummy groups because the rights will be propagated downwards to all children
 	$show_all_types = TRUE;
 	//Show all groups, also terminated ones
@@ -2086,20 +1612,12 @@ if(in_array($_SESSION['show'], array('edit_login', 'edit_admingroup'))) {
 	ko_save_userpref($_SESSION['ses_userid'], 'show_passed_groups', 1);
 	//View
 	$list_id = 1;
-	include($ko_path.'leute/inc/js-groupmenu.inc');
-	$loadcode .= "initList($list_id, document.getElementsByName('sel_ds1_sel_groups_rights_view')[0]);";
-	//New
-	$list_id = 2;
-	include($ko_path.'leute/inc/js-groupmenu.inc');
-	$loadcode .= "initList($list_id, document.getElementsByName('sel_ds1_sel_groups_rights_new')[0]);";
-	//Edit
-	$list_id = 3;
-	include($ko_path.'leute/inc/js-groupmenu.inc');
-	$loadcode .= "initList($list_id, document.getElementsByName('sel_ds1_sel_groups_rights_edit')[0]);";
-	//Del
-	$list_id = 4;
-	include($ko_path.'leute/inc/js-groupmenu.inc');
-	$loadcode .= "initList($list_id, document.getElementsByName('sel_ds1_sel_groups_rights_del')[0]);";
+	foreach (['view', 'new', 'edit', 'del'] AS $rights_level) {
+		include($ko_path . 'leute/inc/js-groupmenu.inc');
+		$loadcode .= "initList(" . $list_id . ", document.getElementsByName('sel_ds1_sel_groups_rights_" . $rights_level . "')[0]);";
+		$list_id++;
+	}
+
 	$onload_code = $loadcode.$onload_code;
 	//Reset userpref to original value
 	ko_save_userpref($_SESSION['ses_userid'], 'show_passed_groups', $show_passed_groups);
@@ -2170,7 +1688,10 @@ switch($_SESSION["show"]) {
 	break;
 	case 'show_sms_log':
 		ko_show_sms_log();
-	break;
+		break;
+	case 'show_telegram_log':
+		ko_show_telegram_log();
+		break;
 	case "show_admingroups":
 		ko_list_admingroups();
 	break;

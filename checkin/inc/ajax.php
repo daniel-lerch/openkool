@@ -92,9 +92,14 @@ switch ($do_action) {
 		print 'notifications@@@';
 		$notifier->display();
 
-		print "@@@POST@@@hideWait($('.checkin-selected-btn'));$('#search-input').val('');";
-
-		print '@@@search-result-container@@@<div class="panel panel-default"><div class="panel-body">'.getLL('checkin_label_enter_query').'</div></div>';
+		if($_SESSION['checkin_mode'] == 1) {
+			print '@@@search-result-container@@@';
+			print ko_checkin_show_results($_SESSION['checkin_tracking_id'], '_all');
+			print '<script>hideWait($("#search-btn"));</script>';
+		} else {
+			print "@@@POST@@@hideWait($('.checkin-selected-btn'));$('#search-input').val('');";
+			print '@@@search-result-container@@@<div class="panel panel-default"><div class="panel-body">'.getLL('checkin_label_enter_query').'</div></div>';
+		}
 
 	break;
 
@@ -112,6 +117,12 @@ switch ($do_action) {
 		print 'notifications@@@';
 		$notifier->display();
 
-		print "@@@POST@@@hideWait($('.checkin-selected-btn'));$('#search-btn').click();";
+		if($_SESSION['checkin_mode'] == 1) {
+			print '@@@search-result-container@@@';
+			print ko_checkin_show_results($_SESSION['checkin_tracking_id'], '_all');
+			print '<script>hideWait($("#search-btn"));</script>';
+		} else {
+			print "@@@POST@@@hideWait($('.checkin-selected-btn'));$('#search-btn').click();";
+		}
 	break;
 }

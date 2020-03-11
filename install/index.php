@@ -2,7 +2,7 @@
 /***************************************************************
 *  Copyright notice
 *
-*  (c) 2003-2017 Renzo Lauper (renzo@churchtool.org)
+*  (c) 2003-2020 Renzo Lauper (renzo@churchtool.org)
 *  All rights reserved
 *
 *  This script is part of the kOOL project. The kOOL project is
@@ -112,6 +112,10 @@ switch($do_action) {
 			db_import_sql($sql_ll);
 		}
 
+		//Mark all update scripts as done
+		ko_updates_find_update_files();
+		db_update_data('ko_updates', "WHERE 1", array('status' => 2, 'done_date' => date('Y-m-d H:i:s')));
+
 		$cur_state = 4;
 		$_SESSION["show"] = "settings";
 	break;
@@ -217,7 +221,7 @@ switch($do_action) {
 					elseif($mod == "admin") $key = "admin";
 					else $key = $mod."_admin";
 
-					if(in_array($mod, array('admin', 'reservation', 'rota'))) $value = 5;
+					if(in_array($mod, array('admin', 'reservation', 'rota', 'crm'))) $value = 5;
 					else if(in_array($mod, array('vesr', 'subscription', 'taxonomy'))) $value = 2;
 					else $value = 4;
 
@@ -240,7 +244,7 @@ switch($do_action) {
 			}
 		}//if(pass1 && pass1 == pass2)
 
-		include($ko_path."config/ko-config.php");
+		require($ko_path."config/ko-config.php");
 
 		//check all the necessary data
 		if(!$BASE_PATH) $notifier->addError(3, $do_action);
@@ -660,7 +664,7 @@ switch($_SESSION["show"]) {
 //--- copyright notice on frontpage:
 //--- Obstructing the appearance of this notice is prohibited by law.
 print '<div class="copyright">';
-print '<a href="https://sourceforge.net/projects/kool"><b>'.getLL("kool").'</b></a> '.sprintf(getLL("copyright_notice"), VERSION).'<br />';
+print '<a href="https://www.churchtool.org"><b>'.getLL("kool").'</b></a> '.sprintf(getLL("copyright_notice"), VERSION).'<br />';
 if(defined("WARRANTY_GIVER")) {
 	print sprintf(getLL("copyright_warranty"), '<a href="'.WARRANTY_URL.'">'.WARRANTY_GIVER.'</a> ');
 } else {

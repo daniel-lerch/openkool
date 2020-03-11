@@ -2,7 +2,7 @@
 /***************************************************************
 *  Copyright notice
 *
-*  (c) 2003-2017 Renzo Lauper (renzo@churchtool.org)
+*  (c) 2003-2020 Renzo Lauper (renzo@churchtool.org)
 *  All rights reserved
 *
 *  This script is part of the kOOL project. The kOOL project is
@@ -809,7 +809,6 @@ $LL['fr'] = array(
 'leute_export_pdf_header_left' => "En-tête gauche : texte",
 'leute_export_pdf_header_right' => "En-tête droite : texte",
 'leute_export_pdf_help_headerfooter' => "Les places suivantes peuvent être utilisée: [[Day]], [[Month]], [[MonthName]], [[Year]], [[Hour]], [[Minute]], [[PageNumber]] und [[kOOL-URL]].",
-'leute_export_pdf_show_children' => "Copier les dates des parents pour les enfants",
 'leute_export_pdf_show_datafields' => "incl. Champs de données des groupes",
 'leute_export_pdf_submit' => "Créer un document PDF",
 'leute_export_pdf_title_data' => "Données",
@@ -919,7 +918,6 @@ $LL['fr'] = array(
 'leute_preferred_fields_mobile_chk' => "Sélectionner comme numéro par défaut (au lieu de '% s')",
 'leute_salutation_m' => "Monsieur",
 'leute_salutation_w' => "Madame",
-'leute_settings_children_columns' => "Colonnes des parents pour l'exportation 'colonnes des parents et colonnes affichées'",
 'leute_settings_default_view' => "Page standard",
 'leute_settings_fam_checkbox' => "Afficher Checkbox familial dans la liste ",
 'leute_settings_form_title' => "Installation dans le module personne",
@@ -934,7 +932,7 @@ $LL['fr'] = array(
 'leute_sms_my_export' => "Exporter dans ma liste",
 'leute_sms_no_number' => "- Les personnes suivantes ont un numéro de GSM inexistant ou invalide",
 'leute_sms_receiver' => "Destinataires : ",
-'leute_sms_send' => "Envoyer SMS",
+'leute_mobilemessage_send' => "Envoyer SMS/Telegram",
 'leute_sms_sender' => "Expéditeur:",
 'leute_sms_submit' => "Envoyer",
 'leute_sms_text' => "Texte:",
@@ -1013,6 +1011,7 @@ $LL['fr'] = array(
 'module_leute' => "Personnes",
 'module_mailing' => "E-Mail de groupe",
 'module_sms' => "SMS",
+'module_taxonomy' => "Taxonomie",
 'month' => "Mois",
 'more' => "Plus",
 'multiedit_list_title' => "Modifier les entrées sélectionnées de cette colonne",

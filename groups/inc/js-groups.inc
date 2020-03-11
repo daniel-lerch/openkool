@@ -5,9 +5,9 @@ function do_submit_new_datafield(sesid) {
 	do_descr = do_typ = do_options = "";
 
 	var descr = document.formular.txt_new_datafield;
-	if(descr) do_descr = encodeURIComponent(descr.value);
+	if(descr) do_descr = escape(descr.value);
 	var typ = document.formular.sel_new_datafield;
-	if(typ) do_typ = encodeURIComponent(typ.value);
+	if(typ) do_typ = escape(typ.value);
 
 	var reusable = document.formular.chk_new_datafield_reusable;
 	if(reusable.checked == true) do_reusable = 1;
@@ -24,7 +24,7 @@ function do_submit_new_datafield(sesid) {
 	if(do_typ == "select" || do_typ == "multiselect") {
 		var options = document.formular.txt_new_datafield_options;
 		if(options) {
-			do_options = encodeURIComponent(options.value);
+			do_options = escape(options.value);
 			//while(do_options.indexOf("\n") != -1) do_options = do_options.replace("\n", "%0A");
 		} else {
 			do_options = '';

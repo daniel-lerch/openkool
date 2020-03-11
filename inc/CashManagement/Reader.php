@@ -393,9 +393,12 @@ class Reader
 			foreach($debtor->PstlAdr->AdrLine as $extraLine) {
 				$extraLines[] = (string)$extraLine;
 			}
-			if($anyAdressInfo || count($extraLines) < 2) {
+			if($anyAdressInfo || count($extraLines) >= 1) {
 				// try to find more information about address
 				$foundAddress = ko_fuzzy_address_search($extraLines);
+				if(empty($message->getDebtorName()) && !empty($foundAddress['firm'])) {
+					$message->setDebtorName($foundAddress['firm']);
+				}
 				if(empty($message->getDebtorZip()) && !empty($foundAddress['zip'])) {
 					$message->setDebtorZip($foundAddress['zip']);
 				}
@@ -431,6 +434,14 @@ class Reader
 				}
 			}
 		}
+
+//		$debugAddress = [
+//			"name" => $message->getDebtorName(),
+//			"address" => $message->getDebtorStreet(),
+//			"zip" => $message->getDebtorZip(),
+//			"city" => $message->getDebtorCity(),
+//		];
+
 		if(isset($debtor->CtctDtls->NmPrfx)) {
 			$prefix = (string)$debtor->CtctDtls->NmPrfx;
 			$gender = '';

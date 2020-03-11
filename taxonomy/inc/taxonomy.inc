@@ -2,7 +2,7 @@
 /***************************************************************
 *  Copyright notice
 *
-*  (c) 2003-2017 Renzo Lauper (renzo@churchtool.org)
+*  (c) 2003-2020 Renzo Lauper (renzo@churchtool.org)
 *  All rights reserved
 *
 *  This script is part of the kOOL project. The kOOL project is
@@ -338,6 +338,9 @@ function ko_taxonomy_delete_node($node_id, $table) {
 	}
 
 	$where = "WHERE node_id = " . $node_id . " AND `table` = '" . $table . "'";
+	$deleted_nodes = db_select_data("ko_taxonomy_index", $where);
+	$log_message = "Typ: " . $table . ", Node-ID: ". $node_id . ", Term-IDs: " . implode(",", array_column($deleted_nodes, "id"));
+	ko_log("delete_term_node", $log_message);
 	db_delete_data("ko_taxonomy_index", $where);
 	return TRUE;
 }

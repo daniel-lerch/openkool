@@ -3,7 +3,7 @@
 /***************************************************************
 *  Copyright notice
 *
-*  (c) 2003-2017 Renzo Lauper (renzo@churchtool.org)
+*  (c) 2003-2020 Renzo Lauper (renzo@churchtool.org)
 *  All rights reserved
 *
 *  This script is part of the kOOL project. The kOOL project is
@@ -56,7 +56,13 @@ if(method_exists($smarty, 'registerPlugin')) {  //Smarty v3
 
 if(!function_exists('smarty_function_ll')) {
 	function smarty_function_ll($params, &$smarty) {
-		return getLL($params['key']);
+		$array_position = strpos($params['key'],"[");
+		if($array_position !== FALSE) {
+			$array = getLL(substr($params['key'],0, $array_position));
+			return $array[substr($params['key'],$array_position+1, -1)];
+		} else {
+			return getLL($params['key']);
+		}
 	}
 }
 $smarty->register_function('ll', 'smarty_function_ll');

@@ -106,23 +106,6 @@ var lastView = '<?php print $_SESSION['cal_view']; ?>';
 			titleRangeSeparator: " \u2014 ",
 			height: calcCalendarHeight,
 
-			//Header layout
-			//titleFormat: {
-			//	month: '<?php //print str_replace("'", "\'", getLL('fullcalendar_title_month')); ?>//',
-			//	week: "<?php //print str_replace("'", "\'", getLL('fullcalendar_title_week')); ?>//",
-			//	day: '<?php //print str_replace("'", "\'", getLL('fullcalendar_title_day')); ?>//'
-			//},
-			//columnFormat: {
-			//	month: '<?php //print str_replace("'", "\'", getLL('fullcalendar_column_month')); ?>//',
-			//	week: '<?php //print str_replace("'", "\'", getLL('fullcalendar_column_week')); ?>//',
-			//	day: '<?php //print str_replace("'", "\'", getLL('fullcalendar_column_day')); ?>//'
-			//},
-			//timeFormat: {
-			//	agenda: '<?php //print str_replace("'", "\'", getLL('fullcalendar_time_agenda')); ?>//',
-			//	month: '<?php //print str_replace("'", "\'", getLL('fullcalendar_time_default')); ?>//',
-			//	timeline: '<?php //print str_replace("'", "\'", getLL('fullcalendar_time_default')); ?>//'
-			//},
-
 			views: {
 				month: {
 					columnFormat: '<?php print str_replace("'", "\'", getLL('fullcalendar_column_month')); ?>',
@@ -351,6 +334,11 @@ var lastView = '<?php print $_SESSION['cal_view']; ?>';
 					else if($(this).hasClass('fc-absence')) {
 						if($(this).hasClass('fc-absence-readonly') === false) {
 							document.location = "/daten/index.php?action=edit_absence&id="+calEvent.id;
+						}
+					}
+					else if($(this).hasClass('fc-amtstag')) {
+						if($(this).hasClass('fc-amtstag-readonly') === false) {
+							document.location = "/rota/index.php?action=schedule&amtstag="+calEvent.start;
 						}
 					}
 					//Add link to birthday entries: Set filter for people module
