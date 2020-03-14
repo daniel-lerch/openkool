@@ -43,7 +43,7 @@
 	</div>
 {/if}
 
-<!-- Adressänderungen: -->
+<!-- AdressÃ¤nderungen: -->
 {if $tpl_show_aa}
 <div style="display:block;">
 	{if $tpl_open_mod_aa}

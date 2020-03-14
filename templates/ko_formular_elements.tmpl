@@ -168,7 +168,7 @@
 
 
 {elseif $input.type == "radio"}
-	{html_radios name=$input.name values=$input.values output=$input.descs selected=$input.value separator=$input.separator class="`$input.add_class`"}
+	{html_radios name=$input.name values=$input.values output=$input.descs selected=$input.value separator=$input.separator class="`$input.add_class`" escape=false}
 
 {elseif $input.type == "select_slider"}
 	{if !$input.html_id} {uid loc="id"} {else} {assign var="id" value=$input.html_id} {/if}

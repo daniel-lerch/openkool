@@ -1,28 +1,22 @@
 <?php
-/***************************************************************
-*  Copyright notice
+/*******************************************************************************
 *
-*  (c) 2003-2020 Renzo Lauper (renzo@churchtool.org)
-*  All rights reserved
+*    OpenKool - Online church organization tool
 *
-*  This script is part of the kOOL project. The kOOL project is
-*  free software; you can redistribute it and/or modify
-*  it under the terms of the GNU General Public License as published by
-*  the Free Software Foundation; either version 2 of the License, or
-*  (at your option) any later version.
+*    Copyright © 2003-2020 Renzo Lauper (renzo@churchtool.org)
+*    Copyright © 2019-2020 Daniel Lerch
 *
-*  The GNU General Public License can be found at
-*  http://www.gnu.org/copyleft/gpl.html.
-*  A copy is found in the textfile GPL.txt and important notices to the license
-*  from the author is found in LICENSE.txt distributed with these scripts.
+*    This program is free software; you can redistribute it and/or modify
+*    it under the terms of the GNU General Public License as published by
+*    the Free Software Foundation; either version 2 of the License, or
+*    (at your option) any later version.
 *
-*  kOOL is distributed in the hope that it will be useful,
-*  but WITHOUT ANY WARRANTY; without even the implied warranty of
-*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-*  GNU General Public License for more details.
+*    This program is distributed in the hope that it will be useful,
+*    but WITHOUT ANY WARRANTY; without even the implied warranty of
+*    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+*    GNU General Public License for more details.
 *
-*  This copyright notice MUST APPEAR in all copies of the script!
-***************************************************************/
+*******************************************************************************/
 
 error_reporting(0);
 
@@ -34,12 +28,12 @@ if(!in_array($_GET['action'], array('jsongetevents', 'fcsetdate', 'pdfcalendar',
 	if(FALSE === session_id($sesid)) exit;
 }
 
-//Send headers to ensure latin1 charset
-header('Content-Type: text/html; charset=ISO-8859-1');
-
+//Send headers to ensure UTF-8 charset
+header('Content-Type: text/html; charset=UTF-8');
+ 
 $ko_menu_akt = 'daten';
 $ko_path = "../../";
-require($ko_path."inc/ko.inc");
+require __DIR__ . '/../../inc/ko.inc.php';
 $ko_path = "../";
 
 array_walk_recursive($_GET,'utf8_decode_array');
@@ -53,9 +47,12 @@ ko_include_kota(array('ko_event', 'ko_eventgruppen', 'ko_event_rooms'));
 
 // Plugins einlesen:
 $hooks = hook_include_main("daten");
-if(sizeof($hooks) > 0) foreach($hooks as $hook) include_once($hook);
+foreach($hooks as $hook) include_once($hook);
  
-require($BASE_PATH."daten/inc/daten.inc");
+//Smarty-Templates-Engine laden
+require __DIR__ . '/../../inc/smarty.inc.php';
+ 
+require __DIR__ . '/daten.inc.php';
 
 //HOOK: Submenus einlesen
 $hooks = hook_include_sm();
@@ -527,7 +524,7 @@ if((isset($_GET) && isset($_GET["action"])) || (isset($_POST) && isset($_POST["a
 
 					//Format time for tooltip
 					if($event['startzeit'] == '00:00:00' && $event['endzeit'] == '00:00:00') $time = getLL('time_all_day');
-					else $time = substr($event['startzeit'], 0, -3).' - '.substr($event['endzeit'], 0, -3);
+					else $time = mb_substr($event['startzeit'], 0, -3).' - '.mb_substr($event['endzeit'], 0, -3);
 
 					$comment = $event['kommentar'] ? nl2br($event['kommentar']) : '';
 
@@ -639,8 +636,8 @@ if((isset($_GET) && isset($_GET["action"])) || (isset($_POST) && isset($_POST["a
 								if($r['startzeit'] == '00:00:00' && $r['endzeit'] == '00:00:00') {
 									$time = getLL('time_all_day');
 								} else {
-									$time = substr($r['startzeit'], 0, -3);
-									if($r['endzeit'] != '00:00:00') $time .= ' - '.substr($r['endzeit'], 0, -3);
+									$time = mb_substr($r['startzeit'], 0, -3);
+									if($r['endzeit'] != '00:00:00') $time .= ' - '.mb_substr($r['endzeit'], 0, -3);
 								}
 
 								if($r['startdatum'] != $r['enddatum']) {
@@ -715,15 +712,15 @@ if((isset($_GET) && isset($_GET["action"])) || (isset($_POST) && isset($_POST["a
 						'id' => $event['id'],
 						'start' => $event['startdatum'].'T'.$event['startzeit'],
 						'end' => $end_,
-						'title' => utf8_encode($title),
+						'title' => $title,
 						'allDay' => $allDay_,
 						'editable' => ($i==0 && $event['import_id'] == '' && $access['daten'][$event['eventgruppen_id']] > 1) ? TRUE : FALSE,
 						'className' => ($i==1 ? 'fc-modEvent' : ''),
 						'isMod' => ($i==1),
 						'color' => '#'.($event['eventgruppen_farbe'] ? $event['eventgruppen_farbe'] : 'aaaaaa'),
 						'textColor' => ko_get_contrast_color($event['eventgruppen_farbe']),
-						'kOOL_tooltip' => utf8_encode($tooltip),
-						'kOOL_editIcons' => utf8_encode($editIcons),
+						'kOOL_tooltip' => $tooltip,
+						'kOOL_editIcons' => $editIcons,
 					);
 				}
 			}
@@ -761,7 +758,7 @@ if((isset($_GET) && isset($_GET["action"])) || (isset($_POST) && isset($_POST["a
 							$bddate = add2date($bddate, 'day', 1, TRUE);
 							$i++;
 						}
-						$where = 'WHERE ('.substr($where, 3).') ';
+						$where = 'WHERE ('.mb_substr($where, 3).') ';
 
 						//Allow plugins to add to the query
 						$where .= ko_get_birthday_filter();
@@ -775,7 +772,7 @@ if((isset($_GET) && isset($_GET["action"])) || (isset($_POST) && isset($_POST["a
 						foreach($birthdays as $day => $birthday) {
 							//Calculate correct year for this birthday
 							$year = $curyear;
-							$thismonth = (int)substr($bd, 0, 2);
+							$thismonth = (int)mb_substr($bd, 0, 2);
 							if($thismonth == $startmonth) {
 								if($startmonth > $curmonth) $year = $curyear-1;
 							} else if($thismonth == $endmonth) {
@@ -786,23 +783,23 @@ if((isset($_GET) && isset($_GET["action"])) || (isset($_POST) && isset($_POST["a
 							foreach($birthday as $b) {
 								//Only add people the user has view access for
 								if($access['leute']['ALL'] > 0 || $access['leute'][$b['id']] > 0) {
-									$age = $year - (int)substr($b['geburtsdatum'], 0, 4);
+									$age = $year - (int)mb_substr($b['geburtsdatum'], 0, 4);
 
 									$tooltip .= $b['vorname'].' '.$b['nachname'].' ('.$age.')<br />';
 								}
 							}
 							if($tooltip) {
-								$tooltip = '<b>'.getLL('fm_birthdays_title').': '.strftime($DATETIME['dM'], mktime(1,1,1, substr($day, 0, 2), substr($day, 2, 2), $year)).'</b><br />'.$tooltip;
+								$tooltip = '<b>'.getLL('fm_birthdays_title').': '.strftime($DATETIME['dM'], mktime(1,1,1, mb_substr($day, 0, 2), mb_substr($day, 2, 2), $year)).'</b><br />'.$tooltip;
 								$data[] = array('id' => 'bd'.$day,
-									'start' => $year.'-'.substr($day, 0, 2).'-'.substr($day, 2, 2),
-									'end' => $year.'-'.substr($day, 0, 2).'-'.substr($day, 2, 2),
+									'start' => $year.'-'.mb_substr($day, 0, 2).'-'.mb_substr($day, 2, 2),
+									'end' => $year.'-'.mb_substr($day, 0, 2).'-'.mb_substr($day, 2, 2),
 									'allDay' => true,
 									'title' => '<i class="fa fa-birthday-cake"></i>',
 									'editable' => FALSE,
 									'className' => 'fc-birthday',
 									'color' => 'transparent',
 									'textColor' => '#f48c41',
-									'kOOL_tooltip' => utf8_encode($tooltip),
+									'kOOL_tooltip' => $tooltip,
 								);
 							}
 						}
@@ -912,7 +909,7 @@ if((isset($_GET) && isset($_GET["action"])) || (isset($_POST) && isset($_POST["a
 				$ok = TRUE;
 				$double_error_txt = '';
 				if($event['reservationen'] && sizeof($new_res) > 0) {
-					require_once($BASE_PATH.'reservation/inc/reservation.inc');
+					require_once __DIR__ . '/../../reservation/inc/reservation.inc.php';
 					//Loop through all reservations to check for double entries after update
 					foreach($current_res as $res) {
 						//Apply new values for double check

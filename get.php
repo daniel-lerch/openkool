@@ -1,34 +1,28 @@
 <?php
-/***************************************************************
-*  Copyright notice
+/*******************************************************************************
 *
-*  (c) 2003-2020 Renzo Lauper (renzo@churchtool.org)
-*  All rights reserved
+*    OpenKool - Online church organization tool
 *
-*  This script is part of the kOOL project. The kOOL project is
-*  free software; you can redistribute it and/or modify
-*  it under the terms of the GNU General Public License as published by
-*  the Free Software Foundation; either version 2 of the License, or
-*  (at your option) any later version.
+*    Copyright © 2003-2020 Renzo Lauper (renzo@churchtool.org)
+*    Copyright © 2019-2020 Daniel Lerch
 *
-*  The GNU General Public License can be found at
-*  http://www.gnu.org/copyleft/gpl.html.
-*  A copy is found in the textfile GPL.txt and important notices to the license
-*  from the author is found in LICENSE.txt distributed with these scripts.
+*    This program is free software; you can redistribute it and/or modify
+*    it under the terms of the GNU General Public License as published by
+*    the Free Software Foundation; either version 2 of the License, or
+*    (at your option) any later version.
 *
-*  kOOL is distributed in the hope that it will be useful,
-*  but WITHOUT ANY WARRANTY; without even the implied warranty of
-*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-*  GNU General Public License for more details.
+*    This program is distributed in the hope that it will be useful,
+*    but WITHOUT ANY WARRANTY; without even the implied warranty of
+*    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+*    GNU General Public License for more details.
 *
-*  This copyright notice MUST APPEAR in all copies of the script!
-***************************************************************/
+*******************************************************************************/
 
 error_reporting(0);
 $ko_path = "./";
 $ko_menu_akt = 'get.php';
 
-require($ko_path."config/ko-config.php");
+require __DIR__ . '/inc/ko.inc.php';
 
 //Get request from _POST or _GET (for backwards compatibility)
 $q = '';
@@ -76,8 +70,6 @@ if($no_enc) {
 
 //Get lang
 $_SESSION["lang"] = $req["language"][0];
-
-include($ko_path."inc/ko.inc");
 
 //Include KOTA
 ko_include_kota(array('ko_leute', 'ko_kleingruppen'));
@@ -176,7 +168,7 @@ switch($action) {
 		if(!in_array('sms', $MODULES)) continue;
 
 		$recipients = explode(',', $req['recipients'][0]);
-		$text = utf8_decode($req['smstext'][0]);
+		$text = $req['smstext'][0];
 		$from = $req['from'][0];
 		send_aspsms($recipients, $text, $from, $num, $credits, $log_id);
 	break;
@@ -220,7 +212,7 @@ switch($action) {
 		$start = $req['start'][0] ? $req['start'][0] : date('Y-m-d');
 		$limit = $req['limit'][0] ? $req['limit'][0] : 100;
 
-		include($ko_path.'tracking/inc/tracking.inc');
+		include __DIR__ . '/tracking/inc/tracking.inc.php';
 		$dates = ko_tracking_get_dates($tracking, $start, $limit, $prev, $next, $prev1, FALSE);
 		$r['TRACKING_DATES'] = $dates;
 	break;
@@ -237,7 +229,7 @@ switch($action) {
 		$filter = $tracking['filter'];
 		if(!$filter) continue;
 
-		include($ko_path.'tracking/inc/tracking.inc');
+		include __DIR__ . '/tracking/inc/tracking.inc.php';
 		$people = ko_tracking_get_people($filter, $dates, $tid, FALSE);
 		$r['TRACKING_PEOPLE'] = $people;
 	break;
@@ -248,14 +240,7 @@ switch($action) {
 		$moderated = $req['moderated'][0];
 		$res = json_decode($req['data'][0], TRUE);
 
-		//UTF-8 decode, because XML request data is always in UTF-8
-		foreach($res as $rid => $r) {
-			foreach($r as $k => $v) {
-				$res[$rid][$k] = utf8_decode($v);
-			}
-		}
-
-		include($ko_path.'reservation/inc/reservation.inc');
+		include __DIR__ . '/reservation/inc/reservation.inc.php';
 
 		if($moderated) {
 			ko_res_store_moderation($res, FALSE);
@@ -279,7 +264,7 @@ switch($action) {
 			continue;
 		}
 
-		include($ko_path.'reservation/inc/reservation.inc');
+		include __DIR__ . '/reservation/inc/reservation.inc.php';
 
 		ko_get_res_by_id($id, $r_); $r = $r_[$id];
 		db_delete_data("ko_reservation", "WHERE `id` = '$id'");
@@ -364,7 +349,6 @@ switch($action) {
 			}
 			$where = "AND `id` IN ('".implode("', '", $use_ids)."')";
 		}
-		$where = utf8_decode($where);
 
 		//Get all groups and datafields
 		ko_get_groups($all_groups);
@@ -373,10 +357,10 @@ switch($action) {
 		//manual sort for MODULE-Columns
 		if(TRUE === ko_manual_sorting(array($sort))) {
 			//Datafields
-			if(FALSE !== strpos($sort, ":")) {
+			if(FALSE !== mb_strpos($sort, ":")) {
 				list($prefix, $dfid) = explode(":", $sort);
 				$counter = 0;
-				foreach(explode(",", $all_groups[substr($prefix, 9)]["datafields"]) as $_dfid) {
+				foreach(explode(",", $all_groups[mb_substr($prefix, 9)]["datafields"]) as $_dfid) {
 					$counter++;
 					if($dfid == $_dfid) break;
 				}
@@ -404,7 +388,7 @@ switch($action) {
 					if(in_array($col, array('groups', 'smallgroups'))) $person[$col.'_raw'] = $_person[$col];
 					$value = map_leute_daten($_person[$col], $col, $_person, $all_datafields, $forceDatafields=TRUE, array('MODULEkg_firstOnly' => TRUE));
 					if(is_array($value)) {  //Group with datafields is returned as array
-						$gid = substr($col, 9);
+						$gid = mb_substr($col, 9);
 						$person[$col] = array_shift($value);
 						foreach(explode(",", $all_groups[$gid]["datafields"]) as $dfid) {
 							if(!$dfid) continue;
@@ -457,8 +441,8 @@ switch($action) {
 				if(!$c || $c == "id") continue;
 				$header[] = $leute_col_name[$c];
 				//add group-datafields if needed
-				if(substr($c, 0, 9) == "MODULEgrp" && $all_groups[substr($c, 9)]["datafields"]) {
-					list($gid, $fid) = explode(":", substr($c, 9));
+				if(mb_substr($c, 0, 9) == "MODULEgrp" && $all_groups[mb_substr($c, 9)]["datafields"]) {
+					list($gid, $fid) = explode(":", mb_substr($c, 9));
 					if(!isset($all_datafields[$fid])) continue;
 					$header[] = $leute_col_name[$c];
 				}
@@ -469,7 +453,7 @@ switch($action) {
 			$filename = ko_export_to_xlsx($header, $data, $filename, "kOOL");
             $fp = fopen ($filename, "r");
 			$r["filename"] = basename($filename);
-            if (substr($filename, -1) == 'x') {
+            if (mb_substr($filename, -1) == 'x') {
                 $r["filetype"] = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
             } else {
                 $r["filetype"] = 'application/vnd.ms-excel';
@@ -482,7 +466,7 @@ switch($action) {
 		else if($action == "getPersonPDF") {
 			list($layout_id) = $req["pdf_layout_id"];
 			if(!$layout_id) return FALSE;
-			include($ko_path."leute/inc/leute.inc");
+			include __DIR__ . '/leute/inc/leute.inc.php';
 
 			//Get layout
 			$_layout = db_select_data("ko_pdf_layout", "WHERE `id` = '$layout_id'", "*", "", "", TRUE);
@@ -574,20 +558,20 @@ function generateXMLResponse($data) {
 				$args = "";
 				foreach($entry as $arg => $value) {
 					if($arg == "content") continue;
-					$args .= " ".$arg.'="'.utf8_encode(xmlspecialchars($value)).'"';
+					$args .= " ".$arg.'="'.xmlspecialchars($value).'"';
 				}
 				if(is_array($entry["content"])) {
 					$xml .= "\t<$key".$args.">\n";
 					foreach($entry["content"] as $ekey => $evalue) {
-						$xml .= "\t\t<$ekey>".utf8_encode(xmlspecialchars($evalue))."</$ekey>\n";
+						$xml .= "\t\t<$ekey>".xmlspecialchars($evalue)."</$ekey>\n";
 					}
 					$xml .= "\t</$key>\n";
 				} else {
-					$xml .= "\t<$key".$args.">".utf8_encode(xmlspecialchars($entry["content"]))."</$key>\n";
+					$xml .= "\t<$key".$args.">".xmlspecialchars($entry["content"])."</$key>\n";
 				}
 			}
 		} else {
-			$xml .= "\t<$key>".utf8_encode($entries)."</$key>\n";
+			$xml .= "\t<$key>".$entries."</$key>\n";
 		}
 	}
 	$xml .= "</kOOLData>\n";
@@ -598,7 +582,7 @@ function generateXMLResponse($data) {
 
 
 function xmlspecialchars($text) {
-	return str_replace('&#039;', '&apos;', htmlspecialchars($text, ENT_QUOTES, 'iso-8859-1'));
+	return str_replace('&#039;', '&apos;', htmlspecialchars($text, ENT_QUOTES));
 }
 
 
@@ -609,29 +593,28 @@ function xmlspecialchars($text) {
  * @return array Array
  */
 function XMLtoArray($XML) {
-	$XML = utf8_encode($XML);
-  $xml_parser = xml_parser_create();
+	$xml_parser = xml_parser_create();
 	xml_parser_set_option($xml_parser, XML_OPTION_CASE_FOLDING, false);
-  xml_parse_into_struct($xml_parser, $XML, $vals);
-  xml_parser_free($xml_parser);
-  // wyznaczamy tablice z powtarzajacymi sie tagami na tym samym poziomie
-  $_tmp='';
-  foreach ($vals as $xml_elem) {
-    $x_tag=$xml_elem['tag'];
-    $x_level=$xml_elem['level'];
-    $x_type=$xml_elem['type'];
-    if ($x_level!=1 && $x_type == 'close') {
-      if (isset($multi_key[$x_tag][$x_level]))
-        $multi_key[$x_tag][$x_level]=1;
-      else
-        $multi_key[$x_tag][$x_level]=0;
-    }
-    if ($x_level!=1 && $x_type == 'complete') {
-      if ($_tmp==$x_tag)
-        $multi_key[$x_tag][$x_level]=1;
-      $_tmp=$x_tag;
-    }
-  }
+	xml_parse_into_struct($xml_parser, $XML, $vals);
+	xml_parser_free($xml_parser);
+	// wyznaczamy tablice z powtarzajacymi sie tagami na tym samym poziomie
+	$_tmp='';
+	foreach ($vals as $xml_elem) {
+		$x_tag=$xml_elem['tag'];
+		$x_level=$xml_elem['level'];
+		$x_type=$xml_elem['type'];
+		if ($x_level!=1 && $x_type == 'close') {
+			if (isset($multi_key[$x_tag][$x_level]))
+				$multi_key[$x_tag][$x_level]=1;
+			else
+				$multi_key[$x_tag][$x_level]=0;
+		}
+		if ($x_level!=1 && $x_type == 'complete') {
+			if ($_tmp==$x_tag)
+				$multi_key[$x_tag][$x_level]=1;
+			$_tmp=$x_tag;
+		}
+	}
   // jedziemy po tablicy
   foreach ($vals as $xml_elem) {
     $x_tag=$xml_elem['tag'];

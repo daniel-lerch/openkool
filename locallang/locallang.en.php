@@ -1,30 +1,25 @@
 <?php
-/***************************************************************
-*  Copyright notice
+/*******************************************************************************
 *
-*  (c) 2003-2020 Renzo Lauper (renzo@churchtool.org)
-*  All rights reserved
+*    OpenKool - Online church organization tool
 *
-*  This script is part of the kOOL project. The kOOL project is
-*  free software; you can redistribute it and/or modify
-*  it under the terms of the GNU General Public License as published by
-*  the Free Software Foundation; either version 2 of the License, or
-*  (at your option) any later version.
+*    Copyright © 2003-2020 Renzo Lauper (renzo@churchtool.org)
+*    Copyright © 2019-2020 Daniel Lerch
 *
-*  The GNU General Public License can be found at
-*  http://www.gnu.org/copyleft/gpl.html.
-*  A copy is found in the textfile GPL.txt and important notices to the license
-*  from the author is found in LICENSE.txt distributed with these scripts.
+*    This program is free software; you can redistribute it and/or modify
+*    it under the terms of the GNU General Public License as published by
+*    the Free Software Foundation; either version 2 of the License, or
+*    (at your option) any later version.
 *
-*  kOOL is distributed in the hope that it will be useful,
-*  but WITHOUT ANY WARRANTY; without even the implied warranty of
-*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-*  GNU General Public License for more details.
+*    This program is distributed in the hope that it will be useful,
+*    but WITHOUT ANY WARRANTY; without even the implied warranty of
+*    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+*    GNU General Public License for more details.
 *
-*  This copyright notice MUST APPEAR in all copies of the script!
-***************************************************************/
+*******************************************************************************/
+
 $LL["en"] = array(
-'kool' => "kOOL - the church tool",
+'kool' => "OpenKool - the church tool",
 'submenu_daten_neuer_termin' => "Add event",
 'submenu_daten_all_events' => "List all events",
 'submenu_daten_calendar' => "Calendar",
@@ -478,6 +473,7 @@ $LL["en"] = array(
 'error_msg_1' => "kOOL could not continue because of a fatal error. An error report has been sent to the developers.",
 'error_msg_2' => "If this error occurs again and again, you are kindly asked to send a detailed bug report to %s, with a description of the necessary steps that lead to this error.",
 'error_msg_3' => "We are sorry for any inconvenience and will try to fix this problem as soon as possible.",
+'error_msg_4' => "Additional information for developers",
 'error_no_db_1' => "Can not connect to database!",
 'error_no_db_2' => "Possible Causes:",
 'error_no_db_reason_1' => "This is a new installation of kOOL, which has not yet been configured. If so, use http://path.to.your.kOOL/install to start the install.",
@@ -2384,8 +2380,8 @@ $LL["en"] = array(
 'ko_tools_cleanup_resitem_linked_items' => "Update linked_items for all reservations according to resitem",
 'form_scheduler_title_new_task' => "Add task",
 'form_scheduler_title_edit_task' => "Edit task",
-'install_welcome' => "Welcome to the first time installation of kOOL - the church tool!",
-'install_title' => "Installation of kOOL",
+'install_welcome' => "Welcome to the setup of OpenKool",
+'install_title' => "Installation of OpenKool",
 'install_lang_header' => "Please choose your language for the installation:",
 'install_langname_de' => "German",
 'install_langname_de_CH' => "German (Switzerland)",
@@ -2439,10 +2435,10 @@ $LL["en"] = array(
 'install_settings_use_webfolders' => "Enable webfolders",
 'install_settings_force_ssl' => "Force SSL",
 'install_settings_leute_no_family' => "Disable families in people module",
-'install_done_header' => "Congratulations! You have successfully installed kOOL.",
+'install_done_header' => "Congratulations! You have successfully installed OpenKool.",
 'install_done_warning' => "Hint: For later changes to these installation settings you will have to touch the file %sENABLE_INSTALL again.",
 'install_done_text' => "You can go ahead and login as root now.",
-'install_done_link' => "&#8594; To kOOL's front page",
+'install_done_link' => "&#8594; To OpenKool's front page",
 'form_textplus' => "or new (if not listed yet)",
 'form_text_mylist_import' => "import from my list",
 'form_color_choose' => "choose colour",
@@ -3427,11 +3423,10 @@ $LL["en"] = array(
 'list_sortcolumn_title' => "Grab here to move this column left or right",
 'error_file_not_found' => "Can not find file",
 'error_not_allowed' => "Action not allowed",
-'copyright_notice' => "Version %s, Copyright &copy; 2003-2020 Renzo Lauper - Plugins are copyright of their respective owners.",
+'copyright_notice' => "Version %s, Copyright © 2003-2020 Renzo Lauper, © 2019-2020 Daniel Lerch and %sothers%s.",
 'copyright_warranty' => "Warranty is supplied by %s.",
-'copyright_no_warranty' => "kOOL comes with ABSOLUTELY NO WARRANTY.",
-'copyright_free_software' => "This is free software, and you are welcome to redistribute it under %scertain conditions%s.",
-'copyright_obstruction' => "Obstructing the appearance of this notice is prohibited by law.",
+'copyright_no_warranty' => "There is absolutely no warranty given.",
+'copyright_free_software' => "OpenKool is free software. Refer to our %slicense%s for further information.",
 'session_timeout' => 'The current kOOL session is about to time out.',
 'session_timedout' => 'The current kOOL session has timed out.',
 'peoplesearch_toomany' => 'Too many hits',

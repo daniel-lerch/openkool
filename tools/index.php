@@ -1,28 +1,22 @@
 <?php
-/***************************************************************
-*  Copyright notice
+/*******************************************************************************
 *
-*  (c) 2003-2020 Renzo Lauper (renzo@churchtool.org)
-*  All rights reserved
+*    OpenKool - Online church organization tool
 *
-*  This script is part of the kOOL project. The kOOL project is
-*  free software; you can redistribute it and/or modify
-*  it under the terms of the GNU General Public License as published by
-*  the Free Software Foundation; either version 2 of the License, or
-*  (at your option) any later version.
+*    Copyright Â© 2003-2020 Renzo Lauper (renzo@churchtool.org)
+*    Copyright Â© 2019-2020 Daniel Lerch
 *
-*  The GNU General Public License can be found at
-*  http://www.gnu.org/copyleft/gpl.html.
-*  A copy is found in the textfile GPL.txt and important notices to the license
-*  from the author is found in LICENSE.txt distributed with these scripts.
+*    This program is free software; you can redistribute it and/or modify
+*    it under the terms of the GNU General Public License as published by
+*    the Free Software Foundation; either version 2 of the License, or
+*    (at your option) any later version.
 *
-*  kOOL is distributed in the hope that it will be useful,
-*  but WITHOUT ANY WARRANTY; without even the implied warranty of
-*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-*  GNU General Public License for more details.
+*    This program is distributed in the hope that it will be useful,
+*    but WITHOUT ANY WARRANTY; without even the implied warranty of
+*    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+*    GNU General Public License for more details.
 *
-*  This copyright notice MUST APPEAR in all copies of the script!
-***************************************************************/
+*******************************************************************************/
 
 header('Content-Type: text/html; charset=ISO-8859-1');
 
@@ -31,8 +25,9 @@ ob_start();  //Ausgabe-Pufferung starten
 $ko_path = "../";
 $ko_menu_akt = "tools";
 
-include($ko_path.'inc/ko.inc');
-include('inc/tools.inc');
+include($ko_path.'inc/ko.inc.php');
+include('inc/tools.inc.php');
+use OpenKool\koNotifier;
 
 //Redirect to SSL if needed
 ko_check_ssl();
@@ -47,6 +42,9 @@ $notifier = koNotifier::Instance();
 $default_lang = $LIB_LANGS[0];
 
 ko_get_access('tools');
+
+//Smarty-Templates-Engine laden
+require($ko_path.'inc/smarty.inc.php');
 
 //kOOL Table Array
 ko_include_kota(array('ko_scheduler_tasks', 'ko_plugins', 'ko_mailing_mails', 'ko_updates'));
@@ -474,8 +472,8 @@ switch($do_action) {
 				if(ko_ldap_check_person($ldap, $id)) ko_ldap_del_person($ldap, $id);
 				//Delete deleted persons
 				if($p["deleted"] == 1) {
-          continue;
-        }
+        			continue;
+        		}
 				//Re-add the entry
 				$r = ko_ldap_add_person($ldap, $p, $p['id']);
 				if($r) $success++;
@@ -522,8 +520,8 @@ switch($do_action) {
 			$ldap = ko_ldap_connect();
 			//Delete old Login
 			if(ko_ldap_check_login($ldap, $login["login"])) {
-        ko_ldap_del_login($ldap, $login["login"]);
-      }
+        		ko_ldap_del_login($ldap, $login["login"]);
+    		}
 
 			//Save new login
 			$data["cn"] = $login["login"];
@@ -543,10 +541,10 @@ switch($do_action) {
 
 	case "delete_leute_col":
 		if(FALSE === $value = format_userinput($_POST["id"], "alphanum+", TRUE)) {
-			trigger_error("Ungültige id für delete_leute_col: ".$_POST["id"], E_USER_ERROR);
+			trigger_error("UngÃ¼ltige id fÃ¼r delete_leute_col: ".$_POST["id"], E_USER_ERROR);
 		}
 
-		//Zu löschende Spalten finden
+		//Zu lÃ¶schende Spalten finden
 		$cols = db_get_columns("ko_leute");
 		$col_namen = unserialize(ko_get_setting("leute_col_name"));
 		$found = FALSE;
@@ -555,11 +553,11 @@ switch($do_action) {
 		}
 		if(!$found) break;
 
-		//Spalte aus DB löschen
+		//Spalte aus DB lÃ¶schen
 		$query = "ALTER TABLE `ko_leute` DROP `$value`";
 		mysqli_query(db_get_link(), $query);
 
-		//Eintrag in leute_col_namen löschen
+		//Eintrag in leute_col_namen lÃ¶schen
 		foreach($LIB_LANGS as $lang) {
 			unset($col_namen[$lang][$value]);
 		}
@@ -591,10 +589,10 @@ switch($do_action) {
 
 	case "delete_familie_col":
 		if(FALSE === $value = format_userinput($_POST["id"], "alphanum+", TRUE)) {
-			trigger_error("Ungültige id für delete_familie_col: ".$_POST["id"], E_USER_ERROR);
+			trigger_error("UngÃ¼ltige id fÃ¼r delete_familie_col: ".$_POST["id"], E_USER_ERROR);
 		}
 
-		//Zu löschende Spalten finden
+		//Zu lÃ¶schende Spalten finden
 		$cols = db_get_columns("ko_familie");
 		$col_namen = unserialize(ko_get_setting("familie_col_name"));
 		$found = FALSE;
@@ -603,11 +601,11 @@ switch($do_action) {
 		}
 		if(!$found) break;
 
-		//Spalte aus DB löschen
+		//Spalte aus DB lÃ¶schen
 		$query = "ALTER TABLE `ko_familie` DROP `$value`";
 		mysqli_query(db_get_link(), $query);
 
-		//Eintrag in familie_col_namen löschen
+		//Eintrag in familie_col_namen lÃ¶schen
 		foreach($LIB_LANGS as $lang) {
 			unset($col_namen[$lang][$value]);
 		}
@@ -622,7 +620,7 @@ switch($do_action) {
 
 	case "delete_leute_filter":
 		if(FALSE === $id = format_userinput($_POST["id"], "uint", TRUE)) {
-			trigger_error("Ungültige id für delete_leute_filter: ".$_POST["id"], E_USER_ERROR);
+			trigger_error("UngÃ¼ltige id fÃ¼r delete_leute_filter: ".$_POST["id"], E_USER_ERROR);
 		}
 		db_delete_data('ko_filter', "WHERE `typ` = 'leute' AND `id` = '$id'");
 	break;
@@ -632,11 +630,11 @@ switch($do_action) {
 	case "add_leute_filter":
 	case "reload_leute_filter":
 		if(FALSE === $id = format_userinput($_POST["id"], "alphanum+", TRUE)) {
-			trigger_error("Ungültige id für add_leute_filter: ".$_POST["id"], E_USER_ERROR);
+			trigger_error("UngÃ¼ltige id fÃ¼r add_leute_filter: ".$_POST["id"], E_USER_ERROR);
 		}
 		if($do_action == "reload_leute_filter") {
 			if(FALSE === $fid = format_userinput($_POST["fid"], "alphanum+", TRUE)) {
-				trigger_error("Ungültige fid für reload_leute_filter: ".$_POST["fid"], E_USER_ERROR);
+				trigger_error("UngÃ¼ltige fid fÃ¼r reload_leute_filter: ".$_POST["fid"], E_USER_ERROR);
 			}
 			$del_query = "DELETE FROM ko_filter WHERE `id` = '$fid' LIMIT 1";
 		} else $fid = "";
@@ -648,19 +646,19 @@ switch($do_action) {
 		$col_names = ko_get_leute_col_name();
 		$col_name = $col_names[$id];
 		//Maxlength
-		$endpos = strpos($col["Type"], "(") ? strpos($col["Type"], "(") : strlen($col["Type"]);
-		$endpos2 = strpos($col["Type"], ")") ? strpos($col["Type"], ")") : strlen($col["Type"]);
-		$max_length = ($endpos && $endpos2) ? substr($col["Type"], ($endpos+1), ($endpos2-$endpos-1)) : 0;
+		$endpos = mb_strpos($col["Type"], "(") ? mb_strpos($col["Type"], "(") : mb_strlen($col["Type"]);
+		$endpos2 = mb_strpos($col["Type"], ")") ? mb_strpos($col["Type"], ")") : mb_strlen($col["Type"]);
+		$max_length = ($endpos && $endpos2) ? mb_substr($col["Type"], ($endpos+1), ($endpos2-$endpos-1)) : 0;
 
 		//find type
 		$type  = "";
-		$type_ = strtolower($col["Type"]);
-		if(substr($type_, 0, 4) == "enum") {
+		$type_ = mb_strtolower($col["Type"]);
+		if(mb_substr($type_, 0, 4) == "enum") {
 			$type = "enum";
 		} else {
-			for($i=0; $i<strlen($type_); $i++) {
-				if(in_array(substr($type_, $i, 1), explode(",", "a,b,c,d,e,f,g,h,i,j,k,l,m,n,o,p,q,r,s,t,u,v,w,x,y,z"))) {
-					$type .= substr($type_, $i, 1);
+			for($i=0; $i<mb_strlen($type_); $i++) {
+				if(in_array(mb_substr($type_, $i, 1), explode(",", "a,b,c,d,e,f,g,h,i,j,k,l,m,n,o,p,q,r,s,t,u,v,w,x,y,z"))) {
+					$type .= mb_substr($type_, $i, 1);
 				}
 			}
 		}
@@ -735,7 +733,7 @@ switch($do_action) {
 		ko_get_login($lid, $login);
 		if(!$login["login"]) break;
 
-		//Submenu hinzufügen
+		//Submenu hinzufÃ¼gen
 		ko_tools_add_submenu(array($sm), array($lid), $mid, $pos);
 
 		$notifier->addInfo(1, $do_action);
@@ -896,7 +894,7 @@ switch($do_action) {
 		}
 		if(sizeof($do_columns) < 1) $notifier->addError(4, $do_action);
 
-		//Zu bearbeitende Einträge
+		//Zu bearbeitende EintrÃ¤ge
 		$do_ids = array();
 		foreach($_POST['chk'] as $c_i => $c) {
 			if($c) {
@@ -908,7 +906,7 @@ switch($do_action) {
 		}
 		if(sizeof($do_ids) < 1) $notifier->addError(4, $do_action);
 
-		//Daten für Formular-Aufruf vorbereiten
+		//Daten fÃ¼r Formular-Aufruf vorbereiten
 		if(!$notifier->hasErrors()) {
 			$_SESSION['show_back'] = $_SESSION['show'];
 
@@ -957,10 +955,9 @@ switch($do_action) {
 
 
 	//Default:
-  default:
-		if(!hook_action_handler($do_action))
-	    include($ko_path."inc/abuse.inc");
-  break;
+	default:
+		hook_action_handler($do_action);
+	break;
 }//switch(do_action)
 
 
@@ -990,7 +987,7 @@ ko_set_submenues();
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="<?php print $_SESSION["lang"]; ?>" lang="<?php print $_SESSION["lang"]; ?>">
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1" />
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <title><?php print "$HTML_TITLE: ".getLL("module_".$ko_menu_akt); ?></title>
 <?php
@@ -1005,9 +1002,9 @@ include($ko_path.'inc/js-sessiontimeout.inc');
 
 <?php
 /*
- * Gibt bei erfolgreichem Login das Menü aus, sonst einfach die Loginfelder
+ * Gibt bei erfolgreichem Login das MenÃ¼ aus, sonst einfach die Loginfelder
  */
-include($ko_path . "menu.php");
+require __DIR__ . '/../inc/menu.inc.php';
 
 ko_get_outer_submenu_code('tools');
 
@@ -1019,7 +1016,7 @@ ko_get_outer_submenu_code('tools');
 <form action="index.php" method="post" name="formular">
 <input type="hidden" name="action" id="action" value="" />
 <input type="hidden" name="id" id="id" value="" />
-<input type="hidden" name="fid" id="fid" value="" />  <!-- Filter-ID für Leute-Modul -->
+<input type="hidden" name="fid" id="fid" value="" />  <!-- Filter-ID fÃ¼r Leute-Modul -->
 <div name="main_content" id="main_content">
 
 <?php
@@ -1127,7 +1124,7 @@ hook_show_case_add($_SESSION["show"]);
 
 </div>
 
-<?php include($ko_path . "footer.php"); ?>
+<?php include($ko_path . 'config/footer.php'); ?>
 
 </body>
 </html>

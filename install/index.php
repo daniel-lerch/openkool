@@ -1,28 +1,22 @@
 <?php
-/***************************************************************
-*  Copyright notice
+/*******************************************************************************
 *
-*  (c) 2003-2020 Renzo Lauper (renzo@churchtool.org)
-*  All rights reserved
+*    OpenKool - Online church organization tool
 *
-*  This script is part of the kOOL project. The kOOL project is
-*  free software; you can redistribute it and/or modify
-*  it under the terms of the GNU General Public License as published by
-*  the Free Software Foundation; either version 2 of the License, or
-*  (at your option) any later version.
+*    Copyright © 2003-2020 Renzo Lauper (renzo@churchtool.org)
+*    Copyright © 2019-2020 Daniel Lerch
 *
-*  The GNU General Public License can be found at
-*  http://www.gnu.org/copyleft/gpl.html.
-*  A copy is found in the textfile GPL.txt and important notices to the license
-*  from the author is found in LICENSE.txt distributed with these scripts.
+*    This program is free software; you can redistribute it and/or modify
+*    it under the terms of the GNU General Public License as published by
+*    the Free Software Foundation; either version 2 of the License, or
+*    (at your option) any later version.
 *
-*  kOOL is distributed in the hope that it will be useful,
-*  but WITHOUT ANY WARRANTY; without even the implied warranty of
-*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-*  GNU General Public License for more details.
+*    This program is distributed in the hope that it will be useful,
+*    but WITHOUT ANY WARRANTY; without even the implied warranty of
+*    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+*    GNU General Public License for more details.
 *
-*  This copyright notice MUST APPEAR in all copies of the script!
-***************************************************************/
+*******************************************************************************/
 
 header('Content-Type: text/html; charset=ISO-8859-1');
 
@@ -36,8 +30,8 @@ if(!file_exists(getcwd()."/ENABLE_INSTALL")) {
 $ko_path = "../";
 $ko_menu_akt = "install";
 
-include($ko_path . "inc/ko.inc");
-//include("inc/install.inc");
+require __DIR__ . '/../inc/ko.inc.php';
+use OpenKool\koNotifier;
 
 $notifier = koNotifier::Instance();
 
@@ -136,7 +130,7 @@ switch($do_action) {
 		if($base_url) ko_update_ko_config("base_url", ('$BASE_URL = "'.$base_url.'";'."\n"));
 
 		$base_path = format_userinput($_POST["txt_base_path"], "text");
-		if(substr($base_path, -1) != "/") $base_path .= "/";
+		if(mb_substr($base_path, -1) != "/") $base_path .= "/";
 		if($base_path) ko_update_ko_config("base_path", ('$BASE_PATH = "'.$base_path.'";'."\n"));
 
 		$leute_no_family = format_userinput($_POST["chk_leute_no_family"], "uint");
@@ -151,8 +145,8 @@ switch($do_action) {
 		foreach($save_modules as $mod) {
 			$data .= '"'.$mod.'", ';
 		}
-		if (strlen($data) >= 2) {
-			$data = substr($data, 0, -2).");";
+		if (mb_strlen($data) >= 2) {
+			$data = mb_substr($data, 0, -2).");";
 		}
 		ko_update_ko_config("modules", $data."\n");
 		$MODULES = $save_modules;
@@ -168,7 +162,7 @@ switch($do_action) {
 			foreach($save_lang as $lang) {
 				$data .= '"'.$lang.'", ';
 			}
-			$data = substr($data, 0, -2).");";
+			$data = mb_substr($data, 0, -2).");";
 		} else {
 			$data .= ');';
 		}
@@ -237,14 +231,14 @@ switch($do_action) {
 					$sm = implode(",", ko_get_submenus($m."_right"));
 					ko_save_userpref($id, "submenu_".$m."_right", $sm, "");
 				}
-				//Zus�tzliche Userpref-Defaults setzen
+				//Zusätzliche Userpref-Defaults setzen
 				foreach($DEFAULT_USERPREFS as $d) {
 					ko_save_userpref($id, $d["key"], $d["value"], $d["type"]);
 				}
 			}
 		}//if(pass1 && pass1 == pass2)
 
-		require($ko_path."config/ko-config.php");
+		require __DIR__ . '/../config/ko-config.php';
 
 		//check all the necessary data
 		if(!$BASE_PATH) $notifier->addError(3, $do_action);
@@ -254,7 +248,7 @@ switch($do_action) {
 
 		if(!$notifier->hasErrors()) {
 			//disable install-tool
-			@unlink($BASE_PATH."install/ENABLE_INSTALL");
+			@unlink(__DIR__ . '/ENABLE_INSTALL');
 			//display done-message
 			$cur_state = 5;
 			$_SESSION["show"] = "done";
@@ -262,18 +256,17 @@ switch($do_action) {
 			$cur_state = 4;
 		}
 	break;
-
-
-	//Default:
-  default:
-    include($ko_path."inc/abuse.inc");
-  break;
 }//switch(do_action)
+
+
+//Smarty-Templates-Engine laden
+require __DIR__ . '/../inc/smarty.inc.php';
+
 ?>
 <!DOCTYPE html>
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="<?php print $_SESSION["lang"]; ?>" lang="<?php print $_SESSION["lang"]; ?>">
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1" />
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <title><?php print getLL("install_welcome"); ?></title>
 <?php
@@ -281,7 +274,7 @@ print ko_include_css();
 
 print ko_include_js();
 
-include($ko_path.'inc/js-sessiontimeout.inc');
+include __DIR__ . '/../inc/js-sessiontimeout.inc.php';
 ?>
 </head>
 
@@ -336,7 +329,7 @@ switch($_SESSION["show"]) {
 			$lang_code = "";
 			foreach($LIB_LANGS as $lang) {
 				print '<div class="install_select_lang">';
-				print '<a href="index.php?action=set_lang&amp;set_lang='.$lang.'">';
+				print '<a href="'.$ko_path.'install/index.php?action=set_lang&amp;set_lang='.$lang.'">';
 				print '<img src="'.$ko_path.'images/flag_'.$lang.'.png" border="0"><br /><br />'.getLL("install_langname_$lang");
 				print '</a></div>';
 			}
@@ -346,13 +339,6 @@ switch($_SESSION["show"]) {
 
 	case "checks":
 		print '<h3>'.getLL("install_checks_header").'</h3>';
-
-		//Check for smarty
-		print '<div>'.getLL("install_checks_smarty")."</div>";
-		if(FALSE === include_once("Smarty.class.php")) {
-			print '<div style="color: red;">'.getLL("install_checks_smarty_error").'</div>';
-			$notifier->addError(7, $do_action);
-		} else print '<div style="color: green;">'.getLL("OK")."</div>";
 
 		//Check for filesystem permissions
 		$check_files = array("config/ko-config.php",
@@ -416,33 +402,37 @@ switch($_SESSION["show"]) {
 		//Formular anzeigen
 		$rowcounter = 0;
 		$gc = 0;
-		$frmgroup[$gc]["row"][$rowcounter]["inputs"][0] = array("desc" => getLL("install_db_user"),
-																 "type" => "text",
-																 "name" => "txt_user",
-																 "value" => (isset($_POST["txt_user"]) ? ko_html($_POST["txt_user"]) : $mysql_user),
-																 "params" => 'size="40"',
-																 );
-		$frmgroup[$gc]["row"][$rowcounter++]["inputs"][1] = array("desc" => getLL("install_db_password"),
-																 "type" => "password",
-																 "name" => "txt_pass",
-																 "value" => (isset($_POST["txt_pass"]) ? ko_html($_POST["txt_pass"]) : $mysql_pass),
-																 "params" => 'size="40"',
-																 );
-		$frmgroup[$gc]["row"][$rowcounter]["inputs"][0] = array("desc" => getLL("install_db_server"),
-																 "type" => "text",
-																 "name" => "txt_server",
-																 "value" => (isset($_POST["txt_server"]) ? ko_html($_POST["txt_server"]) : $mysql_server),
-																 "params" => 'size="40"',
-																 );
-		if($d) {
-			$frmgroup[$gc]["row"][$rowcounter++]["inputs"][1] = array("desc" => getLL("install_db_db"),
-																	 "type" => "select",
-																	 "name" => "sel_db",
-																	 "values" => $databases,
-																	 "descs" => $databases,
-																	 "value" => (isset($_POST["sel_db"]) ? ko_html($_POST["sel_db"]) : $mysql_db),
-																	 "params" => 'size="0"',
-																	 );
+		$frmgroup[$gc]["row"][$rowcounter]["inputs"][0] = array(
+			"desc" => getLL("install_db_user"),
+			"type" => "text",
+			"name" => "txt_user",
+			"value" => (isset($_POST["txt_user"]) ? ko_html($_POST["txt_user"]) : $mysql_user),
+			"params" => 'size="40" autocomplete="off"',
+		);
+		$frmgroup[$gc]["row"][$rowcounter++]["inputs"][1] = array(
+			"desc" => getLL("install_db_password"),
+			"type" => "password",
+			"name" => "txt_pass",
+			"value" => (isset($_POST["txt_pass"]) ? ko_html($_POST["txt_pass"]) : $mysql_pass),
+			"params" => 'size="40" autocomplete="off"',
+		);
+		$frmgroup[$gc]["row"][$rowcounter]["inputs"][0] = array(
+			"desc" => getLL("install_db_server"),
+			"type" => "text",
+			"name" => "txt_server",
+			"value" => (isset($_POST["txt_server"]) ? ko_html($_POST["txt_server"]) : $mysql_server),
+			"params" => 'size="40" autocomplete="off"',
+		);
+		if($link) {
+			$frmgroup[$gc]["row"][$rowcounter++]["inputs"][1] = array(
+				"desc" => getLL("install_db_db"),
+				"type" => "select",
+				"name" => "sel_db",
+				"values" => $databases,
+				"descs" => $databases,
+				"value" => (isset($_POST["sel_db"]) ? ko_html($_POST["sel_db"]) : $mysql_db),
+				"params" => 'size="0"',
+			);
 		}
 		//Display Button to continue if db connection can be established
 		if(!$notifier->hasErrors() && $mysql_db) {
@@ -452,11 +442,12 @@ switch($_SESSION["show"]) {
 			$ok .= '<br><br><button class="btn btn-success" type="submit" value="'.getLL("install_db_import_button").'" name="submit_db_import" onclick="set_action(\'submit_db_import\');this.submit;">'.getLL("install_db_import_button").'</button>';
 			$ok .= '&nbsp;&nbsp;&nbsp;<button class="btn btn-warning" type="submit" value="'.getLL("install_db_import_button_2").'" name="submit_db_import_skip" onclick="set_action(\'submit_db_import_skip\');this.submit;">'.getLL("install_db_import_button_2").'</button>';
 			$frmgroup[$gc]["row"][$rowcounter++]["inputs"][0] = array("type" => "   ");
-			$frmgroup[$gc]["row"][$rowcounter]["inputs"][0] = array("desc" => getLL("install_db_ok_header"),
-																	 "type" => "html",
-																	 "value" => $ok,
-																	 "colspan" => 'colspan="2"',
-																	 );
+			$frmgroup[$gc]["row"][$rowcounter]["inputs"][0] = array(
+				"desc" => getLL("install_db_ok_header"),
+				"type" => "html",
+				"value" => $ok,
+				"colspan" => 'colspan="2"',
+			);
 		}
 
 		$smarty->assign("tpl_titel", getLL("install_db_form_title"));
@@ -495,7 +486,7 @@ switch($_SESSION["show"]) {
 																 "value" => $BASE_URL ? $BASE_URL : ("http://".$_SERVER["HTTP_HOST"]."/"),
 																 "params" => 'size="40"',
 																 );
-		$doc_root = substr($_SERVER["DOCUMENT_ROOT"], -1) == "/" ? $_SERVER["DOCUMENT_ROOT"] : ($_SERVER["DOCUMENT_ROOT"]."/");
+		$doc_root = mb_substr($_SERVER["DOCUMENT_ROOT"], -1) == "/" ? $_SERVER["DOCUMENT_ROOT"] : ($_SERVER["DOCUMENT_ROOT"]."/");
 		$frmgroup[$gc]["row"][$rowcounter++]["inputs"][0] = array("desc" => getLL("install_settings_paths_basepath"),
 																 "type" => "text",
 																 "name" => "txt_base_path",
@@ -663,17 +654,7 @@ switch($_SESSION["show"]) {
 <?php
 //--- copyright notice on frontpage:
 //--- Obstructing the appearance of this notice is prohibited by law.
-print '<div class="copyright">';
-print '<a href="https://www.churchtool.org"><b>'.getLL("kool").'</b></a> '.sprintf(getLL("copyright_notice"), VERSION).'<br />';
-if(defined("WARRANTY_GIVER")) {
-	print sprintf(getLL("copyright_warranty"), '<a href="'.WARRANTY_URL.'">'.WARRANTY_GIVER.'</a> ');
-} else {
-	print getLL("copyright_no_warranty")." ";
-}
-print sprintf(getLL("copyright_free_software"), '<a href="http://www.fsf.org/licensing/licenses/gpl.html">', '</a>')."<br />";
-print getLL("copyright_obstruction");
-print '</div>';
-//--- end of copyright notice
+ko_print_long_footer();
 ?>
 
 </form> <!-- //Hauptformular -->

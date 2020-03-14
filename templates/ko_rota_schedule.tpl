@@ -65,8 +65,6 @@
 				</h4>
 			</div>
 
-			<div id="rota_week_{$week.id}_collapse" class="panel-collapse collapse in">
-				<div class="panel-body rota-event-content" id="rota_event_content_{$week.id}" style="padding:0px 0px 0px 0px;">
 
 			<div id="rota_day_{$week.id}_collapse" class="panel-collapse collapse in">
 				<div class="panel-body rota-event-content" id="rota_event_content_{$week.id}" style="padding:0px 0px 0px 0px;">
@@ -75,6 +73,7 @@
 					</div>
 				</div>
 			</div>
+
 		</div>
 		{/if}
 

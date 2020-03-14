@@ -1,28 +1,22 @@
 <?php
-/***************************************************************
-*  Copyright notice
+/*******************************************************************************
 *
-*  (c) 2003-2020 Renzo Lauper (renzo@churchtool.org)
-*  All rights reserved
+*    OpenKool - Online church organization tool
 *
-*  This script is part of the kOOL project. The kOOL project is
-*  free software; you can redistribute it and/or modify
-*  it under the terms of the GNU General Public License as published by
-*  the Free Software Foundation; either version 2 of the License, or
-*  (at your option) any later version.
+*    Copyright © 2003-2020 Renzo Lauper (renzo@churchtool.org)
+*    Copyright © 2019-2020 Daniel Lerch
 *
-*  The GNU General Public License can be found at
-*  http://www.gnu.org/copyleft/gpl.html.
-*  A copy is found in the textfile GPL.txt and important notices to the license
-*  from the author is found in LICENSE.txt distributed with these scripts.
+*    This program is free software; you can redistribute it and/or modify
+*    it under the terms of the GNU General Public License as published by
+*    the Free Software Foundation; either version 2 of the License, or
+*    (at your option) any later version.
 *
-*  kOOL is distributed in the hope that it will be useful,
-*  but WITHOUT ANY WARRANTY; without even the implied warranty of
-*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-*  GNU General Public License for more details.
+*    This program is distributed in the hope that it will be useful,
+*    but WITHOUT ANY WARRANTY; without even the implied warranty of
+*    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+*    GNU General Public License for more details.
 *
-*  This copyright notice MUST APPEAR in all copies of the script!
-***************************************************************/
+*******************************************************************************/
 
 error_reporting(E_ALL);
 
@@ -31,13 +25,13 @@ if(!isset($argc) || $argc < 1) exit;
 
 //Get ko_path from server settings
 $ko_path = realpath(dirname($_SERVER['SCRIPT_FILENAME']));
-if(substr($ko_path, -1) != '/') $ko_path .= '/';
+if(mb_substr($ko_path, -1) != '/') $ko_path .= '/';
 
 if(isset($_POST['GLOBALS']) || isset($_GET['GLOBALS'])) die('You cannot set the GLOBALS-array from outside this script.');
 
 
 $ko_menu_akt = 'scheduler';
-require_once($ko_path.'inc/ko.inc');
+require_once __DIR__ . '/inc/ko.inc.php';
 
 //Log in as _scheduler user, fall back to root user to have enough access
 $slogin = db_select_data('ko_admin', "WHERE `login` = '_scheduler'", '*', '', '', TRUE);
@@ -63,7 +57,7 @@ foreach($my_tasks as $mt) {
 //Get tasks from DB
 $tasks = db_select_data('ko_scheduler_tasks', "WHERE `status` = '1' AND `next_call` <= NOW()");
 if(sizeof($tasks) > 0) {
-	require_once($ko_path.'inc/cron.php');
+	require_once __DIR__ . '/inc/cron.php';
 
 	foreach($tasks as $task) {
 		//Call task's function

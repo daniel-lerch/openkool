@@ -1,28 +1,22 @@
 <?php
-/***************************************************************
-*  Copyright notice
+/*******************************************************************************
 *
-*  (c) 2003-2020 Renzo Lauper (renzo@churchtool.org)
-*  All rights reserved
+*    OpenKool - Online church organization tool
 *
-*  This script is part of the kOOL project. The kOOL project is
-*  free software; you can redistribute it and/or modify
-*  it under the terms of the GNU General Public License as published by
-*  the Free Software Foundation; either version 2 of the License, or
-*  (at your option) any later version.
+*    Copyright © 2003-2020 Renzo Lauper (renzo@churchtool.org)
+*    Copyright © 2019-2020 Daniel Lerch
 *
-*  The GNU General Public License can be found at
-*  http://www.gnu.org/copyleft/gpl.html.
-*  A copy is found in the textfile GPL.txt and important notices to the license
-*  from the author is found in LICENSE.txt distributed with these scripts.
+*    This program is free software; you can redistribute it and/or modify
+*    it under the terms of the GNU General Public License as published by
+*    the Free Software Foundation; either version 2 of the License, or
+*    (at your option) any later version.
 *
-*  kOOL is distributed in the hope that it will be useful,
-*  but WITHOUT ANY WARRANTY; without even the implied warranty of
-*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-*  GNU General Public License for more details.
+*    This program is distributed in the hope that it will be useful,
+*    but WITHOUT ANY WARRANTY; without even the implied warranty of
+*    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+*    GNU General Public License for more details.
 *
-*  This copyright notice MUST APPEAR in all copies of the script!
-***************************************************************/
+*******************************************************************************/
 
 header('Content-Type: text/html; charset=ISO-8859-1');
 
@@ -31,8 +25,9 @@ ob_start();
 $ko_path = '../';
 $ko_menu_akt = 'rota';
 
-include($ko_path . 'inc/ko.inc');
-include('inc/rota.inc');
+require __DIR__ . '/../inc/ko.inc.php';
+require __DIR__ . '/inc/rota.inc.php';
+use OpenKool\koNotifier;
 
 //Redirect to SSL if needed
 ko_check_ssl();
@@ -48,12 +43,15 @@ $notifier = koNotifier::Instance();
 ko_get_access('daten');
 ko_get_access('rota');
 
+//Smarty-Templates-Engine laden
+require __DIR__ . '/../inc/smarty.inc.php';
+
 //kOOL Table Array (ko_event used for settings to select event fields)
 ko_include_kota(array('ko_rota_teams', 'ko_event'));
 
 
 $hooks = hook_include_main('rota');
-if(sizeof($hooks) > 0) foreach($hooks as $hook) include_once($hook);
+foreach($hooks as $hook) include_once($hook);
 
 
 //Action
@@ -69,7 +67,7 @@ if($_POST['action']) {
 
 
 //Reset show_start if from another module
-if($_SERVER['HTTP_REFERER'] != '' && FALSE === strpos($_SERVER['HTTP_REFERER'], '/'.$ko_menu_akt.'/')) $_SESSION['show_start'] = 1;
+if($_SERVER['HTTP_REFERER'] != '' && FALSE === mb_strpos($_SERVER['HTTP_REFERER'], '/'.$ko_menu_akt.'/')) $_SESSION['show_start'] = 1;
 
 switch($do_action) {
 
@@ -306,7 +304,7 @@ switch($do_action) {
 		if($tmp) {
 			$upload_name = $_FILES['new_file']['name'];
 			$ext_ = explode('.', $upload_name);
-			$ext = strtolower($ext_[sizeof($ext_)-1]);
+			$ext = mb_strtolower($ext_[sizeof($ext_)-1]);
 			if(in_array($ext, $dissallow_ext)) break;
 
 			$path = $BASE_PATH.'download/pdf/';
@@ -409,10 +407,9 @@ switch($do_action) {
 
 
 	//Default:
-  default:
-		if(!hook_action_handler($do_action))
-      include($ko_path.'inc/abuse.inc');
-  break;
+	default:
+		hook_action_handler($do_action);
+	break;
 
 
 }//switch(do_action)
@@ -473,8 +470,8 @@ if(!isset($_SESSION['rota_timespan'])) {
 }
 if(!isset($_SESSION['rota_timestart'])) {
 	$_SESSION['rota_timestart'] = date('Y-m-d');
-	if(substr($_SESSION['rota_timespan'], -1) == 'w') $_SESSION['rota_timestart'] = date_find_last_monday($_SESSION['rota_timestart']);
-	else if(substr($_SESSION['rota_timespan'], -1) == 'm') $_SESSION['rota_timestart'] = substr($_SESSION['rota_timestart'], 0, -2).'01';
+	if(mb_substr($_SESSION['rota_timespan'], -1) == 'w') $_SESSION['rota_timestart'] = date_find_last_monday($_SESSION['rota_timestart']);
+	else if(mb_substr($_SESSION['rota_timespan'], -1) == 'm') $_SESSION['rota_timestart'] = mb_substr($_SESSION['rota_timestart'], 0, -2).'01';
 }
 
 
@@ -486,7 +483,7 @@ ko_set_submenues();
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="<?php print $_SESSION['lang']; ?>" lang="<?php print $_SESSION['lang']; ?>">
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1" />
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title><?php print $HTML_TITLE.': '.getLL('module_'.$ko_menu_akt); ?></title>
@@ -497,8 +494,8 @@ if ($_SESSION['show'] == 'show_filesend' && ko_module_installed('crm')) {
 print ko_include_js(array($ko_path.'inc/ckeditor/ckeditor.js', $ko_path.'inc/ckeditor/adapters/jquery.js'));
 
 print ko_include_css();
-include($ko_path.'inc/js-sessiontimeout.inc');
-include($ko_path.'rota/inc/js-rota.inc');
+include __DIR__ . '/../inc/js-sessiontimeout.inc.php';
+include __DIR__ . '/inc/js-rota.inc.php';
 ?>
 </head>
 
@@ -506,9 +503,9 @@ include($ko_path.'rota/inc/js-rota.inc');
 
 <?php
 /*
- * Gibt bei erfolgreichem Login das Men� aus, sonst einfach die Loginfelder
+ * Gibt bei erfolgreichem Login das Menü aus, sonst einfach die Loginfelder
  */
-include($ko_path . "menu.php");
+require __DIR__ . '/../inc/menu.inc.php';
 ko_get_outer_submenu_code('rota');
 
 ?>
@@ -579,7 +576,7 @@ hook_show_case_add($_SESSION['show']);
 
 	</div>
 
-	<?php include($ko_path . "footer.php"); ?>
+	<?php include __DIR__ . '/../config/footer.php' ?>
 
 </body>
 </html>

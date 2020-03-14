@@ -1,38 +1,34 @@
 <?php
-/***************************************************************
-*  Copyright notice
+/*******************************************************************************
 *
-*  (c) 2003-2020 Renzo Lauper (renzo@churchtool.org)
-*  All rights reserved
+*    OpenKool - Online church organization tool
 *
-*  This script is part of the kOOL project. The kOOL project is
-*  free software; you can redistribute it and/or modify
-*  it under the terms of the GNU General Public License as published by
-*  the Free Software Foundation; either version 2 of the License, or
-*  (at your option) any later version.
+*    Copyright ¬© 2003-2020 Renzo Lauper (renzo@churchtool.org)
+*    Copyright ¬© 2019-2020 Daniel Lerch
 *
-*  The GNU General Public License can be found at
-*  http://www.gnu.org/copyleft/gpl.html.
-*  A copy is found in the textfile GPL.txt and important notices to the license
-*  from the author is found in LICENSE.txt distributed with these scripts.
+*    This program is free software; you can redistribute it and/or modify
+*    it under the terms of the GNU General Public License as published by
+*    the Free Software Foundation; either version 2 of the License, or
+*    (at your option) any later version.
 *
-*  kOOL is distributed in the hope that it will be useful,
-*  but WITHOUT ANY WARRANTY; without even the implied warranty of
-*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-*  GNU General Public License for more details.
+*    This program is distributed in the hope that it will be useful,
+*    but WITHOUT ANY WARRANTY; without even the implied warranty of
+*    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+*    GNU General Public License for more details.
 *
-*  This copyright notice MUST APPEAR in all copies of the script!
-***************************************************************/
+*******************************************************************************/
 
-header('Content-Type: text/html; charset=ISO-8859-1');
+header('Content-Type: text/html; charset=UTF-8');
 
 ob_start();  //Ausgabe-Pufferung einschalten
 
 $ko_path = "../";
 $ko_menu_akt = "reservation";
 
-include_once($ko_path . "inc/ko.inc");
-include_once("inc/reservation.inc");
+require_once __DIR__ . '/../inc/ko.inc.php';
+require_once __DIR__ . '/inc/reservation.inc.php';
+use OpenKool\koNotifier;
+use OpenKool\Localizer;
 
 //get notifier instance
 $notifier = koNotifier::Instance();
@@ -41,7 +37,7 @@ $notifier = koNotifier::Instance();
 ko_check_ssl();
 
 //Check for arguments of moderation links. If so don't redirect yet, as the user will only be determined after processing the params
-$confirm_link = isset($_GET['u']) && isset($_GET['h']) && strlen($_GET['u']) == 32 && strlen($_GET['h']) == 33;
+$confirm_link = isset($_GET['u']) && isset($_GET['h']) && mb_strlen($_GET['u']) == 32 && mb_strlen($_GET['h']) == 33;
 if(!ko_module_installed("reservation") && !$confirm_link) {
 	header("Location: ".$BASE_URL."index.php"); exit;
 }
@@ -49,8 +45,8 @@ if(!ko_module_installed("reservation") && !$confirm_link) {
 //Check for login from confirm/delete link
 if($confirm_link) {
 	$u = $_GET['u'];
-	$h = substr($_GET['h'], 1);
-	$mode = substr($_GET['h'], 0, 1);
+	$h = mb_substr($_GET['h'], 1);
+	$mode = mb_substr($_GET['h'], 0, 1);
 	$login = db_select_data('ko_admin', "WHERE MD5(CONCAT(`id`, '".KOOL_ENCRYPTION_KEY."')) = '".mysqli_real_escape_string(db_get_link(), $u)."'", '*', 'LIMIT 0,1', '', TRUE);
 	if($login['id'] > 0 && md5($login['id'].KOOL_ENCRYPTION_KEY) == $u) {
 		//Check for valid hash
@@ -73,12 +69,7 @@ if($confirm_link) {
 			$_SESSION['last_login'] = ko_get_last_login($_SESSION['ses_userid']);
 			db_update_data('ko_admin', "WHERE `id` = '".$_SESSION['ses_userid']."'", array('last_login' => date('Y-m-d H:i:s')));
 
-			//Use language from userprefs
-			$user_lang = ko_get_userpref($_SESSION['ses_userid'], 'lang');
-			if($user_lang != '' && in_array($user_lang, $LANGS)) {
-				$_SESSION['lang'] = $user_lang;
-				include($ko_path.'inc/lang.inc');
-			}
+			Localizer::init();
 		}
 	}
 }//if(confirm_link)
@@ -96,10 +87,12 @@ if (ko_module_installed('daten')) $kotaDefs = array_merge($kotaDefs, array('ko_e
 ko_include_kota($kotaDefs);
 
 
+//Smarty-Templates-Engine laden
+require __DIR__ . '/../inc/smarty.inc.php';
 
 //*** Plugins einlesen:
 $hooks = hook_include_main("reservation");
-if(sizeof($hooks) > 0) foreach($hooks as $hook) include_once($hook);
+foreach($hooks as $hook) include_once($hook);
 
 
 
@@ -117,7 +110,7 @@ else {
 }
 
 //Reset show_start if from another module
-if($_SERVER['HTTP_REFERER'] != '' && FALSE === strpos($_SERVER['HTTP_REFERER'], '/'.$ko_menu_akt.'/')) $_SESSION['show_start'] = 1;
+if($_SERVER['HTTP_REFERER'] != '' && FALSE === mb_strpos($_SERVER['HTTP_REFERER'], '/'.$ko_menu_akt.'/')) $_SESSION['show_start'] = 1;
 
 switch($do_action) {
 
@@ -308,7 +301,7 @@ switch($do_action) {
 
 		$txt_group = trim(format_userinput($_POST["koi"]["ko_resitem"]["gruppen_id"][$id], "text"));
 
-		//Auf neue Gruppe pr¸fen
+		//Auf neue Gruppe pr√ºfen
 		$found = FALSE;
 		if ($txt_group != "") {
 			ko_get_resgroups($resg);
@@ -342,7 +335,7 @@ switch($do_action) {
 		}
 
 
-		if($allowed && (!$found || $access['reservation']['grp'.$new_group] >= 4)) {  //Rechte ¸berpr¸fen, ob dieser Gruppe Res-Objekte hinzugef¸gt werden d¸rfen
+		if($allowed && (!$found || $access['reservation']['grp'.$new_group] >= 4)) {  //Rechte √ºberpr√ºfen, ob dieser Gruppe Res-Objekte hinzugef√ºgt werden d√ºrfen
 			$old_item = db_select_data('ko_resitem', "WHERE `id` = '$id'", '*', '', '', TRUE);
 
 			$new_id = kota_submit_multiedit('', ($do_action == 'submit_new_item' ? 'new_resitem' : 'edit_resitem'));
@@ -664,7 +657,7 @@ switch($do_action) {
 			}
 			if(sizeof($do_ids) < 1) $notifier->addError(10, $do_action);
 
-			//Daten f¸r Formular-Aufruf vorbereiten
+			//Daten f√ºr Formular-Aufruf vorbereiten
 			if(!$notifier->hasErrors()) {
 				$order = "ORDER BY ".$_SESSION["sort_item"]." ".$_SESSION["sort_item_order"];
 				$_SESSION["show_back"] = $_SESSION["show"];
@@ -683,7 +676,7 @@ switch($do_action) {
 			}
 			if(sizeof($do_columns) < 1) $notifier->addError(8, $do_action);
 
-			//Zu bearbeitende Eintr‰ge
+			//Zu bearbeitende Eintr√§ge
 			$do_ids = array();
 			foreach($_POST["chk"] as $c_i => $c) {
 				if($c) {
@@ -696,7 +689,7 @@ switch($do_action) {
 			}
 			if(sizeof($do_ids) < 1) $notifier->addError(8, $do_action);
 
-			//Daten f¸r Formular-Aufruf vorbereiten
+			//Daten f√ºr Formular-Aufruf vorbereiten
 			if(!$notifier->hasErrors()) {
 				$order = "ORDER BY ".$_SESSION["sort_group"]." ".$_SESSION["sort_group_order"];
 				$_SESSION["show_back"] = $_SESSION["show"];
@@ -715,7 +708,7 @@ switch($do_action) {
 			}
 			if(sizeof($do_columns) < 1) $notifier->addError(58, $do_action);
 
-			//Zu bearbeitende Eintr‰ge
+			//Zu bearbeitende Eintr√§ge
 			$do_ids = array();
 			foreach($_POST["chk"] as $c_i => $c) {
 				if($c) {
@@ -728,7 +721,7 @@ switch($do_action) {
 			}
 			if(sizeof($do_ids) < 1) $notifier->addError(10, $do_action);
 
-			//Daten f¸r Formular-Aufruf vorbereiten
+			//Daten f√ºr Formular-Aufruf vorbereiten
 			if(!$notifier->hasErrors()) {
 				$order = "ORDER BY ".$_SESSION["sort_item"]." ".$_SESSION["sort_item_order"];
 				$_SESSION["show_back"] = $_SESSION["show"];
@@ -818,11 +811,11 @@ switch($do_action) {
 		$id = format_userinput($_POST["id"], "uint");
 
 		if($id) {
-			//Bisheriges Objekt holen, f¸r Logmeldung
+			//Bisheriges Objekt holen, f√ºr Logmeldung
 			ko_get_resitem_by_id($id, $old_item);
-			//Objekt selber lˆschen
+			//Objekt selber l√∂schen
 			db_delete_data("ko_resitem", "WHERE `id`='$id'");
-			//Alle Reservationen f¸r dieses Objekt lˆschen
+			//Alle Reservationen f√ºr dieses Objekt l√∂schen
 			db_delete_data("ko_reservation", "WHERE `item_id`='$id'");
 
 			//Delete this res item from all event groups (don't consider access rights of the current user,
@@ -1067,8 +1060,8 @@ switch($do_action) {
 				trigger_error('Not allowed set_month: '.$_GET['set_month'], E_USER_ERROR);
 			}
 			$_SESSION['cal_tag'] = 1;
-			$_SESSION['cal_monat'] = (int)substr($new_month, 0, 2);
-			$_SESSION['cal_jahr'] = (int)substr($new_month, -4);
+			$_SESSION['cal_monat'] = (int)mb_substr($new_month, 0, 2);
+			$_SESSION['cal_jahr'] = (int)mb_substr($new_month, -4);
 		}
 
 		$_SESSION['cal_view']= 'month';
@@ -1251,7 +1244,7 @@ switch($do_action) {
 			$res_text .= ko_get_res_infotext($r)."\n\n";
 		}
 
-		//Benachrichtigung an Beantragenden schicken, falls gew¸nscht:
+		//Benachrichtigung an Beantragenden schicken, falls gew√ºnscht:
 		if($notification) {
 			$smarty->assign("txt_empfaenger", implode(", ", array_unique($email_rec)));
 			$smarty->assign('txt_empfaenger_semicolon', implode('; ', array_unique($email_rec)));
@@ -1543,10 +1536,9 @@ switch($do_action) {
 
 
 	//Default:
-  default:
-		if(!hook_action_handler($do_action))
-      include($ko_path."inc/abuse.inc");
-  break;
+	default:
+		hook_action_handler($do_action);
+	break;
 
 }//switch(action)
 
@@ -1648,7 +1640,7 @@ ko_set_submenues();
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="<?php print $_SESSION["lang"]; ?>" lang="<?php print $_SESSION["lang"]; ?>">
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1" />
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title><?php print "$HTML_TITLE: ".getLL("module_".$ko_menu_akt); ?></title>
@@ -1672,9 +1664,9 @@ if($_SESSION['show'] == 'calendar') {
 	$css_files[] = $ko_path.'inc/fullcalendar/scheduler.min.css';
 	//print ko_get_resitems_css(); -> dont use this anymore since new fullcalendar with timeline
 }
-print ko_include_css($css_files);
-include($ko_path.'inc/js-sessiontimeout.inc');
-include("inc/js-reservation.inc");
+print ko_include_css();
+include __DIR__ . '/../inc/js-sessiontimeout.inc.php';
+include __DIR__ . '/inc/js-reservation.inc.php';
 ?>
 </head>
 
@@ -1682,9 +1674,9 @@ include("inc/js-reservation.inc");
 
 <?php
 /*
- * Gibt bei erfolgreichem Login das Men¸ aus, sonst einfach die Loginfelder
+ * Gibt bei erfolgreichem Login das Men√º aus, sonst einfach die Loginfelder
  */
-include($ko_path . "menu.php");
+require __DIR__ . '/../inc/menu.inc.php';
 ko_get_outer_submenu_code('reservation');
 
 ?>
@@ -1696,7 +1688,7 @@ ko_get_outer_submenu_code('reservation');
 <input type="hidden" name="id" id="id" value="" />
 <input type="hidden" name="del_event" id="del_event" value="" />  <!-- Delete corresponding event -->
 <input type="hidden" name="mod_confirm" id="mod_confirm" value="" />  <!-- Confirm a moderated reservation -->
-<input type="hidden" name="res_code" id="res_code" value="" />  <!-- Code f¸r Bearbeitung -->
+<input type="hidden" name="res_code" id="res_code" value="" />  <!-- Code f√ºr Bearbeitung -->
 <input type="hidden" name="new_date" id="new_date" value="" />  <!-- Neue Res an Datum -->
 
 <div name="main_content" id="main_content">
@@ -1809,7 +1801,7 @@ hook_show_case_add($_SESSION["show"]);
 
 	</div>
 
-	<?php include($ko_path . "footer.php"); ?>
+	<?php include __DIR__ . '/../config/footer.php' ?>
 
 </body>
 </html>

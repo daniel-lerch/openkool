@@ -1,34 +1,28 @@
 <?php
-/***************************************************************
-*  Copyright notice
+/*******************************************************************************
 *
-*  (c) 2003-2020 Renzo Lauper (renzo@churchtool.org)
-*  All rights reserved
+*    OpenKool - Online church organization tool
 *
-*  This script is part of the kOOL project. The kOOL project is
-*  free software; you can redistribute it and/or modify
-*  it under the terms of the GNU General Public License as published by
-*  the Free Software Foundation; either version 2 of the License, or
-*  (at your option) any later version.
+*    Copyright © 2003-2020 Renzo Lauper (renzo@churchtool.org)
+*    Copyright © 2019-2020 Daniel Lerch
 *
-*  The GNU General Public License can be found at
-*  http://www.gnu.org/copyleft/gpl.html.
-*  A copy is found in the textfile GPL.txt and important notices to the license
-*  from the author is found in LICENSE.txt distributed with these scripts.
+*    This program is free software; you can redistribute it and/or modify
+*    it under the terms of the GNU General Public License as published by
+*    the Free Software Foundation; either version 2 of the License, or
+*    (at your option) any later version.
 *
-*  kOOL is distributed in the hope that it will be useful,
-*  but WITHOUT ANY WARRANTY; without even the implied warranty of
-*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-*  GNU General Public License for more details.
+*    This program is distributed in the hope that it will be useful,
+*    but WITHOUT ANY WARRANTY; without even the implied warranty of
+*    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+*    GNU General Public License for more details.
 *
-*  This copyright notice MUST APPEAR in all copies of the script!
-***************************************************************/
+*******************************************************************************/
 
 $ko_path = "../";
 $ko_menu_akt = "ical";
 
-include($ko_path."inc/ko.inc");
-include($ko_path."reservation/inc/reservation.inc");
+require __DIR__ . '/../inc/ko.inc.php';
+require __DIR__ . '/../reservation/inc/reservation.inc.php';
 
 $auth = FALSE;
 if(isset($_GET["ko_guest"])) {  //Stay with guest user
@@ -36,9 +30,9 @@ if(isset($_GET["ko_guest"])) {  //Stay with guest user
 }
 else if(isset($_GET['user'])) { //User hash given in URL
 	$userhash = $_GET['user'];
-	if(strlen($userhash) != 32) exit;
+	if(mb_strlen($userhash) != 32) exit;
 	for($i=0; $i<32; $i++) {
-		if(!in_array(substr($userhash, $i, 1), array(1,2,3,4,5,6,7,8,9,0,'a','b','c','d','e','f'))) exit;
+		if(!in_array(mb_substr($userhash, $i, 1), array(1,2,3,4,5,6,7,8,9,0,'a','b','c','d','e','f'))) exit;
 	}
 	if(!defined('KOOL_ENCRYPTION_KEY') || trim(KOOL_ENCRYPTION_KEY) == '') exit;
 
@@ -91,8 +85,8 @@ $use_itemset = FALSE;
 if(isset($_GET['items'])) {  //use event groups given in URL
 	foreach(explode(',', $_GET['items']) as $item) {
 		//Preset
-		if(substr($item, 0, 1) == 'p') {
-			$presetid = format_userinput(substr($item, 1), 'uint');
+		if(mb_substr($item, 0, 1) == 'p') {
+			$presetid = format_userinput(mb_substr($item, 1), 'uint');
 			if($presetid) {
 				$userpref = db_select_data('ko_userprefs', "WHERE `id` = '$presetid'", '*', '', '', TRUE);
 				if($userpref['type'] == 'res_itemset' && ($userpref['user_id'] == '-1' || $userpref['user_id'] == $_SESSION['ses_userid'])) {
@@ -104,8 +98,8 @@ if(isset($_GET['items'])) {  //use event groups given in URL
 			}
 		}
 		//Res group
-		else if(substr($item, 0, 1) == 'g') {
-			$gid = format_userinput(substr($item, 1), 'uint');
+		else if(mb_substr($item, 0, 1) == 'g') {
+			$gid = format_userinput(mb_substr($item, 1), 'uint');
 			if($gid) {
 				$group_items = db_select_data('ko_resitem', "WHERE `gruppen_id` = '$gid'");
 				foreach($group_items as $resitem) {
@@ -164,8 +158,8 @@ $z_where .= " AND startdatum >= '$start' ";
 //Set KOTA filter from GET
 unset($_SESSION['kota_filter']['ko_reservation']);
 foreach($_GET as $k => $v) {
-	if(substr($k, 0, 5) != 'kota_') continue;
-	$key = substr($k, 5);
+	if(mb_substr($k, 0, 5) != 'kota_') continue;
+	$key = mb_substr($k, 5);
 	//Check for valid KOTA field
 	$ok = FALSE;
 	foreach($KOTA['ko_reservation']['_listview'] as $klv) {
@@ -200,21 +194,12 @@ ko_get_reservationen($res, $z_where);
 $ical = ko_get_ics_for_res($res);
 
 
-//Set charset to utf-8, but not for google calendar (there seem to be problems with utf-8 for google as of 2010-08)
-if(FALSE === strpos($_SERVER['HTTP_USER_AGENT'], 'Googlebot')) {
-	$charset = 'utf-8';
-	$ical = utf8_encode($ical);
-} else {
-	$charset = 'latin1';
-}
-
-
 //Output
-if (isset($_SERVER["HTTP_USER_AGENT"]) && strpos($_SERVER["HTTP_USER_AGENT"], "MSIE")) {
+if (isset($_SERVER["HTTP_USER_AGENT"]) && mb_strpos($_SERVER["HTTP_USER_AGENT"], "MSIE")) {
 	// IE cannot download from sessions without a cache
 	header("Cache-Control: public");
 	// q316431 - Don't set no-cache when over HTTPS
-	if (	!isset($_SERVER["HTTPS"]) || $_SERVER["HTTPS"] != "on") {
+	if (!isset($_SERVER["HTTPS"]) || $_SERVER["HTTPS"] != "on") {
 		header("Pragma: no-cache");
 	}
 }
@@ -222,7 +207,7 @@ else {
 	header("Cache-Control: no-cache, must-revalidate");
 	header("Pragma: no-cache");
 }
-header('Content-Type: text/calendar; charset='.$charset, TRUE);
+header('Content-Type: text/calendar; charset=UTF-8', TRUE);
 header('Content-Disposition: attachment; filename="kOOLres.ics"');
 header("Content-Length: ".strlen($ical));
 print $ical;

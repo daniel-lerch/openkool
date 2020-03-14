@@ -1,40 +1,34 @@
 <?php
-/***************************************************************
-*  Copyright notice
+/*******************************************************************************
 *
-*  (c) 2003-2020 Renzo Lauper (renzo@churchtool.org)
-*  All rights reserved
+*    OpenKool - Online church organization tool
 *
-*  This script is part of the kOOL project. The kOOL project is
-*  free software; you can redistribute it and/or modify
-*  it under the terms of the GNU General Public License as published by
-*  the Free Software Foundation; either version 2 of the License, or
-*  (at your option) any later version.
+*    Copyright Â© 2003-2020 Renzo Lauper (renzo@churchtool.org)
+*    Copyright Â© 2019-2020 Daniel Lerch
 *
-*  The GNU General Public License can be found at
-*  http://www.gnu.org/copyleft/gpl.html.
-*  A copy is found in the textfile GPL.txt and important notices to the license
-*  from the author is found in LICENSE.txt distributed with these scripts.
+*    This program is free software; you can redistribute it and/or modify
+*    it under the terms of the GNU General Public License as published by
+*    the Free Software Foundation; either version 2 of the License, or
+*    (at your option) any later version.
 *
-*  kOOL is distributed in the hope that it will be useful,
-*  but WITHOUT ANY WARRANTY; without even the implied warranty of
-*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-*  GNU General Public License for more details.
+*    This program is distributed in the hope that it will be useful,
+*    but WITHOUT ANY WARRANTY; without even the implied warranty of
+*    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+*    GNU General Public License for more details.
 *
-*  This copyright notice MUST APPEAR in all copies of the script!
-***************************************************************/
+*******************************************************************************/
 
-//Set session id from GET (session will be started in ko.inc)
+//Set session id from GET (session will be started in ko.inc.php)
 if(!isset($_GET['sesid'])) exit;
 if(FALSE === session_id($_GET['sesid'])) exit;
 
-//Send headers to ensure latin1 charset
-header('Content-Type: text/html; charset=ISO-8859-1');
+//Send headers to ensure UTF-8 charset
+header('Content-Type: text/html; charset=UTF-8');
  
 error_reporting(0);
 $ko_menu_akt = 'tools';
 $ko_path = '../../';
-require($ko_path.'inc/ko.inc');
+require __DIR__ . '/../../inc/ko.inc.php';
 $ko_path = '../';
 
 array_walk_recursive($_GET,'utf8_decode_array');
@@ -43,13 +37,16 @@ ko_include_kota(array('ko_scheduler_tasks','ko_mailing_mails'));
 
 // Plugins einlesen:
 $hooks = hook_include_main('tools');
-if(sizeof($hooks) > 0) foreach($hooks as $hook) include_once($hook);
+foreach($hooks as $hook) include_once($hook);
  
-require($BASE_PATH.'tools/inc/tools.inc');
+//Smarty-Templates-Engine laden
+require __DIR__ . '/../../inc/smarty.inc.php';
+ 
+require __DIR__ . '/tools.inc.php';
 
 //HOOK: Submenus einlesen
 $hooks = hook_include_sm();
-if(sizeof($hooks) > 0) foreach($hooks as $hook) include($hook);
+foreach($hooks as $hook) include($hook);
 
 hook_show_case_pre($_SESSION['show']);
 
@@ -92,11 +89,11 @@ if(isset($_GET) && isset($_GET['action'])) {
 			$delete_filter = FALSE;
 			$old_filter = [];
 			if(FALSE === $id = format_userinput($_GET["id"], "alphanum+", TRUE)) {
-				trigger_error("Ungültige id für add_leute_filter: ".$_GET["id"], E_USER_ERROR);
+				trigger_error("UngÃ¼ltige id fÃ¼r add_leute_filter: ".$_GET["id"], E_USER_ERROR);
 			}
 			if($action == "reloadleutefilter") {
 				if(FALSE === $fid = format_userinput($_GET["fid"], "uint", TRUE)) {
-					trigger_error("Ungültige fid für reload_leute_filter: ".$_GET["fid"], E_USER_ERROR);
+					trigger_error("UngÃ¼ltige fid fÃ¼r reload_leute_filter: ".$_GET["fid"], E_USER_ERROR);
 				}
 
 				$old_filter = db_select_data("ko_filter", "WHERE id = '" . $fid ."'", "*", "", "LIMIT 1", TRUE);
@@ -143,7 +140,7 @@ if(isset($_GET) && isset($_GET['action'])) {
 
 		case "deleteleutefilter":
 			if(FALSE === $fid = format_userinput($_GET["fid"], "uint", TRUE)) {
-				trigger_error("Ungültige id für delete_leute_filter: ".$_GET["fid"], E_USER_ERROR);
+				trigger_error("UngÃ¼ltige id fÃ¼r delete_leute_filter: ".$_GET["fid"], E_USER_ERROR);
 			}
 
 			$id = '';

@@ -1,28 +1,22 @@
 <?php
-/***************************************************************
-*  Copyright notice
+/*******************************************************************************
 *
-*  (c) 2003-2020 Renzo Lauper (renzo@churchtool.org)
-*  All rights reserved
+*    OpenKool - Online church organization tool
 *
-*  This script is part of the kOOL project. The kOOL project is
-*  free software; you can redistribute it and/or modify
-*  it under the terms of the GNU General Public License as published by
-*  the Free Software Foundation; either version 2 of the License, or
-*  (at your option) any later version.
+*    Copyright Â© 2003-2020 Renzo Lauper (renzo@churchtool.org)
+*    Copyright Â© 2019-2020 Daniel Lerch
 *
-*  The GNU General Public License can be found at
-*  http://www.gnu.org/copyleft/gpl.html.
-*  A copy is found in the textfile GPL.txt and important notices to the license
-*  from the author is found in LICENSE.txt distributed with these scripts.
+*    This program is free software; you can redistribute it and/or modify
+*    it under the terms of the GNU General Public License as published by
+*    the Free Software Foundation; either version 2 of the License, or
+*    (at your option) any later version.
 *
-*  kOOL is distributed in the hope that it will be useful,
-*  but WITHOUT ANY WARRANTY; without even the implied warranty of
-*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-*  GNU General Public License for more details.
+*    This program is distributed in the hope that it will be useful,
+*    but WITHOUT ANY WARRANTY; without even the implied warranty of
+*    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+*    GNU General Public License for more details.
 *
-*  This copyright notice MUST APPEAR in all copies of the script!
-***************************************************************/
+*******************************************************************************/
 
 header('Content-Type: text/html; charset=ISO-8859-1');
 
@@ -31,8 +25,9 @@ ob_start();  //Ausgabe-Pufferung starten
 $ko_path = "../";
 $ko_menu_akt = "donations";
 
-include_once($ko_path . "inc/ko.inc");
-include_once("inc/donations.inc");
+require __DIR__ . '/../inc/ko.inc.php';
+require __DIR__ . '/inc/donations.inc.php';
+use OpenKool\koNotifier;
 
 //Redirect to SSL if needed
 ko_check_ssl();
@@ -52,12 +47,16 @@ $notifier = koNotifier::Instance();
 //*** Rechte auslesen
 ko_get_access('donations');
 
+
+//Smarty-Templates-Engine laden
+require __DIR__ . '/../inc/smarty.inc.php';
+
 //kOOL Table Array
 ko_include_kota(array('ko_donations', 'ko_donations_accounts', 'ko_donations_accountgroups'));
 
 //*** Plugins einlesen:
 $hooks = hook_include_main("donations");
-if(sizeof($hooks) > 0) foreach($hooks as $hook) include_once($hook);
+foreach($hooks as $hook) include_once($hook);
 
 
 //*** Action auslesen:
@@ -73,7 +72,7 @@ if($_POST["action"]) {
 if(!$do_action) $do_action = "list_donations";
 
 //Reset show_start if from another module
-if($_SERVER['HTTP_REFERER'] != '' && FALSE === strpos($_SERVER['HTTP_REFERER'], '/'.$ko_menu_akt.'/')) $_SESSION['show_start'] = 1;
+if($_SERVER['HTTP_REFERER'] != '' && FALSE === mb_strpos($_SERVER['HTTP_REFERER'], '/'.$ko_menu_akt.'/')) $_SESSION['show_start'] = 1;
 
 switch($do_action) {
 
@@ -100,12 +99,6 @@ switch($do_action) {
 		if($access['donations']['MAX'] < 1) break;
 		$_SESSION['show'] = 'list_reoccuring_donations';
 		$_SESSION['show_start'] = 1;
-	break;
-
-	case "list_donations_mod":
-		if($access['donations']['MAX'] < 1) break;
-		$_SESSION["show"] = "list_donations_mod";
-		$_SESSION["show_start"] = 1;
 	break;
 
 	case "list_donations_mod":
@@ -347,7 +340,7 @@ switch($do_action) {
 		foreach($merge_from as $id) {
 			$in .= "'$id', ";
 		}
-		$in = substr($in, 0, -2);
+		$in = mb_substr($in, 0, -2);
 
 		//Get all donations of these people and reassign them to person1
 		$donations2 = db_select_data("ko_donations", "WHERE `person` IN ($in)", "*");
@@ -548,7 +541,7 @@ switch($do_action) {
 
 
 
-	//Löschen
+	//LÃ¶schen
 	case "delete_donation":
 		if($access['donations']['MAX'] < 3) break;
 
@@ -605,7 +598,7 @@ switch($do_action) {
 		}
 		if(sizeof($do_columns) < 1) $notifier->addError(4, $do_action);
 
-		//Zu bearbeitende Einträge
+		//Zu bearbeitende EintrÃ¤ge
 		$do_ids = array();
 		foreach($_POST["chk"] as $c_i => $c) {
 			$edit_id = format_userinput($c_i, 'uint', TRUE);
@@ -623,7 +616,7 @@ switch($do_action) {
 		}
 		if(sizeof($do_ids) < 1) $notifier->addError(4, $do_action);
 
-		//Daten für Formular-Aufruf vorbereiten
+		//Daten fÃ¼r Formular-Aufruf vorbereiten
 		if(!$notifier->hasErrors()) {
 			$_SESSION["show_back"] = $_SESSION["show"];
 
@@ -631,7 +624,7 @@ switch($do_action) {
 				$order = "ORDER BY number ASC";
 				$_SESSION["show"] = "multiedit_accounts";
 			} else if($_SESSION["show"] == "list_donations") {
-				if(substr($_SESSION['sort_donations'], 0, 6) == 'MODULE') $order = 'ORDER BY date DESC';
+				if(mb_substr($_SESSION['sort_donations'], 0, 6) == 'MODULE') $order = 'ORDER BY date DESC';
 				else $order = 'ORDER BY '.$_SESSION['sort_donations'].' '.$_SESSION['sort_donations_order'];
 				$_SESSION["show"] = "multiedit";
 			}
@@ -769,8 +762,8 @@ switch($do_action) {
 			break;  //monthly
 
 			default:  //statsYYEAR
-				if(substr($mode, 0, 6) == 'statsY') {
-					$year = intval(substr($mode, 6));
+				if(mb_substr($mode, 0, 6) == 'statsY') {
+					$year = intval(mb_substr($mode, 6));
 					if(!$year) $year = date('Y');
 					$filename = ko_donations_stats('xls', $year);
 				}
@@ -778,15 +771,15 @@ switch($do_action) {
 					//Check for ID from ko_pdf_layout
 					$layout_id = intval($mode);
 					$pdf_layout = db_select_data('ko_pdf_layout', "WHERE `id` = '$layout_id' AND `type` = 'donations'", '*', '', '', TRUE);
-					if($pdf_layout['id'] > 0 && $pdf_layout['id'] == $layout_id && substr($pdf_layout['data'], 0, 4) == 'FCN:' && function_exists(substr($pdf_layout['data'], 4))) {
-						$filename = call_user_func(substr($pdf_layout['data'], 4), $_GET);
+					if($pdf_layout['id'] > 0 && $pdf_layout['id'] == $layout_id && mb_substr($pdf_layout['data'], 0, 4) == 'FCN:' && function_exists(mb_substr($pdf_layout['data'], 4))) {
+						$filename = call_user_func(mb_substr($pdf_layout['data'], 4), $_GET);
 					}
 				}
 			break;  //stats
 			
 		}
 		if($filename) {
-			$filename = substr($filename, 3);
+			$filename = mb_substr($filename, 3);
 			$onload_code = "ko_popup('".$ko_path."download.php?action=file&amp;file=$filename');";
 			ko_log("export_donations", $filename);
 		}
@@ -874,7 +867,7 @@ switch($do_action) {
 		ko_save_userpref($_SESSION['ses_userid'], 'donations_menubar_links', format_userinput($_POST['dsel_donations_menubar_links'], 'text'));
 
 		if($access['donations']['MAX'] > 3) {
-			$id = substr($_POST['sel_ps_filter'], 0, 3) == '@G@' ? '-1' : $_SESSION['ses_userid'];
+			$id = mb_substr($_POST['sel_ps_filter'], 0, 3) == '@G@' ? '-1' : $_SESSION['ses_userid'];
 			$key = str_replace('@G@', '', $_POST['sel_ps_filter']);
 			//Only store, if new filterset has been selected (-1 is the value for a saved filter preset not available anymore)
 			if($key != -1) {
@@ -891,10 +884,9 @@ switch($do_action) {
 
 
 	//Default:
-  default:
-		if(!hook_action_handler($do_action))
-      include($ko_path."inc/abuse.inc");
-  break;
+	default:
+		hook_action_handler($do_action);
+	break;
 
 
 }//switch(do_action)
@@ -955,15 +947,15 @@ ko_set_submenues();
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="<?php print $_SESSION["lang"]; ?>" lang="<?php print $_SESSION["lang"]; ?>">
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1" />
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title><?php print "$HTML_TITLE: ".getLL("module_".$ko_menu_akt); ?></title>
 <?php
 print ko_include_css(array($ko_path.'inc/chartist/kool-chartist.min.css'));
 print ko_include_js(array($ko_path.'inc/ckeditor/ckeditor.js', $ko_path.'inc/ckeditor/adapters/jquery.js', $ko_path.'inc/chartist/chartist.js', $ko_path.'inc/chartist/plugins/chartist-plugin-legend.js', $ko_path.'inc/chartist/plugins/chartist-plugin-tooltip.js'));
-include($ko_path.'inc/js-sessiontimeout.inc');
-include('inc/js-donations.inc');
+include __DIR__ . '/../inc/js-sessiontimeout.inc.php';
+include __DIR__ . '/inc/js-donations.inc.php';
 if ($_SESSION['show'] == 'list_donations_mod') {
 	include('inc/js-donationsmod.inc');
 }
@@ -978,9 +970,9 @@ if (ko_module_installed('crm') && in_array($_SESSION['show'], array('export_dona
 
 <?php
 /*
- * Gibt bei erfolgreichem Login das Menü aus, sonst einfach die Loginfelder
+ * Gibt bei erfolgreichem Login das MenÃ¼ aus, sonst einfach die Loginfelder
  */
-include($ko_path . "menu.php");
+require __DIR__ . '/../inc/menu.inc.php';
 
 ko_get_outer_submenu_code('donations');
 
@@ -1094,7 +1086,7 @@ hook_show_case_add($_SESSION["show"]);
 
 </div>
 
-<?php include($ko_path . "footer.php"); ?>
+<?php include __DIR__ . '/../config/footer.php' ?>
 
 </body>
 </html>

@@ -1,39 +1,34 @@
 <?php
-/***************************************************************
-*  Copyright notice
+/*******************************************************************************
 *
-*  (c) 2003-2020 Renzo Lauper (renzo@churchtool.org)
-*  All rights reserved
+*    OpenKool - Online church organization tool
 *
-*  This script is part of the kOOL project. The kOOL project is
-*  free software; you can redistribute it and/or modify
-*  it under the terms of the GNU General Public License as published by
-*  the Free Software Foundation; either version 2 of the License, or
-*  (at your option) any later version.
+*    Copyright Â© 2003-2020 Renzo Lauper (renzo@churchtool.org)
+*    Copyright Â© 2019-2020 Daniel Lerch
 *
-*  The GNU General Public License can be found at
-*  http://www.gnu.org/copyleft/gpl.html.
-*  A copy is found in the textfile GPL.txt and important notices to the license
-*  from the author is found in LICENSE.txt distributed with these scripts.
+*    This program is free software; you can redistribute it and/or modify
+*    it under the terms of the GNU General Public License as published by
+*    the Free Software Foundation; either version 2 of the License, or
+*    (at your option) any later version.
 *
-*  kOOL is distributed in the hope that it will be useful,
-*  but WITHOUT ANY WARRANTY; without even the implied warranty of
-*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-*  GNU General Public License for more details.
+*    This program is distributed in the hope that it will be useful,
+*    but WITHOUT ANY WARRANTY; without even the implied warranty of
+*    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+*    GNU General Public License for more details.
 *
-*  This copyright notice MUST APPEAR in all copies of the script!
-***************************************************************/
+*******************************************************************************/
 
 
-header('Content-Type: text/html; charset=ISO-8859-1');
+header('Content-Type: text/html; charset=UTF-8');
 
 ob_start();  //Ausgabe-Pufferung einschalten
 
 $ko_path = "../";
 $ko_menu_akt = "leute";
 
-include_once($ko_path . "inc/ko.inc");
-include_once("inc/leute.inc");
+require __DIR__ . '/../inc/ko.inc.php';
+require __DIR__ . '/inc/leute.inc.php';
+use OpenKool\koNotifier;
 
 //get notifier instance
 $notifier = koNotifier::Instance();
@@ -60,13 +55,16 @@ if(ko_module_installed('groups')) {
 	ko_get_groups($all_groups);
 }
 
+//Smarty-Templates-Engine laden
+require __DIR__ . '/../inc/smarty.inc.php';
+
 //kOOL Table Array
 ko_include_kota(array('ko_leute', 'ko_kleingruppen'));
 
 
 //*** Plugins einlesen:
 $hooks = hook_include_main("leute,kg");
-if(sizeof($hooks) > 0) foreach($hooks as $hook) include_once($hook);
+foreach($hooks as $hook) include_once($hook);
 
 
 
@@ -133,7 +131,7 @@ if($_POST["action"]) {
 if(FALSE === format_userinput($do_action, "alphanum+", TRUE, 50)) trigger_error("invalid action: ".$do_action, E_USER_ERROR);
 
 //Reset show_start if from another module
-if($_SERVER['HTTP_REFERER'] != '' && FALSE === strpos($_SERVER['HTTP_REFERER'], '/'.$ko_menu_akt.'/')) $_SESSION['show_start'] = 1;
+if($_SERVER['HTTP_REFERER'] != '' && FALSE === mb_strpos($_SERVER['HTTP_REFERER'], '/'.$ko_menu_akt.'/')) $_SESSION['show_start'] = 1;
 
 switch($do_action) {
 
@@ -242,7 +240,7 @@ switch($do_action) {
 			break;
 		}
 
-		//Beim Editieren auf korrekte Leute-ID prüfen
+		//Beim Editieren auf korrekte Leute-ID prÃ¼fen
 		if($do_action == "submit_edit_person") {
 			if(!$id || !format_userinput($id, "uint", TRUE, 10)) break;
 			$leute_id = format_userinput($id, "uint");
@@ -301,18 +299,21 @@ switch($do_action) {
 		/* Familien-Daten speichern */
 		$old_famid  = $person["famid"];
 		if(!is_array($allowed_cols["edit"]) || in_array("famid", $allowed_cols["edit"])) {
-			$do_update_familie = FALSE;  //Familiendaten - falls nötig - erst nach Speichern der Person updaten
+			$do_update_familie = FALSE;  //Familiendaten - falls nÃ¶tig - erst nach Speichern der Person updaten
 			$new_familie = FALSE;
 
 			//Neue Familie
 			if($_POST["hid_new_family"] == 1) {
-				$save_famid = db_insert_data("ko_familie", array("nachname" => ""));
+				$save_famid = db_insert_data("ko_familie", array(
+					'famfirstname' => format_userinput($_POST['input_famfirstname'], 'text'),
+					'famlastname' => format_userinput($_POST['input_famlastname'], 'text')
+				));
 				$new_familie = TRUE;
 			} else {
 				$save_famid = format_userinput($_POST["sel_familie"], "uint");
 			}
 
-			//Familie geändert
+			//Familie geÃ¤ndert
 			if($save_famid != $old_famid) {
 				$log_message .= getLL("leute_log_family").": $old_famid --> $save_famid, ";
 
@@ -320,7 +321,7 @@ switch($do_action) {
 				//  as there ko_multiedit_familie() would store new address to old family
 				db_update_data('ko_leute', "WHERE `id` = '$leute_id'", array('famid' => $save_famid));
 
-				//Alte Familie löschen, falls keine Mitglieder mehr
+				//Alte Familie lÃ¶schen, falls keine Mitglieder mehr
 				if($old_famid != 0) {
 					$num = ko_get_personen_by_familie($old_famid, $asdf);
 					if($num < 1) {
@@ -417,7 +418,7 @@ switch($do_action) {
 						$ll = getLL('kota_ko_leute_'.$col.'_'.$value);
 						$log_message .= "$label: '".($ll ? $ll : $value)."', ";
 					}
-				} else {  //Bei Editieren nur die loggen, die geändert wurden
+				} else {  //Bei Editieren nur die loggen, die geÃ¤ndert wurden
 					$new  = $value;
 					$old  = $person[$col];
 					if($old == '00:00:00' || $old == '0000-00-00' || $old == '0000-00-00 00:00:00') $old = '';
@@ -446,8 +447,8 @@ switch($do_action) {
 
 		//Check for leute_admin_groups to be added
 		if((!defined('LEUTE_ADMIN_GROUPS_NEW_ONLY') || LEUTE_ADMIN_GROUPS_NEW_ONLY == FALSE)
-				|| in_array($do_action, array("submit_neue_person", "submit_als_neue_person")))
-			{
+			|| in_array($do_action, array("submit_neue_person", "submit_als_neue_person")))
+		{
 			$lag = ko_get_leute_admin_groups($_SESSION["ses_userid"], 'all');
 			if(is_array($lag) && sizeof($lag) > 0) {
 				foreach($lag as $gid) {
@@ -461,16 +462,17 @@ switch($do_action) {
 
 
 		//In DB speichern
-		$data["lastchange"] = date("Y-m-d H:i:s");  //LastChange hinzufügen
-	  //Familien-ID hinzufügen
+		$data["lastchange"] = date("Y-m-d H:i:s");  //LastChange hinzufÃ¼gen
+		//Familien-ID hinzufÃ¼gen
 		if(!is_array($allowed_cols["edit"]) || in_array("famid", $allowed_cols["edit"])) {
 			$data["famid"] = $save_famid;
 			if($data['famid'] <= 0) $data['kinder'] = '0';  //Set number of children to 0 for persons without a family
 		}
 		if($action == "submit_edit_person") {
 			db_update_data("ko_leute", "WHERE `id` = '$leute_id'", $data);
-		} else {
-			//Not needed? as submit_neue_person is handled as submit_edit_person with id of new empty entry...?
+		} else { // submit_neue_person
+			$data['crdate'] = date('Y-m-d H:i:s');
+			$data['cruserid'] = $_SESSION['ses_userid'];
 			$leute_id = db_insert_data("ko_leute", $data);
 		}
 
@@ -532,7 +534,7 @@ switch($do_action) {
 			ko_get_person_by_id($leute_id, $ldap_person);
 			if($action == "submit_edit_person" && !$ldap_new_entry) {  //Als neue Person speichern, ist zwar edit, muss aber neu angelegt werden.
 				ko_ldap_add_person($ldap, $ldap_person, $person['id'], TRUE);
-			} else {
+			} else { // submit_neue_person
 				ko_ldap_add_person($ldap, $ldap_person, $leute_id);
 			}
 			ko_ldap_close($ldap);
@@ -566,13 +568,13 @@ switch($do_action) {
 
 		//Log-Meldung
 		if($do_action == "submit_neue_person") {
-			ko_log("new_person", $leute_id . ": " . substr($log_message,0,-2));
+			ko_log("new_person", $leute_id . ": " . mb_substr($log_message,0,-2));
 			$notifier->addInfo(1, $do_action);
 		} else {
 			if($log_message != "") {
 				$name = $person["vorname"]." ".$person["nachname"];
 				if(!$name) $name = $person["firm"];
-				ko_log("edit_person", $leute_id . " ($name): " . substr($log_message,0,-2));
+				ko_log("edit_person", $leute_id . " ($name): " . mb_substr($log_message,0,-2));
 				//Save changes for versioning
 				ko_save_leute_changes($leute_id, $person, $datafields);
 
@@ -621,110 +623,9 @@ switch($do_action) {
 		else if($action_mode == 'GET') $leute_id = format_userinput($_GET['id'], 'uint');
 		if($access['leute']['ALL'] > 1 || $access['leute'][$leute_id] > 1 || (ko_get_setting('login_edit_person') == 1 && $leute_id == ko_get_logged_in_id())) {} else break;
 
-		if($access['leute']['MAX'] > 1 || (ko_get_setting("login_edit_person") == 1 && $leute_id == ko_get_logged_in_id())) {} else continue;
-
-		//Funktion (kundenspezifisch) einlesen, die Variablen speziell behandeln lässt
-		if(file_exists($ko_path."leute/inc/my_fcn_leute.inc")) {
-			include($ko_path."leute/inc/my_fcn_leute.inc");
-		}
-		$log_message = "";
-
-	case "delete_persons":
-		if (ko_get_setting('leute_multiple_delete')) {
-			foreach($_POST["chk"] as $person_id => $status) {
-				if($status == "on") {
-					$del_id = format_userinput($person_id, "uint", TRUE);
-					if(!$del_id) continue;
-					if($access['leute']['MAX'] < 3) continue;
-
-					if(ko_leute_delete_person($del_id)) {
-						$notifier->addInfo(3, $do_action);
-					} else {
-						$notifier->addError(4, $do_action);
-					}
-				}
-				break;
-
-			case "date":
-				$data[$c["Field"]] = sql_datum($_POST["input_".$c["Field"]]);
-				break;
-
-			//picture
-			case "tinytext":
-				if($_FILES["input_".$c["Field"]]["tmp_name"]) {
-					$upload_name = $_FILES["input_".$c["Field"]]["name"];
-					$tmp = $_FILES["input_".$c["Field"]]["tmp_name"];
-					$ext_ = explode(".", $upload_name);
-					$ext = $ext_[sizeof($ext_)-1];
-
-					$path = $BASE_PATH."my_images/";
-					$filename = 'person_'.$c['Field'].'_'.$leute_id.'.'.$ext;
-					$dest = $path.$filename;
-
-					$ret = move_uploaded_file($tmp, $dest);
-					if($ret) {
-						$data[$c["Field"]] = "/my_images/".$filename;
-						chmod($dest, 0644);
-					} else {
-						$data[$c["Field"]] = "";
-					}
-				}
-				//delete picture
-				else if($_POST["input_".$c["Field"]."_DELETE"] == 1) {
-					$data[$c["Field"]] = "";
-					if($person[$c["Field"]] && file_exists($BASE_PATH.$person[$c["Field"]])) unlink($BASE_PATH.$person[$c["Field"]]);
-				}
-				$test["columns"][] = $col;
-				break;
-
-		}//switch(input_type)
-
-
-		//Kunden-spezifische Behandlung der Leute-Felder
-		if(function_exists("my_fcn_leute")) {
-			my_fcn_leute($c["Field"], format_userinput($_POST["input_".$c["Field"]], "text"), format_userinput($_POST["input_".$c["Field"]."_2"], "text"));
-		}
-
-
-		//Log-Message
-		if(!$dont_log) {
-			if($action == "submit_neue_person") {  //Alle gemachten Angaben loggen
-				if($_POST["input_".$c["Field"]]) {
-					$label = $col_namen[$c["Field"]];
-					$value = format_userinput($_POST["input_".$c["Field"]], "text");
-				} else if($_POST["input_".$c["Field"]."_2"]) {
-					$label = $col_namen[$c["Field"]];
-					$value = format_userinput($_POST["input_".$c["Field"]."_2"], "text");
-				}
-				if($value) $log_message .= "$label: '$value', ";
-
-			} else {  //Bei Editieren nur die loggen, die geändert wurden
-				$new  = format_userinput($_POST["input_".$c["Field"]], "text");
-				$new2 = format_userinput($_POST["input_".$c["Field"]."_2"], "text");
-				$old  = $c["Type"] == "date" ? map_leute_daten($person[$c["Field"]], $c["Field"], $person) : $person[$c["Field"]];
-				if( ($old || $new) && $new != $old) {
-					$ll_old = getLL('kota_ko_leute_'.$c['Field'].'_'.$old);
-					$ll_new = getLL('kota_ko_leute_'.$c['Field'].'_'.$new);
-					$log_message .= $col_namen[$c["Field"]].": '".($ll_old ? $ll_old : $old)."' --> '".($ll_new ? $ll_new : $new)."', ";
-				} else if($new2 && $old != $new2) {
-					$log_message .= $col_namen[$c["Field"]].": '$new2', ";
-				}
-			}
-		}//if(!dont_log)
-
-	}//foreach(leute_cols as c_i => c)
-
-	// create log entry for parents
-	foreach (array('father', 'mother') as $parent) {
-		if (!isset($data[$parent])) continue;
-		$val = (int)$data[$parent];
-		if ($action == 'submit_neue_person') {
-			$log_message .= "{$col_namen[$parent]}: '{$val}', ";
-		} else {
-			if ($person[$parent] != $val) {
-				$log_message .= "{$col_namen[$parent]}: '{$person[$parent]}' --> '{$val}', ";
-			}
-		}
+		$_SESSION["show_back"] = $_SESSION["show"];
+		$_POST['id'] = $leute_id;
+		$_SESSION["show"] = "edit_person";
 	break;
 
 	case "delete_persons":
@@ -744,6 +645,7 @@ switch($do_action) {
 			}
 		}
 	break;
+
 
 
 	case 'merge_duplicates':
@@ -783,7 +685,7 @@ switch($do_action) {
 		$test = array();
 		foreach($all as $person) {
 			$value = array();
-			foreach($fields as $field) $value[] = strtolower($person[$field]);
+			foreach($fields as $field) $value[] = mb_strtolower($person[$field]);
 			$test[$person['id']] = implode('#', $value);
 		}
 		unset($all);
@@ -897,7 +799,7 @@ switch($do_action) {
 			}
 			if(sizeof($do_columns) < 1) koNotifier::Instance()->addError(4);
 
-			//Zu bearbeitende Einträge
+			//Zu bearbeitende EintrÃ¤ge
 			$do_ids = array();
 			foreach($_POST["chk"] as $c_i => $c) {
 				if($c) {
@@ -909,9 +811,9 @@ switch($do_action) {
 			}
 			if(sizeof($do_ids) < 1) $notifier->addError(5, $do_action);
 
-			//Daten für Formular-Aufruf vorbereiten
+			//Daten fÃ¼r Formular-Aufruf vorbereiten
 			if(!$notifier->hasErrors()) {
-				if(substr($_SESSION["sort_leute"][0], 0, 6) == "MODULE") {
+				if(mb_substr($_SESSION["sort_leute"][0], 0, 6) == "MODULE") {
 					$order = "ORDER BY nachname ASC";
 				} else {
 					$order = "ORDER BY ".$_SESSION["sort_leute"][0]." ".$_SESSION["sort_leute_order"][0];
@@ -932,7 +834,7 @@ switch($do_action) {
 			}
 			if(sizeof($do_columns) < 1) $notifier->addError(4, $do_action);
 
-			//Zu bearbeitende Einträge
+			//Zu bearbeitende EintrÃ¤ge
 			$do_ids = array();
 			foreach($_POST["chk"] as $c_i => $c) {
 				if($c) {
@@ -944,7 +846,7 @@ switch($do_action) {
 			}
 			if(sizeof($do_ids) < 1) $notifier->addError(5, $do_action);
 
-			//Daten für Formular-Aufruf vorbereiten
+			//Daten fÃ¼r Formular-Aufruf vorbereiten
 			$order = 'ORDER BY name ASC';  //Default
 			if(!$notifier->hasErrors()) {
 				if(is_string($_SESSION['sort_kg'])) $order = "ORDER BY ".$_SESSION["sort_kg"]." ".$_SESSION["sort_kg_order"];
@@ -972,7 +874,7 @@ switch($do_action) {
 
 
 
-	//Löschen
+	//LÃ¶schen
 	case "delete_person":
 		$del_id = format_userinput($_POST["id"], "uint", TRUE);
 		if(!$del_id) break;
@@ -1138,7 +1040,7 @@ switch($do_action) {
 			ko_log_diff("aa_insert", $data, $old_p);
 		}
 
-		//Mod-Eintrag löschen
+		//Mod-Eintrag lÃ¶schen
 		db_delete_data("ko_leute_mod", "WHERE `_id`='$mod_aa_id'");
 
 		if($_SESSION['show_back']) $_SESSION['show'] = $_SESSION['show_back'];
@@ -1247,7 +1149,7 @@ switch($do_action) {
 			$new_person = $_p;
 			//Unset fields not to be stored in ko_leute
 			foreach($new_person as $k => $v) {
-				if(substr($k, 0, 1) == "_") unset($new_person[$k]);
+				if(mb_substr($k, 0, 1) == "_") unset($new_person[$k]);
 			}
 
 			//Set salutation from gender or vice versa
@@ -1359,7 +1261,7 @@ switch($do_action) {
 			if(in_array('tracking', $MODULES)) {
 				$tracking = db_select_data('ko_tracking', "WHERE `filter` REGEXP '^g".$gid."[:r0-9]*'", '*', '', 'LIMIT 0,1', TRUE);
 				if(isset($tracking['id'])) {
-					include_once($ko_path.'tracking/inc/tracking.inc');
+					include_once __DIR__ . '/../tracking/inc/tracking.inc.php';
 					ko_tracking_set_default($tracking['id'], $lid);
 				}
 			}
@@ -1381,7 +1283,7 @@ switch($do_action) {
 		foreach($_p as $k => $v) {
 			if($k && $v != '') $logdata .= $k.': '.$v.', ';
 		}
-		if($logdata != '') $logdata = substr($logdata, 0, -2);
+		if($logdata != '') $logdata = mb_substr($logdata, 0, -2);
 
 
 		if($do_action == "submit_gs_aa" || $do_action == "submit_gs_ps_aa") {
@@ -1417,7 +1319,7 @@ switch($do_action) {
 
 		$_id = format_userinput($_POST["_id"], "uint");
 		ko_get_groupsubscriptions($_p, $_id); $_p = $_p[$_id];
-		//Mod-Eintrag löschen
+		//Mod-Eintrag lÃ¶schen
 		db_delete_data("ko_leute_mod", "WHERE `_id`='$_id'");
 
 		//Store deleted data in log
@@ -1425,7 +1327,7 @@ switch($do_action) {
 		foreach($_p as $k => $v) {
 			if($k && $v != '') $logdata .= $k.': '.$v.', ';
 		}
-		if($logdata != '') $logdata = substr($logdata, 0, -2);
+		if($logdata != '') $logdata = mb_substr($logdata, 0, -2);
 
 		ko_log("del_groupsubscription", $_p["vorname"]." " .$_p["nachname"].": ".$_p["_group_id"].' - '.$logdata);
 	break;
@@ -1482,7 +1384,7 @@ switch($do_action) {
 		//Set address ID to be kept. If force_keep is set on revision then use the new address,
 		// otherwise (default) keep the older address from the database.
 		// Keeping the new address is needed e.g. for import scripts, where the new address can hold
-		// a newer import id (e.g. Wiederzuzüger)). Used e.g. in plugin gemowin_import.
+		// a newer import id (e.g. WiederzuzÃ¼ger)). Used e.g. in plugin gemowin_import.
 		// For group subscriptions one usually wants to keep the old address (default)
 		$keepId = $revision['force_keep'] ? $revision['leute_id'] : $mergeId;
 
@@ -1604,9 +1506,9 @@ switch($do_action) {
 					$xls_cols = $_SESSION["show_leute_cols"];
 			break;
 			default:
-				if(substr($_POST["sel_cols"], 0, 4) == "set_") {
-					$setname = substr($_POST["sel_cols"], 4);
-					if(substr($setname, 0, 3) == '@G@') $set = ko_get_userpref('-1', substr($setname, 3), "leute_itemset");
+				if(mb_substr($_POST["sel_cols"], 0, 4) == "set_") {
+					$setname = mb_substr($_POST["sel_cols"], 4);
+					if(mb_substr($setname, 0, 3) == '@G@') $set = ko_get_userpref('-1', mb_substr($setname, 3), "leute_itemset");
 					else $set = ko_get_userpref($_SESSION["ses_userid"], $setname, "leute_itemset");
 					$xls_cols = explode(",", $set[0]["value"]);
 				}
@@ -1627,8 +1529,8 @@ switch($do_action) {
 
 		//Zeilen:
 		$pidlist = $famlist = array();
-		if(substr($_POST["sel_auswahl"], 0, 4) == "alle" && $_SESSION["show"] == "show_all") {
-			$mode = substr($_POST["sel_auswahl"], 4);
+		if(mb_substr($_POST["sel_auswahl"], 0, 4) == "alle" && $_SESSION["show"] == "show_all") {
+			$mode = mb_substr($_POST["sel_auswahl"], 4);
 
 			apply_leute_filter($_SESSION["filter"], $z_where, ($access['leute']['ALL'] < 1));
 			ko_get_leute($es, $z_where);
@@ -1637,7 +1539,7 @@ switch($do_action) {
 			}
 		}
 		//Birthday list
-		else if(($_POST['sel_auswahl'] == 'markierte' || substr($_POST['sel_auswahl'], 0, 4) == 'alle') && $_SESSION['show'] == 'geburtstagsliste') {
+		else if(($_POST['sel_auswahl'] == 'markierte' || mb_substr($_POST['sel_auswahl'], 0, 4) == 'alle') && $_SESSION['show'] == 'geburtstagsliste') {
 			$mode = 'p';
 			$deadline_plus = ko_get_userpref($_SESSION['ses_userid'], 'geburtstagsliste_deadline_plus');
 			$deadline_minus = ko_get_userpref($_SESSION['ses_userid'], 'geburtstagsliste_deadline_minus');
@@ -1657,8 +1559,8 @@ switch($do_action) {
 			$es = db_select_data('ko_leute', 'WHERE 1=1 '.$where, $cols, 'ORDER BY `deadline` ASC');
 		}
 		//Use mylist
-		else if(substr($_POST["sel_auswahl"], 0, 4) == "alle") {
-			$mode = substr($_POST["sel_auswahl"], 4);
+		else if(mb_substr($_POST["sel_auswahl"], 0, 4) == "alle") {
+			$mode = mb_substr($_POST["sel_auswahl"], 4);
 			$pidlist = $_SESSION["my_list"];
 		}
 		else if($_POST["sel_auswahl"] == "markierte") {
@@ -1670,7 +1572,7 @@ switch($do_action) {
 				}
 			}
 
-			//TODO: famchk in POST übergeben
+			//TODO: famchk in POST Ã¼bergeben
 			if(isset($_POST["famchk"])) {
 				foreach($_POST["famchk"] as $c_i => $c) {
 					if($c) $famlist[] = format_userinput($c_i, "uint");
@@ -1936,7 +1838,7 @@ switch($do_action) {
 							$cellTypes[$headerColCounter+1] = 'date';
 						}
 						//Define wrapping for excel cells (only wrap for group columns)
-						if($c == 'groups' || substr($c, 0, 9) == 'MODULEgrp') {
+						if($c == 'groups' || mb_substr($c, 0, 9) == 'MODULEgrp') {
 							$wrap[$headerColCounter+1] = TRUE;
 						} else {
 							$wrap[$headerColCounter+1] = FALSE;
@@ -1967,7 +1869,7 @@ switch($do_action) {
 					if(!$show) $show = 'show_all';
 					$_SESSION['show'] = $show;
 
-					$onload_code = "ko_popup('".$ko_path."download.php?action=file&amp;file=".substr($filename, 3)."');";
+					$onload_code = "ko_popup('".$ko_path."download.php?action=file&amp;file=".mb_substr($filename, 3)."');";
 				break;
 
 				case "sms":
@@ -1993,7 +1895,7 @@ switch($do_action) {
 					$smarty->assign("tpl_viewmodelink", $link);
 					$smarty->assign("ko_path", $ko_path);
 
-					//Leute-cols für Excel-Datei auslesen
+					//Leute-cols fÃ¼r Excel-Datei auslesen
 					$cols = array("anrede", "vorname", "nachname", "adresse", "adresse_zusatz", "plz", "ort", "telp", "telg", "natel");
 					if (strpos($sendmode, 'telegram') !== false) $cols[] = "telegram_id";
 
@@ -2007,7 +1909,7 @@ switch($do_action) {
 					foreach($es as $l_id => $l) {
 						$invalid = FALSE;
 
-						// todo: ignore not selected user from mylist (sind anscheinend im array, obwohl nicht gewählt.
+						// todo: ignore not selected user from mylist (sind anscheinend im array, obwohl nicht gewÃ¤hlt.
 
 						// first priority is telegram
 						if (strpos($sendmode, 'telegram') !== false && $l['telegram_id'] != -1) {
@@ -2045,7 +1947,7 @@ switch($do_action) {
 
 					//XLS-Datei aller Leute ohne GSM-Nummer erstellen
 					if($rec_invalid != "") {
-						$rec_invalid_ids = substr($rec_invalid_ids, 0, -1);
+						$rec_invalid_ids = mb_substr($rec_invalid_ids, 0, -1);
 						$smarty->assign("tpl_recipients_invalid", $rec_invalid);
 						$smarty->assign("tpl_recipients_invalid_ids", $rec_invalid_ids);
 						$filename = $ko_path."download/excel/".getLL("export_filename").strftime("%d%m%Y_%H%M%S", time()).".xlsx";
@@ -2093,8 +1995,6 @@ switch($do_action) {
 						$smarty->assign("tpl_show_sendmethods", TRUE);
 					}
 
-					$smarty->assign('crm_contact_tpl_groups', ko_get_crm_contact_form_group(array('leute_ids'), array('type' => 'sms')));
-
 					$_SESSION["show_back"] = $_SESSION["show"];
 					$_SESSION["show"] = "mobil_versand";
 				break;
@@ -2105,7 +2005,7 @@ switch($do_action) {
 					$_SESSION['leute_export_etiketten_post']['leute_ids'] = array_keys($es);
 					$_SESSION['leute_export_etiketten_post']['session_show'] = $_SESSION['show'];
 
-					//Vorlage-Namen auslesen (für Dropdown-Listen)
+					//Vorlage-Namen auslesen (fÃ¼r Dropdown-Listen)
 					ko_get_etiketten_vorlagen($vorlagen_);
 					foreach($vorlagen_ as $k => $v) {
 						$vorlagen["values"][] = $v['id'];
@@ -2162,7 +2062,7 @@ switch($do_action) {
 						$returnAddressLogin .= $person['adresse'] ? $person['adresse'].', ' : '';
 						$returnAddressLogin .= $person['plz'] ? $person['plz'].' ' : '';
 						$returnAddressLogin .= $person['ort'] ? $person['ort'].', ' : '';
-						if(substr($returnAddressLogin, -2) == ', ') $returnAddressLogin = substr($returnAddressLogin, 0, -2);
+						if(mb_substr($returnAddressLogin, -2) == ', ') $returnAddressLogin = mb_substr($returnAddressLogin, 0, -2);
 					}
 					else {
 						$returnAddressLogin = null;
@@ -2173,7 +2073,7 @@ switch($do_action) {
 						$returnAddressInfo .= ko_get_setting('info_address') ? ko_get_setting('info_address').', ' : '';
 						$returnAddressInfo .= ko_get_setting('info_zip') ? ko_get_setting('info_zip').' ' : '';
 						$returnAddressInfo .= ko_get_setting('info_city') ? ko_get_setting('info_city').', ' : '';
-						if(substr($returnAddressInfo, -2) == ', ') $returnAddressInfo = substr($returnAddressInfo, 0, -2);
+						if(mb_substr($returnAddressInfo, -2) == ', ') $returnAddressInfo = mb_substr($returnAddressInfo, 0, -2);
 					}
 					else {
 						$returnAddressInfo = null;
@@ -2381,7 +2281,7 @@ switch($do_action) {
 						$letters[] = ''; $letters_ids[] = '';
 						foreach($rows as $letter) {
 							$letters_ids[] = $letter['id'];
-							$letters[] = strftime($DATETIME['dmy'], strtotime($letter['crdate'])).' '.ko_html(substr($letter['subject'], 0, 40)).' ('.$letter['num_recipients'].')';
+							$letters[] = strftime($DATETIME['dmy'], strtotime($letter['crdate'])).' '.ko_html(mb_substr($letter['subject'], 0, 40)).' ('.$letter['num_recipients'].')';
 						}
 						$smarty->assign('letters', $letters);
 						$smarty->assign('letters_ids', $letters_ids);
@@ -2426,13 +2326,12 @@ switch($do_action) {
 
 
 				case 'vcard':
-					include_once($ko_path.'leute/inc/vcard.php');
-					$v = new vCard();
+					$v = new OpenKool\DAV\vCard();
 					foreach($es as $person) {
 						$v->addPerson($person);
 					}
 					$filename = $v->writeCard();
-					$onload_code = "ko_popup('".$ko_path.'download.php?action=file&amp;file='.substr($filename, 3)."');";
+					$onload_code = "ko_popup('".$ko_path.'download.php?action=file&amp;file='.mb_substr($filename, 3)."');";
 				break;
 			}
 		}//if(!error)
@@ -2453,7 +2352,7 @@ switch($do_action) {
 
 		$filename = ko_export_leute_as_pdf($layout_id, '', FALSE, TRUE);
 
-		$onload_code = "ko_popup('".$ko_path."download.php?action=file&amp;file=".substr($filename, 3)."');";
+		$onload_code = "ko_popup('".$ko_path."download.php?action=file&amp;file=".mb_substr($filename, 3)."');";
 		$_SESSION["show"] = $_SESSION["show_back"] ? $_SESSION["show_back"] : "show_all";
 	break;
 
@@ -2540,7 +2439,7 @@ switch($do_action) {
 				if ($ret) {
 					$notifier->addInfo(99, $do_action);
 					$info_txt = getLL('info_leute_99a') . $success . '/' . $done . getLL('info_leute_99b');
-					if ($problems) $info_txt .= getLL('info_leute_99c') . substr($problems, 0, -2);
+					if ($problems) $info_txt .= getLL('info_leute_99c') . mb_substr($problems, 0, -2);
 					$info_txt .= getLL('info_leute_99d') . ' ' . $charges;
 				} else {
 					$my_error_txt = $error_message;
@@ -2575,7 +2474,7 @@ switch($do_action) {
 			$upload_name = $_FILES['file_sig_file']['name'];
 			$tmp = $_FILES['file_sig_file']['tmp_name'];
 			$ext_ = explode('.', $upload_name);
-			$ext = strtolower($ext_[sizeof($ext_)-1]);
+			$ext = mb_strtolower($ext_[sizeof($ext_)-1]);
 
 			if(in_array($ext, $mailmerge_signature_ext)) {
 				$path = $BASE_PATH.'my_images/';
@@ -2609,7 +2508,7 @@ switch($do_action) {
 			//Used to store values for marks ###COL_X### to be replaced in text and subject below
 			$mapCols = array(); $colcounter = 0;
 			foreach($cols as $col) {
-				if(substr($col, 0, 6) == 'MODULE') {
+				if(mb_substr($col, 0, 6) == 'MODULE') {
 					$value = map_leute_daten($p[$col], $col, $p, $all_datafields);
 					if(is_array($value)) {
 						$values = NULL;
@@ -2648,7 +2547,7 @@ switch($do_action) {
 			//Replace markers in text
 			$text = strtr($_POST['txt_text'], $mapCols);
 			//Remove any newlines at the end of the text
-			while(substr($text, -2) == '\\\\') $text = substr($text, 0, -2);
+			while(mb_substr($text, -2) == '\\\\') $text = mb_substr($text, 0, -2);
 			$data[$p_id]['_text_'] = $text;
 
 			$counter++;
@@ -2820,11 +2719,6 @@ switch($do_action) {
 		}
 	break;
 
-	case "submit_email_contact_entry":
-		// create crm entries
-		ko_create_crm_contact_from_post();
-		$_SESSION['show'] = 'show_all';
-	break;
 
 
 	case "submit_email_contact_entry":
@@ -2879,12 +2773,12 @@ switch($do_action) {
 
 		$filter_akt = 0;
 		ko_get_filters($filters, "leute");
-    foreach($filters as $ff) {
-      if(!$filter_akt && $ff["_name"] == "smallgroup") {
-        $filter_akt = $ff["id"];
-        $f = $ff;
-      }
-    }
+		foreach($filters as $ff) {
+			if(!$filter_akt && $ff["_name"] == "smallgroup") {
+				$filter_akt = $ff["id"];
+				$f = $ff;
+			}
+		}
 		if(!$filter_akt) break;
 
 		$vars = array(1 => $id);
@@ -2958,7 +2852,7 @@ switch($do_action) {
 			//Get preset from userprefs
 			$name = format_userinput($cols, 'js', FALSE, 0, array(), '@');
 			if($name == '') break;
-			if(substr($name, 0, 3) == '@G@') $preset = ko_get_userpref('-1', substr($name, 3), 'leute_kg_itemset');
+			if(mb_substr($name, 0, 3) == '@G@') $preset = ko_get_userpref('-1', mb_substr($name, 3), 'leute_kg_itemset');
 			else $preset = ko_get_userpref($_SESSION['ses_userid'], $name, 'leute_kg_itemset');
 			$use_cols = explode(',', $preset[0]['value']);
 		}
@@ -2971,7 +2865,7 @@ switch($do_action) {
 		$_SESSION['kota_show_cols_ko_kleingruppen'] = $use_cols;
 
 		$filename = ko_list_kg(TRUE, 'xls');
-		$onload_code = "ko_popup('".$ko_path.'download.php?action=file&amp;file='.substr($filename, 3)."');";
+		$onload_code = "ko_popup('".$ko_path.'download.php?action=file&amp;file='.mb_substr($filename, 3)."');";
 
 		//Restore columns
 		$_SESSION['kota_show_cols_ko_kleingruppen'] = $orig_cols;
@@ -3021,7 +2915,7 @@ switch($do_action) {
 				$cols = array_keys(ko_get_leute_col_name(FALSE, TRUE));
 				if(ko_get_userpref($_SESSION['ses_userid'], 'group_shows_datafields') == 1) {
 					foreach($cols as $col) {
-						if(substr($col, 0, 15) != 'MODULEgrp'.$id) continue;
+						if(mb_substr($col, 0, 15) != 'MODULEgrp'.$id) continue;
 						if(!in_array($col, $_SESSION['show_leute_cols'])) $_SESSION['show_leute_cols'][] = $col;
 					}
 				}
@@ -3538,19 +3432,6 @@ switch($do_action) {
 
 				if($doLdap) ko_ldap_close($ldap);
 
-				if($doLdap) ko_ldap_close($ldap);
-
-
-				if (!$notifier->hasErrors()) {
-					$notifier->addInfo(19, $do_action, array(sizeof($context['data'])));
-					unset($_SESSION['leute_import']);
-					$_SESSION['show'] = $_SESSION['show_back'] ? $_SESSION['show_back'] : 'show_all';
-				} else {
-					$context['state'] = 2;
-				}
-			break;
-		}
-	break;
 
 				if (!$notifier->hasErrors()) {
 					$notifier->addInfo(19, $do_action, array(sizeof($context['data'])));
@@ -3640,7 +3521,7 @@ switch($do_action) {
 				if(!isset($all_teams[(int)$did])) continue;
 				list($gid) = explode(',', $all_teams[(int)$did]['group_id']);
 				$full_gid = ko_groups_decode($gid, 'full_gid');
-				if($role_team && FALSE === strpos($full_gid, ':r')) $full_gid .= ':r'.$role_team;
+				if($role_team && FALSE === mb_strpos($full_gid, ':r')) $full_gid .= ':r'.$role_team;
 				$grps[] = $full_gid;
 			}
 
@@ -3650,7 +3531,7 @@ switch($do_action) {
 				if(!isset($all_teams[(int)$did])) continue;
 				list($gid) = explode(',', $all_teams[(int)$did]['group_id']);
 				$full_gid = ko_groups_decode($gid, 'full_gid');
-				if($role_leader && FALSE === strpos($full_gid, ':r')) $full_gid .= ':r'.$role_leader;
+				if($role_leader && FALSE === mb_strpos($full_gid, ':r')) $full_gid .= ':r'.$role_leader;
 				$grps[] = $full_gid;
 			}
 
@@ -3762,8 +3643,8 @@ switch($do_action) {
 		} else if($birthday_filter == -1) {
 			//Don't touch, the current filter was set by a different user and no change has been made
 		} else {
-			$user_id = substr($birthday_filter, 0, 3) == '@G@' ? -1 : $_SESSION['ses_userid'];
-			$key = substr($birthday_filter, 0, 3) == '@G@' ? substr($birthday_filter, 3) : $birthday_filter;
+			$user_id = mb_substr($birthday_filter, 0, 3) == '@G@' ? -1 : $_SESSION['ses_userid'];
+			$key = mb_substr($birthday_filter, 0, 3) == '@G@' ? mb_substr($birthday_filter, 3) : $birthday_filter;
 			$filter = ko_get_userpref($user_id, $key, 'filterset');
 			$filter = array_pop($filter);
 			if($filter['value']) ko_save_userpref($_SESSION['ses_userid'], 'birthday_filter', serialize($filter));
@@ -3848,8 +3729,7 @@ switch($do_action) {
 
 	//Default:
 	default:
-		if(!hook_action_handler($do_action))
-      include($ko_path."inc/abuse.inc");
+		hook_action_handler($do_action);
 	break;
 
 }//switch(action)
@@ -3959,7 +3839,7 @@ ko_set_submenues();
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="<?php print $_SESSION["lang"]; ?>" lang="<?php print $_SESSION["lang"]; ?>">
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1" />
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title><?php print "$HTML_TITLE: ".getLL("module_".$ko_menu_akt); ?></title>
@@ -3977,8 +3857,8 @@ print ko_include_js(
 	), ($_SESSION['show'] == 'list_kg' ? 'kg' : $ko_menu_akt)
 );
 
-include($ko_path.'inc/js-sessiontimeout.inc');
-include("inc/js-leute.inc");
+include __DIR__ . '/../inc/js-sessiontimeout.inc.php';
+include __DIR__ . '/inc/js-leute.inc.php';
 
 //prepare group select for formular and group filter
 $list_id = 1;
@@ -3994,7 +3874,7 @@ if($_SESSION["show"] == "neue_person" || $_SESSION["show"] == "edit_person") {
 	//Beim Einteilen die vergangenen Gruppen nie anzeigen
 	$orig_value = ko_get_userpref($_SESSION['ses_userid'], 'show_passed_groups');
 	ko_save_userpref($_SESSION['ses_userid'], 'show_passed_groups', 0);
-	include("inc/js-groupmenu.inc");
+	include __DIR__ . '/inc/js-groupmenu.inc.php';
 	ko_save_userpref($_SESSION['ses_userid'], 'show_passed_groups', $orig_value);
 	$loadcode = "initList($list_id, $('.groupselect.groupselect-left')[0]);";
 	$onload_code = $loadcode.$onload_code;
@@ -4004,11 +3884,11 @@ if($_SESSION["show"] == "neue_person" || $_SESSION["show"] == "edit_person") {
 		$loadcode = "initList($list_id, document.getElementsByName('sel1-var1')[0]);";
 		$onload_code = $loadcode.$onload_code;
 	}
-	//Beim Filter die vergangenen Gruppen gemäss Einstellung zeigen
+	//Beim Filter die vergangenen Gruppen gemÃ¤ss Einstellung zeigen
 	//allerdings auch Platzhalter-Gruppen anzeigen
 	$show_all_types = TRUE;
 	$includeMaxedGroups = TRUE;
-	include("inc/js-groupmenu.inc");
+	include __DIR__ . '/inc/js-groupmenu.inc.php';
 }
 ?>
 </head>
@@ -4017,9 +3897,9 @@ if($_SESSION["show"] == "neue_person" || $_SESSION["show"] == "edit_person") {
 
 <?php
 /*
- * Gibt bei erfolgreichem Login das Menü aus, sonst einfach die Loginfelder
+ * Gibt bei erfolgreichem Login das MenÃ¼ aus, sonst einfach die Loginfelder
  */
-include($ko_path . "menu.php");
+require __DIR__ . '/../inc/menu.inc.php';
 
 ko_get_outer_submenu_code('leute');
 ?>
@@ -4201,7 +4081,7 @@ hook_show_case_add($_SESSION["show"]);
 
 </div>
 
-<?php include($ko_path . "footer.php"); ?>
+<?php include __DIR__ . '/../config/footer.php' ?>
 
 </body>
 </html>

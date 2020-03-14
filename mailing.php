@@ -1,29 +1,25 @@
 <?php
+/*******************************************************************************
+*
+*    OpenKool - Online church organization tool
+*
+*    Copyright Â© 2003-2020 Renzo Lauper (renzo@churchtool.org)
+*    Copyright Â© 2019-2020 Daniel Lerch
+*
+*    This program is free software; you can redistribute it and/or modify
+*    it under the terms of the GNU General Public License as published by
+*    the Free Software Foundation; either version 2 of the License, or
+*    (at your option) any later version.
+*
+*    This program is distributed in the hope that it will be useful,
+*    but WITHOUT ANY WARRANTY; without even the implied warranty of
+*    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+*    GNU General Public License for more details.
+*
+*******************************************************************************/
 
-/***************************************************************
- *  Copyright notice
- *
- *  (c) 2003-2020 Renzo Lauper (renzo@churchtool.org)
- *  All rights reserved
- *
- *  This script is part of the kOOL project. The kOOL project is
- *  free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
- *
- *  The GNU General Public License can be found at
- *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
- *  from the author is found in LICENSE.txt distributed with these scripts.
- *
- *  kOOL is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
+use PHPMailer\PHPMailer\Exception;
+use PHPMailer\PHPMailer\PHPMailer;
 
 // return warning if called from console
 if (isset($argc) && $argc >= 1) {
@@ -168,10 +164,10 @@ function ko_mailing_main ($test = false, $mail_id_in = null, $recipient_in = nul
 		}
 
 		//Find quoted-printable in header
-		if(FALSE !== strpos(strtolower($mail['header']), 'content-transfer-encoding: quoted-printable')) $qp = TRUE;
+		if(FALSE !== mb_strpos(strtolower($mail['header']), 'content-transfer-encoding: quoted-printable')) $qp = TRUE;
 		else $qp = FALSE;
 		//Find utf-8 encoding. If set then encode recipient's name
-		//if(FALSE !== strpos(strtolower($mail['header']), 'charset=utf-8')) $utf8 = TRUE;
+		//if(FALSE !== mb_strpos(strtolower($mail['header']), 'charset=utf-8')) $utf8 = TRUE;
 		//else $utf8 = FALSE;
 
 		$to = "To: ".mb_encode_mimeheader($rec['name'], 'UTF-8', 'Q')." <".$recipient.">" . CRLF;
@@ -622,7 +618,7 @@ function ko_mailing_send_mails($mailer,$mails_per_cycle) {
 		//Find quoted-printable in header
 
 		//Find utf-8 encoding. If set then encode recipient's name
-		//if(FALSE !== strpos(strtolower($mail['header']), 'charset=utf-8')) $utf8 = TRUE;
+		//if(FALSE !== mb_strpos(mb_strtolower($mail['header']), 'charset=utf-8')) $utf8 = TRUE;
 		//else $utf8 = FALSE;
 
 		//Get next recipients and send emails
@@ -675,7 +671,7 @@ function ko_mailing_send_mails($mailer,$mails_per_cycle) {
 
 			$message = ko_emailtext(trim($mail['header'])).$to.$bulkHeader.$subject.CRLF.ko_emailtext($body);
 
-			$mailer->removeAddresses();
+			$mailer->clearAddresses();
 
 			try {
 				$mailer->setSender($sender);
@@ -827,9 +823,9 @@ function ko_mailing_parse_crm_project($pattern) {
 		if ($project['number'] != $pattern) $project = NULL;
 	}
 	if (!$project) {
-		$title = str_replace(array(',', '.', '@', ' ', 'ä', 'ö', 'ü'), array('', '', '', '', 'ae', 'oe', 'ue'), strtolower($pattern));
-		$project = db_select_data('ko_crm_projects', "WHERE REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(LOWER(`title`), ' ', ''), ',', ''), '@', ''), '.', ''), 'ä', 'ae'), 'ü', 'ue'), 'ö', 'oe') = '{$title}'", '*', '', '', TRUE);
-		if (str_replace(array(',', '.', '@', ' ', 'ä', 'ö', 'ü'), array('', '', '', '', 'ae', 'oe', 'ue'), strtolower($project['title'])) != $title) $project = NULL;
+		$title = str_replace(array(',', '.', '@', ' ', 'Ã¤', 'Ã¶', 'Ã¼'), array('', '', '', '', 'ae', 'oe', 'ue'), strtolower($pattern));
+		$project = db_select_data('ko_crm_projects', "WHERE REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(LOWER(`title`), ' ', ''), ',', ''), '@', ''), '.', ''), 'Ã¤', 'ae'), 'Ã¼', 'ue'), 'Ã¶', 'oe') = '{$title}'", '*', '', '', TRUE);
+		if (str_replace(array(',', '.', '@', ' ', 'Ã¤', 'Ã¶', 'Ã¼'), array('', '', '', '', 'ae', 'oe', 'ue'), strtolower($project['title'])) != $title) $project = NULL;
 	}
 
 	return $project;
@@ -841,8 +837,8 @@ function ko_mailing_get_sender_login(&$from) {
 	//Find sender email address
 	$pos1 = strrpos($from, '<');
 	if(FALSE !== $pos1) {
-		$pos2 = strpos($from, '>', $pos1);
-		$from = substr($from, $pos1 + 1, ($pos2 ? $pos2 : strlen($from)) - $pos1 - 1);
+		$pos2 = mb_strpos($from, '>', $pos1);
+		$from = mb_substr($from, $pos1 + 1, ($pos2 ? $pos2 : mb_strlen($from)) - $pos1 - 1);
 	}
 	if(!check_email($from)) return FALSE;
 	$from = strtolower($from);
@@ -915,8 +911,8 @@ function ko_mailing_mail_confirmed($login, $code) {
 function ko_mailing_get_recipients($login, $rec, &$accessError = null) {
 	global $access, $sender_email;
 
-	$mode = substr($rec, 0, 2);
-	$data = substr($rec, 2);
+	$mode = mb_substr($rec, 0, 2);
+	$data = mb_substr($rec, 2);
 	$_recipients = array();
 	$allow = false;
 	$accessError = FALSE;
@@ -995,8 +991,8 @@ function ko_mailing_get_recipients($login, $rec, &$accessError = null) {
 function ko_mailing_get_rec_name($login, $rec) {
 	global $all_groups;
 
-	$mode = substr($rec, 0, 2);
-	$data = substr($rec, 2);
+	$mode = mb_substr($rec, 0, 2);
+	$data = mb_substr($rec, 2);
 
 	switch($mode) {
 		case 'gr':
@@ -1072,7 +1068,7 @@ function ko_mailing_error($login, $error, $mail, $to='') {
 	foreach($mail as $k => $v) {
 		if($k && $v) $log .= $k.': '.$v.', ';
 	}
-	if(substr($log, 0, -2) == ', ') $log = substr($log, 0, -2);
+	if(mb_substr($log, 0, -2) == ', ') $log = mb_substr($log, 0, -2);
 	db_insert_data('ko_log', array('type' => 'mailing_error', 'comment' => $log, 'user_id' => $login['id'], 'date' => date('Y-m-d H:i:s')));
 }//ko_mailing_error()
 
@@ -1368,7 +1364,7 @@ function ko_mailing_summary($login, $mail, $body='') {
 		if(!$bodytext) $bodytext = trim(imap_fetchbody($imap, $mail['msgno'], '1'));
 		if(!$bodytext) $bodytext = trim(imap_fetchbody($imap, $mail['msgno'], '2.1'));
 
-		$summary .= "\n".($bodytext ? $bodytext : (substr($body, 0, 200)."\n[...]\n"));
+		$summary .= "\n".($bodytext ? $bodytext : (mb_substr($body, 0, 200)."\n[...]\n"));
 	}
 
 	return $summary;
@@ -1510,11 +1506,11 @@ function ko_mailing_get_sender_roles(&$group, $sender_email) {
 	$people = db_select_data('ko_leute', "WHERE 1 AND (".implode(' OR ', $where).") AND `deleted` = '0' AND `hidden` = '0'");
 	foreach($people as $p) {
 		//Find members. Just a member of the group not regarding the role
-		if(FALSE !== strpos($p['groups'], 'g'.$group['id'])) {
+		if(FALSE !== mb_strpos($p['groups'], 'g'.$group['id'])) {
 			$roles[] = 'member';
 		}
 		//Find moderator for the selected moderator role for this group
-		if($group['mailing_mod_role'] && $group['mailing_mod_role'] != '_none' && in_array($group['mailing_mod_role'], explode(',', $group['roles'])) && FALSE !== strpos($p['groups'], 'g'.$group['id'].':r'.$group['mailing_mod_role'])) {
+		if($group['mailing_mod_role'] && $group['mailing_mod_role'] != '_none' && in_array($group['mailing_mod_role'], explode(',', $group['roles'])) && FALSE !== mb_strpos($p['groups'], 'g'.$group['id'].':r'.$group['mailing_mod_role'])) {
 			$roles[] = 'moderator';
 		}
 		//Find moderator if mod_role is set to _none

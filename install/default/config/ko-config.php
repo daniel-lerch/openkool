@@ -1,28 +1,22 @@
 <?php
-/***************************************************************
-*  Copyright notice
+/*******************************************************************************
 *
-*  (c) 2003-2020 Renzo Lauper (renzo@churchtool.org)
-*  All rights reserved
+*    OpenKool - Online church organization tool
 *
-*  This script is part of the kOOL project. The kOOL project is
-*  free software; you can redistribute it and/or modify
-*  it under the terms of the GNU General Public License as published by
-*  the Free Software Foundation; either version 2 of the License, or
-*  (at your option) any later version.
+*    Copyright © 2003-2020 Renzo Lauper (renzo@churchtool.org)
+*    Copyright © 2019-2020 Daniel Lerch
 *
-*  The GNU General Public License can be found at
-*  http://www.gnu.org/copyleft/gpl.html.
-*  A copy is found in the textfile GPL.txt and important notices to the license
-*  from the author is found in LICENSE.txt distributed with these scripts.
+*    This program is free software; you can redistribute it and/or modify
+*    it under the terms of the GNU General Public License as published by
+*    the Free Software Foundation; either version 2 of the License, or
+*    (at your option) any later version.
 *
-*  kOOL is distributed in the hope that it will be useful,
-*  but WITHOUT ANY WARRANTY; without even the implied warranty of
-*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-*  GNU General Public License for more details.
+*    This program is distributed in the hope that it will be useful,
+*    but WITHOUT ANY WARRANTY; without even the implied warranty of
+*    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+*    GNU General Public License for more details.
 *
-*  This copyright notice MUST APPEAR in all copies of the script!
-***************************************************************/
+*******************************************************************************/
 
 //Titel
 $HTML_TITLE= '';
@@ -53,14 +47,8 @@ $ldap_dn = 'ou=kOOL_,dc=your,dc=ldap,dc=server';
 
 //Base
 $BASE_URL  = '';
-$BASE_PATH = '';
+$BASE_PATH = ''; // trailing slash required
 @define('FORCE_SSL', FALSE);
-
-//Smarty
-$smarty_dir = $BASE_PATH;
-
-//Include path for smarty (if installed locally)
-$INCLUDE_PATH_SMARTY = '';
 
 //Transport settings for email (using SwiftMailer)
 //method can be: smtp, mail or sendmail
@@ -121,7 +109,7 @@ $FAMFUNCTION_SORT_ORDER = array('husband' => 1, 'wife' => 2, 'child' => 3);
 // Use _default to overwrite values for default rectype, e.g. empty firm field:
 // $RECTYPES['_default'] = array('firm' => '');
 
-//Define different colors for single events/reservations (see inc/ko.inc for details)
+//Define different colors for single events/reservations (see inc/ko.inc.php for details)
 //$EVENT_COLOR = array();
 //$RES_COLOR = array();
 

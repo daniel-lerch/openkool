@@ -1,39 +1,35 @@
 <?php
-/***************************************************************
- *  Copyright notice
- *
- *  (c) 2003-2020 Renzo Lauper (renzo@churchtool.org)
- *  All rights reserved
- *
- *  This script is part of the kOOL project. The kOOL project is
- *  free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
- *
- *  The GNU General Public License can be found at
- *  http://www.gnu.org/copyleft/gpl.html.
- *  A copy is found in the textfile GPL.txt and important notices to the license
- *  from the author is found in LICENSE.txt distributed with these scripts.
- *
- *  kOOL is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
+/*******************************************************************************
+*
+*    OpenKool - Online church organization tool
+*
+*    Copyright © 2003-2020 Renzo Lauper (renzo@churchtool.org)
+*    Copyright © 2019-2020 Daniel Lerch
+*
+*    This program is free software; you can redistribute it and/or modify
+*    it under the terms of the GNU General Public License as published by
+*    the Free Software Foundation; either version 2 of the License, or
+*    (at your option) any later version.
+*
+*    This program is distributed in the hope that it will be useful,
+*    but WITHOUT ANY WARRANTY; without even the implied warranty of
+*    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+*    GNU General Public License for more details.
+*
+*******************************************************************************/
 
-header('Content-Type: text/html; charset=ISO-8859-1');
+header('Content-Type: text/html; charset=UTF-8');
 
 $ko_path = '../';
 $ko_menu_akt = "consensus";
 $SMARTY_RENDER_TEMPLATE = NULL;
 
-require($ko_path . 'inc/ko.inc');
-require($ko_path . 'rota/inc/rota.inc');
+require __DIR__ . '/../inc/ko.inc.php';
+require __DIR__ . '/../rota/inc/rota.inc.php';
 ko_include_kota(['ko_rota_teams', 'ko_event']);
-require_once('consensus.inc');
+require __DIR__ . '/../inc/smarty.inc.php';
+require_once __DIR__ . '/consensus.inc.php';
+use OpenKool\koNotifier;
 
 $notifier = koNotifier::Instance();
 
@@ -81,7 +77,7 @@ if ($do_action == '') {
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="<?php print $_SESSION['lang']; ?>"
 	  lang="<?php print $_SESSION['lang']; ?>">
 <head>
-	<meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1"/>
+	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
 	<meta http-equiv="X-UA-Compatible" content="IE=edge">
 	<meta name="viewport" content="width=device-width, initial-scale=1" />
 	<title><?php print $HTML_TITLE.': '.getLL('ko_consensus'); ?></title>
@@ -109,7 +105,7 @@ print '<script type="text/javascript" src="' . $ko_path . 'inc/moment/'.$moment_
 print '<script type="text/javascript" src="' . $ko_path . 'inc/bootstrap/plugins/bootstrap-datetimepicker-master/js/bootstrap-datetimepicker.js?'.filemtime($ko_path.'inc/bootstrap/plugins/bootstrap-datetimepicker-master/js/bootstrap-datetimepicker.js').'"></script>';
 
 print '<script type="text/javascript" src="' . $ko_path . 'inc/tooltip.js?'.filemtime($ko_path.'inc/tooltip.js').'"></script>';
-include("js-consensus.inc");
+include __DIR__ . '/js-consensus.inc.php';
 print '<link rel="stylesheet" type="text/css" href="'.$ko_path.'kool-base.css?'.filemtime($ko_path.'consensus/consensus.css').'" />';
 print '<link rel="stylesheet" type="text/css" href="'.$ko_path.'consensus/consensus.css?'.filemtime($ko_path.'consensus/consensus.css').'" />';
 foreach($PLUGINS as $p) {
@@ -134,7 +130,7 @@ foreach($PLUGINS as $p) {
 		<div class="container-fluid" id="header">
 			<div class="row">
 				<div class="col-sm-7 col-xs-12" id="logo">
-					<?php include($BASE_PATH . 'header.php') ?>
+					<?php include __DIR__ . '/../config/header.php' ?>
 				</div>
 				<div class="col-sm-5 hidden-xs" id="title">
 					<h2><?= getLL('ko_consensus') ?></h2>

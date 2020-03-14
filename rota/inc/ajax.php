@@ -1,28 +1,22 @@
 <?php
-/***************************************************************
-*  Copyright notice
+/*******************************************************************************
 *
-*  (c) 2003-2020 Renzo Lauper (renzo@churchtool.org)
-*  All rights reserved
+*    OpenKool - Online church organization tool
 *
-*  This script is part of the kOOL project. The kOOL project is
-*  free software; you can redistribute it and/or modify
-*  it under the terms of the GNU General Public License as published by
-*  the Free Software Foundation; either version 2 of the License, or
-*  (at your option) any later version.
+*    Copyright © 2003-2020 Renzo Lauper (renzo@churchtool.org)
+*    Copyright © 2019-2020 Daniel Lerch
 *
-*  The GNU General Public License can be found at
-*  http://www.gnu.org/copyleft/gpl.html.
-*  A copy is found in the textfile GPL.txt and important notices to the license
-*  from the author is found in LICENSE.txt distributed with these scripts.
+*    This program is free software; you can redistribute it and/or modify
+*    it under the terms of the GNU General Public License as published by
+*    the Free Software Foundation; either version 2 of the License, or
+*    (at your option) any later version.
 *
-*  kOOL is distributed in the hope that it will be useful,
-*  but WITHOUT ANY WARRANTY; without even the implied warranty of
-*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-*  GNU General Public License for more details.
+*    This program is distributed in the hope that it will be useful,
+*    but WITHOUT ANY WARRANTY; without even the implied warranty of
+*    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+*    GNU General Public License for more details.
 *
-*  This copyright notice MUST APPEAR in all copies of the script!
-***************************************************************/
+*******************************************************************************/
 
 error_reporting(0);
 
@@ -32,15 +26,13 @@ if (isset($_GET["sesid"])) $sesid = $_GET["sesid"];
 if (!$sesid && isset($_POST["sesid"])) $sesid = $_POST["sesid"];
 if(FALSE === session_id($sesid)) exit;
 
-//Send headers to ensure latin1 charset
-header('Content-Type: text/html; charset=ISO-8859-1');
-
+//Send headers to ensure UTF-8 charset
+header('Content-Type: text/html; charset=UTF-8');
+ 
 $ko_menu_akt = 'rota';
 $ko_path = '../../';
-require_once($ko_path.'inc/ko.inc');
+require_once __DIR__ . '/../../inc/ko.inc.php';
 $ko_path = '../';
-
-array_walk_recursive($_GET,'utf8_decode_array');
 
 //Rechte auslesen
 ko_get_access('daten');
@@ -51,12 +43,14 @@ ko_include_kota(array('ko_rota_teams', 'ko_event'));
 
 //Plugins
 $hooks = hook_include_main('rota');
-if(sizeof($hooks) > 0) foreach($hooks as $hook) include_once($hook);
+foreach($hooks as $hook) include_once($hook);
  
-require($BASE_PATH.'rota/inc/rota.inc');
+require __DIR__ . '/../../inc/smarty.inc.php';
+
+require __DIR__ . '/rota.inc.php';
 
 $hooks = hook_include_sm();
-if(sizeof($hooks) > 0) foreach($hooks as $hook) include($hook);
+foreach($hooks as $hook) include($hook);
 
 hook_show_case_pre($_SESSION['show']);
 
@@ -738,7 +732,7 @@ if((isset($_GET) && isset($_GET["action"])) || (isset($_POST) && isset($_POST["a
 			kota_ko_event_eventgruppen_id_dynselect($v, $d, 1);
 			if($id == '-') {  //Back to index
 				foreach($v as $vid => $_v) {
-					$suffix = substr($vid, 0, 1) == 'i' ? '-->' : '';
+					$suffix = mb_substr($vid, 0, 1) == 'i' ? '-->' : '';
 					$values[] = $vid.','.$d[$vid].$suffix;
 				}
 			} else {  //Show event groups for the chosen calendar
@@ -855,7 +849,7 @@ if((isset($_GET) && isset($_GET["action"])) || (isset($_POST) && isset($_POST["a
 				$_SESSION['rota_teams'] = array();
 				$_SESSION['rota_teams_readonly'] = array();
 			} else {
-				if(substr($name, 0, 3) == '@G@') $value = ko_get_userpref('-1', substr($name, 3), 'rota_itemset');
+				if(mb_substr($name, 0, 3) == '@G@') $value = ko_get_userpref('-1', mb_substr($name, 3), 'rota_itemset');
 				else $value = ko_get_userpref($_SESSION['ses_userid'], $name, 'rota_itemset');
 
 				$_SESSION['rota_teams'] = [];
@@ -889,8 +883,8 @@ if((isset($_GET) && isset($_GET["action"])) || (isset($_POST) && isset($_POST["a
 			$name = format_userinput($_GET['name'], 'js', FALSE, 0, array(), '@');
 			if($name == '') break;
 
-			if(substr($name, 0, 3) == '@G@') {
-				if($access['rota']['MAX'] > 4) ko_delete_userpref('-1', substr($name, 3), 'rota_itemset');
+			if(mb_substr($name, 0, 3) == '@G@') {
+				if($access['rota']['MAX'] > 4) ko_delete_userpref('-1', mb_substr($name, 3), 'rota_itemset');
 			} else ko_delete_userpref($_SESSION['ses_userid'], $name, 'rota_itemset');
 
 			print submenu_rota('itemlist_teams', 'open', 2);
@@ -916,7 +910,7 @@ if((isset($_GET) && isset($_GET["action"])) || (isset($_POST) && isset($_POST["a
 			} else if($action == 'itemlistgroup') {
 				$groups = db_select_data('ko_eventgruppen', "WHERE `calendar_id` = '$id'", '*', 'ORDER BY name ASC');
 				foreach($groups as $gid => $group) {
-					if(!$access['daten'][$gid]) continue;
+					if(!$access['daten'][$gid]) break;
 					if($state == 'checked') {  //Select it
 						if(!in_array($gid, $_SESSION['rota_egs'])) $_SESSION['rota_egs'][] = $gid;
 					} else {  //Deselect it

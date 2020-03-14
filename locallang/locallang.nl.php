@@ -1,30 +1,25 @@
 <?php
-/***************************************************************
-*  Copyright notice
+/*******************************************************************************
 *
-*  (c) 2003-2020 Renzo Lauper (renzo@churchtool.org)
-*  All rights reserved
+*    OpenKool - Online church organization tool
 *
-*  This script is part of the kOOL project. The kOOL project is
-*  free software; you can redistribute it and/or modify
-*  it under the terms of the GNU General Public License as published by
-*  the Free Software Foundation; either version 2 of the License, or
-*  (at your option) any later version.
+*    Copyright Â© 2003-2020 Renzo Lauper (renzo@churchtool.org)
+*    Copyright Â© 2019-2020 Daniel Lerch
 *
-*  The GNU General Public License can be found at
-*  http://www.gnu.org/copyleft/gpl.html.
-*  A copy is found in the textfile GPL.txt and important notices to the license
-*  from the author is found in LICENSE.txt distributed with these scripts.
+*    This program is free software; you can redistribute it and/or modify
+*    it under the terms of the GNU General Public License as published by
+*    the Free Software Foundation; either version 2 of the License, or
+*    (at your option) any later version.
 *
-*  kOOL is distributed in the hope that it will be useful,
-*  but WITHOUT ANY WARRANTY; without even the implied warranty of
-*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-*  GNU General Public License for more details.
+*    This program is distributed in the hope that it will be useful,
+*    but WITHOUT ANY WARRANTY; without even the implied warranty of
+*    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+*    GNU General Public License for more details.
 *
-*  This copyright notice MUST APPEAR in all copies of the script!
-***************************************************************/
+*******************************************************************************/
+
 $LL["nl"] = array(
-'kool' => "kOOL - the church tool",
+'kool' => "OpenKool - the church tool",
 'submenu_daten_neuer_termin' => "Activiteit toevoegen",
 'submenu_daten_all_events' => "Alle Activiteiten tonen",
 'submenu_daten_cal_monat' => "Kalender",
@@ -80,11 +75,10 @@ $LL["nl"] = array(
 'submenu_admin_set_show_admingroups' => "Admin-groepen tonen",
 'error_file_not_found' => "Kan bestand niet vinden",
 'error_not_allowed' => "Actie niet toegestaan",
-'copyright_notice' => "Versie %s, Copyright © 2003-2012 Renzo Lauper - Plugins zijn het copyright van hun respectievelijke eigenaren.",
+'copyright_notice' => "Versie %s, Auteursrecht Â© 2003-2020 Renzo Lauper, Â© 2019-2020 Daniel Lerch en %sanderen%s.",
 'copyright_warranty' => "Garantie wordt verleend door %s.",
 'copyright_no_warranty' => "kOOL biedt GEEN ENKELE GARANTIE",
 'copyright_free_software' => "Dit is vrije software en het staat u vrij deze opnieuw te distribueren onder %sbepaalde condities%s.",
-'copyright_obstruction' => "Het belemmeren van de weergave van dit bericht is door de wet verboden.",
 'submenu_tools_plugins_list' => "Plugins tonen",
 'submenu_tools_title_submenus' => "Submenu's",
 'submenu_tools_title_leute-db' => "Personen database",
@@ -270,6 +264,7 @@ $LL["nl"] = array(
 'error_msg_1' => "kOOL kon niet doorgaan door een fatale fout. Er is een foutrapport verzonden naar de ontwikkelaars.",
 'error_msg_2' => "Als deze fout herhaaldelijk optreedt, wordt u vriendelijk verzocht om een gedetailleerd foutrapport te verzenden naar %s, met een beschrijving van alle nodige stappen om de fout te reproduceren.",
 'error_msg_3' => "We verontschuldigen ons voor het ongemak en proberen het probleem zo spoedig mogelijk te verhelpen.",
+'error_msg_4' => "Aanvullende informatie voor ontwikkelaars",
 'error_no_db_1' => "Kan geen verbinding krijgen met de database!",
 'error_no_db_2' => "Mogelijke oorzaken:",
 'error_no_db_reason_1' => "Dit is een nieuwe installatie van kOOL, welke nog niet geconfigureerd is. Als dit zo is, gebruik dan http://pad.naar.uw.kOOL/install om de installatie te starten.",
@@ -279,7 +274,7 @@ $LL["nl"] = array(
 'error_admin_2' => "De twee paswoorden komen niet overeen",
 'error_admin_3' => "Ongeldige gebruikersnaam.",
 'error_admin_4' => "Ongeldige gebruikersnaam: de gebruikersnaam is al in gebruik.",
-'error_admin_5' => "Selecteer slechts één gebruikersnaam.",
+'error_admin_5' => "Selecteer slechts Ã©Ã©n gebruikersnaam.",
 'error_admin_6' => "U kunt niet overschakelen naar het gastaccount.",
 'error_admin_7' => "Voer het aantal etiketten per rij en per kolom in.",
 'error_admin_8' => "Kan de voorkeurslijst niet verwijderen.",
@@ -290,13 +285,13 @@ $LL["nl"] = array(
 'error_admin_13' => "Deze Groep bestaat al.",
 'error_admin_14' => "Geen geldige PDF lay-out om te bewerken.",
 'error_daten_2' => "Ongeldige tijd opgegeven. A.u.b. corrigeren.",
-'error_daten_4' => "De Activiteit moet stoppen ná zijn aanvang.",
+'error_daten_4' => "De Activiteit moet stoppen nÃ¡ zijn aanvang.",
 'error_daten_5' => "Geen Activiteiten gevonden in de opgegeven tijdspanne.",
 'error_daten_7' => "Geen Activiteit geselecteerd",
 'error_daten_8' => "Geen Activiteitengroep geselecteerd",
 'error_daten_58' => "Ongeldige kolommen geselecteerd, kan niet doorgaan.",
 'error_daten_59' => "Kan niet doorgaan.",
-'error_dp_1' => "Selecteer ten minste één team",
+'error_dp_1' => "Selecteer ten minste Ã©Ã©n team",
 'error_dp_2' => "Geen naam opgegeven!",
 'error_dp_3' => "Teamselectie is ongeldig. Activiteitengroepen overlappen.",
 'error_dp_4' => "U heeft niets geselecteerd!",
@@ -307,8 +302,8 @@ $LL["nl"] = array(
 'error_leute_4' => "Actie kan niet worden voltooid.",
 'error_leute_5' => "Geen selectie!",
 'error_leute_6' => "Geen kolommen geselecteerd!",
-'error_leute_7' => "Er kan maar één Persoon worden toegewezen aan een gebruikersnaam.",
-'error_leute_9' => "U moet ten minste één Persoon selecteren om aan een team toe te wijzen.",
+'error_leute_7' => "Er kan maar Ã©Ã©n Persoon worden toegewezen aan een gebruikersnaam.",
+'error_leute_9' => "U moet ten minste Ã©Ã©n Persoon selecteren om aan een team toe te wijzen.",
 'error_leute_10' => "De geselecteerde Persoon is al toegewezen aan dit team.",
 'error_leute_11' => "De geselecteerde Persoon is niet toegewezen aan dit team.",
 'error_leute_12' => "Fout met SMS authorisatie",
@@ -324,13 +319,13 @@ $LL["nl"] = array(
 'save' => "opslaan",
 'error_daten_1' => "Ongeldige datum opgegeven. Voer de datum a.u.b. in in de vorm 14-3-2006",
 'error_daten_3' => "Vul ten minste een naam in.",
-'error_daten_6' => "Geen eindtijd opgegeven. Voor Reserveringen die meer dan één dag omvatten moet u start- en eindtijden opgeven.",
+'error_daten_6' => "Geen eindtijd opgegeven. Voor Reserveringen die meer dan Ã©Ã©n dag omvatten moet u start- en eindtijden opgeven.",
 'error_tools_1' => "Kon geen filter toevoegen voor deze kolom.",
 'error_tools_2' => "Ongeldige plugin.",
 'error_tools_3' => "Kon config.php niet vinden in de subfolder van deze plugin.",
 'error_tools_4' => "Kon het type plugin niet bepalen omdat het bestand config.php stuk lijkt te zijn.",
 'error_tools_5' => "Verbroken afhankelijkheden. Installeer a.u.b. alle benodigde plugins.",
-'error_tools_6' => "Verbroken afhankelijkheden. Plugin kan niet worden verwijderd omdat andere geïnstalleerde plugins hier nog afhankelijk van zijn.",
+'error_tools_6' => "Verbroken afhankelijkheden. Plugin kan niet worden verwijderd omdat andere geÃ¯nstalleerde plugins hier nog afhankelijk van zijn.",
 'error_res_1' => "Ongeldige datum, voer deze a.u.b. in in de vorm 14.3.2009.",
 'error_res_2' => "Ongeldig tijdstip.",
 'error_res_3' => "De opgegeven code komt niet overeen met de geselecteerde Reservering",
@@ -354,7 +349,7 @@ $LL["nl"] = array(
 'error_install_3' => "Geen basispad opgegeven.",
 'error_install_4' => "Geen basis-URL opgegeven.",
 'error_install_5' => "Geen modules geselecteerd. kOOL kan niet gebruikt worden zonder modules.",
-'error_install_6' => "Geen talen geselecteerd. Er moet ten minste één taal worden geselecteerd.",
+'error_install_6' => "Geen talen geselecteerd. Er moet ten minste Ã©Ã©n taal worden geselecteerd.",
 'info_admin_1' => "Uw instellingen zijn opgeslagen.",
 'info_admin_4' => "De nieuwe lay-out is opgeslagen.",
 'info_admin_5' => "De lay-out is opgeslagen.",
@@ -520,8 +515,8 @@ $LL["nl"] = array(
 'admin_settings_misc_show_resdata' => "Toon naam en e-mail bij Reserveringen aan het gastaccount",
 'admin_logins_new_password' => "Nieuw paswoord",
 'admin_logins_new_password2' => "Herhaal paswoord",
-'admin_logins_copy_rights_from' => "Bevoegdheden kopiëren van",
-'admin_logins_copy_settings_from' => "Instellingen kopiëren van",
+'admin_logins_copy_rights_from' => "Bevoegdheden kopiÃ«ren van",
+'admin_logins_copy_settings_from' => "Instellingen kopiÃ«ren van",
 'admin_logins_rights' => "Bevoegdheden",
 'admin_logins_rights_daten' => "0: geen bevoegdheden, 1: Bekijken, 2: Bewerken, 3: Verwijderen, 4:Alles",
 'admin_logins_rights_leute' => "0: geen bevoegdheden, 1: Bekijken, 2: Bewerken, 3: Verwijderen, 4: Modereren",
@@ -559,7 +554,7 @@ $LL["nl"] = array(
 'daten_list_footer_del_label' => "Geselecteerde Activiteiten",
 'daten_list_footer_del_button' => "verwijderen",
 'daten_list_footer_del_button_confirm' => "De geselecteerde Activiteiten zullen worden verwijderd. Wilt u doorgaan?",
-'daten_list_footer_pdf_label' => "PDF creëren",
+'daten_list_footer_pdf_label' => "PDF creÃ«ren",
 'daten_cal_year' => "kalender - jaar",
 'daten_cal_month' => "kalender - maand",
 'daten_cal_week' => "kalender - week",
@@ -620,7 +615,7 @@ $LL["nl"] = array(
 'dp_misc_mail_reminder' => "Herinneringse-mail",
 'dp_misc_deadline_title' => "Deadline",
 'dp_misc_deadline_week' => "Week",
-'dp_misc_deadline_week_1' => "één week van tevoren",
+'dp_misc_deadline_week_1' => "Ã©Ã©n week van tevoren",
 'dp_misc_deadline_week_2' => "twee weken van tevoren",
 'dp_misc_deadline_week_3' => "drie weken van tevoren",
 'dp_misc_deadline_week_4' => "vier weken van tevoren",
@@ -715,7 +710,7 @@ $LL["nl"] = array(
 'reset' => "wissen",
 'info_1' => "Bedankt voor de update. Hij zal t.z.t. worden goedgekeurd.",
 'info_dp_6' => "Het dienstrooster is met succes afgeleverd.",
-'admin_settings_options_show_passed_groups' => "Groepen tonen die zijn beëindigd",
+'admin_settings_options_show_passed_groups' => "Groepen tonen die zijn beÃ«indigd",
 'admin_settings_options_dateres_combined' => "Reserveringen voor een Activiteit samenvatten",
 'daten_mod_open' => "Activiteit moet nog moderatie ondergaan!",
 'daten_mod_confirm' => "Activiteit opslaan",
@@ -760,7 +755,7 @@ $LL["nl"] = array(
 'leute_birthday_list_header_age' => "Leeftijd",
 'leute_birthday_list_header_deadline' => "Deadline",
 'leute_export_pdf' => "Naar PDF exporteren",
-'leute_export_pdf_submit' => "PDF creëren",
+'leute_export_pdf_submit' => "PDF creÃ«ren",
 'leute_export_pdf_title_data' => "Gegevens",
 'leute_export_pdf_title_headerfooter' => "Koptekst en voettekst",
 'leute_export_pdf_filter' => "Filter",
@@ -814,7 +809,7 @@ $LL["nl"] = array(
 'res_email_mod_confirm_subject' => "Reservering goedgekeurd:",
 'res_email_mod_delete_subject' => "Reservering afgewezen:",
 'res_error_with_new_res' => "Er is een fout opgetreden met de nieuwe Reservering",
-'res_list_footer_pdf_label' => "PDF creëren",
+'res_list_footer_pdf_label' => "PDF creÃ«ren",
 'res_list_footer_del_label' => "geselecteerd",
 'res_list_footer_del_button' => "verwijderen",
 'res_list_footer_del_button_confirm' => "De geselecteerde Reserveringen zullen worden verwijderd. Weet u het zeker?",
@@ -870,8 +865,8 @@ $LL["nl"] = array(
 'fm_name_dienstplan' => "Dienstrooster",
 'module_dp' => "Dienstrooster",
 'kota_listview_ko_eventgruppen_dp' => "Dienstrooster",
-'dp_list_footer_roster_label' => "Dienstrooster creëren voor de geselecteerde Teams:",
-'dp_list_footer_roster_button' => "creëren",
+'dp_list_footer_roster_label' => "Dienstrooster creÃ«ren voor de geselecteerde Teams:",
+'dp_list_footer_roster_button' => "creÃ«ren",
 'dp_filename_dp' => "dienstrooster_",
 'dp_filename_dp_teams' => "dienstrooster_teams_",
 'dp_roster' => "Dienstrooster",
@@ -880,8 +875,8 @@ $LL["nl"] = array(
 'dp_create_title' => "Dienstrooster aanmaken",
 'dp_create_neutral' => "Algemeen Dienstrooster",
 'dp_create_personal' => "Persoonlijk Dienstrooster voor",
-'dp_create_fm' => "Dienstrooster voor front-module creëren",
-'dp_create' => "creëren",
+'dp_create_fm' => "Dienstrooster voor front-module creÃ«ren",
+'dp_create' => "creÃ«ren",
 'dp_send_title' => "Dienstrooster verzenden",
 'dp_misc_mail_roster' => "Dienstrooster e-mail",
 'leute_list_footer_team_label' => "Wijzig het Teamlidmaatschap van de geselecteerde Personen in dit team:",
@@ -890,7 +885,7 @@ $LL["nl"] = array(
 'donations_filter_submit' => "Filters toepassen",
 'donations_filter_clear' => "Alle filters leegmaken",
 'donations_export_mode_person' => "Totaal voor ieder Persoon",
-'donations_export_submit' => "XLS-bestand creëren",
+'donations_export_submit' => "XLS-bestand creÃ«ren",
 'donations_export_filename' => "giften_",
 'donations_export_title' => "Giften",
 'donations_export_num' => "Nummer",
@@ -923,10 +918,10 @@ $LL["nl"] = array(
 'tools_plugins_listheader_version' => "versie",
 'tools_plugins_listheader_state' => "status",
 'tools_plugins_install' => "plugin installeren",
-'tools_plugins_delete' => "plugin deïnstalleren",
+'tools_plugins_delete' => "plugin deÃ¯nstalleren",
 'tools_plugins_delete_confirm' => "Weet u zeker dat u de plugin wilt verwijderen?",
-'install_welcome' => "Welkom bij de eerste installatie van kOOL - the church tool!",
-'install_title' => "Installatie van kOOL",
+'install_welcome' => "Welkom bij de eerste installatie van OpenKool",
+'install_title' => "Installatie van OpenKool",
 'install_lang_header' => "Kies a.u.b. de taal voor de installatie:",
 'install_langname_de' => "Duits",
 'install_langname_en' => "Engels",
@@ -967,11 +962,11 @@ $LL["nl"] = array(
 'install_settings_warranty_giver' => "Garantie: De naam van het bedrijf dat u garantie geeft voor kOOL:",
 'install_settings_warranty_url' => "Garantie: Uw URL:",
 'install_settings_use_webfolders' => "Webfolders inschakelen",
-'install_done_header' => "Gefeliciteerd! U heeft kOOL succesvol geïnstalleerd.",
+'install_done_header' => "Gefeliciteerd! U heeft OpenKool succesvol geÃ¯nstalleerd.",
 'tools_people_form_not_found' => "Kon het volgende niet vinden:",
 'install_done_warning' => "Tip: Om later aanpassingen te doen aan deze installatie-instellingen, moet u weer een bestandje met de naam %sENABLE_INSTALL aanmaken.",
 'install_done_text' => "U kunt nu verdergaan en aanmelden als root.",
-'install_done_link' => "&#8594; Naar de kOOL voorpagina",
+'install_done_link' => "&#8594; Naar de OpenKool voorpagina",
 'form_text_mylist_import' => "importeren uit Mijn Lijst",
 'form_color_choose' => "kies een kleur",
 'form_doubleselect_remove' => "geselecteerd item verwijderen",
@@ -1006,11 +1001,11 @@ $LL["nl"] = array(
 'form_groups_all_groups' => "Alle groepen",
 'form_groups_datafields' => "Gegevensvelden",
 'form_groups_datafields_select' => "Gegevensvelden voor deze Groep",
-'form_groups_datafields_create' => "Nieuw gegevensveld creëren",
+'form_groups_datafields_create' => "Nieuw gegevensveld creÃ«ren",
 'form_groups_datafields_new_description' => "Omschrijving",
 'form_groups_datafields_new_type' => "Type",
-'form_groups_datafields_new_options' => "Selectieopties (één per regel)",
-'form_groups_datafields_new_create' => "Creéren",
+'form_groups_datafields_new_options' => "Selectieopties (Ã©Ã©n per regel)",
+'form_groups_datafields_new_create' => "CreÃ©ren",
 'form_donation_title_new' => "Gift toevoegen",
 'form_donation_title_edit' => "Gift bewerken",
 'form_donation_title_new_account' => "Rekening toevoegen",
@@ -1407,7 +1402,7 @@ $LL["nl"] = array(
 'form_groups_datafield_help' => "<b>Belangrijk</b><br />: het wijzigen van opties voor de selectielijsten verandert de opgeslagen waarden niet. Alle wijzigingen van een optie moeten handmatig worden toegepast op de records van alle personen.",
 'list_multisort_showLink' => "Geavanceerd sorteren",
 'filter_crdate' => "Datum van creatie",
-'filter_var1_crdate' => "Gecreëerd na...",
+'filter_var1_crdate' => "GecreÃ«erd na...",
 'filter_var2_crdate' => "... en voor",
 'donations_export_mode_statsY' => "Jaarlijkse statistieken",
 'both' => "beide",

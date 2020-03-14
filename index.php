@@ -1,35 +1,30 @@
 <?php
-/***************************************************************
-*  Copyright notice
+/*******************************************************************************
 *
-*  (c) 2003-2020 Renzo Lauper (renzo@churchtool.org)
-*  All rights reserved
+*    OpenKool - Online church organization tool
 *
-*  This script is part of the kOOL project. The kOOL project is
-*  free software; you can redistribute it and/or modify
-*  it under the terms of the GNU General Public License as published by
-*  the Free Software Foundation; either version 2 of the License, or
-*  (at your option) any later version.
+*    Copyright Â© 2003-2020 Renzo Lauper (renzo@churchtool.org)
+*    Copyright Â© 2019-2020 Daniel Lerch
 *
-*  The GNU General Public License can be found at
-*  http://www.gnu.org/copyleft/gpl.html.
-*  A copy is found in the textfile GPL.txt and important notices to the license
-*  from the author is found in LICENSE.txt distributed with these scripts.
+*    This program is free software; you can redistribute it and/or modify
+*    it under the terms of the GNU General Public License as published by
+*    the Free Software Foundation; either version 2 of the License, or
+*    (at your option) any later version.
 *
-*  kOOL is distributed in the hope that it will be useful,
-*  but WITHOUT ANY WARRANTY; without even the implied warranty of
-*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-*  GNU General Public License for more details.
+*    This program is distributed in the hope that it will be useful,
+*    but WITHOUT ANY WARRANTY; without even the implied warranty of
+*    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+*    GNU General Public License for more details.
 *
-*  This copyright notice MUST APPEAR in all copies of the script!
-***************************************************************/
+*******************************************************************************/
 
 header('Content-Type: text/html; charset=ISO-8859-1');
 
 $ko_path = "./";
 $ko_menu_akt = "home";
 
-include($ko_path . "inc/ko.inc");
+require __DIR__ . '/inc/ko.inc.php';
+use OpenKool\koNotifier;
 
 //Redirect to SSL if needed
 ko_check_ssl();
@@ -44,7 +39,7 @@ $notifier = koNotifier::Instance();
 
 //*** Plugins einlesen:
 $hooks = hook_include_main("_all");
-if(sizeof($hooks) > 0) foreach($hooks as $hook) include_once($hook);
+foreach($hooks as $hook) include_once($hook);
 
 
 /**
@@ -92,7 +87,7 @@ if(sizeof($hooks) > 0) foreach($hooks as $hook) include($hook);
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="<?php print $_SESSION["lang"]; ?>" lang="<?php print $_SESSION["lang"]; ?>">
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1" />
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title><?php print $HTML_TITLE; ?></title>
@@ -107,7 +102,7 @@ $js_files = array(
 	$ko_path.'inc/fullcalendar/scheduler.min.js',
 );
 print ko_include_js($js_files);
-include($ko_path.'inc/js-sessiontimeout.inc');
+include __DIR__ . '/inc/js-sessiontimeout.inc.php';
 include("{$ko_path}js-home.inc");
 ?>
 </head>
@@ -115,10 +110,13 @@ include("{$ko_path}js-home.inc");
 <body onload="session_time_init();<?php if(isset($onload_code)) print $onload_code; ?>">
 
 <?php
+//Smarty-Templates-Engine laden
+require __DIR__ . '/inc/smarty.inc.php';
+
 /*
- * Gibt bei erfolgreichem Login das Menü aus, sonst einfach die Loginfelder
+ * Gibt bei erfolgreichem Login das MenÃ¼ aus, sonst einfach die Loginfelder
  */
-include($ko_path . "menu.php");
+require __DIR__ . '/inc/menu.inc.php';
 ?>
 
 
@@ -132,7 +130,7 @@ switch($do_action) {
 
 
 	/**
-		* Ein Adress-Änderungsantrag wurde abgeschickt
+		* Ein Adress-Ã„nderungsantrag wurde abgeschickt
 		*/
 	case "submit_aa":
 		if(!$_POST["aa_id"]) break;
@@ -153,7 +151,7 @@ switch($do_action) {
 		//Spalten auswerten
 		$cols = db_get_columns("ko_leute_mod");
 		foreach($cols as $c) {
-			if(substr($c["Field"], 0, 1) != "_") {
+			if(mb_substr($c["Field"], 0, 1) != "_") {
 				if($c["Type"] == "date") {  //Datum-Eingaben wieder in SQL-Format konvertieren.
 					$data[$c["Field"]] = sql_datum($_POST["aa_input_".$c["Field"]]);
 				} else {
@@ -179,7 +177,7 @@ switch($do_action) {
 
 
 	/**
-		* Adress-Änderungs-Felder (oder Liste bei mehreren gleichen Namen) sollen angezeigt werden
+		* Adress-Ã„nderungs-Felder (oder Liste bei mehreren gleichen Namen) sollen angezeigt werden
 		*/
 	case "show_adressaenderung_fields":
 		$aa_display = FALSE;
@@ -187,22 +185,22 @@ switch($do_action) {
 		if($_GET["aa_nachname"]) $aa_use_nachname = format_userinput($_GET["aa_nachname"], "text"); else $aa_use_nachname = "";
 		if($_GET["aa_vorname"]) $aa_use_vorname = format_userinput($_GET["aa_vorname"], "text"); else $aa_use_vorname = "";
 
-		//Name aus Textfeldern auslesen, falls keine übergeben wurden.
+		//Name aus Textfeldern auslesen, falls keine Ã¼bergeben wurden.
 		if(!$aa_use_vorname && $_POST["submit_fm_aa"]) $aa_use_vorname = format_userinput($_POST["txt_fm_aa_vorname"], "text");
 		if(!$aa_use_nachname && $_POST["submit_fm_aa"]) $aa_use_nachname = format_userinput($_POST["txt_fm_aa_nachname"], "text");
 
-		//Vorname und Nachname müssen angegeben werden, denn sonst könnte Datenbank nach bestimmten Namen durchsucht werden...
+		//Vorname und Nachname mÃ¼ssen angegeben werden, denn sonst kÃ¶nnte Datenbank nach bestimmten Namen durchsucht werden...
 		if((!$_POST["txt_fm_aa_nachname"] || !$_POST["txt_fm_aa_vorname"]) && !$aa_use_id) break;
 
-		//Sicherheitscheck: (Felder nur anzeigen, wenn ID mit Namen und Vornamen übereinstimmen
-		//(so müssen ID, Name und Nachname bekannt sein, um die Felder manuell anzuzeigen)
+		//Sicherheitscheck: (Felder nur anzeigen, wenn ID mit Namen und Vornamen Ã¼bereinstimmen
+		//(so mÃ¼ssen ID, Name und Nachname bekannt sein, um die Felder manuell anzuzeigen)
 		if($aa_use_id > 0) {
 			ko_get_person_by_id($aa_use_id, $p);
 			if($p["vorname"] != $aa_use_vorname || $p["nachname"] != $aa_use_nachname) break;
 			unset($p);
 		}
 
-		//Auf vorhandenen Eintrag prüfen und ID(s) merken
+		//Auf vorhandenen Eintrag prÃ¼fen und ID(s) merken
 		if(!$aa_use_id) {
 			$ids = ko_fuzzy_search(array("vorname" => $aa_use_vorname, "nachname" => $aa_use_nachname), "ko_leute", 1, FALSE, 3);
 			if(is_array($ids)) $fm_aa_ids = array_merge($ids, array('-1'));
@@ -216,9 +214,9 @@ switch($do_action) {
 			$aa_display = TRUE;
 		}
 
-		//Falls mehrere IDs gefunden: Liste anzeigen und einen auswählen lassen. (Adresse und Geburtsdatum)
+		//Falls mehrere IDs gefunden: Liste anzeigen und einen auswÃ¤hlen lassen. (Adresse und Geburtsdatum)
 		//Dies ist auch der Fall, wenn eine neue Person schon vorhanden ist.
-		//Nur 5 identische Namen erlauben, darüber wird es verdächtig... (z.B. SQL-Injection OR 1=1...)
+		//Nur 5 identische Namen erlauben, darÃ¼ber wird es verdÃ¤chtig... (z.B. SQL-Injection OR 1=1...)
 		if(sizeof($fm_aa_ids) > 1 && sizeof($fm_aa_ids < 5)) {
 			$c = 0;
 			foreach ($fm_aa_ids as $i) {
@@ -244,7 +242,7 @@ switch($do_action) {
 		}
 
 
-		//Falls genau eine ID gefunden (auch -1 für neu...), dann diese zum Bearbeiten ausgeben
+		//Falls genau eine ID gefunden (auch -1 fÃ¼r neu...), dann diese zum Bearbeiten ausgeben
 		if(sizeof($fm_aa_ids) == 1) {
 			if (!is_array($KOTA['ko_leute'])) ko_include_kota(array('ko_leute'));
 			$leuteKota = $KOTA['ko_leute'];
@@ -268,7 +266,7 @@ switch($do_action) {
 				if(substr($c["Field"], 0, 1) != "_") {  //Alle Spalten, die mit "_" beginnen, ignorieren
 					$tpl_input[$counter]["name"] = "aa_input_".$c["Field"];
 					$tpl_input[$counter]["desc"] = $col_namen[$c["Field"]];
-					//Vor- und Nachname immer ausgeben, denn diese dürfen immer angezeigt werden, da diese ja vorher selber eingegeben wurden.
+					//Vor- und Nachname immer ausgeben, denn diese dÃ¼rfen immer angezeigt werden, da diese ja vorher selber eingegeben wurden.
 					if($do_fillout || (!$do_fillout && ($c["Field"]=="vorname" || $c["Field"]=="nachname"))) {
 						if($KOTA['ko_leute'][$c['Field']]['form']['type'] == 'jsdate') {
 							$tpl_input[$counter]["value"] = sql2datum($p[$c['Field']]);
@@ -466,17 +464,7 @@ print '</main>';
 
 //--- copyright notice on frontpage:
 //--- Obstructing the appearance of this notice is prohibited by law.
-print '<div id="footer" style="text-align:center;">';
-print '<a href="http://www.churchtool.org"><b>'.getLL("kool").'</b></a> '.sprintf(getLL("copyright_notice"), VERSION).'<br />';
-if(WARRANTY_GIVER != "") {
-	print sprintf(getLL("copyright_warranty"), '<a href="'.WARRANTY_URL.'">'.WARRANTY_GIVER.'</a>');
-} else {
-	print getLL("copyright_no_warranty")." ";
-}
-print " ".sprintf(getLL("copyright_free_software"), '<a href="http://www.fsf.org/licensing/licenses/gpl.html">', '</a>')."<br />";
-print getLL("copyright_obstruction");
-print '</div>';
-//--- end of copyright notice
+ko_print_long_footer();
 ?>
 
 </body>

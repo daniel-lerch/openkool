@@ -15,4 +15,4 @@
 <b>TODO:</b> Mehr Infos: Gruppen inkl. Datenfelder, Familie, KG, usw.
 
 <br /><br />
-<a href="javascript:history.back();">&larr; zurück</a>
+<a href="javascript:history.back();">&larr; zurÃ¼ck</a>

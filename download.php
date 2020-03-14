@@ -1,36 +1,30 @@
 <?php
-/***************************************************************
-*  Copyright notice
+/*******************************************************************************
 *
-*  (c) 2003-2020 Renzo Lauper (renzo@churchtool.org)
-*  All rights reserved
+*    OpenKool - Online church organization tool
 *
-*  This script is part of the kOOL project. The kOOL project is
-*  free software; you can redistribute it and/or modify
-*  it under the terms of the GNU General Public License as published by
-*  the Free Software Foundation; either version 2 of the License, or
-*  (at your option) any later version.
+*    Copyright © 2003-2020 Renzo Lauper (renzo@churchtool.org)
+*    Copyright © 2019-2020 Daniel Lerch
 *
-*  The GNU General Public License can be found at
-*  http://www.gnu.org/copyleft/gpl.html.
-*  A copy is found in the textfile GPL.txt and important notices to the license
-*  from the author is found in LICENSE.txt distributed with these scripts.
+*    This program is free software; you can redistribute it and/or modify
+*    it under the terms of the GNU General Public License as published by
+*    the Free Software Foundation; either version 2 of the License, or
+*    (at your option) any later version.
 *
-*  kOOL is distributed in the hope that it will be useful,
-*  but WITHOUT ANY WARRANTY; without even the implied warranty of
-*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-*  GNU General Public License for more details.
+*    This program is distributed in the hope that it will be useful,
+*    but WITHOUT ANY WARRANTY; without even the implied warranty of
+*    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+*    GNU General Public License for more details.
 *
-*  This copyright notice MUST APPEAR in all copies of the script!
-***************************************************************/
+*******************************************************************************/
 
 
-//Send headers to ensure latin1 charset
-header('Content-Type: text/html; charset=ISO-8859-1');
+//Send headers to ensure UTF-8 charset
+header('Content-Type: text/html; charset=UTF-8');
 
 $ko_path = './';
 $ko_menu_akt = FALSE;
-include($ko_path.'inc/ko.inc');
+require __DIR__ . '/inc/ko.inc.php';
 
 switch($_GET["action"]) {
 	case "file":
@@ -40,14 +34,14 @@ switch($_GET["action"]) {
 		if($full_path == '') ko_die('No file found');
 		//Replace \ with / for windows systems otherwise the check below will always trigger an error
 		if(DIRECTORY_SEPARATOR == '\\') $full_path = str_replace('\\', '/', $full_path);
-		if(substr($full_path, 0, strlen($BASE_PATH."download")) != ($BASE_PATH."download")) {
+		if(mb_substr($full_path, 0, mb_strlen($BASE_PATH."download")) != ($BASE_PATH."download")) {
 			trigger_error('Not allowed download file: '.$_GET['file'], E_USER_ERROR);
 			exit;
 		}
 		if(!file_exists($_GET["file"])) {
 			exit;
 		}
-		if(substr($_GET["file"], 0, 1) == "/") {
+		if(mb_substr($_GET["file"], 0, 1) == "/") {
 			exit;
 		}
 
@@ -70,7 +64,7 @@ switch($_GET["action"]) {
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="de" lang="de">
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1" />
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
 <title><?php print getLL("download_title")." ".$dateiname; ?></title>
 </head>
 

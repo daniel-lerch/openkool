@@ -1,79 +1,54 @@
 <?php
-/***************************************************************
-*  Copyright notice
+/*******************************************************************************
 *
-*  (c) 2003-2020 Renzo Lauper (renzo@churchtool.org)
-*  All rights reserved
+*    OpenKool - Online church organization tool
 *
-*  This script is part of the kOOL project. The kOOL project is
-*  free software; you can redistribute it and/or modify
-*  it under the terms of the GNU General Public License as published by
-*  the Free Software Foundation; either version 2 of the License, or
-*  (at your option) any later version.
+*    Copyright © 2003-2020 Renzo Lauper (renzo@churchtool.org)
+*    Copyright © 2019-2020 Daniel Lerch
 *
-*  The GNU General Public License can be found at
-*  http://www.gnu.org/copyleft/gpl.html.
-*  A copy is found in the textfile GPL.txt and important notices to the license
-*  from the author is found in LICENSE.txt distributed with these scripts.
+*    This program is free software; you can redistribute it and/or modify
+*    it under the terms of the GNU General Public License as published by
+*    the Free Software Foundation; either version 2 of the License, or
+*    (at your option) any later version.
 *
-*  kOOL is distributed in the hope that it will be useful,
-*  but WITHOUT ANY WARRANTY; without even the implied warranty of
-*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-*  GNU General Public License for more details.
+*    This program is distributed in the hope that it will be useful,
+*    but WITHOUT ANY WARRANTY; without even the implied warranty of
+*    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+*    GNU General Public License for more details.
 *
-*  This copyright notice MUST APPEAR in all copies of the script!
-***************************************************************/
+*******************************************************************************/
 
-error_reporting(0);
 $ko_path = '../';
-include($ko_path.'inc/ko.inc');
-include($ko_path.'inc/qrcode/qrlib.php');
+require __DIR__ . '/ko.inc.php';
 
 $string = base64_decode($_GET['s']);
 if(!$string) exit;
 $hash = $_GET['h'];
-if(strlen($hash) != 32) exit;
+if(mb_strlen($hash) != 32) exit;
 
 $check = md5(KOOL_ENCRYPTION_KEY.$string);
 if($check != $hash) exit;
 
 $size = $_GET['size'];
-if(!$size || $size > 10 || $size < 1) $size = 6;
+if(!$size || $size > 1000 || $size < 100) $size = 250;
 
-
-$cache_path = $ko_path.'my_images/cache/';
-$filename = 'qr_'.$check.'_'.$size.'.png';
-
-//Check for cached image
-$dontcache = FALSE;
-if(file_exists($cache_path.$filename)) {
-	//Do nothing
-} else {
-	if(substr($string, 0, 4) == 'pid:') {
-		$pid = intval(substr($string, 4));
-		if(!$pid) exit;
-		ko_get_access('leute');
-		if($access['leute']['ALL'] > 0 || $access['leute'][$pid]) {
-			require_once($ko_path.'leute/inc/vcard.php');
-			$vcard = new vCard(TRUE);
-			$vcard->addPerson($pid);
-			$string = $vcard->getVCard($pid);
-			if(!$string) exit;
-			$dontcache = TRUE;
-		} else exit;
-	}
-
-	//Create new image
-	QRcode::png($string, $cache_path.$filename, 'L', $size);
+if(mb_substr($string, 0, 4) == 'pid:') {
+	$pid = intval(mb_substr($string, 4));
+	if(!$pid) exit;
+	ko_get_access('leute');
+	if($access['leute']['ALL'] > 0 || $access['leute'][$pid]) {
+		$vcard = new OpenKool\DAV\vCard(TRUE);
+		$vcard->addPerson($pid);
+		$string = $vcard->getVCard($pid);
+		if(!$string) exit;
+	} else exit;
 }
 
-header('Content-type: image/png');
-readfile($cache_path.$filename);
-
-
-if($dontcache) {
-	unlink($cache_path.$filename);
-}
+$qr = new Endroid\QrCode\QrCode($string);
+$qr->setSize((int)$size);
+$qr->setMargin(4);
+header('Content-Type: ' . $qr->getContentType());
+echo $qr->writeString();
 
 
 /*

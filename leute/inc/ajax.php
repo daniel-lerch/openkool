@@ -1,28 +1,22 @@
 <?php
-/***************************************************************
-*  Copyright notice
+/*******************************************************************************
 *
-*  (c) 2003-2020 Renzo Lauper (renzo@churchtool.org)
-*  All rights reserved
+*    OpenKool - Online church organization tool
 *
-*  This script is part of the kOOL project. The kOOL project is
-*  free software; you can redistribute it and/or modify
-*  it under the terms of the GNU General Public License as published by
-*  the Free Software Foundation; either version 2 of the License, or
-*  (at your option) any later version.
+*    Copyright Â© 2003-2020 Renzo Lauper (renzo@churchtool.org)
+*    Copyright Â© 2019-2020 Daniel Lerch
 *
-*  The GNU General Public License can be found at
-*  http://www.gnu.org/copyleft/gpl.html.
-*  A copy is found in the textfile GPL.txt and important notices to the license
-*  from the author is found in LICENSE.txt distributed with these scripts.
+*    This program is free software; you can redistribute it and/or modify
+*    it under the terms of the GNU General Public License as published by
+*    the Free Software Foundation; either version 2 of the License, or
+*    (at your option) any later version.
 *
-*  kOOL is distributed in the hope that it will be useful,
-*  but WITHOUT ANY WARRANTY; without even the implied warranty of
-*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-*  GNU General Public License for more details.
+*    This program is distributed in the hope that it will be useful,
+*    but WITHOUT ANY WARRANTY; without even the implied warranty of
+*    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+*    GNU General Public License for more details.
 *
-*  This copyright notice MUST APPEAR in all copies of the script!
-***************************************************************/
+*******************************************************************************/
 
 error_reporting(0);
 
@@ -32,15 +26,13 @@ if (isset($_GET["sesid"])) $sesid = $_GET["sesid"];
 if (!$sesid && isset($_POST["sesid"])) $sesid = $_POST["sesid"];
 if(FALSE === session_id($sesid)) exit;
 
-//Send headers to ensure latin1 charset
-header('Content-Type: text/html; charset=ISO-8859-1');
+//Send headers to ensure UTF-8 charset
+header('Content-Type: text/html; charset=UTF-8');
 
 $ko_menu_akt = 'leute';
 $ko_path = "../../";
-require($ko_path."inc/ko.inc");
+require __DIR__ . '/../../inc/ko.inc.php';
 $ko_path = "../";
-
-array_walk_recursive($_GET,'utf8_decode_array');
 
 ko_get_access('leute');
 ko_get_access('groups');
@@ -52,17 +44,20 @@ ko_include_kota(array('ko_leute', 'ko_kleingruppen', 'ko_taxonomy'));
 //get notifier instance
 $notifier = koNotifier::Instance();
 
-require($BASE_PATH."leute/inc/leute.inc");
-if(ko_module_installed("kg")) require($BASE_PATH."leute/inc/kg.inc");
+//Smarty-Templates-Engine laden
+require __DIR__ . '/../../inc/smarty.inc.php';
+
+require __DIR__ . '/leute.inc.php';
+if(ko_module_installed("kg")) require __DIR__ . '/kg.inc.php';
 
 // Plugins einlesen:
 $hooks = hook_include_main("leute,kg");
-if(sizeof($hooks) > 0) foreach($hooks as $hook) include_once($hook);
+foreach($hooks as $hook) include_once($hook);
 
 
 //HOOK: Submenus einlesen
 $hooks = hook_include_sm();
-if(sizeof($hooks) > 0) foreach($hooks as $hook) include($hook);
+foreach($hooks as $hook) include($hook);
 
 hook_show_case_pre($_SESSION['show']);
 
@@ -134,7 +129,7 @@ if((isset($_GET) && isset($_GET["action"])) || (isset($_POST) && isset($_POST["a
 				}
 			}
 
-			//Neuen HTML-Code für SM ausgeben
+			//Neuen HTML-Code fÃ¼r SM ausgeben
 			print submenu_leute("filter", "open", 2);
 
 			//group filter
@@ -156,7 +151,7 @@ if((isset($_GET) && isset($_GET["action"])) || (isset($_POST) && isset($_POST["a
 				ko_save_userpref($_SESSION['ses_userid'], 'show_limit_leute', $_SESSION['show_limit']);
 		    }
 
-			//Neuen HTML-Code für SM ausgeben
+			//Neuen HTML-Code fÃ¼r SM ausgeben
 			print "main_content@@@";
 			if($_SESSION["show"] == "show_all") {
 				ko_list_personen("liste");
@@ -184,7 +179,7 @@ if((isset($_GET) && isset($_GET["action"])) || (isset($_POST) && isset($_POST["a
 				ko_save_userpref($_SESSION['ses_userid'], 'show_limit_kg', $_SESSION['show_kg_limit']);
 	    }
 
-			//Neuen HTML-Code für SM ausgeben
+			//Neuen HTML-Code fÃ¼r SM ausgeben
 			print "main_content@@@";
 			print ko_list_kg(FALSE);
 		break;
@@ -200,7 +195,7 @@ if((isset($_GET) && isset($_GET["action"])) || (isset($_POST) && isset($_POST["a
 		case "leuteopenfilterset":
 			if($access['leute']['MAX'] < 1) break;
 
-			//Filter löschen, falls Neu Anwenden geklickt wurde
+			//Filter lÃ¶schen, falls Neu Anwenden geklickt wurde
 			if($action == "leutefilternew" || $action == "leutefilterdelall") {
 				//Link speichern
 				$link = $_SESSION["filter"]["link"];
@@ -291,7 +286,7 @@ if((isset($_GET) && isset($_GET["action"])) || (isset($_POST) && isset($_POST["a
 				$_SESSION["filter"] = $new;
 				$_SESSION['filter']['use_link_adv'] = FALSE;
 			}
-			//Filter-Verknüpfung setzen
+			//Filter-VerknÃ¼pfung setzen
 			else if($action == "leutefilterlink") {
 				if($_GET["link"] == "or") {
 					$_SESSION["filter"]["link"] = "or";
@@ -344,10 +339,10 @@ if((isset($_GET) && isset($_GET["action"])) || (isset($_POST) && isset($_POST["a
 				}
 				$_SESSION['filter']['use_link_adv'] = FALSE;
 			}
-			//Filter-Vorlage öffnen
+			//Filter-Vorlage Ã¶ffnen
 			else if($action == "leuteopenfilterset") {
-				$name = substr($_GET['name'], 0, 3) == '@G@' ? substr($_GET['name'], 3) : $_GET['name'];
-				$value = substr($_GET['name'], 0, 3) == '@G@' ? (array)ko_get_userpref('-1', '', 'filterset') : (array)ko_get_userpref($_SESSION['ses_userid'], '', 'filterset');
+				$name = mb_substr($_GET['name'], 0, 3) == '@G@' ? mb_substr($_GET['name'], 3) : $_GET['name'];
+				$value = mb_substr($_GET['name'], 0, 3) == '@G@' ? (array)ko_get_userpref('-1', '', 'filterset') : (array)ko_get_userpref($_SESSION['ses_userid'], '', 'filterset');
 				$_SESSION["filter"] = array();
 				foreach($value as $v_i => $v) {
 					if($v["key"] == $name) {
@@ -366,7 +361,7 @@ if((isset($_GET) && isset($_GET["action"])) || (isset($_POST) && isset($_POST["a
 				}
 			}
 
-			//Neuen HTML-Code für Main ausgeben
+			//Neuen HTML-Code fÃ¼r Main ausgeben
 			print "main_content@@@";
 			if($_SESSION["show"] == "chart") {
 				print ko_leute_chart();
@@ -374,7 +369,7 @@ if((isset($_GET) && isset($_GET["action"])) || (isset($_POST) && isset($_POST["a
 				ko_list_personen(($_SESSION["show"] == "show_adressliste"?"adressliste":"liste"));
 			}
 
-			//Neuen HTML-Code für SM ausgeben
+			//Neuen HTML-Code fÃ¼r SM ausgeben
 			print "@@@";
 			print submenu_leute("filter", "open", 2);
 
@@ -708,7 +703,7 @@ if((isset($_GET) && isset($_GET["action"])) || (isset($_POST) && isset($_POST["a
 				} else if($name == '_none_') {
 					$_SESSION['kota_show_cols_ko_kleingruppen'] = array();
 				} else {
-					if(substr($name, 0, 3) == '@G@') $value = ko_get_userpref('-1', substr($name, 3), "leute_kg_itemset");
+					if(mb_substr($name, 0, 3) == '@G@') $value = ko_get_userpref('-1', mb_substr($name, 3), "leute_kg_itemset");
 					else $value = ko_get_userpref($_SESSION['ses_userid'], $name, "leute_kg_itemset");
 					$_SESSION["kota_show_cols_ko_kleingruppen"] = explode(",", $value[0]["value"]);
 				}
@@ -724,14 +719,14 @@ if((isset($_GET) && isset($_GET["action"])) || (isset($_POST) && isset($_POST["a
 					$cols = ko_get_leute_col_name();
 					//Remove small group and group columns
 					foreach($cols as $k => $v) {
-						if(substr($k, 0, 6) == 'MODULE') unset($cols[$k]);
+						if(mb_substr($k, 0, 6) == 'MODULE') unset($cols[$k]);
 					}
 					$_SESSION['show_leute_cols'] = array_keys($cols);
 				} else if($name == '_none_') {
 					$_SESSION['show_leute_cols'] = array();
 				} else {
 					//global or user itemlist
-					if(substr($name, 0, 3) == '@G@') $value = ko_get_userpref('-1', substr($name, 3), "leute_itemset");
+					if(mb_substr($name, 0, 3) == '@G@') $value = ko_get_userpref('-1', mb_substr($name, 3), "leute_itemset");
 					else $value = ko_get_userpref($_SESSION['ses_userid'], $name, "leute_itemset");
 					$_SESSION["show_leute_cols"] = explode(",", $value[0]["value"]);
 				}
@@ -757,9 +752,9 @@ if((isset($_GET) && isset($_GET["action"])) || (isset($_POST) && isset($_POST["a
 			if($name == "") break;
 
 			if($_SESSION["show"] == "list_kg") {
-				if(substr($name, 0, 3) == '@G@') {
+				if(mb_substr($name, 0, 3) == '@G@') {
 					$kg_all_rights = ko_get_access_all('kg', '', $kg_max_rights);
-					if($kg_max_rights > 2) ko_delete_userpref('-1', substr($name, 3), "leute_kg_itemset");
+					if($kg_max_rights > 2) ko_delete_userpref('-1', mb_substr($name, 3), "leute_kg_itemset");
 				} else ko_delete_userpref($_SESSION['ses_userid'], $name, "leute_kg_itemset");
 				print submenu_leute("itemlist_spalten_kg", "open", 2);
 			} else {
@@ -918,7 +913,7 @@ if((isset($_GET) && isset($_GET["action"])) || (isset($_POST) && isset($_POST["a
 			$limit = 30;
 
 			$string = format_userinput($_GET['string'], 'text');
-			if(!$string || strlen($string) < 3) {
+			if(!$string || mb_strlen($string) < 3) {
 				print '';
 				break;
 			}
@@ -930,7 +925,7 @@ if((isset($_GET) && isset($_GET["action"])) || (isset($_POST) && isset($_POST["a
 				$accessAll = FALSE;
 			}
 
-			$input_name = format_userinput(substr($_GET['name'], 0, strrpos($_GET['name'], '[')), 'text');
+			$input_name = format_userinput(mb_substr($_GET['name'], 0, mb_strrpos($_GET['name'], '[')), 'text');
 			$name = 'sel_ds1_' . $input_name;
 			$filter = unserialize(ko_get_setting('ps_filter_'.$name));
 			apply_leute_filter($filter, $base_where, ($access['leute']['ALL'] < 1 && !$accessAll));

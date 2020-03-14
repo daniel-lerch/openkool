@@ -5,11 +5,11 @@ CREATE TABLE `ko_admin` (
   `password` varchar(32) NOT NULL,
   `admin` text NOT NULL,
   `leute_admin` text NOT NULL,
-  `leute_admin_filter` text NOT NULL,
-  `leute_admin_spalten` text NOT NULL,
-  `leute_admin_groups` text NOT NULL,
+  `leute_admin_filter` text NOT NULL DEFAULT '',
+  `leute_admin_spalten` text NOT NULL DEFAULT '',
+  `leute_admin_groups` text NOT NULL DEFAULT '',
   `leute_admin_gs` tinyint(3) unsigned NOT NULL DEFAULT '0',
-  `leute_admin_assign` tinyint(4) NOT NULL,
+  `leute_admin_assign` tinyint(4) NOT NULL DEFAULT '0',
   `res_admin` text NOT NULL,
   `rota_admin` text NOT NULL,
   `event_admin` text NOT NULL,
@@ -21,11 +21,11 @@ CREATE TABLE `ko_admin` (
   `vesr_admin` text NOT NULL,
   `modules` text NOT NULL,
   `last_login` datetime NOT NULL DEFAULT '0000-00-00 00:00:00',
-  `disabled` varchar(32) NOT NULL,
-  `admingroups` text NOT NULL,
-  `email` varchar(255) NOT NULL,
-  `mobile` varchar(50) NOT NULL,
-	`kota_columns_ko_kleingruppen` text NOT NULL,
+  `disabled` varchar(32) NOT NULL DEFAULT '',
+  `admingroups` text NOT NULL DEFAULT '',
+  `email` varchar(255) NOT NULL DEFAULT '',
+  `mobile` varchar(50) NOT NULL DEFAULT '',
+	`kota_columns_ko_kleingruppen` text NOT NULL DEFAULT '',
 	`kota_columns_ko_event` text NOT NULL,
 	`res_force_global` tinyint(3) unsigned NOT NULL DEFAULT '0',
 	`event_force_global` tinyint(3) unsigned NOT NULL DEFAULT '0',
@@ -38,7 +38,7 @@ CREATE TABLE `ko_admin` (
 	`ical_hash` varchar(32) NOT NULL,
 	`allow_bypass_information_lock` tinyint(3) unsigned NOT NULL DEFAULT '0',
   PRIMARY KEY (`id`)
-) ENGINE=MyISAM  DEFAULT CHARSET=latin1 COLLATE latin1_german1_ci;
+) ENGINE=InnoDB  DEFAULT CHARSET=utf8mb4;
 
 INSERT INTO `ko_admin` (`id`, `leute_id`, `login`, `password`, `modules`) VALUES(2, -1, 'ko_guest', '098f6bcd4621d373cade4e832627b4f6', '');
 
@@ -76,7 +76,7 @@ CREATE TABLE `ko_admingroups` (
   `taxonomy_admin` text NOT NULL,
   `allow_bypass_information_lock` tinyint(3) unsigned NOT NULL DEFAULT '0',
   PRIMARY KEY (`id`)
-) ENGINE=MyISAM DEFAULT CHARSET=latin1 COLLATE latin1_german1_ci;
+) ENGINE=InnoDB  DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE `ko_vesr` (
   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
@@ -223,7 +223,7 @@ CREATE TABLE `ko_donations` (
   KEY `reoccuring` (`reoccuring`),
   KEY `valutadate` (`valutadate`),
   KEY `promise` (`promise`)
-) ENGINE=MyISAM DEFAULT CHARSET=latin1 COLLATE latin1_german1_ci;
+) ENGINE=InnoDB  DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE `ko_donations_mod` (
 	`id` mediumint(9) unsigned NOT NULL AUTO_INCREMENT,
@@ -266,7 +266,7 @@ CREATE TABLE `ko_donations_accounts` (
   `lastchange` datetime NOT NULL,
   `lastchange_user` mediumint(8) unsigned NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=MyISAM DEFAULT CHARSET=latin1 COLLATE latin1_german1_ci;
+) ENGINE=InnoDB  DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE `ko_donations_accountgroups` (
   `id` mediumint(8) unsigned NOT NULL AUTO_INCREMENT,
@@ -298,7 +298,7 @@ CREATE TABLE `ko_reminder` (
   `lastchange` datetime NOT NULL,
   `lastchange_user` int NOT NULL DEFAULT '0',
 	PRIMARY KEY (`id`)
-) ENGINE=MyISAM DEFAULT CHARSET=latin1 COLLATE latin1_german1_ci;
+) ENGINE=InnoDB  DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE `ko_reminder_mapping` (
 	`id` mediumint(9) NOT NULL AUTO_INCREMENT,
@@ -307,7 +307,7 @@ CREATE TABLE `ko_reminder_mapping` (
 	`leute_id` mediumint(9) NOT NULL DEFAULT '0',
 	`crdate` DATETIME NOT NULL,
 	PRIMARY KEY (`id`)
-) ENGINE=MyISAM DEFAULT CHARSET=latin1 COLLATE latin1_german1_ci;
+) ENGINE=InnoDB  DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE `ko_event` (
   `id` mediumint(9) NOT NULL AUTO_INCREMENT,
@@ -330,13 +330,13 @@ CREATE TABLE `ko_event` (
   `user_id` mediumint(9) NOT NULL DEFAULT '0',
   `last_change` datetime NOT NULL,
   `lastchange_user` int NOT NULL DEFAULT '0',
-  `import_id` text NOT NULL,
+  `import_id` text NOT NULL DEFAULT '',
   UNIQUE KEY `id` (`id`),
   KEY `eventgruppen_id` (`eventgruppen_id`),
   KEY `dp` (`rota`),
   KEY `startdatum` (`startdatum`),
   KEY `import_id` (`import_id`(200))
-) ENGINE=MyISAM DEFAULT CHARSET=latin1 COLLATE latin1_german1_ci;
+) ENGINE=InnoDB  DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE `ko_event_program` (
 	`id` mediumint(9) unsigned NOT NULL AUTO_INCREMENT,
@@ -350,32 +350,32 @@ CREATE TABLE `ko_event_program` (
 	`cruser` mediumint(9) NOT NULL,
 	`sorting` mediumint(9) NOT NULL,
 	PRIMARY KEY (`id`)
-) ENGINE=MyISAM DEFAULT CHARSET=latin1 COLLATE latin1_german1_ci;
+) ENGINE=InnoDB  DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE `ko_eventgruppen` (
   `id` mediumint(9) unsigned NOT NULL AUTO_INCREMENT,
-  `calendar_id` mediumint(9) NOT NULL,
-  `name` varchar(100) NOT NULL,
-  `shortname` varchar(5) NOT NULL,
-  `room` varchar(200) NOT NULL,
-  `startzeit` time NOT NULL,
-  `endzeit` time NOT NULL,
-  `title` varchar(255) NOT NULL,
-  `kommentar` text NOT NULL,
+  `calendar_id` mediumint(9) NOT NULL DEFAULT '0',
+  `name` varchar(100) NOT NULL DEFAULT '',
+  `shortname` varchar(5) NOT NULL DEFAULT '',
+  `room` varchar(200) NOT NULL DEFAULT '',
+  `startzeit` time NOT NULL DEFAULT '00:00:00',
+  `endzeit` time NOT NULL DEFAULT '00:00:00',
+  `title` varchar(255) NOT NULL DEFAULT '',
+  `kommentar` text NOT NULL DEFAULT '',
   `farbe` varchar(6) NOT NULL DEFAULT '',
   `resitems` varchar(255) NOT NULL DEFAULT '',
   `rota` tinyint(4) NOT NULL DEFAULT '0',
   `res_startzeit` time NOT NULL DEFAULT '00:00:00',
   `res_endzeit` time NOT NULL DEFAULT '00:00:00',
   `res_combined` tinyint(4) NOT NULL DEFAULT '0',
-  `url` tinytext NOT NULL,
+  `url` tinytext NOT NULL DEFAULT '',
   `moderation` tinyint(4) NOT NULL DEFAULT '0',
-  `notify` varchar(250) NOT NULL,
+  `notify` varchar(250) NOT NULL DEFAULT '',
   `type` tinyint(4) NOT NULL DEFAULT '0',
-  `ical_url` varchar(255) NOT NULL,
-  `ical_title` varchar(255) NOT NULL,
-  `update` int(11) NOT NULL,
-  `last_update` datetime NOT NULL,
+  `gcal_url` varchar(250) NOT NULL DEFAULT '',
+  `ical_url` varchar(255) NOT NULL DEFAULT '',
+  `update` int(11) NOT NULL DEFAULT '0',
+  `last_update` datetime NOT NULL DEFAULT '0000-00-00 00:00:00',
 	`responsible_for_res` mediumint(9) NOT NULL,
 	`crdate` DATETIME NOT NULL,
 	`cruser` mediumint(9) NOT NULL,
@@ -384,7 +384,7 @@ CREATE TABLE `ko_eventgruppen` (
   UNIQUE KEY `id` (`id`),
   KEY `calendar_id` (`calendar_id`),
   KEY `type` (`type`)
-) ENGINE=MyISAM DEFAULT CHARSET=latin1 COLLATE latin1_german1_ci;
+) ENGINE=InnoDB  DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE `ko_eventgruppen_program` (
 	`id` mediumint(9) unsigned NOT NULL AUTO_INCREMENT,
@@ -398,7 +398,7 @@ CREATE TABLE `ko_eventgruppen_program` (
 	`cruser` mediumint(9) NOT NULL,
 	`sorting` mediumint(9) NOT NULL,
 	PRIMARY KEY (`id`)
-) ENGINE=MyISAM DEFAULT CHARSET=latin1 COLLATE latin1_german1_ci;
+) ENGINE=InnoDB  DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE `ko_event_calendar` (
   `id` mediumint(9) NOT NULL AUTO_INCREMENT,
@@ -406,7 +406,7 @@ CREATE TABLE `ko_event_calendar` (
   `type` smallint(6) NOT NULL DEFAULT '1',
   PRIMARY KEY (`id`),
   KEY `type` (`type`)
-) ENGINE=MyISAM DEFAULT CHARSET=latin1 COLLATE latin1_german1_ci;
+) ENGINE=InnoDB  DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE `ko_event_mod` (
   `id` mediumint(9) NOT NULL AUTO_INCREMENT,
@@ -439,7 +439,7 @@ CREATE TABLE `ko_event_mod` (
   `cdate` datetime NOT NULL,
   `last_change` datetime NOT NULL,
   UNIQUE KEY `id` (`id`)
-) ENGINE=MyISAM DEFAULT CHARSET=latin1 COLLATE latin1_german1_ci;
+) ENGINE=InnoDB  DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE `ko_event_rooms` (
   `id` mediumint(9) NOT NULL AUTO_INCREMENT,
@@ -468,10 +468,10 @@ CREATE TABLE `ko_familie` (
   `famanrede` varchar(100) NOT NULL DEFAULT '',
   `famfirstname` varchar(100) NOT NULL,
   `famlastname` varchar(100) NOT NULL,
-  `famemail` enum('','husband','wife') NOT NULL,
+  `famemail` enum('','husband','wife') NOT NULL DEFAULT '',
   PRIMARY KEY (`famid`),
   KEY `nachname` (`nachname`)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE latin1_german1_ci;
+) ENGINE=InnoDB  DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE `ko_filter` (
   `id` mediumint(9) NOT NULL AUTO_INCREMENT,
@@ -493,7 +493,7 @@ CREATE TABLE `ko_filter` (
   `allow_fastfilter` tinyint(4) NOT NULL DEFAULT '0',
   UNIQUE KEY `id` (`id`),
   KEY `group` (`group`)
-) ENGINE=MyISAM  DEFAULT CHARSET=latin1 COLLATE latin1_german1_ci;
+) ENGINE=InnoDB  DEFAULT CHARSET=utf8mb4;
 
 INSERT INTO `ko_filter` VALUES(NULL, 'leute', 'anrede', 'salutation', 'person', 1, 'anrede REGEXP ''[VAR1]''', '', '', 1, 'salutation', '<select class="input-sm form-control" name="var1" size="0"><option value=""></option><option value="Herr">Herr</option><option value="Frau">Frau</option></select>', '', '', '', '', 1);
 INSERT INTO `ko_filter` VALUES(NULL, 'leute', 'ko_filter.name', 'filterpreset', 'misc', 0, '[VAR1]', '', '', 1, 'filterpreset', 'FCN:ko_specialfilter_filterpreset', '', '', '', '', 0);
@@ -566,7 +566,7 @@ CREATE TABLE `ko_grouproles` (
   `lastchange` datetime NOT NULL,
   `lastchange_user` int NOT NULL DEFAULT '0',
   PRIMARY KEY (`id`)
-) ENGINE=MyISAM DEFAULT CHARSET=latin1 COLLATE latin1_german1_ci;
+) ENGINE=InnoDB  DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE `ko_groups` (
   `id` mediumint(6) unsigned zerofill NOT NULL AUTO_INCREMENT,
@@ -588,7 +588,7 @@ CREATE TABLE `ko_groups` (
   `ezmlm_moderator` varchar(250) NOT NULL,
   `mailing_alias` varchar(50) NOT NULL,
   `maxcount` mediumint(9) NOT NULL,
-  `count` mediumint(9) NOT NULL,
+  `count` mediumint(9) NOT NULL DEFAULT '0',
   `count_role` text NOT NULL,
   `mailing_mod_role` varchar(15) NOT NULL,
   `mailing_mod_logins` smallint(6) NOT NULL,
@@ -610,7 +610,7 @@ CREATE TABLE `ko_groups` (
   KEY `ezmlm_list` (`ezmlm_list`),
   KEY `mailing_alias` (`mailing_alias`),
   FULLTEXT KEY `roles` (`roles`)
-) ENGINE=MyISAM DEFAULT CHARSET=latin1 COLLATE latin1_german1_ci;
+) ENGINE=InnoDB  DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE `ko_groups_datafields` (
   `id` mediumint(6) unsigned zerofill NOT NULL AUTO_INCREMENT,
@@ -626,7 +626,7 @@ CREATE TABLE `ko_groups_datafields` (
   `lastchange_user` int NOT NULL DEFAULT '0',
   PRIMARY KEY (`id`),
   KEY `reusable` (`reusable`)
-) ENGINE=MyISAM DEFAULT CHARSET=latin1 COLLATE latin1_german1_ci;
+) ENGINE=InnoDB  DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE `ko_groups_datafields_data` (
   `id` bigint(20) NOT NULL AUTO_INCREMENT,
@@ -638,7 +638,7 @@ CREATE TABLE `ko_groups_datafields_data` (
   PRIMARY KEY (`id`),
   KEY `person_id` (`person_id`),
   KEY `datafield_id` (`datafield_id`,`person_id`,`group_id`)
-) ENGINE=MyISAM DEFAULT CHARSET=latin1 COLLATE latin1_german1_ci;
+) ENGINE=InnoDB  DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE `ko_groups_assignment_history` (
   `id` mediumint(9) NOT NULL AUTO_INCREMENT,
@@ -666,7 +666,7 @@ CREATE TABLE `ko_help` (
   `url` varchar(255) NOT NULL,
   PRIMARY KEY (`id`),
   KEY `module` (`module`,`language`)
-) ENGINE=MyISAM  DEFAULT CHARSET=latin1 COLLATE latin1_german1_ci;
+) ENGINE=InnoDB  DEFAULT CHARSET=utf8mb4;
 
 -- vesr, set_allgemein, set_layout, etiketten/pdf/individual, logs, kg, multiedit, inlineedit
 INSERT INTO `ko_help` VALUES(NULL, 'admin', '', 'de', 0, 0, '', 'http://kool.help/admin/benutzerverwaltung');
@@ -761,39 +761,39 @@ INSERT INTO `ko_help` VALUES(NULL, 'kota', 'ko_eventgruppen', 'de', 0, 0, '', 'h
 INSERT INTO `ko_help` VALUES(NULL, 'kota', 'ko_resitem', 'de', 0, 0, '', 'http://kool.help/module/reservationen#reservations-objekte');
 INSERT INTO `ko_help` VALUES(NULL, 'kota', 'ko_donations', 'de', 0, 0, '', 'http://kool.help/module/spenden#spenden_erfassen');
 
-INSERT INTO `ko_help` VALUES(NULL, 'admin', 'login_rights_daten', 'de', 0, 0, '<b>2: </b>Zu den gewählten Termingruppen dürfen neue Termine erfasst, bestehende bearbeitet und gelöscht werden (inkl. Moderation gemäss Einstellung pro Termingruppe)<br />\r\n<b>3: </b>Rechte von 2 aber ohne Moderation auch bei moderierten Termingruppen<br/>\r\n<b>4: </b>Von Stufe-2-Benutzern erfasste Termine moderieren<br />\r\n<b>ALL-Rechte auf 3:</b><br />Termingruppen/Kalender erstellen', '');
-INSERT INTO `ko_help` VALUES(NULL, 'admin', 'login_rights_reservation', 'de', 0, 0, '<b>2:</b> Neue Reservationen erfassen, die aber je nach Objekt noch moderiert werden.<br /> <b>3: </b>Eigene Reservationen bearbeiten/löschen.<br /> <b>4:</b> Neue Reservationen ohne Moderation erfassen. Alle Reservationen zu den gewählten Objekten bearbeiten/löschen.<br /> <b>5:</b> Moderieren der Reservations-Anfragen<br /> <b>ALL-Rechte auf 4:</b> Neue Reservations-Gruppen und -Objekte erstellen', '');
-INSERT INTO `ko_help` VALUES(NULL, 'admin', 'login_rights_groups', 'de', 0, 0, '<b>2:</b> Personen Gruppen zuweisen oder Zuweisung aufheben.<br /> <b>3:</b> Gruppen und Rollen bearbeiten.<br /> <b>4:</b> Gruppen und Rollen löschen.', '');
-INSERT INTO `ko_help` VALUES(NULL, 'admin', 'login_rights_admin', 'de', 0, 0, 'Normalerweise sollte jeder Benutzer Berechtigungsstufe 1 für das Admin-Modul haben, um die eigenen Layout-Einstellungen bearbeiten zu können.', '');
+INSERT INTO `ko_help` VALUES(NULL, 'admin', 'login_rights_daten', 'de', 0, 0, '<b>2: </b>Zu den gewÃ¤hlten Termingruppen dÃ¼rfen neue Termine erfasst, bestehende bearbeitet und gelÃ¶scht werden (inkl. Moderation gemÃ¤ss Einstellung pro Termingruppe)<br />\r\n<b>3: </b>Rechte von 2 aber ohne Moderation auch bei moderierten Termingruppen<br/>\r\n<b>4: </b>Von Stufe-2-Benutzern erfasste Termine moderieren<br />\r\n<b>ALL-Rechte auf 3:</b><br />Termingruppen/Kalender erstellen', '');
+INSERT INTO `ko_help` VALUES(NULL, 'admin', 'login_rights_reservation', 'de', 0, 0, '<b>2:</b> Neue Reservationen erfassen, die aber je nach Objekt noch moderiert werden.<br /> <b>3: </b>Eigene Reservationen bearbeiten/lÃ¶schen.<br /> <b>4:</b> Neue Reservationen ohne Moderation erfassen. Alle Reservationen zu den gewÃ¤hlten Objekten bearbeiten/lÃ¶schen.<br /> <b>5:</b> Moderieren der Reservations-Anfragen<br /> <b>ALL-Rechte auf 4:</b> Neue Reservations-Gruppen und -Objekte erstellen', '');
+INSERT INTO `ko_help` VALUES(NULL, 'admin', 'login_rights_groups', 'de', 0, 0, '<b>2:</b> Personen Gruppen zuweisen oder Zuweisung aufheben.<br /> <b>3:</b> Gruppen und Rollen bearbeiten.<br /> <b>4:</b> Gruppen und Rollen lÃ¶schen.', '');
+INSERT INTO `ko_help` VALUES(NULL, 'admin', 'login_rights_admin', 'de', 0, 0, 'Normalerweise sollte jeder Benutzer Berechtigungsstufe 1 fÃ¼r das Admin-Modul haben, um die eigenen Layout-Einstellungen bearbeiten zu kÃ¶nnen.', '');
 INSERT INTO `ko_help` VALUES(NULL, 'admin', 'login_rights_daten', 'en', 0, 0, '<b>2: </b>Add new events, edit or delete events for the selected event groups. Moderation needed if set for the event group.<br />\r\n<b>3: </b>Same as 2 but without moderation even if set for the event group.<br/>\r\n<b>4: </b>Moderate events entered by users with access level 2.<br />\r\n<b>ALL rights set to 3:</b><br />Create new event groups/calendars', '');
 INSERT INTO `ko_help` VALUES(NULL, 'admin', 'login_rights_reservation', 'en', 0, 0, '<b>2:</b> Add new reservations. Moderation needed for items with moderation.<br /> <b>3: </b>Edit/delete own reservations.<br /> <b>4:</b> Add new reservations without moderation and edit/delete all reservations for the given items.<br /> <b>4:</b> Moderate reservation requests.<br /> <b>ALL rights set to 4:</b> Create new reservation groups and items', '');
 INSERT INTO `ko_help` VALUES(NULL, 'admin', 'login_rights_groups', 'en', 0, 0, '<b>2:</b> Add people to groups or remove them.<br /> <b>3:</b> Edit groups and add or edit roles.<br /> <b>4:</b> Delete groups and roles.', '');
 INSERT INTO `ko_help` VALUES(NULL, 'admin', 'login_rights_admin', 'en', 0, 0, 'Usually every user should have access to the admin module with access level 1 to edit her own layout settings.', '');
 INSERT INTO `ko_help` VALUES(NULL, 'daten', 'ical_links2', 'en', 0, 0, 'Right click on link and select "Copy link" to add the link to your clipboard. Paste it into your calendar application.', '');
-INSERT INTO `ko_help` VALUES(NULL, 'daten', 'ical_links2', 'de', 0, 0, 'Mit der rechten Maustaste auf den gewünschten Link klicken und "Link-Adresse kopieren". Danach im Kalender-Programm als Kalender-URL einfügen.', '');
-INSERT INTO `ko_help` VALUES(NULL, 'daten', 'kota.ko_reminder.text', 'de', 0, 0, 'Im Text der Nachricht können verschiedene Platzhalter eingefügt werden, die anschliessend vom kOOL durch Absender-, Empfänger-, oder Eventspezifische Informationen ersetzt werden.\nAls Beispiel:\n\n###r__salutation_formal_name###\nHier erhalten Sie wichtige Informationen zum Event ###e_title###:\nStartzeit: ###e_startzeit###, Startdatum: ###e_startdatum###.\n\nMit freundlichen Grüssen,\n###s_vorname### ###s_nachname###', '');
+INSERT INTO `ko_help` VALUES(NULL, 'daten', 'ical_links2', 'de', 0, 0, 'Mit der rechten Maustaste auf den gewÃ¼nschten Link klicken und "Link-Adresse kopieren". Danach im Kalender-Programm als Kalender-URL einfÃ¼gen.', '');
+INSERT INTO `ko_help` VALUES(NULL, 'daten', 'kota.ko_reminder.text', 'de', 0, 0, 'Im Text der Nachricht kÃ¶nnen verschiedene Platzhalter eingefÃ¼gt werden, die anschliessend vom kOOL durch Absender-, EmpfÃ¤nger-, oder Eventspezifische Informationen ersetzt werden.\nAls Beispiel:\n\n###r__salutation_formal_name###\nHier erhalten Sie wichtige Informationen zum Event ###e_title###:\nStartzeit: ###e_startzeit###, Startdatum: ###e_startdatum###.\n\nMit freundlichen GrÃ¼ssen,\n###s_vorname### ###s_nachname###', '');
 INSERT INTO `ko_help` VALUES(NULL, 'daten', 'kota.ko_reminder.text', 'en', 0, 0, 'Several placeholders may be inserted into the text of the reminder. These will then be replaced by the corresponding information of an event, receiver or sender.\nAn Example:\n\n###r__salutation_formal_name###\nHere you get some important information concerning the event ###e_title###:\nStarting time: ###e_startzeit###, Starting date: ###e_startdatum###.\n\nYours sincerely,\n###s_vorname### ###s_nachname###', '');
 INSERT INTO `ko_help` VALUES(NULL, 'reservation', 'ical_links2', 'en', 0, 0, 'Right click on link and select "Copy link" to add the link to your clipboard. Paste it into your calendar application.', '');
-INSERT INTO `ko_help` VALUES(NULL, 'reservation', 'ical_links2', 'de', 0, 0, 'Mit der rechten Maustaste auf den gewünschten Link klicken und "Link-Adresse kopieren". Danach im Kalender-Programm als Kalender-URL einfügen.', '');
+INSERT INTO `ko_help` VALUES(NULL, 'reservation', 'ical_links2', 'de', 0, 0, 'Mit der rechten Maustaste auf den gewÃ¼nschten Link klicken und "Link-Adresse kopieren". Danach im Kalender-Programm als Kalender-URL einfÃ¼gen.', '');
 INSERT INTO `ko_help` VALUES(NULL, 'donations', 'submenu_filter_amount', 'en', 0, 0, '<h1>Filter for the amount:</h1><ul><li><b>100-200</b>: Find amount between 100 and 200 (including)</li><li><b>&gt;100</b>: Amount greater than or equal to 100</li><li><b>&lt;100</b>: Amount smaller than or equal to 100</li><li><b>=100</b>: Amount is exactly 100</li><li><b>Other values</b>: Partial matches: "100" finds "100", "1000" and e.g. "1009"</li></ul>', '');
-INSERT INTO `ko_help` VALUES(NULL, 'donations', 'submenu_filter_amount', 'de', 0, 0, '<h1>Suche nach Betrag:</h1><ul><li><b>100-200</b>: Betrag zwischen 100 und 200 (inklusive)</li><li><b>&gt;100</b>: Betrag grösser als 100 (inklusive)</li><li><b>&lt;100</b>: Betrag kleiner als 100 (inklusive)</li><li><b>=100</b>: Betrag exakt 100</li><li><b>Sonstige Eingaben</b>: Teilsuche, z.B. "100" findet "100" aber auch "1000" oder "1009"</li></ul>', '');
-INSERT INTO `ko_help` VALUES(NULL, 'leute', 'filter_link_adv', 'de', 0, 0, '<h1>Manuelle Filter-Verknüpfung</h1>Für jeden angewandten Filter erscheint in obiger Liste eine Nummer, über die der Filter im Textfeld referenziert werden kann.<br />Beispiele:<ul><li><b>0 UND 1:</b> Damit wird der erste Filter ("0") mit einem logischen UND mit dem zweiten ("1") verknüpft.</li><li><b>0 UND (1 ODER 2)</b>: Der erste ("0") sowie entweder der zweite oder der dritte Filter ("(1 ODER 2)") müssen zutreffen.</li></ul>', '');
+INSERT INTO `ko_help` VALUES(NULL, 'donations', 'submenu_filter_amount', 'de', 0, 0, '<h1>Suche nach Betrag:</h1><ul><li><b>100-200</b>: Betrag zwischen 100 und 200 (inklusive)</li><li><b>&gt;100</b>: Betrag grÃ¶sser als 100 (inklusive)</li><li><b>&lt;100</b>: Betrag kleiner als 100 (inklusive)</li><li><b>=100</b>: Betrag exakt 100</li><li><b>Sonstige Eingaben</b>: Teilsuche, z.B. "100" findet "100" aber auch "1000" oder "1009"</li></ul>', '');
+INSERT INTO `ko_help` VALUES(NULL, 'leute', 'filter_link_adv', 'de', 0, 0, '<h1>Manuelle Filter-VerknÃ¼pfung</h1>FÃ¼r jeden angewandten Filter erscheint in obiger Liste eine Nummer, Ã¼ber die der Filter im Textfeld referenziert werden kann.<br />Beispiele:<ul><li><b>0 UND 1:</b> Damit wird der erste Filter ("0") mit einem logischen UND mit dem zweiten ("1") verknÃ¼pft.</li><li><b>0 UND (1 ODER 2)</b>: Der erste ("0") sowie entweder der zweite oder der dritte Filter ("(1 ODER 2)") mÃ¼ssen zutreffen.</li></ul>', '');
 INSERT INTO `ko_help` VALUES(NULL, 'leute', 'filter_link_adv', 'en', 0, 0, '<h1>Manually set filter links</h1>In the list above you can see a number for every currently applied filter. Use these in the input below to add a reference to each filter.<br />Some examples:<ul><li><b>0 AND 1:</b>The first ("0") and second ("1") filter will be linked by a logical AND.</li><li><b>0 AND (1 OR 2)</b>: The first ("0") filter and either the second or third filter ("(1 OR 2)")must match.</li></ul>', '');
 INSERT INTO `ko_help` VALUES(NULL, 'groups', 'kota.ko_groups.linked_group', 'en', '', '', 'When adding an address to the current group this option will also assign this address to the group specified here. This only applies to newly assigned addresses. If the address is removed from this group it will stay in the linked group.', '');
-INSERT INTO `ko_help` VALUES(NULL, 'groups', 'kota.ko_groups.linked_group', 'de', '', '', 'Beim Hinzufügen einer Adresse zu dieser Gruppe wird diese Adresse auch der verknüpften Gruppe zugewiesen. Dies gilt nur für Neuzuweisungen von Adressen zu dieser Gruppe. Wird eine Adresse aus dieser Gruppe entfernt, bleibt sie in der verknüpften Gruppe bestehen.', '');
+INSERT INTO `ko_help` VALUES(NULL, 'groups', 'kota.ko_groups.linked_group', 'de', '', '', 'Beim HinzufÃ¼gen einer Adresse zu dieser Gruppe wird diese Adresse auch der verknÃ¼pften Gruppe zugewiesen. Dies gilt nur fÃ¼r Neuzuweisungen von Adressen zu dieser Gruppe. Wird eine Adresse aus dieser Gruppe entfernt, bleibt sie in der verknÃ¼pften Gruppe bestehen.', '');
 
-INSERT INTO `ko_help` VALUES(NULL, 'subscription', 'kota.ko_subscription_forms.response_body_subscription', 'de', 0, 0, 'Platzhalter die hier verwendet werden können sind bei den Formularfeldern einsehbar.<br />Weitere Platzhalter:<dl><dt>###EDIT_LINK###</dt><dd>Fügt einen Link zum Bearbeiten der Anmeldung ein. Das funktioniert nur bei deaktivierter Moderation.</dd><dt>###SALUTATION_FORMAL###><dd>Formelle Anrede inkl. Name (z.B. Sehr geehrter Herr Muster)</dd><dt>###SALUTATION_INFORMAL###</dt><dd>Informelle Anrede inkl. Name (z.B. Lieber Peter)</dd></dl>', '');
-INSERT INTO `ko_help` VALUES(NULL, 'subscription', 'kota.ko_subscription_forms.response_body_edit', 'de', 0, 0, 'Platzhalter die hier verwendet werden können sind bei den Formularfeldern einsehbar.<br />Weitere Platzhalter:<dl><dt>###EDIT_LINK###</dt><dd>Fügt einen Link zum Bearbeiten der Anmeldung ein. Das funktioniert nur bei deaktivierter Moderation.</dd><dt>###SALUTATION_FORMAL###><dd>Formelle Anrede inkl. Name (z.B. Sehr geehrter Herr Muster)</dd><dt>###SALUTATION_INFORMAL###</dt><dd>Informelle Anrede inkl. Name (z.B. Lieber Peter)</dd></dl>', '');
-INSERT INTO `ko_help` VALUES(NULL, 'subscription', 'kota.ko_subscription_forms.moderated', 'de', '', '', 'Moderierte Anmeldungen müssen unter "Leute > Anmeldungen moderiert werden. Sonst wird sofort eine neue Adresse in kOOL gespeichert und ein Adressbereinigungs-Eintrag erstellt.', '');
-INSERT INTO `ko_help` VALUES(NULL, 'subscription', 'kota.ko_subscription_forms.protected', 'de', '', '', 'Diesen Link können Sie im Leute-Modul als Spalte einblenden und über den E-Mail Versand den einzelnen eingeladenen Personen zukommen lassen.', '');
-INSERT INTO `ko_help` VALUES(NULL, 'subscription', 'kota.ko_subscription_forms.edit_link', 'de', '', '', 'Mit diesem Link können die Benutzer ihre eigene Adresse und die Angaben zur Gruppenanmeldung später wieder bearbeiten.', '');
-INSERT INTO `ko_help` VALUES(NULL, 'subscription', 'kota.ko_subscription_forms.url_segment', 'de', '', '', 'Unter diesem Link ist das Anmeldeformular erreichbar. Persönliche Links können Sie aus dem Leute-Modul mit eigener Spalte und über den E-Mail Versand versenden.', '');
+INSERT INTO `ko_help` VALUES(NULL, 'subscription', 'kota.ko_subscription_forms.response_body_subscription', 'de', 0, 0, 'Platzhalter die hier verwendet werden kÃ¶nnen sind bei den Formularfeldern einsehbar.<br />Weitere Platzhalter:<dl><dt>###EDIT_LINK###</dt><dd>FÃ¼gt einen Link zum Bearbeiten der Anmeldung ein. Das funktioniert nur bei deaktivierter Moderation.</dd><dt>###SALUTATION_FORMAL###><dd>Formelle Anrede inkl. Name (z.B. Sehr geehrter Herr Muster)</dd><dt>###SALUTATION_INFORMAL###</dt><dd>Informelle Anrede inkl. Name (z.B. Lieber Peter)</dd></dl>', '');
+INSERT INTO `ko_help` VALUES(NULL, 'subscription', 'kota.ko_subscription_forms.response_body_edit', 'de', 0, 0, 'Platzhalter die hier verwendet werden kÃ¶nnen sind bei den Formularfeldern einsehbar.<br />Weitere Platzhalter:<dl><dt>###EDIT_LINK###</dt><dd>FÃ¼gt einen Link zum Bearbeiten der Anmeldung ein. Das funktioniert nur bei deaktivierter Moderation.</dd><dt>###SALUTATION_FORMAL###><dd>Formelle Anrede inkl. Name (z.B. Sehr geehrter Herr Muster)</dd><dt>###SALUTATION_INFORMAL###</dt><dd>Informelle Anrede inkl. Name (z.B. Lieber Peter)</dd></dl>', '');
+INSERT INTO `ko_help` VALUES(NULL, 'subscription', 'kota.ko_subscription_forms.moderated', 'de', '', '', 'Moderierte Anmeldungen mÃ¼ssen unter "Leute > Anmeldungen moderiert werden. Sonst wird sofort eine neue Adresse in kOOL gespeichert und ein Adressbereinigungs-Eintrag erstellt.', '');
+INSERT INTO `ko_help` VALUES(NULL, 'subscription', 'kota.ko_subscription_forms.protected', 'de', '', '', 'Diesen Link kÃ¶nnen Sie im Leute-Modul als Spalte einblenden und Ã¼ber den E-Mail Versand den einzelnen eingeladenen Personen zukommen lassen.', '');
+INSERT INTO `ko_help` VALUES(NULL, 'subscription', 'kota.ko_subscription_forms.edit_link', 'de', '', '', 'Mit diesem Link kÃ¶nnen die Benutzer ihre eigene Adresse und die Angaben zur Gruppenanmeldung spÃ¤ter wieder bearbeiten.', '');
+INSERT INTO `ko_help` VALUES(NULL, 'subscription', 'kota.ko_subscription_forms.url_segment', 'de', '', '', 'Unter diesem Link ist das Anmeldeformular erreichbar. PersÃ¶nliche Links kÃ¶nnen Sie aus dem Leute-Modul mit eigener Spalte und Ã¼ber den E-Mail Versand versenden.', '');
 INSERT INTO `ko_help` VALUES(NULL, 'subscription', 'kota.ko_subscription_forms.double_opt_in', 'de', '', '', '', 'https://kool.help/module/anmeldung#double-opt-in_aktivieren');
 
 
 CREATE TABLE `ko_kleingruppen` (
   `id` mediumint(4) unsigned zerofill NOT NULL AUTO_INCREMENT,
-  `name` varchar(250) NOT NULL,
+  `name` varchar(250) NOT NULL DEFAULT '',
   `alter` varchar(20) NOT NULL DEFAULT '',
   `geschlecht` varchar(10) NOT NULL,
   `wochentag` varchar(20) NOT NULL,
@@ -816,7 +816,7 @@ CREATE TABLE `ko_kleingruppen` (
   PRIMARY KEY (`id`),
   KEY `type` (`type`,`region`,`eventGroupID`),
   KEY `mailing_alias` (`mailing_alias`)
-) ENGINE=MyISAM DEFAULT CHARSET=latin1 COLLATE latin1_german1_ci;
+) ENGINE=InnoDB  DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE `ko_leute` (
   `id` mediumint(9) unsigned NOT NULL AUTO_INCREMENT,
@@ -869,7 +869,7 @@ CREATE TABLE `ko_leute` (
   KEY `famfunction` (`famfunction`),
   KEY `checkin_number` (`checkin_number`),
   FULLTEXT KEY `groups` (`groups`)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE latin1_german1_ci;
+) ENGINE=InnoDB  DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE `ko_leute_changes` (
   `id` mediumint(8) unsigned NOT NULL AUTO_INCREMENT,
@@ -881,7 +881,7 @@ CREATE TABLE `ko_leute_changes` (
   PRIMARY KEY (`id`),
   KEY `liduiddate` (`leute_id`,`user_id`,`date`),
   KEY `date` (`date`)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE latin1_german1_ci;
+) ENGINE=InnoDB  DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE `ko_leute_mod` (
   `_id` mediumint(9) unsigned NOT NULL AUTO_INCREMENT,
@@ -922,7 +922,7 @@ CREATE TABLE `ko_leute_mod` (
   PRIMARY KEY (`_id`),
   KEY `nachname` (`nachname`),
   KEY `geburtsdatum` (`geburtsdatum`)
-) ENGINE=MyISAM DEFAULT CHARSET=latin1 COLLATE latin1_german1_ci;
+) ENGINE=InnoDB  DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE `ko_leute_revisions` (
 	`id` mediumint(9) unsigned NOT NULL AUTO_INCREMENT,
@@ -944,7 +944,7 @@ CREATE TABLE `ko_leute_preferred_fields` (
   KEY `type` (`type`),
   KEY `lid` (`lid`),
   KEY `field` (`field`)
-) ENGINE=MyISAM DEFAULT CHARSET=latin1 COLLATE latin1_german1_ci;
+) ENGINE=InnoDB  DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE `ko_event_absence` (
   `id` mediumint(9) unsigned NOT NULL AUTO_INCREMENT,
@@ -972,7 +972,7 @@ CREATE TABLE `ko_log` (
   KEY `user_id` (`user_id`),
   KEY `date` (`date`),
   KEY `type` (`type`,`comment`(8))
-) ENGINE=MyISAM DEFAULT CHARSET=latin1 COLLATE latin1_german1_ci;
+) ENGINE=InnoDB  DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE `ko_mailing_mails` (
   `id` mediumint(8) unsigned NOT NULL AUTO_INCREMENT,
@@ -992,7 +992,7 @@ CREATE TABLE `ko_mailing_mails` (
 	`size` int(11) unsigned NOT NULL,
   PRIMARY KEY (`id`),
   KEY `status` (`status`,`code`)
-) ENGINE=MyISAM DEFAULT CHARSET=latin1 COLLATE latin1_german1_ci;
+) ENGINE=InnoDB  DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE `ko_mailing_recipients` (
   `id` mediumint(8) unsigned NOT NULL AUTO_INCREMENT,
@@ -1004,7 +1004,7 @@ CREATE TABLE `ko_mailing_recipients` (
   `delivery_attempts` mediumint(2) unsigned NOT NULL,
   PRIMARY KEY (`id`),
   KEY `mail_id` (`mail_id`)
-) ENGINE=MyISAM DEFAULT CHARSET=latin1 COLLATE latin1_german1_ci;
+) ENGINE=InnoDB  DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE `ko_mailmerge` (
   `id` mediumint(8) unsigned NOT NULL AUTO_INCREMENT,
@@ -1020,7 +1020,7 @@ CREATE TABLE `ko_mailmerge` (
   `sig_file` tinyint(4) NOT NULL,
   PRIMARY KEY (`id`),
   KEY `user_id` (`user_id`,`crdate`)
-) ENGINE=MyISAM DEFAULT CHARSET=latin1 COLLATE latin1_german1_ci;
+) ENGINE=InnoDB  DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE `ko_news` (
   `id` mediumint(9) NOT NULL AUTO_INCREMENT,
@@ -1037,7 +1037,7 @@ CREATE TABLE `ko_news` (
   `lastchange_user` mediumint(8) unsigned NOT NULL,
   UNIQUE KEY `id` (`id`),
   KEY `type` (`type`)
-) ENGINE=MyISAM DEFAULT CHARSET=latin1 COLLATE latin1_german1_ci;
+) ENGINE=InnoDB  DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE `ko_pdf_layout` (
   `id` mediumint(8) unsigned NOT NULL AUTO_INCREMENT,
@@ -1049,7 +1049,7 @@ CREATE TABLE `ko_pdf_layout` (
   `lastchange` datetime NOT NULL,
   `lastchange_user` mediumint(8) unsigned NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=MyISAM  DEFAULT CHARSET=latin1 COLLATE latin1_german1_ci;
+) ENGINE=InnoDB  DEFAULT CHARSET=utf8mb4;
 
 INSERT INTO `ko_pdf_layout` VALUES(1, 'leute', 'Layout 1', 'a:8:{s:4:"page";a:5:{s:11:"orientation";s:1:"L";s:11:"margin_left";s:2:"10";s:10:"margin_top";s:2:"15";s:12:"margin_right";s:2:"10";s:13:"margin_bottom";s:2:"10";}s:6:"header";a:3:{s:4:"left";a:3:{s:4:"font";s:6:"arialb";s:8:"fontsize";s:2:"12";s:4:"text";s:22:"kOOL - the church tool";}s:6:"center";a:3:{s:4:"font";s:6:"arialb";s:8:"fontsize";s:2:"12";s:4:"text";s:0:"";}s:5:"right";a:3:{s:4:"font";s:6:"arialb";s:8:"fontsize";s:2:"12";s:4:"text";s:0:"";}}s:6:"footer";a:3:{s:4:"left";a:3:{s:4:"font";s:5:"arial";s:8:"fontsize";s:2:"11";s:4:"text";s:0:"";}s:6:"center";a:3:{s:4:"font";s:5:"arial";s:8:"fontsize";s:2:"11";s:4:"text";s:18:"- [[PageNumber]] -";}s:5:"right";a:3:{s:4:"font";s:5:"arial";s:8:"fontsize";s:2:"11";s:4:"text";s:46:"[[Day]].[[Month]].[[Year]] [[Hour]]:[[Minute]]";}}s:9:"headerrow";a:3:{s:4:"font";s:6:"arialb";s:8:"fontsize";s:2:"11";s:9:"fillcolor";s:3:"204";}s:18:"columns_datafields";b:0;s:4:"sort";s:8:"nachname";s:10:"sort_order";s:3:"ASC";s:12:"col_template";a:1:{s:8:"_default";a:2:{s:4:"font";s:5:"arial";s:8:"fontsize";s:2:"11";}}}', NOW(), 1, NOW(), 1);
 
@@ -1064,13 +1064,13 @@ CREATE TABLE `ko_reservation` (
   `name` varchar(100) NOT NULL DEFAULT '',
   `email` varchar(100) NOT NULL DEFAULT '',
   `telefon` varchar(50) NOT NULL DEFAULT '',
-  `comments` text NOT NULL,
+  `comments` text NOT NULL DEFAULT '',
   `code` varchar(32) NOT NULL DEFAULT '',
   `cdate` datetime NOT NULL DEFAULT '0000-00-00 00:00:00',
   `last_change` datetime NOT NULL DEFAULT '0000-00-00 00:00:00',
   `lastchange_user` mediumint(8) unsigned NOT NULL,
   `user_id` mediumint(6) NOT NULL DEFAULT '0',
-  `serie_id` mediumint(9) NOT NULL,
+  `serie_id` mediumint(9) NOT NULL DEFAULT '0',
   `linked_items` text NOT NULL,
   PRIMARY KEY (`id`),
   KEY `serie_id` (`serie_id`),
@@ -1078,7 +1078,7 @@ CREATE TABLE `ko_reservation` (
   KEY `user_id` (`user_id`),
   KEY `startdatum` (`startdatum`),
   KEY `last_change` (`last_change`)
-) ENGINE=MyISAM DEFAULT CHARSET=latin1 COLLATE latin1_german1_ci;
+) ENGINE=InnoDB  DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE `ko_reservation_mod` (
   `id` mediumint(9) NOT NULL AUTO_INCREMENT,
@@ -1097,24 +1097,24 @@ CREATE TABLE `ko_reservation_mod` (
   `last_change` datetime NOT NULL DEFAULT '0000-00-00 00:00:00',
   `lastchange_user` mediumint(8) unsigned NOT NULL,
   `user_id` mediumint(6) NOT NULL DEFAULT '0',
-  `serie_id` mediumint(9) NOT NULL,
+  `serie_id` mediumint(9) NOT NULL DEFAULT '0',
   `linked_items` text NOT NULL,
   `_event_id` mediumint(9) NOT NULL DEFAULT '0',
   `event_id` tinyint(3) NOT NULL,
   PRIMARY KEY (`id`),
   KEY `serie_id` (`serie_id`)
-) ENGINE=MyISAM DEFAULT CHARSET=latin1 COLLATE latin1_german1_ci;
+) ENGINE=InnoDB  DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE `ko_resgruppen` (
   `id` smallint(6) NOT NULL AUTO_INCREMENT,
   `name` varchar(100) NOT NULL DEFAULT '',
   PRIMARY KEY (`id`)
-) ENGINE=MyISAM DEFAULT CHARSET=latin1 COLLATE latin1_german1_ci;
+) ENGINE=InnoDB  DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE `ko_resitem` (
   `id` mediumint(9) NOT NULL AUTO_INCREMENT,
-  `name` varchar(100) NOT NULL,
-  `beschreibung` text NOT NULL,
+  `name` varchar(100) NOT NULL DEFAULT '',
+  `beschreibung` text NOT NULL DEFAULT '',
   `bild` varchar(255) NOT NULL DEFAULT '',
   `farbe` varchar(6) NOT NULL DEFAULT '',
   `gruppen_id` smallint(4) NOT NULL DEFAULT '0',
@@ -1127,7 +1127,7 @@ CREATE TABLE `ko_resitem` (
   `lastchange` datetime NOT NULL,
   `lastchange_user` mediumint(8) unsigned NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=MyISAM DEFAULT CHARSET=latin1 COLLATE latin1_german1_ci;
+) ENGINE=InnoDB  DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE `ko_rota_schedulling` (
   `team_id` mediumint(8) unsigned NOT NULL,
@@ -1136,7 +1136,7 @@ CREATE TABLE `ko_rota_schedulling` (
   `status` tinyint(4) NOT NULL DEFAULT '1',
   KEY `dienst` (`team_id`,`event_id`),
   KEY `event` (`event_id`)
-) ENGINE=MyISAM DEFAULT CHARSET=latin1 COLLATE latin1_german1_ci;
+) ENGINE=InnoDB  DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE `ko_rota_disable_scheduling` (
   `id` mediumint(8) unsigned NOT NULL AUTO_INCREMENT,
@@ -1167,7 +1167,7 @@ CREATE TABLE `ko_rota_teams` (
   `lastchange_user` mediumint(8) unsigned NOT NULL,
   PRIMARY KEY (`id`),
   KEY `rotatype` (`rotatype`)
-) ENGINE=MyISAM DEFAULT CHARSET=latin1 COLLATE latin1_german1_ci;
+) ENGINE=InnoDB  DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE `ko_rota_consensus` (
   `team_id` mediumint(8) unsigned NOT NULL,
@@ -1176,7 +1176,7 @@ CREATE TABLE `ko_rota_consensus` (
   `answer` tinyint(4) NOT NULL,
   `status` tinyint(4) NOT NULL DEFAULT '1',
   KEY `main` (`team_id`,`event_id`,`person_id`)
-) ENGINE=MyISAM DEFAULT CHARSET=latin1 COLLATE latin1_german1_ci;
+) ENGINE=InnoDB  DEFAULT CHARSET=utf8mb4;
 
 
 CREATE TABLE `ko_rota_consensus_comment` (
@@ -1195,7 +1195,7 @@ CREATE TABLE `ko_scheduler_tasks` (
   `last_call` datetime NOT NULL,
   `next_call` datetime NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB  DEFAULT CHARSET=latin1 COLLATE latin1_german1_ci;
+) ENGINE=InnoDB  DEFAULT CHARSET=utf8mb4;
 
 INSERT INTO `ko_scheduler_tasks` VALUES(NULL, 'Delete old data (downloads, unused gdf, ko_log, ko_mailing_mails tables)', '47 2 * * *', 0, 'ko_task_delete_old_downloads', '0000-00-00 00:00:00', '0000-00-00 00:00:00');
 INSERT INTO `ko_scheduler_tasks` VALUES(NULL, 'Mailing', '*/5 * * * *', 0, 'ko_task_mailing', '0000-00-00 00:00:00', '0000-00-00 00:00:00');
@@ -1211,8 +1211,9 @@ CREATE TABLE `ko_settings` (
   `key` varchar(100) NOT NULL DEFAULT '',
   `value` text NOT NULL,
   PRIMARY KEY (`key`)
-) ENGINE=MyISAM DEFAULT CHARSET=latin1 COLLATE latin1_german1_ci;
+) ENGINE=InnoDB  DEFAULT CHARSET=utf8mb4;
 
+INSERT INTO `ko_settings` VALUES('db_migration', '2')
 INSERT INTO `ko_settings` VALUES('show_leute_cols', 'vorname,nachname,adresse,plz,ort');
 INSERT INTO `ko_settings` VALUES('mailing_mails_per_cycle', '30');
 INSERT INTO `ko_settings` VALUES('daten_perm_filter_ende', '');
@@ -1322,7 +1323,7 @@ CREATE TABLE `ko_tracking` (
   `lastchange_user` mediumint(8) unsigned NOT NULL,
   PRIMARY KEY (`id`),
   KEY `group_id` (`group_id`)
-) ENGINE=MyISAM DEFAULT CHARSET=latin1 COLLATE latin1_german1_ci;
+) ENGINE=InnoDB  DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE `ko_tracking_entries` (
   `id` mediumint(8) unsigned NOT NULL AUTO_INCREMENT,
@@ -1340,7 +1341,7 @@ CREATE TABLE `ko_tracking_entries` (
   KEY `tidliddate` (`tid`,`lid`,`date`),
   KEY `tid` (`tid`),
   KEY `tiddate` (`tid`,`date`)
-) ENGINE=MyISAM DEFAULT CHARSET=latin1 COLLATE latin1_german1_ci;
+) ENGINE=InnoDB  DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE `ko_tracking_groups` (
   `id` mediumint(9) unsigned NOT NULL AUTO_INCREMENT,
@@ -1372,7 +1373,7 @@ CREATE TABLE `ko_updates` (
   `plugin` varchar(100) NOT NULL,
   PRIMARY KEY (`id`),
   KEY `name` (`name`)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE latin1_german1_ci;
+) ENGINE=InnoDB  DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE `ko_userprefs` (
   `id` mediumint(8) unsigned NOT NULL AUTO_INCREMENT,
@@ -1384,7 +1385,7 @@ CREATE TABLE `ko_userprefs` (
   PRIMARY KEY (`id`),
   KEY `user_id` (`user_id`),
   KEY `type` (`type`)
-) ENGINE=MyISAM  DEFAULT CHARSET=latin1 COLLATE latin1_german1_ci;
+) ENGINE=InnoDB  DEFAULT CHARSET=utf8mb4;
 
 INSERT INTO `ko_userprefs` VALUES(1, 2, '', 'submenu_daten_left', 'termine,termingruppen,export', '');
 INSERT INTO `ko_userprefs` VALUES(2, 2, '', 'submenu_reservation_left', 'reservationen,objekte,moderation,export', '');

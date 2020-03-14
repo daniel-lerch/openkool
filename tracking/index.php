@@ -1,28 +1,22 @@
 <?php
-/***************************************************************
-*  Copyright notice
+/*******************************************************************************
 *
-*  (c) 2003-2020 Renzo Lauper (renzo@churchtool.org)
-*  All rights reserved
+*    OpenKool - Online church organization tool
 *
-*  This script is part of the kOOL project. The kOOL project is
-*  free software; you can redistribute it and/or modify
-*  it under the terms of the GNU General Public License as published by
-*  the Free Software Foundation; either version 2 of the License, or
-*  (at your option) any later version.
+*    Copyright Â© 2003-2020 Renzo Lauper (renzo@churchtool.org)
+*    Copyright Â© 2019-2020 Daniel Lerch
 *
-*  The GNU General Public License can be found at
-*  http://www.gnu.org/copyleft/gpl.html.
-*  A copy is found in the textfile GPL.txt and important notices to the license
-*  from the author is found in LICENSE.txt distributed with these scripts.
+*    This program is free software; you can redistribute it and/or modify
+*    it under the terms of the GNU General Public License as published by
+*    the Free Software Foundation; either version 2 of the License, or
+*    (at your option) any later version.
 *
-*  kOOL is distributed in the hope that it will be useful,
-*  but WITHOUT ANY WARRANTY; without even the implied warranty of
-*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-*  GNU General Public License for more details.
+*    This program is distributed in the hope that it will be useful,
+*    but WITHOUT ANY WARRANTY; without even the implied warranty of
+*    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+*    GNU General Public License for more details.
 *
-*  This copyright notice MUST APPEAR in all copies of the script!
-***************************************************************/
+*******************************************************************************/
 
 header('Content-Type: text/html; charset=ISO-8859-1');
 
@@ -31,8 +25,9 @@ ob_start();  //Ausgabe-Pufferung starten
 $ko_path = '../';
 $ko_menu_akt = 'tracking';
 
-include($ko_path.'inc/ko.inc');
-include('inc/tracking.inc');
+require __DIR__ . '/../inc/ko.inc.php';
+require __DIR__ . '/inc/tracking.inc.php';
+use OpenKool\koNotifier;
 
 //Redirect to SSL if needed
 ko_check_ssl();
@@ -49,13 +44,16 @@ $notifier = koNotifier::Instance();
 //Get access rights
 ko_get_access('tracking');
 
+//Smarty-Templates-Engine laden
+require __DIR__ . '/../inc/smarty.inc.php';
+
 //kOOL Table Array
 ko_include_kota(array('ko_tracking', 'ko_tracking_entries'));
 
 
 //*** Plugins einlesen:
 $hooks = hook_include_main('tracking');
-if(sizeof($hooks) > 0) foreach($hooks as $hook) include_once($hook);
+if(!empty($hooks)) foreach($hooks as $hook) include_once($hook);
 
 
 //*** Action auslesen:
@@ -71,7 +69,7 @@ if($_POST['action']) {
 if(!$do_action) $do_action = 'list_trackings';
 
 //Reset show_start if from another module
-if($_SERVER['HTTP_REFERER'] != '' && FALSE === strpos($_SERVER['HTTP_REFERER'], '/'.$ko_menu_akt.'/')) $_SESSION['show_start'] = 1;
+if($_SERVER['HTTP_REFERER'] != '' && FALSE === mb_strpos($_SERVER['HTTP_REFERER'], '/'.$ko_menu_akt.'/')) $_SESSION['show_start'] = 1;
 
 switch($do_action) {
 
@@ -242,7 +240,7 @@ switch($do_action) {
 
 
 
-	//Löschen
+	//LÃ¶schen
 	case 'delete_tracking':
 		if($access['tracking']['MAX'] < 4) break;
 
@@ -407,7 +405,7 @@ switch($do_action) {
 			}
 
 			$zip->close();
-			$onload_code = "ko_popup('".$ko_path.'download.php?action=file&amp;file='.substr($zip_filename, 3)."');";
+			$onload_code = "ko_popup('".$ko_path.'download.php?action=file&amp;file='.mb_substr($zip_filename, 3)."');";
 		}
 	break;
 
@@ -511,7 +509,7 @@ switch($do_action) {
 		}
 		if(sizeof($do_columns) < 1) $notifier->addError(4, $do_action);
 
-		//Zu bearbeitende Einträge
+		//Zu bearbeitende EintrÃ¤ge
 		$do_ids = array();
 		foreach($_POST['chk'] as $c_i => $c) {
 			if($c) {
@@ -585,10 +583,9 @@ switch($do_action) {
 
 
 	//Default:
-  default:
-		if(!hook_action_handler($do_action))
-      include($ko_path.'inc/abuse.inc');
-  break;
+	default:
+		hook_action_handler($do_action);
+	break;
 
 
 }//switch(do_action)
@@ -648,7 +645,7 @@ ko_set_submenues();
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="<?php print $_SESSION['lang']; ?>" lang="<?php print $_SESSION['lang']; ?>">
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1" />
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title><?php print $HTML_TITLE.': '.getLL('module_'.$ko_menu_akt); ?></title>
@@ -657,8 +654,8 @@ print ko_include_css();
 
 print ko_include_js();
 
-include($ko_path.'inc/js-sessiontimeout.inc');
-include('inc/js-tracking.inc');
+include __DIR__ . '/../inc/js-sessiontimeout.inc.php';
+include __DIR__ . '/inc/js-tracking.inc.php';
 ?>
 </head>
 
@@ -666,9 +663,9 @@ include('inc/js-tracking.inc');
 
 <?php
 /*
- * Gibt bei erfolgreichem Login das Menü aus, sonst einfach die Loginfelder
+ * Gibt bei erfolgreichem Login das MenÃ¼ aus, sonst einfach die Loginfelder
  */
-include($ko_path . "menu.php");
+require __DIR__ . '/../inc/menu.inc.php';
 ko_get_outer_submenu_code('tracking');
 
 ?>
@@ -752,7 +749,7 @@ hook_show_case_add($_SESSION['show']);
 
 </div>
 
-<?php include($ko_path . "footer.php"); ?>
+<?php include __DIR__ . '/../config/footer.php' ?>
 
 </body>
 </html>

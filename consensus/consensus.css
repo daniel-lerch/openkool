@@ -1,4 +1,4 @@
-/***************************************************************
+﻿/***************************************************************
 *  Copyright notice
 *
 *  (c) 2003-2020 Renzo Lauper (renzo@churchtool.org)
@@ -492,14 +492,4 @@ p.team_members {
   #consensus_filter {
     display: block;
   }
-}
-
-@media screen and (max-width: 768px) {
-    #filter-popover {
-        display: none;
-    }
-
-    #consensus_filter {
-        display: block;
-    }
 }

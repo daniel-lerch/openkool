@@ -1,28 +1,22 @@
 <?php
-/***************************************************************
-*  Copyright notice
+/*******************************************************************************
 *
-*  (c) 2003-2020 Renzo Lauper (renzo@churchtool.org)
-*  All rights reserved
+*    OpenKool - Online church organization tool
 *
-*  This script is part of the kOOL project. The kOOL project is
-*  free software; you can redistribute it and/or modify
-*  it under the terms of the GNU General Public License as published by
-*  the Free Software Foundation; either version 2 of the License, or
-*  (at your option) any later version.
+*    Copyright Â© 2003-2020 Renzo Lauper (renzo@churchtool.org)
+*    Copyright Â© 2019-2020 Daniel Lerch
 *
-*  The GNU General Public License can be found at
-*  http://www.gnu.org/copyleft/gpl.html.
-*  A copy is found in the textfile GPL.txt and important notices to the license
-*  from the author is found in LICENSE.txt distributed with these scripts.
+*    This program is free software; you can redistribute it and/or modify
+*    it under the terms of the GNU General Public License as published by
+*    the Free Software Foundation; either version 2 of the License, or
+*    (at your option) any later version.
 *
-*  kOOL is distributed in the hope that it will be useful,
-*  but WITHOUT ANY WARRANTY; without even the implied warranty of
-*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-*  GNU General Public License for more details.
+*    This program is distributed in the hope that it will be useful,
+*    but WITHOUT ANY WARRANTY; without even the implied warranty of
+*    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+*    GNU General Public License for more details.
 *
-*  This copyright notice MUST APPEAR in all copies of the script!
-***************************************************************/
+*******************************************************************************/
 
 header('Content-Type: text/html; charset=ISO-8859-1');
 
@@ -31,8 +25,9 @@ ob_start();  //Ausgabe-Pufferung starten
 $ko_path = "../";
 $ko_menu_akt = "admin";
 
-include($ko_path . "inc/ko.inc");
-include("inc/admin.inc");
+require __DIR__ . '/../inc/ko.inc.php';
+require __DIR__ . '/inc/admin.inc.php';
+use OpenKool\koNotifier;
 
 $notifier = koNotifier::Instance();
 
@@ -61,10 +56,10 @@ ko_include_kota(array('ko_news', '_ko_sms_log', '_ko_telegram_log', 'ko_log', 'k
 
 //*** Plugins einlesen:
 $hooks = hook_include_main("admin");
-if(sizeof($hooks) > 0) foreach($hooks as $hook) include_once($hook);
+foreach($hooks as $hook) include_once($hook);
 
 //Reset show_start if from another module
-if($_SERVER['HTTP_REFERER'] != '' && FALSE === strpos($_SERVER['HTTP_REFERER'], '/'.$ko_menu_akt.'/')) $_SESSION['show_start'] = 1;
+if($_SERVER['HTTP_REFERER'] != '' && FALSE === mb_strpos($_SERVER['HTTP_REFERER'], '/'.$ko_menu_akt.'/')) $_SESSION['show_start'] = 1;
 
 switch($do_action) {
 
@@ -343,7 +338,7 @@ switch($do_action) {
 		$is_number = check_natel($number);
 		$code = trim(format_userinput($_POST['sms_sender_id_code'], 'alphanum'));
 		if($is_number === TRUE) {
-			require_once($ko_path.'inc/aspsms.php');
+			require_once __DIR__ . '/../inc/aspsms.php';
 			$sms = new SMS($SMS_PARAMETER['user'], $SMS_PARAMETER['pass']);
 			if($code != '') {
 				//Unlock number
@@ -773,7 +768,7 @@ switch($do_action) {
 					ko_save_userpref($id, $pref["key"], $pref["value"], $pref["type"]);
 				}
 			}
-			else {  //Default-Werte für Userprefs einfügen
+			else {  //Default-Werte fÃ¼r Userprefs einfÃ¼gen
 				//Submenus als Userprefs speichern
 				foreach($MODULES as $m) {
 					$sm = implode(",", ko_get_submenus($m."_left"));
@@ -781,7 +776,7 @@ switch($do_action) {
 					$sm = implode(",", ko_get_submenus($m."_right"));
 					ko_save_userpref($id, "submenu_".$m."_right", $sm, "");
 				}
-				//Zusätzliche Userpref-Defaults setzen
+				//ZusÃ¤tzliche Userpref-Defaults setzen
 				foreach($DEFAULT_USERPREFS as $d) {
 					ko_save_userpref($id, $d["key"], $d["value"], $d["type"]);
 				}
@@ -835,7 +830,7 @@ switch($do_action) {
 	break;
 
 
-	//Löschen
+	//LÃ¶schen
 	case "delete_login":
 		if($access['admin']['MAX'] < 5) break;
 
@@ -1018,13 +1013,13 @@ switch($do_action) {
 
 
 	
-	//Identität annehmen (mit anderem Login einloggen)
+	//IdentitÃ¤t annehmen (mit anderem Login einloggen)
 	case "sudo_login":
 		if($access['admin']['MAX'] < 5) break;
 
 		$found = 0;
 		foreach($_POST["chk"] as $c_i => $c) {
-      if($c) {
+    		if($c) {
 				$found++;
 				$sudo_id = format_userinput($c_i, "uint");
 			}
@@ -1048,7 +1043,7 @@ switch($do_action) {
 			break;
 		}
 
-		//Auf gültiges Login testen
+		//Auf gÃ¼ltiges Login testen
 		$found = FALSE;
 		ko_get_logins($logins, " AND (`disabled` = '' OR `disabled` = '0')");
 		foreach($logins as $l) {
@@ -1061,7 +1056,7 @@ switch($do_action) {
 			break;
 		}
 
-		//Identität wechseln
+		//IdentitÃ¤t wechseln
 		$_SESSION["ses_userid"] = $sudo_id;
 		ko_get_login($sudo_id, $sudo_l);
 		$_SESSION["ses_username"] = $sudo_l["login"];
@@ -1127,7 +1122,7 @@ switch($do_action) {
 				$new["headerrow"][$a] = $post["headerrow"][$a];
 			}
 			if($post['columns']) {
-				if(substr($post['columns'], 0, 3) == '@G@') $value = ko_get_userpref('-1', substr($post['columns'], 3), 'leute_itemset');
+				if(mb_substr($post['columns'], 0, 3) == '@G@') $value = ko_get_userpref('-1', mb_substr($post['columns'], 3), 'leute_itemset');
 				else $value = ko_get_userpref($_SESSION['ses_userid'], $post['columns'], 'leute_itemset');
 				$new['columns'] = explode(',', $value[0]['value']);
 			}
@@ -1135,9 +1130,9 @@ switch($do_action) {
 			$new["sort"] = $post["sort"];
 			$new["sort_order"] = $post["sort_order"];
 			if($post["filter"]) {
-				if(substr($post['filter'], 0, 3) == '@G@') {
+				if(mb_substr($post['filter'], 0, 3) == '@G@') {
 					$value = ko_get_userpref('-1', '', 'filterset');
-					$post['filter'] = substr($post['filter'], 3);
+					$post['filter'] = mb_substr($post['filter'], 3);
 				} else $value = ko_get_userpref($_SESSION['ses_userid'], '', 'filterset');
 				foreach($value as $v_i => $v) {
 					if($v["key"] == $post["filter"]) $new["filter"] = unserialize($value[$v_i]["value"]);
@@ -1536,11 +1531,9 @@ switch($do_action) {
 	break;
 
 	//Default:
-  default:
-		if(!hook_action_handler($do_action)) {
-			include($ko_path."inc/abuse.inc");
-		}
-  break;
+	default:
+		hook_action_handler($do_action);
+	break;
 
 
 }//switch(do_action)
@@ -1578,13 +1571,16 @@ if(!$_SESSION['sort_news_order']) $_SESSION['sort_news_order'] = 'DESC';
 
 //Include submenus
 ko_set_submenues();
+
+//Smarty-Templates-Engine laden
+require __DIR__ . '/../inc/smarty.inc.php';
 ?>
 <!DOCTYPE html 
   PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="<?php print $_SESSION["lang"]; ?>" lang="<?php print $_SESSION["lang"]; ?>">
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1" />
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title><?php print "$HTML_TITLE: ".getLL("module_".$ko_menu_akt); ?></title>
@@ -1629,9 +1625,9 @@ if(in_array($_SESSION['show'], array('new_login', 'new_admingroup', 'edit_login'
 
 <?php
 /*
- * Gibt bei erfolgreichem Login das Menü aus, sonst einfach die Loginfelder
+ * Gibt bei erfolgreichem Login das MenÃ¼ aus, sonst einfach die Loginfelder
  */
-include($ko_path . "menu.php");
+require __DIR__ . '/../inc/menu.inc.php';
 
 ko_get_outer_submenu_code('admin');
 
@@ -1779,7 +1775,7 @@ hook_show_case_add($_SESSION["show"]);
 
 	</div>
 
-	<?php include($ko_path . "footer.php"); ?>
+<?php include __DIR__ . '/../config/footer.php' ?>
 
 </body>
 </html>

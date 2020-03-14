@@ -1,28 +1,22 @@
 <?php
-/***************************************************************
-*  Copyright notice
+/*******************************************************************************
 *
-*  (c) 2003-2020 Renzo Lauper (renzo@churchtool.org)
-*  All rights reserved
+*    OpenKool - Online church organization tool
 *
-*  This script is part of the kOOL project. The kOOL project is
-*  free software; you can redistribute it and/or modify
-*  it under the terms of the GNU General Public License as published by
-*  the Free Software Foundation; either version 2 of the License, or
-*  (at your option) any later version.
+*    Copyright © 2003-2020 Renzo Lauper (renzo@churchtool.org)
+*    Copyright © 2019-2020 Daniel Lerch
 *
-*  The GNU General Public License can be found at
-*  http://www.gnu.org/copyleft/gpl.html.
-*  A copy is found in the textfile GPL.txt and important notices to the license
-*  from the author is found in LICENSE.txt distributed with these scripts.
+*    This program is free software; you can redistribute it and/or modify
+*    it under the terms of the GNU General Public License as published by
+*    the Free Software Foundation; either version 2 of the License, or
+*    (at your option) any later version.
 *
-*  kOOL is distributed in the hope that it will be useful,
-*  but WITHOUT ANY WARRANTY; without even the implied warranty of
-*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-*  GNU General Public License for more details.
+*    This program is distributed in the hope that it will be useful,
+*    but WITHOUT ANY WARRANTY; without even the implied warranty of
+*    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+*    GNU General Public License for more details.
 *
-*  This copyright notice MUST APPEAR in all copies of the script!
-***************************************************************/
+*******************************************************************************/
 
 error_reporting(0);
 
@@ -34,12 +28,12 @@ if(!in_array($_GET['action'], array('jsongetreservations', 'jsongetresitems', 'f
 	if(FALSE === session_id($sesid)) exit;
 }
 
-//Send headers to ensure latin1 charset
-header('Content-Type: text/html; charset=ISO-8859-1');
+//Send headers to ensure UTF-8 charset
+header('Content-Type: text/html; charset=UTF-8');
 
 $ko_menu_akt = 'reservation';
 $ko_path = "../../";
-require($ko_path."inc/ko.inc");
+require __DIR__ . '/../../inc/ko.inc.php';
 $ko_path = "../";
 
 array_walk_recursive($_GET,'utf8_decode_array');
@@ -56,13 +50,16 @@ ko_include_kota($kotaDefs);
 
 // Plugins einlesen:
 $hooks = hook_include_main("reservation");
-if(sizeof($hooks) > 0) foreach($hooks as $hook) include_once($hook);
+foreach($hooks as $hook) include_once($hook);
 
-require($BASE_PATH."reservation/inc/reservation.inc");
+require __DIR__ . '/reservation.inc.php';
+
+//Smarty-Templates-Engine laden
+require __DIR__ . '/../../inc/smarty.inc.php';
 
 //HOOK: Submenus einlesen
 $hooks = hook_include_sm();
-if(sizeof($hooks) > 0) foreach($hooks as $hook) include($hook);
+foreach($hooks as $hook) include($hook);
 
 hook_show_case_pre($_SESSION['show']);
 
@@ -483,11 +480,11 @@ if((isset($_GET) && isset($_GET["action"])) || (isset($_POST) && isset($_POST["a
 								ko_get_res_by_id($resid, $thisres_); $thisres = $thisres_[$resid];
 								$event_items .= $resitems[$thisres['item_id']]['name'].', ';
 							}
-							$event_items = substr($event_items, 0, -2);
+							$event_items = mb_substr($event_items, 0, -2);
 							//Reset color and name according to event group
 							$res['item_farbe'] = $event['eventgruppen_farbe'];
 							if($event['kommentar']) {
-								$htmlKommentar = html_entity_decode(strip_tags($event['kommentar']), ENT_COMPAT | ENT_HTML401, 'iso-8859-1');
+								$htmlKommentar = html_entity_decode(strip_tags($event['kommentar']), ENT_COMPAT | ENT_HTML401, 'UTF-8');
 								$res['zweck'] = $htmlKommentar.' ('.$event['eventgruppen_name'].')';
 								$res['item_name'] = $event_items;
 							} else {
@@ -518,13 +515,13 @@ if((isset($_GET) && isset($_GET["action"])) || (isset($_POST) && isset($_POST["a
 
 					//Format time for tooltip
 					if($res['startzeit'] == '00:00:00' && $res['endzeit'] == '00:00:00') $time = getLL('time_all_day');
-					else $time = substr($res['startzeit'], 0, -3).' - '.substr($res['endzeit'], 0, -3);
+					else $time = mb_substr($res['startzeit'], 0, -3).' - '.mb_substr($res['endzeit'], 0, -3);
 
 					$tooltip = '';
 
 					//Moderated events
 					if($i == 1) {
-						if(!ko_res_check_double($res['item_id'], sql2datum($res['startdatum']), sql2datum($res['enddatum']), substr($res['startzeit'], 0, -3), substr($res['endzeit'], 0, -3), $double_error)) {
+						if(!ko_res_check_double($res['item_id'], sql2datum($res['startdatum']), sql2datum($res['enddatum']), mb_substr($res['startzeit'], 0, -3), mb_substr($res['endzeit'], 0, -3), $double_error)) {
 							$title = '! '.$title.' !';
 							$tooltip .= '<b>'.getLL('res_collision_text').'</b><br />'.$double_error.'<br /><br />';
 							$checkLink = FALSE;
@@ -635,15 +632,15 @@ if((isset($_GET) && isset($_GET["action"])) || (isset($_POST) && isset($_POST["a
 					$data[] = array('id' => $res['id'],
 						'start' => $res['startdatum'].'T'.$res['startzeit'],
 						'end' => $endT,
-						'title' => utf8_encode($title),
+						'title' => $title,
 						'allDay' => $allDay,
 						'editable' => $editable,
 						'className' => ($i == 1 ? ' fc-modEvent' : ''),
 						'isMod' => ($i == 1),
 						'color' => '#'.($res_color ? $res_color : 'aaaaaa'),
 						'textColor' => ko_get_contrast_color($res_color),
-						'kOOL_tooltip' => utf8_encode($tooltip),
-						'kOOL_editIcons' => utf8_encode($editIcons),
+						'kOOL_tooltip' => $tooltip,
+						'kOOL_editIcons' => $editIcons,
 						'resourceId' => $res['item_id'],
 					);
 
@@ -657,14 +654,14 @@ if((isset($_GET) && isset($_GET["action"])) || (isset($_POST) && isset($_POST["a
 							$data[] = array('id' => $res['id'].'_'.$liId,
 								'start' => $res['startdatum'].'T'.$res['startzeit'],
 								'end' => $endT,
-								'title' => utf8_encode($title),
+								'title' => $title,
 								'allDay' => $allDay,
 								'editable' => FALSE,
 								'className' => '',
 								'isMod' => FALSE,
 								'color' => '#'.($res_color ? $res_color : 'aaaaaa'),
 								'textColor' => ko_get_contrast_color($res_color),
-								'kOOL_tooltip' => utf8_encode($tooltip),
+								'kOOL_tooltip' => $tooltip,
 								'kOOL_editIcons' => '',
 								'resourceId' => $liId,
 							);
@@ -694,7 +691,7 @@ if((isset($_GET) && isset($_GET["action"])) || (isset($_POST) && isset($_POST["a
 			$items = array();
 			foreach($resitems as $item) {
 				if(!in_array($item['id'], $_SESSION['show_items'])) continue;
-				$items[] = array('title' => utf8_encode($item['name']), 'id' => $item['id']);
+				$items[] = array('title' => $item['name'], 'id' => $item['id']);
 			}
 
 			if(!empty($_SESSION['show_absences_res'])) {

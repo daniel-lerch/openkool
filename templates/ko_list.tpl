@@ -255,7 +255,7 @@
 					</li>
 				{elseif $k=='qrcode'}
 					<li class="list-qrcode list-action-header">
-						<a class="list-icon" href="javascript:ko_image_popup('{$ko_path}inc/qrcode.php?s={$l.qrcode_string}&h={$l.qrcode_hash}&size=7');" title="{$label_qrcode}">
+						<a class="list-icon" href="javascript:ko_image_popup('{$ko_path}inc/qrcode.php?s={$l.qrcode_string}&h={$l.qrcode_hash}&size=400');" title="{$label_qrcode}">
 							<i class="fa fa-qrcode"></i>
 						</a>
 					</li>

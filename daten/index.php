@@ -1,28 +1,22 @@
 <?php
-/***************************************************************
-*  Copyright notice
+/*******************************************************************************
 *
-*  (c) 2003-2020 Renzo Lauper (renzo@churchtool.org)
-*  All rights reserved
+*    OpenKool - Online church organization tool
 *
-*  This script is part of the kOOL project. The kOOL project is
-*  free software; you can redistribute it and/or modify
-*  it under the terms of the GNU General Public License as published by
-*  the Free Software Foundation; either version 2 of the License, or
-*  (at your option) any later version.
+*    Copyright Â© 2003-2020 Renzo Lauper (renzo@churchtool.org)
+*    Copyright Â© 2019-2020 Daniel Lerch
 *
-*  The GNU General Public License can be found at
-*  http://www.gnu.org/copyleft/gpl.html.
-*  A copy is found in the textfile GPL.txt and important notices to the license
-*  from the author is found in LICENSE.txt distributed with these scripts.
+*    This program is free software; you can redistribute it and/or modify
+*    it under the terms of the GNU General Public License as published by
+*    the Free Software Foundation; either version 2 of the License, or
+*    (at your option) any later version.
 *
-*  kOOL is distributed in the hope that it will be useful,
-*  but WITHOUT ANY WARRANTY; without even the implied warranty of
-*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-*  GNU General Public License for more details.
+*    This program is distributed in the hope that it will be useful,
+*    but WITHOUT ANY WARRANTY; without even the implied warranty of
+*    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+*    GNU General Public License for more details.
 *
-*  This copyright notice MUST APPEAR in all copies of the script!
-***************************************************************/
+*******************************************************************************/
 
 header('Content-Type: text/html; charset=ISO-8859-1');
 
@@ -31,13 +25,13 @@ ob_start();  //Ausgabe-Pufferung einschalten
 $ko_path = "../";
 $ko_menu_akt = "daten";
 
-include_once($ko_path . "inc/ko.inc");
-include_once($ko_path . 'consensus/consensus.inc');
-include_once("inc/daten.inc");
+include_once __DIR__ . '/../inc/ko.inc.php';
+include_once __DIR__ . '/../consensus/consensus.inc.php';
+include_once __DIR__ . '/inc/daten.inc.php';
 if(ko_module_installed("reservation"))
-	include_once("../reservation/inc/reservation.inc");
+	include_once __DIR__ . "/../reservation/inc/reservation.inc";
 if(ko_module_installed("rota"))
-	include_once("../rota/inc/rota.inc");
+	include_once __DIR__ . "/../rota/inc/rota.inc";
 
 $notifier = koNotifier::Instance();
 
@@ -58,10 +52,12 @@ ko_get_access('daten');
 ko_include_kota(array('ko_event', 'ko_eventgruppen', 'ko_reservation', 'ko_pdf_layout', 'ko_reminder', 'ko_event_rooms', 'ko_event_absence'));
 
 
+//Smarty-Templates-Engine laden
+require __DIR__ . '/../inc/smarty.inc.php';
 
 // Plugins einlesen:
 $hooks = hook_include_main("daten");
-if(sizeof($hooks) > 0) foreach($hooks as $hook) include_once($hook);
+foreach($hooks as $hook) include_once($hook);
 
 
 //***Action auslesen:
@@ -78,7 +74,7 @@ if($_POST["action"]) {
 if(FALSE === format_userinput($do_action, "alpha+", TRUE)) trigger_error("invalid action: ".$do_action, E_USER_ERROR);
 
 //Reset show_start if from another module
-if($_SERVER['HTTP_REFERER'] != '' && FALSE === strpos($_SERVER['HTTP_REFERER'], '/'.$ko_menu_akt.'/')) $_SESSION['show_start'] = 1;
+if($_SERVER['HTTP_REFERER'] != '' && FALSE === mb_strpos($_SERVER['HTTP_REFERER'], '/'.$ko_menu_akt.'/')) $_SESSION['show_start'] = 1;
 
 // Fallback if user came from reservation timeline-view #2636
 if(substr($_SESSION['cal_view'],0,8) == "timeline") {
@@ -165,7 +161,7 @@ switch($do_action) {
 
 
 
-	//Löschen
+	//LÃ¶schen
 	case 'delete_termin':
 		if(FALSE === ($del_id = format_userinput($_POST['id'], 'uint', TRUE))) {
 			trigger_error('Not allowed del_id: '.$_POST['id'], E_USER_ERROR);
@@ -187,7 +183,7 @@ switch($do_action) {
 
 
 
-	//Ausgewählte Termine löschen
+	//AusgewÃ¤hlte Termine lÃ¶schen
 	case "del_selected":
 		$failed = FALSE;
 		foreach($_POST["chk"] as $c_i => $c) {
@@ -207,7 +203,7 @@ switch($do_action) {
 
 
 
-	//Termingruppe löschen
+	//Termingruppe lÃ¶schen
 	case "delete_gruppe":
 		if(FALSE === ($del_id = format_userinput($_POST["id"], "uint", TRUE))) {
 			trigger_error("Not allowed del_id: ".$_POST["id"], E_USER_ERROR);
@@ -223,7 +219,7 @@ switch($do_action) {
 		db_delete_data("ko_eventgruppen", "WHERE `id` = '$del_id'");
 		ko_log_diff('delete_termingruppe', $del_eventgruppe);
 
-		//Alle Termine dieser Termingruppe löschen (inkl. zugehöriger Reservationen)
+		//Alle Termine dieser Termingruppe lÃ¶schen (inkl. zugehÃ¶riger Reservationen)
 		$rows = db_select_data("ko_event", "WHERE `eventgruppen_id` = '$del_id'");
 		foreach($rows as $row) {
 			do_del_termin(format_userinput($row["id"], "uint"));
@@ -377,8 +373,8 @@ switch($do_action) {
 				trigger_error("Not allowed set_month: ".$_GET["set_month"], E_USER_ERROR);
 			}
 			$_SESSION['cal_tag'] = 1;
-			$_SESSION["cal_monat"] = (int)substr($new_month, 0, 2);
-			$_SESSION["cal_jahr"] = (int)substr($new_month, -4);
+			$_SESSION["cal_monat"] = (int)mb_substr($new_month, 0, 2);
+			$_SESSION["cal_jahr"] = (int)mb_substr($new_month, -4);
 		}
 
 		$_SESSION['cal_view'] = 'month';
@@ -789,7 +785,7 @@ switch($do_action) {
 			}
 			if(sizeof($do_columns) < 1) $notifier->addError(8, $do_action);
 
-			//Zu bearbeitende Einträge
+			//Zu bearbeitende EintrÃ¤ge
 			$do_ids = array();
 			foreach($_POST["chk"] as $c_i => $c) {
 				if(!$c) continue;
@@ -806,7 +802,7 @@ switch($do_action) {
 			}
 			if(sizeof($do_ids) < 1) $notifier->addError(7, $do_action);
 
-			//Daten für Formular-Aufruf vorbereiten
+			//Daten fÃ¼r Formular-Aufruf vorbereiten
 			if(!$notifier->hasErrors()) {
 				$order = "ORDER BY ".$_SESSION["sort_events"]." ".$_SESSION["sort_events_order"];
 				$_SESSION["show_back"] = $_SESSION["show"];
@@ -825,7 +821,7 @@ switch($do_action) {
 			}
 			if(sizeof($do_columns) < 1) $notifier->addError(8, $do_action);
 
-			//Zu bearbeitende Einträge
+			//Zu bearbeitende EintrÃ¤ge
 			$do_ids = array();
 			foreach($_POST["chk"] as $c_i => $c) {
 				if(!$c) continue;
@@ -836,7 +832,7 @@ switch($do_action) {
 			}
 			if(sizeof($do_ids) < 1) $notifier->addError(8, $do_action);
 
-			//Daten für Formular-Aufruf vorbereiten
+			//Daten fÃ¼r Formular-Aufruf vorbereiten
 			if(!$notifier->hasErrors()) {
 				$order = "ORDER BY ".$_SESSION["sort_tg"]." ".$_SESSION["sort_tg_order"];
 				$_SESSION["show_back"] = $_SESSION["show"];
@@ -1370,7 +1366,7 @@ switch($do_action) {
 		if($do_ldap) ko_ldap_close($ldap);
 
 
-		//HOOK: Plugins erlauben, hier einzugreifen, bevor die Session-Daten gelöscht werden
+		//HOOK: Plugins erlauben, hier einzugreifen, bevor die Session-Daten gelÃ¶scht werden
 		hook_action_handler_inline($do_action);
 
 		$notifier->addInfo(15, $do_action);
@@ -1774,8 +1770,8 @@ switch($do_action) {
 
 			//Handle selection of presets
 			default:
-				if(substr($mode, 0, 6) == 'preset') {
-					$id = intval(substr($mode, 6));
+				if(mb_substr($mode, 0, 6) == 'preset') {
+					$id = intval(mb_substr($mode, 6));
 					if(!$id) break;
 					$preset = db_select_data('ko_pdf_layout', "WHERE `id` = '$id' AND `type` = 'daten'", '*', '', '', TRUE);
 					if($preset['id'] > 0 && $preset['id'] == $id) {
@@ -1871,8 +1867,7 @@ switch($do_action) {
 
 
 	default:
-		if(!hook_action_handler($do_action))
-      include($ko_path."inc/abuse.inc");
+		hook_action_handler($do_action);
 	break;
 }//switch(do_action)
 
@@ -1976,7 +1971,7 @@ ko_set_submenues();
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="<?php print $_SESSION["lang"]; ?>" lang="<?php print $_SESSION["lang"]; ?>">
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1" />
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title><?php print "$HTML_TITLE: ".getLL("module_".$ko_menu_akt); ?></title>
@@ -2003,8 +1998,8 @@ print ko_include_css($css_files);
 if (in_array($_SESSION['show'], array('all_events', 'list_events_mod'))) {
 	print daten_get_eg_color_css();
 }
-include($ko_path.'inc/js-sessiontimeout.inc');
-include("inc/js-daten.inc");
+include __DIR__ . '/../inc/js-sessiontimeout.inc.php';
+include __DIR__ . '/inc/js-daten.inc.php';
 
 //Include JS from rota module when editing an event
 if(in_array($_SESSION['show'], array('edit_termin')) && ko_module_installed('rota')) include($ko_path.'rota/inc/js-rota.inc');
@@ -2016,9 +2011,9 @@ if(in_array($_SESSION["show"], array("neuer_termin", "edit_termin"))) include("i
 
 <?php
 /*
- * Gibt bei erfolgreichem Login das Menü aus, sonst einfach die Loginfelder
+ * Gibt bei erfolgreichem Login das MenÃ¼ aus, sonst einfach die Loginfelder
  */
-include($ko_path . "menu.php");
+require __DIR__ . '/../inc/menu.inc.php';
 ko_get_outer_submenu_code('daten');
 
 ?>
@@ -2188,7 +2183,7 @@ hook_show_case_add($_SESSION["show"]);
 
 </div>
 
-<?php include($ko_path . "footer.php"); ?>
+<?php include __DIR__ . '/../config/footer.php' ?>
 
 </body>
 </html>
