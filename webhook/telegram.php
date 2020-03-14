@@ -3,6 +3,7 @@
 *  Copyright notice
 *
 *  (c) 2003-2020 Renzo Lauper (renzo@churchtool.org)
+*  (c) 2019-2020 Daniel Lerch
 *  All rights reserved
 *
 *  This script is part of the kOOL project. The kOOL project is
@@ -28,8 +29,8 @@ $debug = FALSE;
 
 $ko_path = '../';
 $ko_menu_akt = 'telegram_bot';
-include_once($ko_path.'inc/ko.inc');
-require_once($ko_path.'inc/TelegramBot/bot.php');
+include_once __DIR__ . '/../inc/ko.inc.php';
+require_once __DIR__ . '/../inc/TelegramBot/bot.php';
 
 
 //Check security hash

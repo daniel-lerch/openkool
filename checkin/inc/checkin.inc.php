@@ -418,14 +418,12 @@ function ko_checkin_create_labels($trackingEntries, $date, $trackingId, $printer
 	if ($pluginFcn) {
 		call_user_func_array($pluginFcn, array($trackingId, $personIds, $trackingEntries, $date, $printerId, $filename));
 	} else {
-		require_once($BASE_PATH.'inc/tcpdf/tcpdf.php');
-
 		class CheckinLabelTCPDF extends TCPDF {
 			public function Header() {}
 			public function Footer() {}
 		}
 
-		$pdf = new CheckinLabelTCPDF('P', 'mm', 'A4', false, 'ISO-8859-1', false);
+		$pdf = new CheckinLabelTCPDF('P', 'mm', 'A4', false, 'UTF-8', false);
 		$pdf->resetLastH();
 
 		// set document information

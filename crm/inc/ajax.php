@@ -3,6 +3,7 @@
  *  Copyright notice
  *
  *  (c) 2003-2020 Renzo Lauper (renzo@churchtool.org)
+ *  (c) 2019-2020 Daniel Lerch
  *  All rights reserved
  *
  *  This script is part of the kOOL project. The kOOL project is
@@ -29,15 +30,13 @@ if(!isset($_GET['sesid'])) exit;
 if(FALSE === session_id($_GET['sesid'])) exit;
 
 //Send headers to ensure latin1 charset
-header('Content-Type: text/html; charset=ISO-8859-1');
+header('Content-Type: text/html; charset=UTF-8');
 
 error_reporting(0);
 $ko_menu_akt = 'crm';
 $ko_path = '../../';
-require($ko_path.'inc/ko.inc');
+require __DIR__ . '/../../inc/ko.inc.php';
 $ko_path = '../';
-
-array_walk_recursive($_GET,'utf8_decode_array');
 
 //Get access rights
 ko_get_access('crm');
@@ -49,7 +48,7 @@ ko_include_kota(array('ko_crm_projects', 'ko_crm_status', 'ko_crm_contacts'));
 $hooks = hook_include_main('crm');
 if(sizeof($hooks) > 0) foreach($hooks as $hook) include_once($hook);
 
-require($BASE_PATH.'crm/inc/crm.inc');
+require __DIR__ . '/crm.inc.php';
 
 //HOOK: Submenus einlesen
 $hooks = hook_include_sm();

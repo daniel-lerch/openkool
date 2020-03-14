@@ -55,9 +55,6 @@ if(ko_module_installed('groups')) {
 	ko_get_groups($all_groups);
 }
 
-//Smarty-Templates-Engine laden
-require __DIR__ . '/../inc/smarty.inc.php';
-
 //kOOL Table Array
 ko_include_kota(array('ko_leute', 'ko_kleingruppen'));
 

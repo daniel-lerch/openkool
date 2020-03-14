@@ -45,8 +45,6 @@ ko_include_kota(array('ko_rota_teams', 'ko_event'));
 $hooks = hook_include_main('rota');
 foreach($hooks as $hook) include_once($hook);
  
-require __DIR__ . '/../../inc/smarty.inc.php';
-
 require __DIR__ . '/rota.inc.php';
 
 $hooks = hook_include_sm();

@@ -44,9 +44,6 @@ ko_include_kota(array('ko_groups', 'ko_grouproles', 'ko_groups_datafields'));
 $hooks = hook_include_main("groups");
 foreach($hooks as $hook) include_once($hook);
 
-//Smarty-Templates-Engine laden
-require __DIR__ . '/../../inc/smarty.inc.php';
-
 require __DIR__ . '/groups.inc.php';
 
 //HOOK: Submenus einlesen

@@ -176,8 +176,7 @@ function apply_daten_filter_for_teams(&$z_where) {
  * @throws Exception
  */
 function ko_list_events($method, $mode='html', $dontApplyLimit=FALSE, $showForeignRows=FALSE, $filter_ids = []) {
-	global $ko_path, $smarty, $KOTA;
-	global $access, $LOCAL_LANG;
+	global $ko_path, $smarty, $KOTA, $access;
 
 	if($method == "mod") {
 		ko_list_mod_events("new");
@@ -3396,8 +3395,6 @@ function ko_daten_export_single_pdf($event, $settings) {
 	$fontSizeH1 = 16;
 	$fontSizeH2 = 14;
 
-	require_once($ko_path.'inc/tcpdf/tcpdf.php');
-
 	class MyTCPDF extends TCPDF {
 		public function Header() {
 			global $BASE_PATH;
@@ -3437,7 +3434,7 @@ function ko_daten_export_single_pdf($event, $settings) {
 	}
 
 
-	$pdf = new MyTCPDF('P', 'mm', 'A4', false, 'ISO-8859-1', false);
+	$pdf = new MyTCPDF('P', 'mm', 'A4', false, 'UTF-8', false);
 	$pdf->resetLastH();
 
 	// set document information

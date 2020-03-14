@@ -2818,7 +2818,7 @@ if(in_array('ko_resitem', $KOTA_TABLES)) {
 		),
 		'email_text' => array(
 			'list' => 'nl2br('."'@VALUE@'".')',
-			'post' => 'htmlentities(format_userinput("@VALUE@", "text"), ENT_COMPAT | ENT_HTML401, "ISO-8859-1")',
+			'post' => 'htmlentities(format_userinput("@VALUE@", "text"), ENT_COMPAT | ENT_HTML401, "UTF-8")',
 			'form' => array(
 				'type' => 'textarea',
 				'params' => 'cols="60" rows="5"',

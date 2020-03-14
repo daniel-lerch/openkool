@@ -18,7 +18,7 @@
 *
 *******************************************************************************/
 
-header('Content-Type: text/html; charset=ISO-8859-1');
+header('Content-Type: text/html; charset=UTF-8');
 
 ob_start();
 
@@ -42,9 +42,6 @@ $notifier = koNotifier::Instance();
 //Get access rights
 ko_get_access('daten');
 ko_get_access('rota');
-
-//Smarty-Templates-Engine laden
-require __DIR__ . '/../inc/smarty.inc.php';
 
 //kOOL Table Array (ko_event used for settings to select event fields)
 ko_include_kota(array('ko_rota_teams', 'ko_event'));

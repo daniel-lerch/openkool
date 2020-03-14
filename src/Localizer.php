@@ -3,8 +3,8 @@
 *
 *    OpenKool - Online church organization tool
 *
-*    Copyright © 2003-2015 Renzo Lauper (renzo@churchtool.org)
-*    Copyright © 2019      Daniel Lerch
+*    Copyright © 2003-2020 Renzo Lauper (renzo@churchtool.org)
+*    Copyright © 2019-2020 Daniel Lerch
 *
 *    This program is free software; you can redistribute it and/or modify
 *    it under the terms of the GNU General Public License as published by
@@ -120,7 +120,7 @@ class Localizer {
 
         //HOOK: Include locallang files from the plugins
         $hooks = hook_include_ll();
-        foreach($hooks as $hook) include($hook);
+        if (!empty($hooks)) foreach($hooks as $hook) include($hook);
 
         Localizer::$dictionary[$_SESSION["lang"]] = $LL[$_SESSION["lang"]];
 

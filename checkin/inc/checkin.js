@@ -1,6 +1,3 @@
-<script language="javascript" type="text/javascript">
-<!--
-
 $(function() {
 
 	$('#search-input').on('keypress', function(e) {
@@ -89,6 +86,3 @@ function hideWait($el) {
 		$el.data('is-waiting', false);
 	}
 }
-
--->
-</script>

@@ -44,9 +44,6 @@ ko_include_kota(array('ko_leute', 'ko_kleingruppen', 'ko_taxonomy'));
 //get notifier instance
 $notifier = koNotifier::Instance();
 
-//Smarty-Templates-Engine laden
-require __DIR__ . '/../../inc/smarty.inc.php';
-
 require __DIR__ . '/leute.inc.php';
 if(ko_module_installed("kg")) require __DIR__ . '/kg.inc.php';
 

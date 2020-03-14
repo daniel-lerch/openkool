@@ -54,9 +54,6 @@ foreach($hooks as $hook) include_once($hook);
 
 require __DIR__ . '/reservation.inc.php';
 
-//Smarty-Templates-Engine laden
-require __DIR__ . '/../../inc/smarty.inc.php';
-
 //HOOK: Submenus einlesen
 $hooks = hook_include_sm();
 foreach($hooks as $hook) include($hook);

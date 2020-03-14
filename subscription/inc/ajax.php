@@ -41,9 +41,6 @@ ko_include_kota(array('ko_subscription_forms', 'ko_subscription_form_groups'));
 $hooks = hook_include_main("subscription");
 if(sizeof($hooks) > 0) foreach($hooks as $hook) include_once($hook);
  
-//Smarty-Templates-Engine laden
-require __DIR__ . '/../../inc/smarty.inc.php';
-
 require __DIR__ . '/subscription.inc.php';
 
 //HOOK: Submenus einlesen

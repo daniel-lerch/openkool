@@ -3,6 +3,7 @@
  *  Copyright notice
  *
  *  (c) 2003-2020 Renzo Lauper (renzo@churchtool.org)
+ *  (c) 2019-2020 Daniel Lerch
  *  All rights reserved
  *
  *  This script is part of the kOOL project. The kOOL project is
@@ -24,16 +25,14 @@
  *  This copyright notice MUST APPEAR in all copies of the script!
  ***************************************************************/
 
-//Send headers to ensure latin1 charset
-header('Content-Type: text/html; charset=ISO-8859-1');
+//Send headers to ensure UTF-8 charset
+header('Content-Type: text/html; charset=UTF-8');
 
 error_reporting(0);
 $ko_menu_akt = 'taxonomy';
 $ko_path = "../../";
-require($ko_path . "inc/ko.inc");
+require __DIR__ . '/../../inc/ko.inc.php';
 $ko_path = "../";
-
-array_walk_recursive($_GET, 'utf8_decode_array');
 
 //Get access rights
 ko_get_access('taxonomy');

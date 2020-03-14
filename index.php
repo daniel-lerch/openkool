@@ -18,7 +18,7 @@
 *
 *******************************************************************************/
 
-header('Content-Type: text/html; charset=ISO-8859-1');
+header('Content-Type: text/html; charset=UTF-8');
 
 $ko_path = "./";
 $ko_menu_akt = "home";
@@ -110,9 +110,6 @@ include("{$ko_path}js-home.inc");
 <body onload="session_time_init();<?php if(isset($onload_code)) print $onload_code; ?>">
 
 <?php
-//Smarty-Templates-Engine laden
-require __DIR__ . '/inc/smarty.inc.php';
-
 /*
  * Gibt bei erfolgreichem Login das Menü aus, sonst einfach die Loginfelder
  */

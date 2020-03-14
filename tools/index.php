@@ -18,15 +18,15 @@
 *
 *******************************************************************************/
 
-header('Content-Type: text/html; charset=ISO-8859-1');
+header('Content-Type: text/html; charset=UTF-8');
 
 ob_start();  //Ausgabe-Pufferung starten
 
 $ko_path = "../";
 $ko_menu_akt = "tools";
 
-include($ko_path.'inc/ko.inc.php');
-include('inc/tools.inc.php');
+require __DIR__ . '/../inc/ko.inc.php';
+require __DIR__ . '/inc/tools.inc.php';
 use OpenKool\koNotifier;
 
 //Redirect to SSL if needed
@@ -42,9 +42,6 @@ $notifier = koNotifier::Instance();
 $default_lang = $LIB_LANGS[0];
 
 ko_get_access('tools');
-
-//Smarty-Templates-Engine laden
-require($ko_path.'inc/smarty.inc.php');
 
 //kOOL Table Array
 ko_include_kota(array('ko_scheduler_tasks', 'ko_plugins', 'ko_mailing_mails', 'ko_updates'));
@@ -993,8 +990,7 @@ ko_set_submenues();
 <?php
 print ko_include_css();
 print ko_include_js();
-include($ko_path.'inc/js-sessiontimeout.inc');
-//include("inc/js-tools.inc");
+include __DIR__ . '/../inc/js-sessiontimeout.inc.php';
 ?>
 </head>
 

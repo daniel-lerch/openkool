@@ -18,7 +18,7 @@
 *
 *******************************************************************************/
 
-header('Content-Type: text/html; charset=ISO-8859-1');
+header('Content-Type: text/html; charset=UTF-8');
 
 ob_start();  //Ausgabe-Pufferung starten
 
@@ -46,10 +46,6 @@ $notifier = koNotifier::Instance();
 
 //*** Rechte auslesen
 ko_get_access('donations');
-
-
-//Smarty-Templates-Engine laden
-require __DIR__ . '/../inc/smarty.inc.php';
 
 //kOOL Table Array
 ko_include_kota(array('ko_donations', 'ko_donations_accounts', 'ko_donations_accountgroups'));
@@ -957,11 +953,11 @@ print ko_include_js(array($ko_path.'inc/ckeditor/ckeditor.js', $ko_path.'inc/cke
 include __DIR__ . '/../inc/js-sessiontimeout.inc.php';
 include __DIR__ . '/inc/js-donations.inc.php';
 if ($_SESSION['show'] == 'list_donations_mod') {
-	include('inc/js-donationsmod.inc');
+	include __DIR__ . '/inc/js-donationsmod.inc.php';
 }
 if (ko_module_installed('crm') && in_array($_SESSION['show'], array('export_donations_settings'))) {
 	ko_get_access('crm');
-	include($ko_path.'crm/inc/js-selproject.inc');
+	include __DIR__ . '/../crm/inc/js-selproject.inc.php';
 }
 ?>
 </head>

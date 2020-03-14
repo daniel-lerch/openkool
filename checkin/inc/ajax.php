@@ -1,14 +1,14 @@
 <?php
 
-//Send headers to ensure latin1 charset
-header('Content-Type: text/html; charset=ISO-8859-1');
+//Send headers to ensure UTF-8 charset
+header('Content-Type: text/html; charset=UTF-8');
 
 $ko_menu_akt = 'checkin';
 $ko_path = '../../';
 
-require_once("{$ko_path}inc/ko.inc");
-require_once("{$ko_path}checkin/inc/checkin.inc");
-require_once("{$ko_path}tracking/inc/tracking.inc");
+require __DIR__ . '/../../inc/ko.inc.php';
+require __DIR__ . '/checkin.inc.php';
+require_once __DIR__ . '/../../tracking/inc/tracking.inc.php';
 
 $onload_code = '';
 $notifier = koNotifier::Instance();

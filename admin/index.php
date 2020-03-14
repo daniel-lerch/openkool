@@ -18,7 +18,7 @@
 *
 *******************************************************************************/
 
-header('Content-Type: text/html; charset=ISO-8859-1');
+header('Content-Type: text/html; charset=UTF-8');
 
 ob_start();  //Ausgabe-Pufferung starten
 
@@ -1571,9 +1571,6 @@ if(!$_SESSION['sort_news_order']) $_SESSION['sort_news_order'] = 'DESC';
 
 //Include submenus
 ko_set_submenues();
-
-//Smarty-Templates-Engine laden
-require __DIR__ . '/../inc/smarty.inc.php';
 ?>
 <!DOCTYPE html 
   PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
@@ -1593,11 +1590,10 @@ $js_files[] = $ko_path.'inc/ckeditor/adapters/jquery.js';
 if(in_array($_SESSION['show'], array('new_login',  'new_admingroup', 'edit_login', 'edit_admingroup'))) $js_files[] = $ko_path.'inc/selectmenu.js';
 $js_files[] = $ko_path.'inc/ckeditor/ckeditor.js';
 $js_files[] = $ko_path.'inc/ckeditor/adapters/jquery.js';
+$js_files[] = 'inc/admin.js';
 print ko_include_js($js_files);
 
-include($ko_path.'admin/inc/js-admin.inc');
-include($ko_path.'inc/js-sessiontimeout.inc');
-include("inc/js-admin.inc");
+include __DIR__ . '/../inc/js-sessiontimeout.inc.php';
 
 //Prepare group double selects when editing a login
 if(in_array($_SESSION['show'], array('new_login', 'new_admingroup', 'edit_login', 'edit_admingroup'))) {

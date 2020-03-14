@@ -87,9 +87,6 @@ if (ko_module_installed('daten')) $kotaDefs = array_merge($kotaDefs, array('ko_e
 ko_include_kota($kotaDefs);
 
 
-//Smarty-Templates-Engine laden
-require __DIR__ . '/../inc/smarty.inc.php';
-
 //*** Plugins einlesen:
 $hooks = hook_include_main("reservation");
 foreach($hooks as $hook) include_once($hook);

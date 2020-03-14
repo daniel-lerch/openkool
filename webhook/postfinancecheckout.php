@@ -5,7 +5,7 @@ $ko_menu_akt = '';
 
 ob_start();  //Ausgabe-Pufferung starten
 
-include($ko_path . "inc/ko.inc");
+require __DIR__ . '/../inc/ko.inc.php';
 
 //Redirect to SSL if needed
 ko_check_ssl();

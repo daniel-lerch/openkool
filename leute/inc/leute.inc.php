@@ -4774,7 +4774,7 @@ function leute_mailmerge_pdf_layout_default_add_address_to_pdf(PDF_HTML &$pdf, $
 	$top += 1.2;
 	$pdf->SetMargins($leftD, $marginTop, $marginRight);
 	$pdf->SetXY($left, $top);
-	$pdf->WriteHtml(html_entity_decode($entry['_text_'], null, "ISO-8859-1"));
+	$pdf->WriteHtml(html_entity_decode($entry['_text_'], null, "UTF-8"));
 
 	$top = $pdf->GetY() + 3.4;
 	$pdf->SetMargins($marginLeft, $marginTop, $marginRight);
@@ -4837,8 +4837,6 @@ function ko_leute_export_details_personal_form_extended($export, $personIds) {
 
 function ko_leute_export_details_personal_form($export, $personIds, $extend = FALSE) {
 	global $ko_path, $BASE_PATH, $PLUGINS, $KOTA, $LEUTE_EMAIL_FIELDS, $LEUTE_MOBILE_FIELDS;
-
-	require_once($ko_path.'inc/tcpdf/tcpdf.php');
 
 	$mainLayout = array(
 		array('nachname' => 'B'),
@@ -5217,7 +5215,7 @@ function ko_leute_export_details_personal_form($export, $personIds, $extend = FA
 		}
 	}
 
-	$pdf = new kOOLPeoplePersonalFormTCPDF('P', 'mm', 'A4', false, 'ISO-8859-1', false);
+	$pdf = new kOOLPeoplePersonalFormTCPDF('P', 'mm', 'A4', false, 'UTF-8', false);
 	$pdf->SetMainLayout($mainLayout);
 	$pdf->SetOthersLayout($othersLayout);
 	$pdf->resetLastH();

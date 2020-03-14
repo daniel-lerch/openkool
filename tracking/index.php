@@ -18,7 +18,7 @@
 *
 *******************************************************************************/
 
-header('Content-Type: text/html; charset=ISO-8859-1');
+header('Content-Type: text/html; charset=UTF-8');
 
 ob_start();  //Ausgabe-Pufferung starten
 
@@ -43,9 +43,6 @@ $notifier = koNotifier::Instance();
 
 //Get access rights
 ko_get_access('tracking');
-
-//Smarty-Templates-Engine laden
-require __DIR__ . '/../inc/smarty.inc.php';
 
 //kOOL Table Array
 ko_include_kota(array('ko_tracking', 'ko_tracking_entries'));

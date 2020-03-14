@@ -18,7 +18,7 @@
 *
 *******************************************************************************/
 
-header('Content-Type: text/html; charset=ISO-8859-1');
+header('Content-Type: text/html; charset=UTF-8');
 
 ob_start();  //Ausgabe-Pufferung einschalten
 
@@ -29,9 +29,9 @@ include_once __DIR__ . '/../inc/ko.inc.php';
 include_once __DIR__ . '/../consensus/consensus.inc.php';
 include_once __DIR__ . '/inc/daten.inc.php';
 if(ko_module_installed("reservation"))
-	include_once __DIR__ . "/../reservation/inc/reservation.inc";
+	include_once __DIR__ . "/../reservation/inc/reservation.inc.php";
 if(ko_module_installed("rota"))
-	include_once __DIR__ . "/../rota/inc/rota.inc";
+	include_once __DIR__ . "/../rota/inc/rota.inc.php";
 
 $notifier = koNotifier::Instance();
 
@@ -50,10 +50,6 @@ ko_get_access('daten');
 
 //kOOL Table Array
 ko_include_kota(array('ko_event', 'ko_eventgruppen', 'ko_reservation', 'ko_pdf_layout', 'ko_reminder', 'ko_event_rooms', 'ko_event_absence'));
-
-
-//Smarty-Templates-Engine laden
-require __DIR__ . '/../inc/smarty.inc.php';
 
 // Plugins einlesen:
 $hooks = hook_include_main("daten");

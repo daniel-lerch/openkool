@@ -18,7 +18,7 @@
 *
 *******************************************************************************/
 
-header('Content-Type: text/html; charset=ISO-8859-1');
+header('Content-Type: text/html; charset=UTF-8');
 
 ob_start();  //Ausgabe-Pufferung starten
 
@@ -1003,9 +1003,6 @@ if(!$_SESSION["show_start"]) $_SESSION["show_start"] = 1;
 $_SESSION["show_limit"] = ko_get_userpref($_SESSION["ses_userid"], "show_limit_groups");
 if(!$_SESSION["show_limit"]) $_SESSION["show_limit"] = ko_get_setting("show_limit_groups");
 if(!isset($_SESSION['groups_show_hidden_datafields'])) $_SESSION['groups_show_hidden_datafields'] = ko_get_userpref($_SESSION['ses_userid'], 'groups_show_hidden_datafields');
-
-//Smarty-Templates-Engine laden
-require __DIR__ . '/../inc/smarty.inc.php';
 
 //Include submenus
 ko_set_submenues();

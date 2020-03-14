@@ -3220,7 +3220,7 @@ function ko_rota_get_participation_chart($personId, $teamId, $mode='all') {
 	$chart .= '</g>';
 	foreach($count as $key => $days) {
 		$chart .= '<rect x="-365" y="'.$yOffset[$key].'" width="'.($xmax+365).'" height="20" fill="'.$colors[$key][2].'" />';
-		$chart .= '<text x="'.($getParticipationMode == 'all' ? 0 : -360).'" y="'.($yOffset[$key]+15).'" fill="#ffffff" style="font-size:14; font-family:sans-serif;" text-anchor="'.($getParticipationMode == 'all' ? 'middle' : 'start').'">'.utf8_encode(htmlentities($labels[$key], ENT_QUOTES|ENT_XML1,"ISO-8859-1",false)).'</text>';
+		$chart .= '<text x="'.($getParticipationMode == 'all' ? 0 : -360).'" y="'.($yOffset[$key]+15).'" fill="#ffffff" style="font-size:14; font-family:sans-serif;" text-anchor="'.($getParticipationMode == 'all' ? 'middle' : 'start').'">'.utf8_encode(htmlentities($labels[$key], ENT_QUOTES|ENT_XML1,"UTF-8",false)).'</text>';
 		$chart .= '<text x="'.($getParticipationMode == 'all' ? -360 : -5).'" y="'.($yOffset[$key]+15).'" fill="#ffffff" style="font-size:14; font-family:sans-serif;" text-anchor="'.($getParticipationMode == 'all' ? 'start' : 'end').'">'.$total[$key][0].'</text>';
 		if($getParticipationMode == 'all') {
 			$chart .= '<text x="360" y="'.($yOffset[$key]+15).'" fill="#ffffff" style="font-size:14; font-family:sans-serif;" text-anchor="end">'.$total[$key][1].'</text>';

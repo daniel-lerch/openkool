@@ -3,6 +3,7 @@
  *  Copyright notice
  *
  *  (c) 2003-2020 Renzo Lauper (renzo@churchtool.org)
+ *  (c) 2019-2020 Daniel Lerch
  *  All rights reserved
  *
  *  This script is part of the kOOL project. The kOOL project is
@@ -24,13 +25,13 @@
  *  This copyright notice MUST APPEAR in all copies of the script!
  ***************************************************************/
 
-//Send headers to ensure latin1 charset
-header('Content-Type: text/html; charset=ISO-8859-1');
+//Send headers to ensure UTF-8 charset
+header('Content-Type: text/html; charset=UTF-8');
 
 error_reporting(0);
 $ko_menu_akt = 'home';
 $ko_path = "../";
-require_once($ko_path."inc/ko.inc");
+require __DIR__ . '/ko.inc.php';
 
 //Include plugin code
 $hooks = hook_include_main('_all');
@@ -103,7 +104,7 @@ if ($_POST['async_form'] == 1) {
 <!DOCTYPE html>
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="<?php print $_SESSION["lang"]; ?>" lang="<?php print $_SESSION["lang"]; ?>">
 <head>
-	<meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1" />
+	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
 	<meta http-equiv="X-UA-Compatible" content="IE=edge">
 	<meta name="viewport" content="width=device-width, initial-scale=1" />
 	<title><?php print "$HTML_TITLE: ".getLL("module_".$ko_menu_akt); ?></title>
@@ -125,11 +126,10 @@ if ($_POST['async_form'] == 1) {
 
 	print ko_include_css();
 
-	if (file_exists("{$ko_path}{$module}/inc/js-{$module}.inc")) {
-		require_once("{$ko_path}{$module}/inc/js-{$module}.inc");
+	if (file_exists("{$ko_path}{$module}/inc/js-{$module}.inc.php")) {
+		require_once("{$ko_path}{$module}/inc/js-{$module}.inc.php");
 	}
-	include($ko_path.'inc/js-sessiontimeout.inc');
-
+	include __DIR__ . '/js-sessiontimeout.inc.php';
 	switch ($table) {
 		case 'ko_leute':
 			if ($showForm) {
@@ -140,7 +140,7 @@ if ($_POST['async_form'] == 1) {
 				//Beim Einteilen die vergangenen Gruppen nie anzeigen
 				$orig_value = ko_get_userpref($_SESSION['ses_userid'], 'show_passed_groups');
 				ko_save_userpref($_SESSION['ses_userid'], 'show_passed_groups', 0);
-				include("{$ko_path}leute/inc/js-groupmenu.inc");
+				include("{$ko_path}leute/inc/js-groupmenu.inc.php");
 				ko_save_userpref($_SESSION['ses_userid'], 'show_passed_groups', $orig_value);
 				$loadcode = "initList($list_id, $('.groupselect.groupselect-left')[0]);";
 				$onload_code = $loadcode.$onload_code;

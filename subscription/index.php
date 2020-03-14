@@ -3,6 +3,7 @@
 *  Copyright notice
 *
 *  (c) 2003-2020 Renzo Lauper (renzo@churchtool.org)
+*  (c) 2019-2020 Daniel Lerch
 *  All rights reserved
 *
 *  This script is part of the kOOL project. The kOOL project is
@@ -24,15 +25,15 @@
 *  This copyright notice MUST APPEAR in all copies of the script!
 ***************************************************************/
 
-header('Content-Type: text/html; charset=ISO-8859-1');
+header('Content-Type: text/html; charset=UTF-8');
 
 ob_start();  //Ausgabe-Pufferung starten
 
 $ko_path = "../";
 $ko_menu_akt = "subscription";
 
-include($ko_path . "inc/ko.inc");
-include("inc/subscription.inc");
+require __DIR__ . '/../inc/ko.inc.php';
+require __DIR__ . '/inc/subscription.inc.php';
 
 $notifier = koNotifier::Instance();
 
@@ -317,16 +318,13 @@ if(!$_SESSION['show_start']) $_SESSION['show_start'] = 1;
 
 //Include submenus
 ko_set_submenues();
-
-//Smarty-Templates-Engine laden
-require("$ko_path/inc/smarty.inc");
 ?>
 <!DOCTYPE html
   PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="<?php print $_SESSION["lang"]; ?>" lang="<?php print $_SESSION["lang"]; ?>">
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1" />
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title><?php print "$HTML_TITLE: ".getLL("module_".$ko_menu_akt); ?></title>
@@ -338,7 +336,7 @@ $js_files[] = $ko_path.'inc/ckeditor/ckeditor.js';
 $js_files[] = $ko_path.'inc/ckeditor/adapters/jquery.js';
 print ko_include_js($js_files);
 
-include($ko_path.'inc/js-sessiontimeout.inc');
+include __DIR__ . '/../inc/js-sessiontimeout.inc.php';
 
 ?>
 <script language="javascript" type="text/javascript">

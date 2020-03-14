@@ -49,9 +49,6 @@ ko_include_kota(array('ko_event', 'ko_eventgruppen', 'ko_event_rooms'));
 $hooks = hook_include_main("daten");
 foreach($hooks as $hook) include_once($hook);
  
-//Smarty-Templates-Engine laden
-require __DIR__ . '/../../inc/smarty.inc.php';
- 
 require __DIR__ . '/daten.inc.php';
 
 //HOOK: Submenus einlesen

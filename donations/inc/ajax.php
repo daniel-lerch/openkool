@@ -41,9 +41,6 @@ ko_include_kota(array('ko_donations', 'ko_donations_accounts', 'ko_donations_acc
 $hooks = hook_include_main("donations");
 foreach($hooks as $hook) include_once($hook);
  
-//Smarty-Templates-Engine laden
-require __DIR__ . '/../../inc/smarty.inc.php';
-
 require __DIR__ . '/donations.inc.php';
 
 //HOOK: Submenus einlesen

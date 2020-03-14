@@ -254,7 +254,7 @@ class Bot extends Authentication {
 	 * @return string
 	 */
 	public function encodeMessage($message) {
-		$message = html_entity_decode($message, ENT_COMPAT | ENT_HTML401, 'ISO-8859-1');
+		$message = html_entity_decode($message, ENT_COMPAT | ENT_HTML401, 'UTF-8');
 		$message = str_replace('</p>', PHP_EOL, $message);
 		$message = preg_replace('/\<br(\s*)?\/?\>/i', PHP_EOL, $message);
 		$message = preg_replace('/<p\b[^>]*>(.*?)<\/p>/mi', PHP_EOL . "$1", $message);

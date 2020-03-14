@@ -3635,7 +3635,7 @@ function submenu_donations($namen, $state, $display=1, $doClean = true) {
 			$submenu[$menucounter]["items"][] = ko_get_menuitem_html($code, $pre.getLL("donations_filter_leute").$post);
 
 			//Person-search filter
-			$code  = '<input class="input-sm form-control" type="text" name="donations_filter[personString]" value="'.htmlspecialchars($_SESSION["donations_filter"]["personString"], ENT_COMPAT | ENT_HTML401, 'ISO-8859-1').'" size="17">';
+			$code  = '<input class="input-sm form-control" type="text" name="donations_filter[personString]" value="'.htmlspecialchars($_SESSION["donations_filter"]["personString"], ENT_COMPAT | ENT_HTML401, 'UTF-8').'" size="17">';
 
 			$pre  = $_SESSION["donations_filter"]["personString"] ? '<mark>' : "";
 			$post = $_SESSION["donations_filter"]["personString"] ? '</mark>' : "";
@@ -3649,7 +3649,7 @@ function submenu_donations($namen, $state, $display=1, $doClean = true) {
 			}
 
 			//Search for amount
-			$code  = '<input class="input-sm form-control" type="text" name="donations_filter[amount]" value="'.htmlspecialchars($_SESSION['donations_filter']['amount'], ENT_COMPAT | ENT_HTML401, 'ISO-8859-1').'">';
+			$code  = '<input class="input-sm form-control" type="text" name="donations_filter[amount]" value="'.htmlspecialchars($_SESSION['donations_filter']['amount'], ENT_COMPAT | ENT_HTML401, 'UTF-8').'">';
 			$help = ko_get_help('donations', 'submenu_filter_amount', array('ph' => 'l'));
 
 			$pre  = $_SESSION['donations_filter']['amount'] ? '<mark>' : '';

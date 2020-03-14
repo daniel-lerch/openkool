@@ -3,6 +3,7 @@
  *  Copyright notice
  *
  *  (c) 2003-2020 Renzo Lauper (renzo@churchtool.org)
+ *  (c) 2019-2020 Daniel Lerch
  *  All rights reserved
  *
  *  This script is part of the kOOL project. The kOOL project is
@@ -27,8 +28,8 @@
 $ko_path = "../";
 $ko_menu_akt = "ical";
 
-include($ko_path . "inc/ko.inc");
-include($ko_path . "rota/inc/rota.inc");
+require __DIR__ . '/../inc/ko.inc.php';
+require __DIR__ . '/../rota/inc/rota.inc.php';
 
 //Include plugins
 $hooks = hook_include_main('rota');

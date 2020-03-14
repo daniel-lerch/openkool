@@ -1,6 +1,6 @@
 <?php
 
-header('Content-Type: text/html; charset=ISO-8859-1');
+header('Content-Type: text/html; charset=UTF-8');
 
 $ko_path = "../";
 $ko_menu_akt = "subscription";
@@ -152,7 +152,7 @@ function ko_subscription_render_form_page($content,$title = null, &$formRow) {
 <!DOCTYPE html>
 <html lang="<?php print $_SESSION["lang"]; ?>">
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1" />
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title><?= "$HTML_TITLE: ".($title ?: getLL("module_".$ko_menu_akt)) ?></title>

@@ -43,9 +43,6 @@ ko_include_kota(array('_ko_sms_log', '_ko_telegram_log', 'ko_log', 'ko_admin', '
 $hooks = hook_include_main("admin");
 foreach($hooks as $hook) include_once($hook);
 
-//Smarty-Templates-Engine laden
-require __DIR__ . '/../../inc/smarty.inc.php';
-
 require __DIR__ . '/admin.inc.php';
 
 //HOOK: Submenus einlesen

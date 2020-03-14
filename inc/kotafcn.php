@@ -2594,9 +2594,9 @@ function kota_listview_event_reservations(&$value, $data, $xls=FALSE) {
 		if($txt != '') {
 			//Add title
 			if ($ko_menu_akt == "ical") {
-				$value = htmlspecialchars("<br />" . $txt, ENT_COMPAT | ENT_HTML401, 'ISO-8859-1');
+				$value = htmlspecialchars("<br />" . $txt, ENT_COMPAT | ENT_HTML401, 'UTF-8');
 			} else {
-				$txt = getLL('daten_list_reservations_title') . ':<br /><br />' . htmlspecialchars($txt, ENT_COMPAT | ENT_HTML401, 'ISO-8859-1');
+				$txt = getLL('daten_list_reservations_title') . ':<br /><br />' . htmlspecialchars($txt, ENT_COMPAT | ENT_HTML401, 'UTF-8');
 				$label = (sizeof($ids) > 2 && !$xls) ? sizeof($ids) : implode(', ', $objectNames);
 				$value = '<a href="#" onclick="return false;" ' . ko_get_tooltip_code($txt) . '>' . $label . '</a>';
 			}

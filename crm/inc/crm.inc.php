@@ -1,6 +1,6 @@
 <?php
 
-require_once($BASE_PATH.'inc/class.kOOL_listview.php');
+use OpenKool\ListView;
 
 function ko_list_crm_projects() {
 	global $access, $MAILING_PARAMETER;
@@ -37,7 +37,7 @@ function ko_list_crm_projects() {
 		}
 	}
 
-	$list = new kOOL_listview();
+	$list = new ListView();
 
 	$list->init('crm', 'ko_crm_projects', array('chk', 'edit', 'delete', 'mailing'), $_SESSION['show_start'], $_SESSION['show_limit']);
 	$list->setTitle(getLL('crm_projects_list_title'));
@@ -103,7 +103,7 @@ function ko_list_crm_status() {
 		}
 	}
 
-	$list = new kOOL_listview();
+	$list = new ListView();
 
 	$list->init('crm', 'ko_crm_status', array('chk', 'edit', 'delete'), $_SESSION['show_start'], $_SESSION['show_limit']);
 	$list->setTitle(getLL('crm_status_list_title'));
@@ -158,7 +158,7 @@ function ko_list_crm_contacts() {
 		}
 	}
 
-	$list = new kOOL_listview();
+	$list = new ListView();
 
 	$list->init('crm', 'ko_crm_contacts', array('chk', 'edit', 'delete'), $_SESSION['show_start'], $_SESSION['show_limit']);
 

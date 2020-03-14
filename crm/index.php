@@ -3,6 +3,7 @@
  *  Copyright notice
  *
  *  (c) 2003-2020 Renzo Lauper (renzo@churchtool.org)
+ *  (c) 2019-2020 Daniel Lerch
  *  All rights reserved
  *
  *  This script is part of the kOOL project. The kOOL project is
@@ -24,15 +25,15 @@
  *  This copyright notice MUST APPEAR in all copies of the script!
  ***************************************************************/
 
-header('Content-Type: text/html; charset=ISO-8859-1');
+header('Content-Type: text/html; charset=UTF-8');
 
 ob_start();  //Ausgabe-Pufferung starten
 
 $ko_path = "../";
 $ko_menu_akt = "crm";
 
-include($ko_path . "inc/ko.inc");
-include("inc/crm.inc");
+require __DIR__ . '/../inc/ko.inc.php';
+require __DIR__ . '/inc/crm.inc.php';
 
 //Redirect to SSL if needed
 ko_check_ssl();
@@ -341,7 +342,7 @@ switch($do_action) {
 			}
 			if (sizeof($do_columns) < 1) $notifier->addError(1, $do_action);
 
-			//Zu bearbeitende Einträge
+			//Zu bearbeitende Eintrï¿½ge
 			$do_ids = array();
 			foreach ($_POST["chk"] as $c_i => $c) {
 				if (!$c) continue;
@@ -353,7 +354,7 @@ switch($do_action) {
 			}
 			if (sizeof($do_ids) < 1) $notifier->addError(2, $do_action);
 
-			//Daten für Formular-Aufruf vorbereiten
+			//Daten fï¿½r Formular-Aufruf vorbereiten
 			if (!$notifier->hasErrors()) {
 				$order = "ORDER BY " . $_SESSION["sort_crm_projects"] . " " . $_SESSION["sort_crm_projects_order"];
 				$_SESSION["show_back"] = $_SESSION["show"];
@@ -370,7 +371,7 @@ switch($do_action) {
 			}
 			if (sizeof($do_columns) < 1) $notifier->addError(1, $do_action);
 
-			//Zu bearbeitende Einträge
+			//Zu bearbeitende Eintrï¿½ge
 			$do_ids = array();
 			foreach ($_POST["chk"] as $c_i => $c) {
 				if (!$c) continue;
@@ -382,7 +383,7 @@ switch($do_action) {
 			}
 			if (sizeof($do_ids) < 1) $notifier->addError(3, $do_action);
 
-			//Daten für Formular-Aufruf vorbereiten
+			//Daten fï¿½r Formular-Aufruf vorbereiten
 			if (!$notifier->hasErrors()) {
 				$order = "ORDER BY " . $_SESSION["sort_crm_status"] . " " . $_SESSION["sort_crm_status_order"];
 				$_SESSION["show_back"] = $_SESSION["show"];
@@ -399,7 +400,7 @@ switch($do_action) {
 			}
 			if (sizeof($do_columns) < 1) $notifier->addError(1, $do_action);
 
-			//Zu bearbeitende Einträge
+			//Zu bearbeitende Eintrï¿½ge
 			$do_ids = array();
 			foreach ($_POST["chk"] as $c_i => $c) {
 				if (!$c) continue;
@@ -421,7 +422,7 @@ switch($do_action) {
 			}
 			if (sizeof($do_ids) < 1) $notifier->addError(4, $do_action);
 
-			//Daten für Formular-Aufruf vorbereiten
+			//Daten fï¿½r Formular-Aufruf vorbereiten
 			if (!$notifier->hasErrors()) {
 				$order = "ORDER BY " . $_SESSION["sort_crm_contacts"] . " " . $_SESSION["sort_crm_contacts_order"];
 				$_SESSION["show_back"] = $_SESSION["show"];
@@ -449,9 +450,7 @@ switch($do_action) {
 
 	//Default:
 	default:
-		if(!hook_action_handler($do_action)) {
-			include($ko_path."inc/abuse.inc");
-		}
+		hook_action_handler($do_action);
 	break;
 
 }//switch(do_action)
@@ -509,7 +508,7 @@ ko_set_submenues();
 	"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="<?php print $_SESSION["lang"]; ?>" lang="<?php print $_SESSION["lang"]; ?>">
 <head>
-	<meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1" />
+	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
 	<meta http-equiv="X-UA-Compatible" content="IE=edge">
 	<meta name="viewport" content="width=device-width, initial-scale=1" />
 	<title><?php print "$HTML_TITLE: ".getLL("module_".$ko_menu_akt); ?></title>
@@ -519,10 +518,10 @@ ko_set_submenues();
 	$js_files = array();
 	$js_files[] = $ko_path.'inc/ckeditor/ckeditor.js';
 	$js_files[] = $ko_path.'inc/ckeditor/adapters/jquery.js';
+	$js_files[] = 'inc/crm.js';
 	print ko_include_js($js_files);
-	include($ko_path.'inc/js-sessiontimeout.inc');
+	include __DIR__ . '/../inc/js-sessiontimeout.inc.php';
 	include('inc/js-selproject.inc');
-	include('inc/js-crm.inc');
 	?>
 </head>
 
@@ -530,7 +529,7 @@ ko_set_submenues();
 
 <?php
 /*
- * Gibt bei erfolgreichem Login das Menü aus, sonst einfach die Loginfelder
+ * Gibt bei erfolgreichem Login das MenÃ¼ aus, sonst einfach die Loginfelder
  */
 include($ko_path . "menu.php");
 

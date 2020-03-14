@@ -43,9 +43,6 @@ ko_include_kota(array('ko_tracking', 'ko_tracking_entries'));
 $hooks = hook_include_main('tracking');
 foreach($hooks as $hook) include_once($hook);
  
-//Smarty-Templates-Engine laden
-require __DIR__ . '/../../inc/smarty.inc.php';
- 
 require __DIR__ . '/tracking.inc.php';
 
 //HOOK: Submenus einlesen

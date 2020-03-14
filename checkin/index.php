@@ -1,14 +1,14 @@
 <?php
 
-header('Content-Type: text/html; charset=ISO-8859-1');
+header('Content-Type: text/html; charset=UTF-8');
 
 $ko_menu_akt = 'checkin';
 $ko_path = '../';
 
-require_once("{$ko_path}inc/ko.inc");
-require_once("{$ko_path}checkin/inc/checkin.inc");
-require_once("{$ko_path}tracking/inc/tracking.inc");
-require_once("{$ko_path}inc/googleCloudPrint/koGoogleCloudPrint.php");
+require __DIR__ . '/../inc/ko.inc.php';
+require __DIR__ . '/inc/checkin.inc.php';
+require_once __DIR__ . '/../tracking/inc/tracking.inc.php';
+require_once __DIR__ . '/../inc/googleCloudPrint/koGoogleCloudPrint.php';
 
 $onload_code = '';
 $notifier = koNotifier::Instance();
@@ -147,16 +147,16 @@ switch ($do_action) {
 	"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="<?php print $_SESSION["lang"]; ?>" lang="<?php print $_SESSION["lang"]; ?>">
 <head>
-	<meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1" />
+	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
 	<meta http-equiv="X-UA-Compatible" content="IE=edge">
 	<meta name="viewport" content="width=device-width, initial-scale=1" />
 	<title><?php print getLL('checkin_page_title'); ?></title>
 <?php
 print ko_include_css();
 print ko_include_js();
-
-include("{$ko_path}checkin/inc/js-checkin.inc");
-
+?>
+<script language="javascript" type="text/javascript" src="<?=$ko_path ?>checkin/inc/checkin.js"></script>
+<?php
 if(ko_get_setting('qz_tray_enable')) {
 	if(!empty($_SESSION['checkin_user']) && isset($_SESSION['checkin_printer']) && $_SESSION['checkin_printer']['type'] == 'qz_tray') {
 ?>

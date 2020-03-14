@@ -34,11 +34,7 @@ $ko_path = "../";
 require __DIR__ . '/ko.inc.php';
 use OpenKool\koNotifier;
 
-//Smarty-Templates-Engine laden
-require __DIR__ . '/smarty.inc.php';
-
 array_walk_recursive($_GET, 'rawurldecode_array');
-array_walk_recursive($_GET, 'utf8_decode_array');
 
 //Include plugin code
 $hooks = hook_include_main('_all');
@@ -419,7 +415,7 @@ if (isset($_GET) && isset($_GET["action"])) {
 					print 'main_content@@@';
 					list($module, $file) = explode('|', $KOTA[$table]['_inlineform']['module']);
 					$file = $file != '' ? $file : $module;
-					include_once __DIR__ . "/../$module/inc/$file.inc";
+					include_once __DIR__ . "/../$module/inc/$file.inc.php";
 					eval($KOTA[$table]['_inlineform']['redraw']['fcn']);
 				} else {
 					//Output new value
@@ -681,7 +677,7 @@ if (isset($_GET) && isset($_GET["action"])) {
 				print 'main_content@@@';
 				list($module, $file) = explode('|', $KOTA[$table]['_inlineform']['module']);
 				$file = $file != '' ? $file : $module;
-				include_once __DIR__ . "/../$module/inc/$file.inc";
+				include_once __DIR__ . "/../$module/inc/$file.inc.php";
 				eval($KOTA[$table]['_inlineform']['redraw']['fcn']);
 			} //Just redraw single table cell
 			else {
@@ -825,7 +821,7 @@ if (isset($_GET) && isset($_GET["action"])) {
 			print 'main_content@@@';
 			list($module, $file) = explode('|', $KOTA[$table]['_inlineform']['module']);
 			$file = $file != '' ? $file : $module;
-			include_once __DIR__ . "/../$module/inc/$file.inc";
+			include_once __DIR__ . "/../$module/inc/$file.inc.php";
 			eval($KOTA[$table]['_inlineform']['redraw']['fcn']);
 
 			break;
@@ -855,7 +851,7 @@ if (isset($_GET) && isset($_GET["action"])) {
 			print 'main_content@@@';
 			list($module, $file) = explode('|', $KOTA[$table]['_inlineform']['module']);
 			$file = $file != '' ? $file : $module;
-			include_once __DIR__ . "/../$module/inc/$file.inc";
+			include_once __DIR__ . "/../$module/inc/$file.inc.php";
 			eval($KOTA[$table]['_inlineform']['redraw']['fcn']);
 			break;
 
@@ -867,7 +863,7 @@ if (isset($_GET) && isset($_GET["action"])) {
 			ko_get_access($module);
 			if (isset($KOTA[$table]['_supermodule'])) $supermodule = $KOTA[$table]['_supermodule'];
 			else $supermodule = $module;
-			require_once __DIR__ . "/../$supermodule/inc/$module.inc";
+			require_once __DIR__ . "/../$supermodule/inc/$module.inc.php";
 
 			//ID and state of the clicked field
 			$id = format_userinput($_GET['id'], 'js');
@@ -923,7 +919,7 @@ if (isset($_GET) && isset($_GET["action"])) {
 			ko_get_access($module);
 			if (isset($KOTA[$table]['_supermodule'])) $supermodule = $KOTA[$table]['_supermodule'];
 			else $supermodule = $module;
-			require_once __DIR__ . "/../$supermodule/inc/$module.inc";
+			require_once __DIR__ . "/../$supermodule/inc/$module.inc.php";
 
 			//save new value
 			if ($_GET['name'] == '') break;

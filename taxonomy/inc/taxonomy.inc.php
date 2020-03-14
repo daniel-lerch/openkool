@@ -3,6 +3,7 @@
 *  Copyright notice
 *
 *  (c) 2003-2020 Renzo Lauper (renzo@churchtool.org)
+*  (c) 2019-2020 Daniel Lerch
 *  All rights reserved
 *
 *  This script is part of the kOOL project. The kOOL project is
@@ -24,7 +25,6 @@
 *  This copyright notice MUST APPEAR in all copies of the script!
 ***************************************************************/
 
-include_once($BASE_PATH."inc/class.kOOL_listview.php");
 ko_get_access('taxonomy');
 
 function ko_taxonomy_list($output=TRUE, $highlight=NULL) {
@@ -46,7 +46,7 @@ function ko_taxonomy_list($output=TRUE, $highlight=NULL) {
 		$terms[$key]['used_in'] = $key;
 	}
 
-	$list = new kOOL_listview();
+	$list = new ListView();
 
 	$list->init('taxonomy', 'ko_taxonomy_terms', array('chk', 'edit', 'delete'), $_SESSION['show_start'], $_SESSION['show_limit']);
 	$list->disableMultiedit();

@@ -39,9 +39,6 @@ ko_include_kota(array('ko_scheduler_tasks','ko_mailing_mails'));
 $hooks = hook_include_main('tools');
 foreach($hooks as $hook) include_once($hook);
  
-//Smarty-Templates-Engine laden
-require __DIR__ . '/../../inc/smarty.inc.php';
- 
 require __DIR__ . '/tools.inc.php';
 
 //HOOK: Submenus einlesen

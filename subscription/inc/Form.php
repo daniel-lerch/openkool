@@ -790,7 +790,7 @@ class Tag
 	}
 
 	public function setText($text) {
-		$this->content = htmlspecialchars($text,ENT_COMPAT|ENT_HTML5,'ISO-8859-1');
+		$this->content = htmlspecialchars($text,ENT_COMPAT|ENT_HTML5,'UTF-8');
 	}
 
 	public function addContent($content) {
@@ -828,11 +828,11 @@ class Tag
 		foreach($this->attributes as $name => $value) {
 			$html .= ' '.$name;
 			if($value !== true) {
-				$html .= '="'.htmlspecialchars($value,ENT_COMPAT|ENT_HTML5,'ISO-8859-1').'"';
+				$html .= '="'.htmlspecialchars($value,ENT_COMPAT|ENT_HTML5,'UTF-8').'"';
 			}
 		}
 		if($this->classes) {
-			$html .= ' class="'.htmlspecialchars(implode(' ',$this->classes),ENT_COMPAT|ENT_HTML5,'ISO-8859-1').'"';
+			$html .= ' class="'.htmlspecialchars(implode(' ',$this->classes),ENT_COMPAT|ENT_HTML5,'UTF-8').'"';
 		}
 		if($this->selfClosing === true && empty($this->content)) {
 			$html .= ' />';

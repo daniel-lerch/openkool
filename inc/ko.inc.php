@@ -680,7 +680,7 @@ function ko_error_handler($errno, $errstr, $errfile, $errline) {
 	}
 }
 
-set_error_handler('ko_error_handler');
+set_error_handler('ko_error_handler', E_ERROR | E_USER_ERROR);
 
 
 if(defined('DEBUG') && DEBUG) {
@@ -781,7 +781,7 @@ if(!$db_connection && $ko_menu_akt != "install" && $ko_menu_akt != 'ldap') {
 	exit;
 }
 
-include __DIR__ . '/smarty.inc.php';
+require __DIR__ . '/smarty.inc.php';
 
 //Submenus (für alle Module)
 include __DIR__ . '/submenu.inc.php';
@@ -2823,8 +2823,6 @@ function ko_specialfilter_groupdatafields(&$code) {
 function ko_specialfilter_groupshistory(&$code) {
 	global $BASE_PATH, $smarty;
 
-	if($smarty === NULL) require_once($BASE_PATH.'/inc/smarty.inc');
-
 	$groupId = '';
 	$fromDate = '';
 	$toDate = '';
@@ -2894,8 +2892,6 @@ function ko_specialfilter_groupshistory(&$code) {
 
 function ko_specialfilter_groupsanniversary(&$code) {
 	global $BASE_PATH, $smarty;
-
-	if ($smarty === NULL) require_once($BASE_PATH . '/inc/smarty.inc');
 
 	$input = [
 		'type' => 'groupsearch',
@@ -11363,7 +11359,7 @@ function ko_update_group_count($id, $rid='') {
  *                             then all KOTA definitions will be included
  */
 function ko_include_kota($tables=array()) {
-	global $BASE_PATH, $KOTA, $RES_GUEST_FIELDS_FORCE, $ko_menu_akt, $access, $SMALLGROUPS_ROLES, $LOCAL_LANG, $MODULES;
+	global $BASE_PATH, $KOTA, $RES_GUEST_FIELDS_FORCE, $ko_menu_akt, $access, $SMALLGROUPS_ROLES, $MODULES;
 	global $EVENT_PROPAGATE_FIELDS, $LEUTE_NO_FAMILY;
 
 	if ($tables === '_all') {
@@ -17818,12 +17814,7 @@ function ko_parse_general_csv($csv, $options, $fromString=FALSE) {
 		//Encoding
 		if($encoding == 'macintosh') {
 			foreach($parts as $k => $v) {
-				$parts[$k] = iconv('macintosh', 'ISO-8859-1', $v);
-			}
-		}
-		else if($encoding == 'utf-8') {
-			foreach($parts as $k => $v) {
-				$parts[$k] = utf8_decode($v);
+				$parts[$k] = iconv('macintosh', 'UTF-8', $v);
 			}
 		}
 
@@ -19752,8 +19743,7 @@ function ko_vesr_process_emails(&$vesrFiles, &$report, &$log) {
 function ko_vesr_create_reportattachment($vesrfiles, $total, $done, $importtype, $issues = null) {
 	global $BASE_PATH, $ko_path, $DATETIME;
 
-	require_once($BASE_PATH . 'inc/tcpdf/tcpdf.php');
-	$pdf = new TCPDF('L', 'mm', 'A4', false, 'ISO-8859-1', false);
+	$pdf = new TCPDF('L', 'mm', 'A4', false, 'UTF-8', false);
 	$pdf->SetAutoPageBreak(TRUE, 10);
 	$pdf->SetMargins(10, 10, 10);
 	$pdf->AddPage();
@@ -23121,11 +23111,8 @@ function getBrowserLanguages() {
  * @return string|array
 */
 function getLL($string) {
-	global $LOCAL_LANG;
-
-	if(!$string) return '';
-	return $LOCAL_LANG[$_SESSION['lang']][$string];
-}//getLL()
+	return Localizer::get($string);
+}
 
 
 
@@ -23723,7 +23710,7 @@ function ko_check_ssl() {
 
 
 function ko_check_login() {
-	global $ko_path, $LANGS, $LIB_LANGS, $LOCAL_LANG, $WEB_LANGS, $BASE_URL;
+	global $ko_path, $LANGS, $LIB_LANGS, $WEB_LANGS, $BASE_URL;
 
 	$do_guest = TRUE;
 	$reinit = FALSE;
