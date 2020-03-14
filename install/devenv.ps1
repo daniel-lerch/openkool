@@ -4,8 +4,8 @@
 #
 #    OpenKool - Online church organization tool
 #
-#    Copyright © 2003-2015 Renzo Lauper (renzo@churchtool.org)
-#    Copyright © 2019      Daniel Lerch
+#    Copyright © 2003-2020 Renzo Lauper (renzo@churchtool.org)
+#    Copyright © 2019-2020 Daniel Lerch
 #
 #    This program is free software; you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License as published by
@@ -23,6 +23,8 @@
 param (
     [Parameter(Mandatory = $false)]
     [switch]$Setup,
+    [Parameter(Mandatory = $false)]
+    [string]$Composer,
     [Parameter(Mandatory = $false)]
     [switch]$Start
 )
@@ -58,8 +60,8 @@ function SetupEnvironment {
     Write-Host ""
     Write-Host "Preparing ~/config..."
     EnsureExists -Path "..\config"
-    Copy-Item -Path ".\default\config\address.rtf",".\default\config\footer.php",".\default\config\header.php",`
-        ".\default\config\ko-config.php",".\default\config\leute_formular.inc.php" -Destination "..\config" -Force
+    Copy-Item -Path ".\default\config\footer.php",".\default\config\header.php",`
+        ".\default\config\ko-config.php" -Destination "..\config" -Force
     # TODO: Handle permissions
 
     Write-Host "Preparing ~/download..."
@@ -75,13 +77,6 @@ function SetupEnvironment {
     Copy-Item -Path ".\default\download\index2.php" -Destination "..\download\word\index.php" -Force
     # TODO: Handle permissions
 
-    Write-Host "Preparing ~/latex..."
-    EnsureExists -Path "..\latex\compile"
-    EnsureExists -Path "..\latex\images"
-    Copy-Item -Path ".\default\latex\images\.htaccess" -Destination "..\latex\images" -Force
-    Copy-Item -Path ".\default\latex\layouts\letter_default.lco" -Destination "..\latex\layouts" -Force
-    # TODO: Handle permissions
-
     Write-Host "Preparing ~/my_images..."
     EnsureExists -Path "..\my_images"
     EnsureExists -Path "..\my_images\cache"
@@ -89,11 +84,6 @@ function SetupEnvironment {
     
     Write-Host "Preparing ~/templates_c..."
     EnsureExists -Path "..\templates_c"
-    # TODO: Handle permissions
-
-    Write-Host "Preparing ~/webfolders and ~/.webfolders..."
-    EnsureExists -Path "..\webfolders"
-    EnsureExists -Path "..\.webfolders"
     # TODO: Handle permissions
 
     Write-Host "Preparing PHP runtime components..."
@@ -117,12 +107,18 @@ function SetupEnvironment {
     }
 }
 
+function RunComposer ($Arguments) {
+    Write-Host "Invoking Composer..."
+    Write-Host ""
+    $executablePath = GetPhpLocation
+    Start-Process -FilePath $executablePath -ArgumentList "-c",".\php.ini","composer.phar",$Arguments -WorkingDirectory ".\.." -NoNewWindow -Wait
+}
+
 function StartServer {
     Write-Host "Starting development server..."
     Write-Host ""
     $executablePath = GetPhpLocation
     Start-Process -FilePath $executablePath -ArgumentList "-c",".\php.ini","-S","localhost:8080" -WorkingDirectory ".\.."
-    Write-Host $executablePath
 }
 
 function Main {
@@ -131,10 +127,13 @@ function Main {
     if ($Setup) {
         SetupEnvironment
     }
+    if ($Composer) {
+        RunComposer $Composer
+    }
     if ($Start) {
         StartServer
     }
-    if (!($Setup) -and !($Start)) {
+    if (!($Setup) -and !($Start) -and !($Composer)) {
         Write-Host "Please select an action"
     }
 }

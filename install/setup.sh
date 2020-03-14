@@ -4,8 +4,8 @@
 #
 #    OpenKool - Online church organization tool
 #
-#    Copyright © 2003-2015 Renzo Lauper (renzo@churchtool.org)
-#    Copyright © 2019      Daniel Lerch
+#    Copyright © 2003-2020 Renzo Lauper (renzo@churchtool.org)
+#    Copyright © 2019-2020 Daniel Lerch
 #
 #    This program is free software; you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License as published by
@@ -25,8 +25,8 @@ WEB_GID=www-data
 function dir_config() {
     echo "Preparing ~/config..."
     if [[ ! -d ../config ]]; then mkdir ../config; fi
-    cp -f default/config/address.rtf default/config/footer.php default/config/header.php \
-        default/config/ko-config.php default/config/leute_formular.inc.php ../config
+    cp -f default/config/footer.php default/config/header.php \
+        default/config/ko-config.php ../config
     chown --recursive $WEB_UID:$WEB_GID ../config
 }
 
@@ -45,15 +45,6 @@ function dir_download() {
     chown $WEB_UID:$WEB_GID ../download ../download/dp ../download/excel ../download/pdf ../download/word
 }
 
-function dir_latex() {
-    echo "Preparing ~/latex..."
-    if [[ ! -d ../latex/compile ]]; then mkdir ../latex/compile; fi
-    if [[ ! -d ../latex/images ]]; then mkdir ../latex/images; fi
-    cp -f default/latex/images/.htaccess ../latex/images
-    cp -f default/latex/layouts/letter_default.lco ../latex/layouts
-    chown --recursive $WEB_UID:$WEB_GID ../latex/compile ../latex/images
-}
-
 function dir_my_images() {
     echo "Preparing ~/my_images..."
     if [[ ! -d ../my_images ]]; then mkdir ../my_images; fi
@@ -67,13 +58,6 @@ function dir_templates_c() {
     chown $WEB_UID:$WEB_GID ../templates_c
 }
 
-function dir_webfolders() {
-    echo "Preparing ~/webfolders and ~/.webfolders..."
-    if [[ ! -d ../webfolders ]]; then mkdir ../webfolders; fi
-    if [[ ! -d ../.webfolders ]]; then mkdir ../.webfolders; fi
-    chown $WEB_UID:$WEB_GID ../webfolders ../.webfolders
-}
-
 function main() {
     echo "# OpenKool setup script #"
     echo ""
@@ -81,7 +65,6 @@ function main() {
 
     if [[ $1 == "--docker-build" ]]; then
         dir_download
-        dir_latex
         dir_templates_c
 
         echo ""
@@ -91,14 +74,11 @@ function main() {
         if grep -qa docker /proc/1/cgroup; then
             dir_config
             dir_my_images
-            dir_webfolders
         else
             dir_config
             dir_download
-            dir_latex
             dir_my_images
             dir_templates_c
-            dir_webfolders
         fi
         
         echo ""
