@@ -2,17 +2,18 @@
 	<form action="index.php?action=show_adressaenderung_fields" method="post">
 {/if}
 {if $tpl_aa_show == "fields"}
-	<form action="index.php?action=submit_aa" method="post">
+	<form action="index.php?action=submit_aa" method="post" autocomplete="off">
+		<input autocomplete="false" name="hidden" type="text" style="display:none;">
 {/if}
 
 {include file="ko_fm_header.tpl"}
 
 
 {if $tpl_aa_show == "name"}
-	<label>{$label_name}:</label>
-	<input class="input-sm form-control" type="text" name="txt_fm_aa_nachname">
 	<label>{$label_firstname}:</label>
 	<input class="input-sm form-control" type="text" name="txt_fm_aa_vorname">
+	<label>{$label_name}:</label>
+	<input class="input-sm form-control" type="text" name="txt_fm_aa_nachname">
 	<div class="btn-field">
 		<button class="btn btn-sm btn-primary" type="submit" name="submit_fm_aa" value="{$label_ok}">
 			{$label_ok}
@@ -33,7 +34,7 @@
 			 ({$tpl_label_new})
 		{/if}
 		</a>
-		</td><td>
+		</td><td style="padding-left: 5px;">
 		{$i.adresse}
 		</td></tr>
 	{/foreach}
@@ -55,21 +56,13 @@
 
 	<br /><br />
 	<div class="form-horizontal">
-	{foreach name=settings item=setting from=$tpl_input}
+	{foreach name=settings item=input from=$tpl_input}
 			<div class="form-group">
 
-				<label class="col-sm-4 control-label">{$setting.desc}</label>
+				<label class="col-sm-4 control-label">{$input.desc}</label>
 
 				<div class="col-sm-8">
-					{if $setting.type == "text"}
-						<input class="input-sm form-control" type="text" name="{$setting.name}" value="{$setting.value}" {$setting.params}>
-					{elseif $setting.type == "select"}
-						<select class="input-sm form-control" name="{$setting.name}" {$setting.params}>
-							{foreach from=$setting.values item=v key=k}
-								<option value="{$v}" {if $v == $setting.value}selected="selected"{/if}>{if $setting.descs.$k}{$setting.descs.$k}{else}{$setting.descs.$v}{/if}</option>
-							{/foreach}
-						</select>
-					{/if}
+					{include file="ko_formular_elements.tmpl"}
 				</div>
 
 			</div>

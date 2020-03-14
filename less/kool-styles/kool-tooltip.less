@@ -1,11 +1,46 @@
 div.tooltip-inner {
     text-align: left;
 
+    .title {
+        margin-top: 5px;
+        font-weight: bold;
+    }
+
+    fieldset {
+        margin: 5px;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        padding: 3px 6px;
+
+        legend {
+            color: white;
+            margin-bottom: -5px;
+            padding: 5px;
+            border: none;
+            width: auto;
+            font-size:1.35em;
+        }
+    }
+
+    .datetime {
+        font-size:1.35em;
+    }
+
     ul {
         padding-left: 5px;
 
         li {
             list-style-type: none;
         }
+    }
+}
+
+.google_charts__tooltip {
+    padding: 8px;
+    width: 220px;
+
+    .group_info {
+        border-top: 1px solid #666;
+        padding: 2px 0;
     }
 }

@@ -13,9 +13,7 @@ CREATE TABLE `ko_admin` (
   `res_admin` text NOT NULL,
   `rota_admin` text NOT NULL,
   `event_admin` text NOT NULL,
-  `fileshare_admin` text NOT NULL,
   `kg_admin` text NOT NULL,
-  `tapes_admin` text NOT NULL,
   `groups_admin` text NOT NULL,
   `donations_admin` text NOT NULL,
   `tracking_admin` text NOT NULL,
@@ -32,14 +30,21 @@ CREATE TABLE `ko_admin` (
 	`res_force_global` tinyint(3) unsigned NOT NULL DEFAULT '0',
 	`event_force_global` tinyint(3) unsigned NOT NULL DEFAULT '0',
 	`event_reminder_rights` tinyint(3) unsigned NOT NULL DEFAULT '0',
+	`event_absence_rights` tinyint(3) unsigned NOT NULL DEFAULT '0',
+	`disable_password_change` tinyint(3) unsigned NOT NULL DEFAULT '0',
+	`subscription_admin` text NOT NULL,
+	`taxonomy_admin` text NOT NULL,
+	`ical_hash` varchar(32) NOT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=MyISAM  DEFAULT CHARSET=latin1 COLLATE latin1_german1_ci;
 
-INSERT INTO `ko_admin` VALUES(2, -1, 'ko_guest', '098f6bcd4621d373cade4e832627b4f6', '0', '0', '', '', '', 0, 0, '2', '1', '1', '0', '0', '0', '0', '', '', '', '', 'daten,reservation', '0000-00-00 00:00:00', '', '', '', '', '', '', 0, 0, 0);
+INSERT INTO `ko_admin` (`id`, `leute_id`, `login`, `password`, `modules`) VALUES(2, -1, 'ko_guest', '098f6bcd4621d373cade4e832627b4f6', '');
+
+INSERT INTO `ko_admin` (`id`, `leute_id`, `login`, `password`, `modules`, `leute_admin`, `groups_admin`) VALUES(NULL, -1, '_checkin_user', '31622ad9c487574e5fa3276b56005291', 'leute,groups', '2', '2');
 
 CREATE TABLE `ko_admingroups` (
   `id` mediumint(9) unsigned NOT NULL AUTO_INCREMENT,
-  `name` varchar(100) NOT NULL,
+  `name` varchar(250) NOT NULL,
   `admin` text NOT NULL,
   `leute_admin` text NOT NULL,
   `leute_admin_filter` text NOT NULL,
@@ -50,9 +55,7 @@ CREATE TABLE `ko_admingroups` (
   `res_admin` text NOT NULL,
   `rota_admin` text NOT NULL,
   `event_admin` text NOT NULL,
-  `fileshare_admin` text NOT NULL,
   `kg_admin` text NOT NULL,
-  `tapes_admin` text NOT NULL,
   `groups_admin` text NOT NULL,
   `donations_admin` text NOT NULL,
   `tracking_admin` text NOT NULL,
@@ -64,6 +67,10 @@ CREATE TABLE `ko_admingroups` (
   `res_force_global` tinyint(3) unsigned NOT NULL DEFAULT '0',
   `event_force_global` tinyint(3) unsigned NOT NULL DEFAULT '0',
 	`event_reminder_rights` tinyint(3) unsigned NOT NULL DEFAULT '0',
+	`event_absence_rights` tinyint(3) unsigned NOT NULL DEFAULT '0',
+  `disable_password_change` tinyint(3) unsigned NOT NULL DEFAULT '0',
+	`subscription_admin` text NOT NULL,
+  `taxonomy_admin` text NOT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=MyISAM DEFAULT CHARSET=latin1 COLLATE latin1_german1_ci;
 
@@ -95,6 +102,47 @@ CREATE TABLE `ko_vesr` (
   KEY `vesr_misc_id` (`misc_id`)
 ) ENGINE=MyISAM  DEFAULT CHARSET=latin1;
 
+CREATE TABLE `ko_vesr_camt` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `type` text NOT NULL,
+  `reason` varchar(50) NOT NULL,
+  `cruser` mediumint(9) NOT NULL,
+  `amount` varchar(11) NOT NULL,
+  `valuta_date` datetime NOT NULL,
+  `booking_date` datetime NOT NULL,
+  `refnumber` text NOT NULL,
+  `charges` varchar(20) NOT NULL,
+  `crdate` datetime NOT NULL,
+  `currency` varchar(30) NOT NULL,
+  `note` text NOT NULL,
+  `purpose` text NOT NULL,
+  `purpose_code` text NOT NULL,
+  `account_number` text NOT NULL,
+  `account_name` text NOT NULL,
+  `participant_number` text NOT NULL,
+  `reject` tinyint(1) NOT NULL,
+  `source` varchar(255) NOT NULL,
+  `file` text NOT NULL,
+  `uid` varchar(100) NOT NULL,
+  `_p_city` text NOT NULL,
+  `_p_country` text NOT NULL,
+  `_p_email` text NOT NULL,
+  `_p_extra_address_lines` text NOT NULL,
+  `_p_gender` text NOT NULL,
+  `_p_identification` text NOT NULL,
+  `_p_mobile` text NOT NULL,
+  `_p_name` text NOT NULL,
+  `_p_address` text NOT NULL,
+  `_p_phone` text NOT NULL,
+  `_p_zip` text NOT NULL,
+  `additional_information` text NOT NULL,
+  `misc_id` mediumint(9) unsigned NOT NULL,
+  `misc` text NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `reason` (`reason`),
+  KEY `uid` (`uid`)
+) ENGINE=MyISAM  DEFAULT CHARSET=latin1;
+
 CREATE TABLE `ko_labels` (
 	`id` mediumint(8) unsigned NOT NULL AUTO_INCREMENT,
 	`name` text NOT NULL,
@@ -116,6 +164,7 @@ CREATE TABLE `ko_labels` (
 	`ra_margin_left` float NOT NULL,
 	`ra_font` varchar(100) NOT NULL,
 	`ra_textsize` mediumint(9) NOT NULL,
+	`pp_position` varchar(20) NOT NULL,
 	`pic_file` text NOT NULL,
 	`pic_w` float NOT NULL,
 	`pic_x` float NOT NULL,
@@ -125,7 +174,22 @@ CREATE TABLE `ko_labels` (
 	PRIMARY KEY (`id`)
 ) ENGINE=MyISAM DEFAULT CHARSET=latin1 COLLATE latin1_german1_ci;
 
-INSERT INTO `ko_labels` VALUES (NULL, '3x8', 'A4', 'P', '3', '8', '2', '2', '2', '2', '5', '2', 'L', 'T', 'arial', '11', '5', '3', 'arial', '7', '', '', '', '', NOW(), 1);
+INSERT INTO `ko_labels` VALUES (NULL, '3x8', 'A4', 'P', '3', '8', '2', '2', '2', '2', '5', '2', 'L', 'T', 'arial', '11', '5', '3', 'arial', '7', 'address', '', '', '', '', NOW(), 1);
+INSERT INTO `ko_labels` VALUES(NULL, 'Couverts C5', 'C5', 'L', 1, 1, 100, 10, 10, 120, 0, 0, 'L', 'T', 'arial', 11, 0, 0, 'arial', 9, 'stamp', '', 0, 0, 0, NOW(), 1);
+
+
+CREATE TABLE `ko_detailed_person_exports` (
+  `id` mediumint(8) unsigned NOT NULL AUTO_INCREMENT,
+  `name` text NOT NULL,
+  `template` text NOT NULL,
+  `crdate` datetime NOT NULL,
+  `cruser` mediumint(8) unsigned NOT NULL,
+  `lastchange` datetime NOT NULL,
+  `lastchange_user` mediumint(8) unsigned NOT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1 COLLATE latin1_german1_ci;
+
+INSERT INTO `ko_detailed_person_exports` VALUES (NULL, 'Word', 'my_images/kota_ko_detailed_person_exports_template_1.docx', NOW(), '', '', '');
 
 CREATE TABLE `ko_donations` (
   `id` mediumint(8) unsigned NOT NULL AUTO_INCREMENT,
@@ -139,6 +203,8 @@ CREATE TABLE `ko_donations` (
   `reoccuring` varchar(10) NOT NULL,
   `promise` tinyint(4) NOT NULL,
   `thanked` tinyint(4) NOT NULL,
+  `camt_uid` varchar(100) NOT NULL,
+  `crm_project_id` int(10) NOT NULL,
   PRIMARY KEY (`id`),
   KEY `source` (`source`),
   KEY `date` (`date`),
@@ -157,8 +223,9 @@ CREATE TABLE `ko_donations_mod` (
 	`valutadate` date NOT NULL,
 	`comment` varchar(255) NOT NULL,
 	`source` varchar(255) NOT NULL,
+	`camt_uid` varchar(100) NOT NULL,
 	`person` mediumint(8) unsigned NOT NULL,
-	`_p_anrede` enum('','Mr','Mrs','Miss','Ms') NOT NULL,
+	`_p_anrede` varchar(50) NOT NULL,
 	`_p_firm` varchar(250) NOT NULL,
 	`_p_department` varchar(250) NOT NULL,
 	`_p_vorname` varchar(50) NOT NULL,
@@ -169,6 +236,8 @@ CREATE TABLE `ko_donations_mod` (
 	`_p_ort` varchar(50) NOT NULL,
 	`_p_land` varchar(50) NOT NULL,
 	`_p_email` varchar(50) NOT NULL,
+	`_account_number` varchar(50) NOT NULL,
+	`_account_name` varchar(255) NOT NULL,
 	`_crdate` datetime NOT NULL,
 	`_cruser` mediumint(8) unsigned NOT NULL,
 	PRIMARY KEY (`id`)
@@ -180,39 +249,10 @@ CREATE TABLE `ko_donations_accounts` (
   `number` varchar(50) NOT NULL,
   `comment` varchar(255) NOT NULL,
 	`group_id` text NOT NULL,
+	`account_group` text NOT NULL,
   `archived` tinyint(3) NOT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=MyISAM DEFAULT CHARSET=latin1 COLLATE latin1_german1_ci;
-
-CREATE TABLE `ko_etiketten` (
-  `vorlage` varchar(32) NOT NULL DEFAULT '',
-  `key` varchar(100) NOT NULL DEFAULT '',
-  `value` varchar(255) NOT NULL DEFAULT '',
-  KEY `vorlage` (`vorlage`)
-) ENGINE=MyISAM DEFAULT CHARSET=latin1 COLLATE latin1_german1_ci;
-
-INSERT INTO `ko_etiketten` VALUES('46033b974ad2d50859ea599df0dffba4', 'name', '3x8');
-INSERT INTO `ko_etiketten` VALUES('46033b974ad2d50859ea599df0dffba4', 'per_row', '3');
-INSERT INTO `ko_etiketten` VALUES('46033b974ad2d50859ea599df0dffba4', 'per_col', '8');
-INSERT INTO `ko_etiketten` VALUES('46033b974ad2d50859ea599df0dffba4', 'border_top', '2');
-INSERT INTO `ko_etiketten` VALUES('46033b974ad2d50859ea599df0dffba4', 'border_right', '2');
-INSERT INTO `ko_etiketten` VALUES('46033b974ad2d50859ea599df0dffba4', 'border_bottom', '2');
-INSERT INTO `ko_etiketten` VALUES('46033b974ad2d50859ea599df0dffba4', 'border_left', '2');
-INSERT INTO `ko_etiketten` VALUES('46033b974ad2d50859ea599df0dffba4', 'spacing_horiz', '5');
-INSERT INTO `ko_etiketten` VALUES('46033b974ad2d50859ea599df0dffba4', 'spacing_vert', '2');
-INSERT INTO `ko_etiketten` VALUES('46033b974ad2d50859ea599df0dffba4', 'align_horiz', 'L');
-INSERT INTO `ko_etiketten` VALUES('46033b974ad2d50859ea599df0dffba4', 'align_vert', 'T');
-INSERT INTO `ko_etiketten` VALUES('46033b974ad2d50859ea599df0dffba4', 'textsize', '11');
-INSERT INTO `ko_etiketten` VALUES('46033b974ad2d50859ea599df0dffba4', 'ra_textsize', '7');
-INSERT INTO `ko_etiketten` VALUES('46033b974ad2d50859ea599df0dffba4', 'ra_margin_top', '5');
-INSERT INTO `ko_etiketten` VALUES('46033b974ad2d50859ea599df0dffba4', 'ra_margin_left', '3');
-INSERT INTO `ko_etiketten` VALUES('46033b974ad2d50859ea599df0dffba4', 'font', 'arial');
-INSERT INTO `ko_etiketten` VALUES('46033b974ad2d50859ea599df0dffba4', 'ra_font', 'arial');
-INSERT INTO `ko_etiketten` VALUES('46033b974ad2d50859ea599df0dffba4', 'pic_file', '');
-INSERT INTO `ko_etiketten` VALUES('46033b974ad2d50859ea599df0dffba4', 'page_orientation', 'P');
-INSERT INTO `ko_etiketten` VALUES('46033b974ad2d50859ea599df0dffba4', 'pic_x', '');
-INSERT INTO `ko_etiketten` VALUES('46033b974ad2d50859ea599df0dffba4', 'pic_y', '');
-INSERT INTO `ko_etiketten` VALUES('46033b974ad2d50859ea599df0dffba4', 'pic_w', '');
 
 CREATE TABLE `ko_reminder` (
 	`id` mediumint(9) NOT NULL AUTO_INCREMENT,
@@ -227,6 +267,7 @@ CREATE TABLE `ko_reminder` (
 	`recipients_leute` TEXT NOT NULL,
 	`status` tinyint(4) NOT NULL DEFAULT '0',
 	`type` tinyint(4) NOT NULL,
+	`replyto_email` VARCHAR(250) NOT NULL,
 	`crdate` DATETIME NOT NULL,
 	`cruser` mediumint(9) NOT NULL,
 	PRIMARY KEY (`id`)
@@ -260,6 +301,7 @@ CREATE TABLE `ko_event` (
   `cdate` datetime NOT NULL,
   `user_id` mediumint(9) NOT NULL DEFAULT '0',
   `last_change` datetime NOT NULL,
+  `lastchange_user` int NOT NULL DEFAULT '0',
   `import_id` text NOT NULL,
   UNIQUE KEY `id` (`id`),
   KEY `eventgruppen_id` (`eventgruppen_id`),
@@ -272,8 +314,10 @@ CREATE TABLE `ko_event_program` (
 	`id` mediumint(9) unsigned NOT NULL AUTO_INCREMENT,
 	`pid` varchar(200) NOT NULL,
 	`time` time NOT NULL DEFAULT '00:00:00',
+	`name` varchar(200) NOT NULL,
 	`title` text NOT NULL,
 	`team` text NOT NULL,
+	`infrastructure` text NOT NULL,
 	`crdate` datetime NOT NULL,
 	`cruser` mediumint(9) NOT NULL,
 	`sorting` mediumint(9) NOT NULL,
@@ -296,7 +340,6 @@ CREATE TABLE `ko_eventgruppen` (
   `res_startzeit` time NOT NULL DEFAULT '00:00:00',
   `res_endzeit` time NOT NULL DEFAULT '00:00:00',
   `res_combined` tinyint(4) NOT NULL DEFAULT '0',
-  `tapes` tinyint(4) NOT NULL DEFAULT '0',
   `url` tinytext NOT NULL,
   `moderation` tinyint(4) NOT NULL DEFAULT '0',
   `notify` varchar(250) NOT NULL,
@@ -315,8 +358,10 @@ CREATE TABLE `ko_eventgruppen_program` (
 	`id` mediumint(9) unsigned NOT NULL AUTO_INCREMENT,
 	`pid` varchar(200) NOT NULL,
 	`time` time NOT NULL DEFAULT '00:00:00',
+	`name` varchar(200) NOT NULL,
 	`title` text NOT NULL,
 	`team` text NOT NULL,
+	`infrastructure` text NOT NULL,
 	`crdate` datetime NOT NULL,
 	`cruser` mediumint(9) NOT NULL,
 	`sorting` mediumint(9) NOT NULL,
@@ -353,6 +398,7 @@ CREATE TABLE `ko_event_mod` (
   `url` tinytext NOT NULL,
   `gs_gid` varchar(20) NOT NULL,
   `user_id` mediumint(9) NOT NULL DEFAULT '0',
+  `_res_mod_on_conflict` tinyint(3) NOT NULL,
   `_event_id` mediumint(9) NOT NULL DEFAULT '0',
   `_user_id` mediumint(9) NOT NULL DEFAULT '0',
   `_delete` tinyint(4) NOT NULL DEFAULT '0',
@@ -377,47 +423,7 @@ CREATE TABLE `ko_familie` (
   `famemail` enum('','husband','wife') NOT NULL,
   PRIMARY KEY (`famid`),
   KEY `nachname` (`nachname`)
-) ENGINE=MyISAM DEFAULT CHARSET=latin1 COLLATE latin1_german1_ci;
-
-CREATE TABLE `ko_fileshare` (
-  `id` varchar(32) NOT NULL DEFAULT '0',
-  `user_id` mediumint(9) NOT NULL DEFAULT '0',
-  `filename` varchar(255) NOT NULL DEFAULT '',
-  `type` varchar(255) NOT NULL DEFAULT '',
-  `c_date` datetime NOT NULL,
-  `parent` mediumint(9) NOT NULL DEFAULT '0',
-  `filesize` int(11) NOT NULL DEFAULT '0',
-  PRIMARY KEY (`id`),
-  KEY `user_id` (`user_id`),
-  KEY `parent` (`parent`)
-) ENGINE=MyISAM DEFAULT CHARSET=latin1 COLLATE latin1_german1_ci;
-
-CREATE TABLE `ko_fileshare_folders` (
-  `id` mediumint(8) unsigned NOT NULL AUTO_INCREMENT,
-  `parent` mediumint(8) unsigned NOT NULL DEFAULT '0',
-  `user` mediumint(9) NOT NULL DEFAULT '0',
-  `name` varchar(50) NOT NULL DEFAULT '',
-  `c_date` datetime NOT NULL DEFAULT '0000-00-00 00:00:00',
-  `share_users` text NOT NULL,
-  `comment` text NOT NULL,
-  `share_rights` varchar(255) NOT NULL DEFAULT '',
-  `flag` varchar(5) NOT NULL DEFAULT '',
-  PRIMARY KEY (`id`),
-  KEY `parent` (`parent`,`user`),
-  KEY `flag` (`flag`)
-) ENGINE=MyISAM DEFAULT CHARSET=latin1 COLLATE latin1_german1_ci;
-
-CREATE TABLE `ko_fileshare_sent` (
-  `id` mediumint(9) NOT NULL AUTO_INCREMENT,
-  `file_id` varchar(32) NOT NULL DEFAULT '',
-  `recipient` varchar(255) NOT NULL DEFAULT '',
-  `recipient_id` varchar(32) NOT NULL DEFAULT '',
-  `d_date` datetime NOT NULL,
-  PRIMARY KEY (`id`),
-  KEY `file_id` (`file_id`,`recipient`),
-  KEY `recipient_id` (`recipient_id`),
-  KEY `d_date` (`d_date`)
-) ENGINE=MyISAM DEFAULT CHARSET=latin1 COLLATE latin1_german1_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE latin1_german1_ci;
 
 CREATE TABLE `ko_filter` (
   `id` mediumint(9) NOT NULL AUTO_INCREMENT,
@@ -450,15 +456,15 @@ INSERT INTO `ko_filter` VALUES(NULL, 'leute', 'adresse_zusatz', 'address2', 'per
 INSERT INTO `ko_filter` VALUES(NULL, 'leute', 'plz', 'zip code', 'person', 1, 'plz REGEXP ''[VAR1]''', '', '', 1, 'zip code', '<input class="input-sm form-control" type="text" name="var1" maxlength="10" onkeydown="if ((event.which == 13) || (event.keyCode == 13)) { this.form.submit_filter.click(); return false;} else return true;" />', '', '', '', '', 1);
 INSERT INTO `ko_filter` VALUES(NULL, 'leute', 'ort', 'city', 'person', 1, 'ort REGEXP ''[VAR1]''', '', '', 1, 'city', '<input class="input-sm form-control" type="text" name="var1" maxlength="50" onkeydown="if ((event.which == 13) || (event.keyCode == 13)) { this.form.submit_filter.click(); return false;} else return true;" />', '', '', '', '', 1);
 INSERT INTO `ko_filter` VALUES(NULL, 'leute', 'land', 'country', 'person', 1, 'land REGEXP ''[VAR1]''', '', '', 1, 'country', '<input class="input-sm form-control" type="text" name="var1" maxlength="50" onkeydown="if ((event.which == 13) || (event.keyCode == 13)) { this.form.submit_filter.click(); return false;} else return true;" />', '', '', '', '', 1);
-INSERT INTO `ko_filter` VALUES(NULL, 'leute', 'telp', 'tel p', 'com', 1, 'telp REGEXP ''[VAR1]''', '', '', 1, 'tel p', '<input class="input-sm form-control" type="text" name="var1" maxlength="30" onkeydown="if ((event.which == 13) || (event.keyCode == 13)) { this.form.submit_filter.click(); return false;} else return true;" />', '', '', '', '', 1);
-INSERT INTO `ko_filter` VALUES(NULL, 'leute', 'telg', 'tel b', 'com', 1, 'telg REGEXP ''[VAR1]''', '', '', 1, 'tel b', '<input class="input-sm form-control" type="text" name="var1" maxlength="30" onkeydown="if ((event.which == 13) || (event.keyCode == 13)) { this.form.submit_filter.click(); return false;} else return true;" />', '', '', '', '', 1);
-INSERT INTO `ko_filter` VALUES(NULL, 'leute', 'natel', 'mobile', 'com', 1, 'natel REGEXP ''[VAR1]''', '', '', 1, 'mobile', '<input class="input-sm form-control" type="text" name="var1" maxlength="30" onkeydown="if ((event.which == 13) || (event.keyCode == 13)) { this.form.submit_filter.click(); return false;} else return true;" />', '', '', '', '', 1);
+INSERT INTO `ko_filter` VALUES(NULL, 'leute', 'telp', 'tel p', 'com', 1, 'REPLACE(telp, '' '', '''')  LIKE REPLACE(''%[VAR1]%'', '' '', '''')', '', '', 1, 'tel p', '<input class="input-sm form-control" type="text" name="var1" maxlength="30" onkeydown="if ((event.which == 13) || (event.keyCode == 13)) { this.form.submit_filter.click(); return false;} else return true;" />', '', '', '', '', 1);
+INSERT INTO `ko_filter` VALUES(NULL, 'leute', 'telg', 'tel b', 'com', 1, 'REPLACE(telg, '' '', '''')  LIKE REPLACE(''%[VAR1]%'', '' '', '''')', '', '', 1, 'tel b', '<input class="input-sm form-control" type="text" name="var1" maxlength="30" onkeydown="if ((event.which == 13) || (event.keyCode == 13)) { this.form.submit_filter.click(); return false;} else return true;" />', '', '', '', '', 1);
+INSERT INTO `ko_filter` VALUES(NULL, 'leute', 'natel', 'mobile', 'com', 1, 'REPLACE(natel, '' '', '''')  LIKE REPLACE(''%[VAR1]%'', '' '', '''')', '', '', 1, 'mobile', '<input class="input-sm form-control" type="text" name="var1" maxlength="30" onkeydown="if ((event.which == 13) || (event.keyCode == 13)) { this.form.submit_filter.click(); return false;} else return true;" />', '', '', '', '', 1);
 INSERT INTO `ko_filter` VALUES(NULL, 'leute', 'fax', 'fax', 'com', 1, 'fax REGEXP ''[VAR1]''', '', '', 1, 'fax', '<input class="input-sm form-control" type="text" name="var1" maxlength="30" onkeydown="if ((event.which == 13) || (event.keyCode == 13)) { this.form.submit_filter.click(); return false;} else return true;" />', '', '', '', '', 1);
-INSERT INTO `ko_filter` VALUES(NULL, 'leute', 'email', 'email', 'com', 1, 'email REGEXP ''[VAR1]''', '', '', 1, 'email', '<input type="text" name="var1" maxlength="100" onkeydown="if ((event.which == 13) || (event.keyCode == 13)) { this.form.submit_filter.click(); return false;} else return true;" />', '', '', '', '', 1);
+INSERT INTO `ko_filter` VALUES(NULL, 'leute', 'email', 'email', 'com', 1, 'email REGEXP ''[VAR1]''', '', '', 1, 'email', '<input class="input-sm form-control" type="text" name="var1" maxlength="100" onkeydown="if ((event.which == 13) || (event.keyCode == 13)) { this.form.submit_filter.click(); return false;} else return true;" />', '', '', '', '', 1);
 INSERT INTO `ko_filter` VALUES(NULL, 'leute', 'url', 'url', 'com', 1, 'web REGEXP ''[VAR1]''', '', '', 1, 'url', '<input class="input-sm form-control" type="text" name="var1" maxlength="100" onkeydown="if ((event.which == 13) || (event.keyCode == 13)) { this.form.submit_filter.click(); return false;} else return true;" />', '', '', '', '', 1);
-INSERT INTO `ko_filter` VALUES(NULL, 'leute', 'zivilstand', 'civil status', 'status', 1, 'zivilstand REGEXP ''[VAR1]''', '', '', 1, 'civil status', 'FCN:ko_specialfilter_enum_ll:ko_leute:zivilstand', '', '', '', '', 1);
+INSERT INTO `ko_filter` VALUES(NULL, 'leute', 'zivilstand', 'civil status', 'status', 1, 'kota_filter', '', '', 1, 'civil status', 'FCN:ko_specialfilter_kota:ko_leute:zivilstand', '', '', '', '', 0);
 INSERT INTO `ko_filter` VALUES(NULL, 'leute', 'geburtsdatum', 'birthdate', 'status', 1, 'DAYOFMONTH(geburtsdatum) LIKE ''[VAR1]''', 'MONTH(geburtsdatum) LIKE ''[VAR2]''', 'YEAR(geburtsdatum) REGEXP ''[VAR3]''', 3, 'day', '<input class="input-sm form-control" type="text" name="var1" maxlength="2" onkeydown="if ((event.which == 13) || (event.keyCode == 13)) { this.form.submit_filter.click(); return false;} else return true;" />', 'month', '<input class="input-sm form-control" type="text" name="var2" maxlength="2" onkeydown="if ((event.which == 13) || (event.keyCode == 13)) { this.form.submit_filter.click(); return false;} else return true;" />', 'year', '<input class="input-sm form-control" type="text" name="var3" maxlength="4" onkeydown="if ((event.which == 13) || (event.keyCode == 13)) { this.form.submit_filter.click(); return false;} else return true;" />', 0);
-INSERT INTO `ko_filter` VALUES(NULL, 'leute', 'geschlecht', 'sex', 'status', 1, 'geschlecht REGEXP ''[VAR1]''', '', '', 1, 'sex', 'FCN:ko_specialfilter_enum_ll:ko_leute:geschlecht', '', '', '', '', 1);
+INSERT INTO `ko_filter` VALUES(NULL, 'leute', 'geschlecht', 'sex', 'status', 1, 'kota_filter', '', '', 1, 'sex', 'FCN:ko_specialfilter_kota:ko_leute:geschlecht', '', '', '', '', 0);
 INSERT INTO `ko_filter` VALUES(NULL, 'leute', '', 'smallgroup', 'smallgroup', 1, 'smallgroups REGEXP ''[VAR1]''', '', '', 1, 'smallgroup', '<select class="input-sm form-control" name="var1" size="0"><option value=""></option></select>', '', '', '', '', 0);
 INSERT INTO `ko_filter` VALUES(NULL, 'leute', '', 'duplicates', 'misc', 0, '', '', '', 1, 'test field', 'FCN:ko_specialfilter_duplicates', '', '', '', '', 0);
 INSERT INTO `ko_filter` VALUES(NULL, 'leute', 'memo1', 'memo1', 'misc', 1, 'memo1 REGEXP ''[VAR1]''', '', '', 1, 'memo1', '<input class="input-sm form-control" type="text" name="var1" maxlength="50" onkeydown="if ((event.which == 13) || (event.keyCode == 13)) { this.form.submit_filter.click(); return false;} else return true;" />', '', '', '', '', 1);
@@ -467,17 +473,17 @@ INSERT INTO `ko_filter` VALUES(NULL, 'leute', '', 'group', 'groups', 1, 'groups 
 INSERT INTO `ko_filter` VALUES(NULL, 'leute', 'geburtsdatum', 'year', 'status', 0, 'YEAR(geburtsdatum) >= [VAR1] && `geburtsdatum` != ''0000-00-00''', 'YEAR(geburtsdatum) <= [VAR2]', '', 2, 'lower limit', '<input class="input-sm form-control" type="text" name="var1" maxlength="4" onkeydown="if ((event.which == 13) || (event.keyCode == 13)) { this.form.submit_filter.click(); return false;} else return true;" />', 'upper limit', '<input class="input-sm form-control" type="text" name="var2" maxlength="4" onkeydown="if ((event.which == 13) || (event.keyCode == 13)) { this.form.submit_filter.click(); return false;} else return true;" />', '', '', 0);
 INSERT INTO `ko_filter` VALUES(NULL, 'leute', '', 'role', 'groups', 1, 'groups REGEXP ''[VAR1]''', '', '', 1, 'role', '<select class="input-sm form-control" name="var1" size="0"><option value="0"></option></select>', '', '', '', '', 0);
 INSERT INTO `ko_filter` VALUES(NULL, 'leute', 'kinder', 'children', 'family', 1, 'kinder REGEXP ''[VAR1]''', '', '', 1, 'number of children', '<input class="input-sm form-control" type="text" name="var1" maxlength="50" onkeydown="if ((event.which == 13) || (event.keyCode == 13)) { this.form.submit_filter.click(); return false;} else return true;" />', '', '', '', '', 1);
-INSERT INTO `ko_filter` VALUES(NULL, 'leute', 'famid', 'family', 'family', 1, 'famid LIKE ''[VAR1]''', '', '', 1, 'family', '', '', '', '', '', 1);
-INSERT INTO `ko_filter` VALUES(NULL, 'leute', 'famfunction', 'family role', 'family', 1, 'famfunction REGEXP ''[VAR1]''', '', '', 1, 'family role', 'FCN:ko_specialfilter_enum_ll:ko_leute:famfunction', '', '', '', '', 1);
+INSERT INTO `ko_filter` VALUES(NULL, 'leute', 'famid', 'family', 'family', 1, 'famid LIKE ''[VAR1]''', '', '', 1, 'family', 'FCN:ko_specialfilter_families', '', '', '', '', 1);
+INSERT INTO `ko_filter` VALUES(NULL, 'leute', 'famfunction', 'family role', 'family', 1, 'kota_filter', '', '', 1, 'family role', 'FCN:ko_specialfilter_kota:ko_leute:famfunction', '', '', '', '', 0);
 INSERT INTO `ko_filter` VALUES(NULL, 'leute', 'ko_rota_schedulling.event_id', 'rota', 'groups', 1, '`event_id` IN ([VAR1])', '', '', 2, 'rota event', 'FCN:ko_specialfilter_rota', 'teams', 'FCN:ko_specialfilter_rota_teams', '', '', 0);
-INSERT INTO `ko_filter` VALUES(NULL, 'leute', 'lastchange', 'last change', 'misc', 1, '(365 * YEAR(CURDATE()) + 30 * MONTH(CURDATE()) + DAYOFMONTH(CURDATE()) ) - (365 * YEAR(lastchange) + 30 * MONTH(lastchange) + DAYOFMONTH(lastchange) ) <= ''[VAR1]''', '', '', 1, 'last change', '<select class="input-sm form-control" name="var1" size="0"> <option value="7">7 Tage zurück</option> <option value="30">1 Monat zurück</option> <option value="60">2 Monate zurück</option> <option value="90">3 Monate zurück</option> <option value="183">6 Monate zurück</option> <option value="365">1 Jahr zurück</option> <option value="730">2 Jahre zurück</option> </select>', '', '', '', '', 0);
+INSERT INTO `ko_filter` VALUES(NULL, 'leute', 'lastchange', 'last change', 'misc', 1, 'DATE_FORMAT(`lastchange`, ''%Y-%m-%d'') >= ''[VAR1]''', 'DATE_FORMAT(`lastchange`, ''%Y-%m-%d'') <= ''[VAR2]''', '', 2, 'Created after (YYYY-MM-DD)', 'FCN:ko_specialfilter_lastchange:1', 'Created before (YYYY-MM-DD)', 'FCN:ko_specialfilter_lastchange:2', '', '', 0);
 INSERT INTO `ko_filter` VALUES(NULL, 'leute', 'geburtsdatum', 'age', 'status', 0, '(YEAR(CURDATE())-YEAR(geburtsdatum))- (RIGHT(CURDATE(),5)<RIGHT(geburtsdatum,5)) >= [VAR1]', '(YEAR(CURDATE())-YEAR(geburtsdatum))- (RIGHT(CURDATE(),5)<RIGHT(geburtsdatum,5)) <= [VAR2]', '', 2, 'lower limit', '<input class="input-sm form-control" type="text" name="var1" maxlength="3" onkeydown="if ((event.which == 13) || (event.keyCode == 13)) { this.form.submit_filter.click(); return false;} else return true;" />', 'upper limit', '<input class="input-sm form-control" type="text" name="var2" maxlength="3" onkeydown="if ((event.which == 13) || (event.keyCode == 13)) { this.form.submit_filter.click(); return false;} else return true;" />', '', '', 0);
 INSERT INTO `ko_filter` VALUES(NULL, 'leute', 'firm', 'firm', 'person', 1, 'firm REGEXP ''[VAR1]''', '', '', 1, 'firm', '<input class="input-sm form-control" type="text" name="var1" maxlength="200" onkeydown="if ((event.which == 13) || (event.keyCode == 13)) { this.form.submit_filter.click(); return false;} else return true;" />', '', '', '', '', 1);
 INSERT INTO `ko_filter` VALUES(NULL, 'leute', 'department', 'department', 'person', 1, 'department REGEXP ''[VAR1]''', '', '', 1, 'department', '<input class="input-sm form-control" type="text" name="var1" maxlength="200" onkeydown="if ((event.which == 13) || (event.keyCode == 13)) { this.form.submit_filter.click(); return false;} else return true;" />', '', '', '', '', 1);
 INSERT INTO `ko_filter` VALUES(NULL, 'leute', 'ko_groups_datafields_data.value', 'grp data', 'groups', 1, 'datafield_id = ''[VAR1]''', 'value LIKE ''%[VAR2]%''', '', 2, 'group datafield', 'FCN:ko_specialfilter_groupdatafields', 'value', '<div name="groups_datafields_filter">\r\n<input class="input-sm form-control" type="text" name="var2" maxlength="200" onkeydown="if ((event.which == 13) || (event.keyCode == 13)) { this.form.submit_filter.click(); return false;} else return true;" />\r\n</div>', '', '', 0);
 INSERT INTO `ko_filter` VALUES(NULL, 'leute', 'ko_kleingruppen.region', 'sg region', 'smallgroup', 1, 'region REGEXP ''[VAR1]''', '', '', 1, 'small group region', 'FCN:ko_specialfilter_kleingruppen_region', '', '', '', '', 1);
 INSERT INTO `ko_filter` VALUES(NULL, 'leute', 'ko_kleingruppen.type', 'sg type', 'smallgroup', 1, 'type REGEXP ''[VAR1]''', '', '', 1, 'small group type', 'FCN:ko_specialfilter_kleingruppen_type', '', '', '', '', 1);
-INSERT INTO `ko_filter` VALUES(NULL, 'leute', 'ko_kleingruppen.wochentag', 'sg day', 'smallgroup', 1, 'wochentag REGEXP ''[VAR1]''', '', '', 1, 'small group day', 'FCN:ko_specialfilter_enum_ll:ko_kleingruppen:wochentag', '', '', '', '', 1);
+INSERT INTO `ko_filter` VALUES(NULL, 'leute', 'ko_kleingruppen.wochentag', 'sg day', 'smallgroup', 1, 'wochentag REGEXP ''[VAR1]''', '', '', 1, 'small group day', 'FCN:ko_specialfilter_select_ll:ko_kleingruppen:wochentag', '', '', '', '', 1);
 INSERT INTO `ko_filter` VALUES(NULL, 'leute', '', 'crdate', 'misc', 0, '`crdate` >= ''[VAR1]''', 'DATE_FORMAT(`crdate`, ''%Y-%m-%d'') <= ''[VAR2]''', '', 2, 'Created after (YYYY-MM-DD)', 'FCN:ko_specialfilter_crdate:1', 'Created before (YYYY-MM-DD)', 'FCN:ko_specialfilter_crdate:2', '', '', 0);
 INSERT INTO `ko_filter` VALUES(NULL, 'leute', 'ko_donations.date', 'donation', 'misc', 1, '', '', '', 2, 'year', 'FCN:ko_specialfilter_donation', 'account', 'FCN:ko_specialfilter_donation_account', '', '', 0);
 INSERT INTO `ko_filter` VALUES(NULL, 'leute', 'famid', 'addchildren', 'family', 0, 'YEAR(CURDATE())-YEAR(`geburtsdatum`) >= ''[VAR1]''', 'YEAR(CURDATE())-YEAR(`geburtsdatum`) <= ''[VAR2]''', '', 3, 'age_min', '<input class="input-sm form-control" type="text" name="var1" maxlength="3" onkeydown="if ((event.which == 13) || (event.keyCode == 13)) { this.form.submit_filter.click(); return false;} else return true;" />', 'age_max', '<input class="input-sm form-control" type="text" name="var2" maxlength="3" onkeydown="if ((event.which == 13) || (event.keyCode == 13)) { this.form.submit_filter.click(); return false;} else return true;" />', 'only_children', '<input class="input-sm form-control" type="checkbox" name="var3" value="1" />', 0);
@@ -485,7 +491,7 @@ INSERT INTO `ko_filter` VALUES(NULL, 'leute', 'famid', 'addparents', 'family', 0
 INSERT INTO `ko_filter` VALUES(NULL, 'leute', 'famid', 'childrencount', 'family', 0, '', '', '', 1, 'childrencount', 'FCN:ko_specialfilter_childrencount', '', '', '', '', 0);
 INSERT INTO `ko_filter` VALUES(NULL, 'leute', '', 'smallgrouproles', 'smallgroup', 1, 'smallgroups REGEXP '':[VAR1]''', '', '', 1, 'smallgroup role', 'FCN:ko_specialfilter_smallgrouproles', '', '', '', '', 1);
 INSERT INTO `ko_filter` VALUES(NULL, 'leute', 'ko_admin.leute_id', 'logins', 'misc', 0, '`admingroups` REGEXP ''(^|,)[VAR1](,|$)'' AND `disabled` = ''''', '', '', 1, 'usergroup', 'FCN:ko_specialfilter_logins', '', '', '', '', 1);
-INSERT INTO `ko_filter` VALUES(NULL, 'leute', 'geburtsdatum', 'dobrange', 'status', 1, 'geburtsdatum >= ''[VAR1]''', 'geburtsdatum <= ''[VAR2]''', '', 2, 'lower', '<input class="input-sm form-control" type="text" name="var1" maxlength="10" />', 'upper', '<input class="input-sm form-control" type="text" name="var2" maxlength="10" />', '', '', 0);
+INSERT INTO `ko_filter` VALUES(NULL, 'leute', 'geburtsdatum', 'dobrange', 'status', 1, '`geburtsdatum` >= \'[VAR1]\'', '`geburtsdatum` <= \'[VAR2]\'', '', 2, 'lower', 'FCN:ko_specialfilter_dobrange:1', 'upper', 'FCN:ko_specialfilter_dobrange:2', '', '', 0);
 INSERT INTO `ko_filter` VALUES(NULL, 'leute', 'id', 'id', 'misc', 0, 'id = ''[VAR1]''', '', '', 1, 'id', '<input class="input-sm form-control" type="text" name="var1" maxlength="11" onkeydown="if ((event.which == 13) || (event.keyCode == 13)) { this.form.submit_filter.click(); return false;} else return true;" />', '', '', '', '', 1);
 INSERT INTO `ko_filter` VALUES(NULL, 'leute', 'hidden', 'hidden', 'status', 0, '`hidden` = ''1''', '', '', 1, 'hidden', '<input class="input-sm form-control" type="checkbox" name="var1" checked="checked" value="1" disabled="disabled" />', '', '', '', '', 0);
 INSERT INTO `ko_filter` VALUES(NULL, 'leute', 'ko_crm_contacts.project_id', 'crm_project', 'misc', 1, 'c.`project_id` = ''[VAR1]''', 'c.`status_id` = ''[VAR2]''', '', 2, 'project_id', 'FCN:ko_specialfilter_crm_project', 'status_id', 'FCN:ko_specialfilter_crm_status', '', '', 0);
@@ -494,8 +500,12 @@ INSERT INTO `ko_filter` VALUES(NULL, 'leute', 'id', 'random_ids', 'misc', 1, '',
 INSERT INTO `ko_filter` VALUES(NULL, 'leute', '', 'fastfilter', 'person', 0, '', '', '', 0, '', '', '', '', '', '', 0);
 INSERT INTO `ko_filter` VALUES(NULL, 'leute', '', 'candidateadults', 'family', 0, '', '', '', 1, 'dummy', 'FCN:ko_specialfilter_candidateadults', '', '', '', '', 0);
 INSERT INTO `ko_filter` VALUES(NULL, 'leute', '', 'groupshistory', 'groups', 0, '', '', '', 4, 'id', 'FCN:ko_specialfilter_groupshistory', '', '', '', '', 0);
+INSERT INTO `ko_filter` VALUES(NULL, 'leute', '', 'groupsanniversary', 'groups', 0, '', '', '', 4, 'id', 'FCN:ko_specialfilter_groupsanniversary', '', '', '', '', 0);
 INSERT INTO `ko_filter` VALUES(NULL, 'leute', 'geburtsdatum', 'jubilee', 'status', 0, '', '', '', 3, 'minage', 'FCN:ko_specialfilter_text:var1', 'step', 'FCN:ko_specialfilter_jubilee_step', 'yearoffset', 'FCN:ko_specialfilter_jubilee_yearoffset', 1);
-INSERT INTO `ko_filter` VALUES(NULL, 'leute', 'geburtsdatum', 'yearage', 'status', 0, '', '', '', 1, 'age', 'FCN:ko_specialfilter_text:var1', '', '', '', '', 1);
+INSERT INTO `ko_filter` VALUES(NULL, 'leute', 'confession', 'mixedhousehold', 'family', 0, '', '', '', 1, 'mode', 'FCN:ko_specialfilter_mixedhousehold', '', '', '', '', 0);
+INSERT INTO `ko_filter` VALUES(NULL, 'leute', 'geburtsdatum', 'yearage', 'status', 0, '', '', '', 2, 'lower limit', '<input class="input-sm form-control" type="text" name="var1" maxlength="3" onkeydown="if ((event.which == 13) || (event.keyCode == 13)) { this.form.submit_filter.click(); return false;} else return true;" />', 'upper limit', '<input class="input-sm form-control" type="text" name="var2" maxlength="3" onkeydown="if ((event.which == 13) || (event.keyCode == 13)) { this.form.submit_filter.click(); return false;} else return true;" />', '', '', 1);
+INSERT INTO `ko_filter` VALUES(NULL, 'leute', 'ko_tracking_entries.value', 'trackingentries', 'misc', 0, '', '', '', 5, 'tracking_id', 'FCN:ko_specialfilter_trackingentries', '', '', '', '', 0);
+INSERT INTO `ko_filter` VALUES(NULL, 'leute', 'ko_taxonomy_terms.id', 'taxonomy', 'groups', 0, '', '', '', 2, 'taxonomy', 'FCN:ko_specialfilter_taxonomy_term:taxonomy', 'role', '', '', '', 0);
 
 
 
@@ -535,6 +545,7 @@ CREATE TABLE `ko_groups` (
   `mailing_modify_rcpts` tinyint(1) NOT NULL DEFAULT '1',
 	`mailing_prefix` varchar(50) NOT NULL,
 	`mailing_rectype` varchar(10) NOT NULL,
+	`mailing_crm_project_id` mediumint(6) unsigned NOT NULL,
   `linked_group` mediumint(6) unsigned zerofill DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `start` (`start`),
@@ -580,6 +591,7 @@ CREATE TABLE `ko_groups_assignment_history` (
   `stop_is_exact` tinyint(3) NOT NULL,
   PRIMARY KEY (`id`),
   KEY `group_id` (`group_id`),
+  KEY `role_id` (`role_id`),
   KEY `person_id` (`person_id`)
 ) ENGINE=MyISAM DEFAULT CHARSET=latin1 COLLATE latin1_german1_ci;
 
@@ -591,246 +603,139 @@ CREATE TABLE `ko_help` (
   `t3_page` mediumint(9) NOT NULL,
   `t3_content` mediumint(9) NOT NULL,
   `text` text NOT NULL,
+  `url` varchar(255) NOT NULL,
   PRIMARY KEY (`id`),
   KEY `module` (`module`,`language`)
 ) ENGINE=MyISAM  DEFAULT CHARSET=latin1 COLLATE latin1_german1_ci;
 
-INSERT INTO `ko_help` VALUES(NULL, 'admin', '', 'de', 40, 0, '');
-INSERT INTO `ko_help` VALUES(NULL, 'admin', '', 'en', 40, 0, '');
-INSERT INTO `ko_help` VALUES(NULL, 'admin', '', 'nl', 40, 0, '');
-INSERT INTO `ko_help` VALUES(NULL, 'leute', '', 'de', 47, 0, '');
-INSERT INTO `ko_help` VALUES(NULL, 'leute', '', 'en', 47, 0, '');
-INSERT INTO `ko_help` VALUES(NULL, 'leute', '', 'nl', 47, 0, '');
-INSERT INTO `ko_help` VALUES(NULL, 'home', '', 'de', 49, 0, '');
-INSERT INTO `ko_help` VALUES(NULL, 'home', '', 'en', 49, 0, '');
-INSERT INTO `ko_help` VALUES(NULL, 'home', '', 'nl', 49, 0, '');
-INSERT INTO `ko_help` VALUES(NULL, 'daten', '', 'de', 48, 0, '');
-INSERT INTO `ko_help` VALUES(NULL, 'daten', '', 'en', 48, 0, '');
-INSERT INTO `ko_help` VALUES(NULL, 'daten', '', 'nl', 48, 0, '');
-INSERT INTO `ko_help` VALUES(NULL, 'groups', '', 'de', 46, 0, '');
-INSERT INTO `ko_help` VALUES(NULL, 'groups', '', 'en', 46, 0, '');
-INSERT INTO `ko_help` VALUES(NULL, 'groups', '', 'nl', 46, 0, '');
-INSERT INTO `ko_help` VALUES(NULL, 'reservation', '', 'de', 45, 0, '');
-INSERT INTO `ko_help` VALUES(NULL, 'reservation', '', 'en', 45, 0, '');
-INSERT INTO `ko_help` VALUES(NULL, 'reservation', '', 'nl', 45, 0, '');
-INSERT INTO `ko_help` VALUES(NULL, 'tapes', '', 'de', 43, 0, '');
-INSERT INTO `ko_help` VALUES(NULL, 'tapes', '', 'en', 43, 0, '');
-INSERT INTO `ko_help` VALUES(NULL, 'tapes', '', 'nl', 43, 0, '');
-INSERT INTO `ko_help` VALUES(NULL, 'fileshare', '', 'de', 42, 0, '');
-INSERT INTO `ko_help` VALUES(NULL, 'fileshare', '', 'en', 42, 0, '');
-INSERT INTO `ko_help` VALUES(NULL, 'fileshare', '', 'nl', 42, 0, '');
-INSERT INTO `ko_help` VALUES(NULL, 'donations', '', 'de', 67, 0, '');
-INSERT INTO `ko_help` VALUES(NULL, 'donations', '', 'en', 67, 0, '');
-INSERT INTO `ko_help` VALUES(NULL, 'donations', '', 'nl', 67, 0, '');
-INSERT INTO `ko_help` VALUES(NULL, 'admin', 'vesr_import', 'de', 94, 1249, '');
-INSERT INTO `ko_help` VALUES(NULL, 'admin', 'set_allgemein', 'de', 40, 840, '');
-INSERT INTO `ko_help` VALUES(NULL, 'admin', 'set_allgemein', 'en', 40, 839, '');
-INSERT INTO `ko_help` VALUES(NULL, 'admin', 'set_allgemein', 'nl', 40, 766, '');
-INSERT INTO `ko_help` VALUES(NULL, 'admin', 'set_etiketten', 'de', 40, 539, '');
-INSERT INTO `ko_help` VALUES(NULL, 'admin', 'set_etiketten', 'en', 40, 292, '');
-INSERT INTO `ko_help` VALUES(NULL, 'admin', 'set_etiketten', 'nl', 40, 770, '');
-INSERT INTO `ko_help` VALUES(NULL, 'admin', 'set_layout', 'de', 40, 536, '');
-INSERT INTO `ko_help` VALUES(NULL, 'admin', 'set_layout', 'en', 40, 295, '');
-INSERT INTO `ko_help` VALUES(NULL, 'admin', 'set_layout', 'nl', 40, 767, '');
-INSERT INTO `ko_help` VALUES(NULL, 'admin', 'set_layout_guest', 'de', 40, 538, '');
-INSERT INTO `ko_help` VALUES(NULL, 'admin', 'set_layout_guest', 'en', 40, 293, '');
-INSERT INTO `ko_help` VALUES(NULL, 'admin', 'set_layout_guest', 'nl', 40, 769, '');
-INSERT INTO `ko_help` VALUES(NULL, 'admin', 'change_password', 'de', 40, 818, '');
-INSERT INTO `ko_help` VALUES(NULL, 'admin', 'change_password', 'en', 40, 817, '');
-INSERT INTO `ko_help` VALUES(NULL, 'admin', 'show_logins', 'de', 40, 540, '');
-INSERT INTO `ko_help` VALUES(NULL, 'admin', 'show_logins', 'en', 40, 291, '');
-INSERT INTO `ko_help` VALUES(NULL, 'admin', 'show_logins', 'nl', 40, 771, '');
-INSERT INTO `ko_help` VALUES(NULL, 'admin', 'show_admingroups', 'de', 40, 543, '');
-INSERT INTO `ko_help` VALUES(NULL, 'admin', 'show_admingroups', 'en', 40, 288, '');
-INSERT INTO `ko_help` VALUES(NULL, 'admin', 'show_admingroups', 'nl', 40, 774, '');
-INSERT INTO `ko_help` VALUES(NULL, 'admin', 'show_logs', 'de', 40, 544, '');
-INSERT INTO `ko_help` VALUES(NULL, 'admin', 'show_logs', 'en', 40, 287, '');
-INSERT INTO `ko_help` VALUES(NULL, 'admin', 'show_logs', 'nl', 40, 775, '');
-INSERT INTO `ko_help` VALUES(NULL, 'admin', 'set_leute_pdf', 'de', 40, 1057, '');
-INSERT INTO `ko_help` VALUES(NULL, 'leute', 'submenu_filter', 'de', 47, 423, '');
-INSERT INTO `ko_help` VALUES(NULL, 'leute', 'submenu_filter', 'en', 47, 203, '');
-INSERT INTO `ko_help` VALUES(NULL, 'leute', 'submenu_filter', 'nl', 47, 668, '');
-INSERT INTO `ko_help` VALUES(NULL, 'leute', 'submenu_meine_liste', 'de', 47, 429, '');
-INSERT INTO `ko_help` VALUES(NULL, 'leute', 'submenu_meine_liste', 'en', 47, 197, '');
-INSERT INTO `ko_help` VALUES(NULL, 'leute', 'submenu_meine_liste', 'nl', 47, 674, '');
-INSERT INTO `ko_help` VALUES(NULL, 'leute', 'submenu_aktionen', 'de', 47, 430, '');
-INSERT INTO `ko_help` VALUES(NULL, 'leute', 'submenu_aktionen', 'en', 47, 196, '');
-INSERT INTO `ko_help` VALUES(NULL, 'leute', 'submenu_aktionen', 'nl', 47, 675, '');
-INSERT INTO `ko_help` VALUES(NULL, 'leute', 'submenu_schnellfilter', 'de', 47, 442, '');
-INSERT INTO `ko_help` VALUES(NULL, 'leute', 'submenu_schnellfilter', 'en', 47, 184, '');
-INSERT INTO `ko_help` VALUES(NULL, 'leute', 'submenu_schnellfilter', 'nl', 47, 687, '');
-INSERT INTO `ko_help` VALUES(NULL, 'leute', 'submenu_kg', 'de', 47, 445, '');
-INSERT INTO `ko_help` VALUES(NULL, 'leute', 'submenu_kg', 'en', 47, 181, '');
-INSERT INTO `ko_help` VALUES(NULL, 'leute', 'submenu_kg', 'nl', 47, 690, '');
-INSERT INTO `ko_help` VALUES(NULL, 'daten', 'submenu_filter', 'de', 48, 397, '');
-INSERT INTO `ko_help` VALUES(NULL, 'daten', 'submenu_filter', 'en', 48, 170, '');
-INSERT INTO `ko_help` VALUES(NULL, 'daten', 'submenu_filter', 'nl', 48, 614, '');
-INSERT INTO `ko_help` VALUES(NULL, 'daten', 'form_neuer_termin', 'de', 48, 404, '');
-INSERT INTO `ko_help` VALUES(NULL, 'daten', 'form_neuer_termin', 'en', 48, 163, '');
-INSERT INTO `ko_help` VALUES(NULL, 'daten', 'form_neuer_termin', 'nl', 48, 621, '');
-INSERT INTO `ko_help` VALUES(NULL, 'daten', 'submenu_export', 'de', 48, 411, '');
-INSERT INTO `ko_help` VALUES(NULL, 'daten', 'submenu_export', 'en', 48, 156, '');
-INSERT INTO `ko_help` VALUES(NULL, 'daten', 'submenu_export', 'nl', 48, 628, '');
-INSERT INTO `ko_help` VALUES(NULL, 'daten', 'daten_settings', 'de', 48, 412, '');
-INSERT INTO `ko_help` VALUES(NULL, 'daten', 'daten_settings', 'en', 48, 155, '');
-INSERT INTO `ko_help` VALUES(NULL, 'daten', 'daten_settings', 'nl', 48, 629, '');
-INSERT INTO `ko_help` VALUES(NULL, 'groups', 'new_group', 'en', 46, 222, '');
-INSERT INTO `ko_help` VALUES(NULL, 'groups', 'new_group', 'de', 46, 459, '');
-INSERT INTO `ko_help` VALUES(NULL, 'groups', 'new_group', 'nl', 46, 737, '');
-INSERT INTO `ko_help` VALUES(NULL, 'groups', 'list_groups', 'en', 46, 221, '');
-INSERT INTO `ko_help` VALUES(NULL, 'groups', 'list_groups', 'de', 46, 460, '');
-INSERT INTO `ko_help` VALUES(NULL, 'groups', 'list_groups', 'nl', 46, 738, '');
-INSERT INTO `ko_help` VALUES(NULL, 'groups', 'list_rights', 'en', 46, 219, '');
-INSERT INTO `ko_help` VALUES(NULL, 'groups', 'list_rights', 'de', 46, 462, '');
-INSERT INTO `ko_help` VALUES(NULL, 'groups', 'list_rights', 'nl', 46, 740, '');
-INSERT INTO `ko_help` VALUES(NULL, 'groups', 'list_roles', 'en', 46, 218, '');
-INSERT INTO `ko_help` VALUES(NULL, 'groups', 'list_roles', 'de', 46, 463, '');
-INSERT INTO `ko_help` VALUES(NULL, 'groups', 'list_roles', 'nl', 46, 741, '');
-INSERT INTO `ko_help` VALUES(NULL, 'groups', 'list_datafields', 'en', 46, 217, '');
-INSERT INTO `ko_help` VALUES(NULL, 'groups', 'list_datafields', 'de', 46, 464, '');
-INSERT INTO `ko_help` VALUES(NULL, 'groups', 'list_datafields', 'nl', 46, 742, '');
-INSERT INTO `ko_help` VALUES(NULL, 'reservation', 'submenu_objekte', 'en', 45, 242, '');
-INSERT INTO `ko_help` VALUES(NULL, 'reservation', 'submenu_objekte', 'de', 45, 473, '');
-INSERT INTO `ko_help` VALUES(NULL, 'reservation', 'submenu_objekte', 'nl', 45, 693, '');
-INSERT INTO `ko_help` VALUES(NULL, 'reservation', 'show_mod_res', 'en', 45, 238, '');
-INSERT INTO `ko_help` VALUES(NULL, 'reservation', 'show_mod_res', 'de', 45, 477, '');
-INSERT INTO `ko_help` VALUES(NULL, 'reservation', 'show_mod_res', 'nl', 45, 697, '');
-INSERT INTO `ko_help` VALUES(NULL, 'reservation', 'neue_reservation', 'en', 45, 236, '');
-INSERT INTO `ko_help` VALUES(NULL, 'reservation', 'neue_reservation', 'de', 45, 479, '');
-INSERT INTO `ko_help` VALUES(NULL, 'reservation', 'neue_reservation', 'nl', 45, 699, '');
-INSERT INTO `ko_help` VALUES(NULL, 'reservation', 'submenu_filter', 'en', 45, 234, '');
-INSERT INTO `ko_help` VALUES(NULL, 'reservation', 'submenu_filter', 'de', 45, 481, '');
-INSERT INTO `ko_help` VALUES(NULL, 'reservation', 'submenu_filter', 'nl', 45, 701, '');
-INSERT INTO `ko_help` VALUES(NULL, 'reservation', 'res_settings', 'en', 45, 231, '');
-INSERT INTO `ko_help` VALUES(NULL, 'reservation', 'res_settings', 'de', 45, 484, '');
-INSERT INTO `ko_help` VALUES(NULL, 'reservation', 'res_settings', 'nl', 45, 704, '');
-INSERT INTO `ko_help` VALUES(NULL, 'rota', 'settings', 'de', 93, 1159, '');
-INSERT INTO `ko_help` VALUES(NULL, 'rota', 'schedule', 'en', 93, 1134, '');
-INSERT INTO `ko_help` VALUES(NULL, 'rota', 'schedule', 'de', 93, 1150, '');
-INSERT INTO `ko_help` VALUES(NULL, 'rota', 'settings', 'en', 93, 1144, '');
-INSERT INTO `ko_help` VALUES(NULL, 'rota', 'list_teams', 'en', 93, 1132, '');
-INSERT INTO `ko_help` VALUES(NULL, 'rota', 'list_teams', 'de', 93, 1148, '');
-INSERT INTO `ko_help` VALUES(NULL, 'rota', '', 'de', 93, 0, '');
-INSERT INTO `ko_help` VALUES(NULL, 'tapes', 'submenu_filter', 'en', 43, 269, '');
-INSERT INTO `ko_help` VALUES(NULL, 'tapes', 'submenu_filter', 'de', 43, 517, '');
-INSERT INTO `ko_help` VALUES(NULL, 'tapes', 'submenu_filter', 'nl', 43, 791, '');
-INSERT INTO `ko_help` VALUES(NULL, 'tapes', 'submenu_print', 'en', 43, 268, '');
-INSERT INTO `ko_help` VALUES(NULL, 'tapes', 'submenu_print', 'de', 43, 518, '');
-INSERT INTO `ko_help` VALUES(NULL, 'tapes', 'submenu_print', 'nl', 43, 792, '');
-INSERT INTO `ko_help` VALUES(NULL, 'tapes', 'submenu_settings', 'en', 43, 265, '');
-INSERT INTO `ko_help` VALUES(NULL, 'tapes', 'submenu_settings', 'de', 43, 521, '');
-INSERT INTO `ko_help` VALUES(NULL, 'tapes', 'submenu_settings', 'nl', 43, 795, '');
-INSERT INTO `ko_help` VALUES(NULL, 'donations', 'submenu_accounts', 'en', 67, 721, '');
-INSERT INTO `ko_help` VALUES(NULL, 'donations', 'submenu_accounts', 'de', 67, 557, '');
-INSERT INTO `ko_help` VALUES(NULL, 'donations', 'submenu_accounts', 'nl', 67, 830, '');
-INSERT INTO `ko_help` VALUES(NULL, 'donations', 'submenu_filter', 'en', 67, 724, '');
-INSERT INTO `ko_help` VALUES(NULL, 'donations', 'submenu_filter', 'de', 67, 554, '');
-INSERT INTO `ko_help` VALUES(NULL, 'donations', 'submenu_filter', 'nl', 67, 833, '');
-INSERT INTO `ko_help` VALUES(NULL, 'donations', 'merge', 'en', 67, 726, '');
-INSERT INTO `ko_help` VALUES(NULL, 'donations', 'merge', 'de', 67, 657, '');
-INSERT INTO `ko_help` VALUES(NULL, 'donations', 'merge', 'nl', 67, 835, '');
-INSERT INTO `ko_help` VALUES(NULL, 'donations', 'submenu_export', 'en', 67, 728, '');
-INSERT INTO `ko_help` VALUES(NULL, 'donations', 'submenu_export', 'de', 67, 550, '');
-INSERT INTO `ko_help` VALUES(NULL, 'donations', 'submenu_export', 'nl', 67, 837, '');
-INSERT INTO `ko_help` VALUES(NULL, 'kota', 'ko_eventgruppen', 'en', 48, 158, '');
-INSERT INTO `ko_help` VALUES(NULL, 'kota', 'ko_eventgruppen', 'de', 48, 409, '');
-INSERT INTO `ko_help` VALUES(NULL, 'kota', 'ko_eventgruppen', 'nl', 48, 626, '');
-INSERT INTO `ko_help` VALUES(NULL, 'kota', 'ko_resitem', 'en', 45, 241, '');
-INSERT INTO `ko_help` VALUES(NULL, 'kota', 'ko_resitem', 'de', 45, 474, '');
-INSERT INTO `ko_help` VALUES(NULL, 'kota', 'ko_resitem', 'nl', 45, 694, '');
-INSERT INTO `ko_help` VALUES(NULL, 'kota', 'ko_tapes', 'en', 43, 272, '');
-INSERT INTO `ko_help` VALUES(NULL, 'kota', 'ko_tapes', 'de', 43, 514, '');
-INSERT INTO `ko_help` VALUES(NULL, 'kota', 'ko_tapes', 'nl', 43, 788, '');
-INSERT INTO `ko_help` VALUES(NULL, 'kota', 'ko_donations', 'en', 67, 722, '');
-INSERT INTO `ko_help` VALUES(NULL, 'kota', 'ko_donations', 'de', 67, 556, '');
-INSERT INTO `ko_help` VALUES(NULL, 'kota', 'ko_donations', 'nl', 67, 831, '');
-INSERT INTO `ko_help` VALUES(NULL, 'kota', 'multiedit', 'en', 49, 841, '');
-INSERT INTO `ko_help` VALUES(NULL, 'kota', 'multiedit', 'de', 49, 842, '');
-INSERT INTO `ko_help` VALUES(NULL, 'leute', 'show_all', 'en', 47, 865, '');
-INSERT INTO `ko_help` VALUES(NULL, 'leute', 'show_all', 'de', 47, 866, '');
-INSERT INTO `ko_help` VALUES(NULL, 'leute', 'version_history', 'en', 47, 867, '');
-INSERT INTO `ko_help` VALUES(NULL, 'leute', 'version_history', 'de', 47, 868, '');
-INSERT INTO `ko_help` VALUES(NULL, 'donations', 'list_donations', 'en', 67, 724, '');
-INSERT INTO `ko_help` VALUES(NULL, 'donations', 'list_donations', 'de', 67, 554, '');
-INSERT INTO `ko_help` VALUES(NULL, 'donations', 'list_donations', 'nl', 67, 833, '');
-INSERT INTO `ko_help` VALUES(NULL, 'rota', '', 'en', 93, 0, '');
-INSERT INTO `ko_help` VALUES(NULL, 'admin', 'login_rights_daten', 'de', 0, 0, '<b>2: </b>Zu den gew?hlten Termingruppen d?rfen neue Termine erfasst, bestehende bearbeitet und gel?scht werden (inkl. Moderation gem?ss Einstellung pro Termingruppe)<br />\r\n<b>3: </b>Rechte von 2 aber ohne Moderation auch bei moderierten Termingruppen<br/>\r\n<b>4: </b>Von Stufe-2-Benutzern erfasste Termine moderieren<br />\r\n<b>ALL-Rechte auf 3:</b><br />Termingruppen/Kalender erstellen');
-INSERT INTO `ko_help` VALUES(NULL, 'admin', 'login_rights_reservation', 'de', 0, 0, '<b>2:</b> Neue Reservationen erfassen, die aber je nach Objekt noch moderiert werden.<br /> <b>3: </b>Eigene Reservationen bearbeiten/l?schen.<br /> <b>4:</b> Neue Reservationen ohne Moderation erfassen. Alle Reservationen zu den gew?hlten Objekten bearbeiten/l?schen.<br /> <b>5:</b> Moderieren der Reservations-Anfragen<br /> <b>ALL-Rechte auf 4:</b> Neue Reservations-Gruppen und -Objekte erstellen');
-INSERT INTO `ko_help` VALUES(NULL, 'admin', 'login_rights_groups', 'de', 0, 0, '<b>2:</b> Personen Gruppen zuweisen oder Zuweisung aufheben.<br /> <b>3:</b> Gruppen und Rollen bearbeiten.<br /> <b>4:</b> Gruppen und Rollen l?schen.');
-INSERT INTO `ko_help` VALUES(NULL, 'admin', 'login_rights_fileshare', 'de', 0, 0, 'Diese Modul wird nur ben?tigt, wenn der Benutzer Webordner anlegen oder bearbeiten muss. F?r den Zugriff auf die Dateien im Webordner muss dieses Modul nicht gew?hlt werden.');
-INSERT INTO `ko_help` VALUES(NULL, 'admin', 'login_rights_admin', 'de', 0, 0, 'Normalerweise sollte jeder Benutzer Berechtigungsstufe 1 f?r das Admin-Modul haben, um die eigenen Layout-Einstellungen bearbeiten zu k?nnen.');
-INSERT INTO `ko_help` VALUES(NULL, 'admin', 'login_rights_leute', 'de', 47, 420, '');
-INSERT INTO `ko_help` VALUES(NULL, 'admin', 'login_rights_daten', 'en', 0, 0, '<b>2: </b>Add new events, edit or delete events for the selected event groups. Moderation needed if set for the event group.<br />\r\n<b>3: </b>Same as 2 but without moderation even if set for the event group.<br/>\r\n<b>4: </b>Moderate events entered by users with access level 2.<br />\r\n<b>ALL rights set to 3:</b><br />Create new event groups/calendars');
-INSERT INTO `ko_help` VALUES(NULL, 'admin', 'login_rights_reservation', 'en', 0, 0, '<b>2:</b> Add new reservations. Moderation needed for items with moderation.<br /> <b>3: </b>Edit/delete own reservations.<br /> <b>4:</b> Add new reservations without moderation and edit/delete all reservations for the given items.<br /> <b>4:</b> Moderate reservation requests.<br /> <b>ALL rights set to 4:</b> Create new reservation groups and items');
-INSERT INTO `ko_help` VALUES(NULL, 'admin', 'login_rights_groups', 'en', 0, 0, '<b>2:</b> Add people to groups or remove them.<br /> <b>3:</b> Edit groups and add or edit roles.<br /> <b>4:</b> Delete groups and roles.');
-INSERT INTO `ko_help` VALUES(NULL, 'admin', 'login_rights_fileshare', 'en', 0, 0, 'This module is only needed if the user has to create or edit new webfolders. It is not needed to access the files in the webfolders through webDAV.');
-INSERT INTO `ko_help` VALUES(NULL, 'admin', 'login_rights_admin', 'en', 0, 0, 'Usually every user should have access to the admin module with access level 1 to edit her own layout settings.');
-INSERT INTO `ko_help` VALUES(NULL, 'admin', 'login_rights_leute', 'en', 47, 206, '');
-INSERT INTO `ko_help` VALUES(NULL, 'daten', 'list_events_mod', 'en', 48, 160, '');
-INSERT INTO `ko_help` VALUES(NULL, 'daten', 'list_events_mod', 'de', 48, 407, '');
-INSERT INTO `ko_help` VALUES(NULL, 'daten', 'list_events_mod', 'nl', 48, 624, '');
-INSERT INTO `ko_help` VALUES(NULL, 'admin', 'login_rights_daten', 'nl', 0, 0, '<b>2: </b>Activiteiten toevoegen, bewerken of verwijderen voor de geselecteerde Activiteitengroepen. Moderatie benodigd indien dit is ingesteld voor de Activiteitengroep.<br />\r\n<b>3: </b>Hetzelfde als 2, maar zonder moderatie, zelfs als dat is ingesteld voor de Activiteitengroep.<br />\r\n<b>4: </b>Activiteiten modereren welke ingevoerd zijn door gebruikers met authorisatieniveau 2.<br />\r\n<b>ALLE rechten ingesteld op 3:</b><br />\r\nCre?er nieuwe Activiteitengroepen/Kalenders');
-INSERT INTO `ko_help` VALUES(NULL, 'admin', 'login_rights_reservation', 'nl', 0, 0, '<b>2: </b>Reserveringen toevoegen, bewerken of verwijderen voor de geselecteerde Activiteitengroepen. Moderatie benodigd voor items met moderatie. Alleen eigen Reserveringen bewerken/verwijderen.<br />\r\n<b>3: </b>Nieuwe Reserveringen toevoegen zonder moderatie en alle Reserveringen voor de opgegeven items bewerken/verwijderen.<br />\r\n<b>4: </b>Reserveringen modereren welke ingevoerd zijn door gebruikers met authorisatieniveau 2.<br />\r\n<b>ALLE rechten ingesteld op 3:</b><br />\r\nCre?er nieuwe Reserveringsgroepen');
-INSERT INTO `ko_help` VALUES(NULL, 'admin', 'login_rights_groups', 'nl', 0, 0, '<b>2: </b>Personen toevoegen aan of verwijderen uit Groepen.<br />\r\n<b>3: </b>Groepen bewerken en Rollen toevoegen of bewerken.<br />\r\n<b>4: </b>Groepen en Rollen verwijderen.<br />\r\n<b>Bevoegdheden die hier worden gegeven, gelden voor alle Groepen</b><br />\r\nVoor individuele Groepen is het authorisatieniveau te verhogen door "Bevoegdheden Gebruiker" in de Groepen-module te gebruiken of door individuele Groepen te bewerken.');
-INSERT INTO `ko_help` VALUES(NULL, 'admin', 'login_rights_fileshare', 'nl', 0, 0, 'Deze module is alleen nodig indien de gebruiker webfolders moet kunnen toevoegen of bewerken. Deze module is niet vereist om bestanden in de webfolders te benaderen via webDAV.');
-INSERT INTO `ko_help` VALUES(NULL, 'admin', 'login_rights_admin', 'nl', 0, 0, 'Doorgaans moet iedere gebruiker toegang hebben tot de Admin-module met authorisatieniveau 1, om zo zijn eigen lay-out instellingen te kunnen wijzigen.');
-INSERT INTO `ko_help` VALUES(NULL, 'admin', 'login_rights_leute', 'nl', 47, 665, '');
-INSERT INTO `ko_help` VALUES(NULL, 'leute', 'mailmerge', 'en', 47, 998, '');
-INSERT INTO `ko_help` VALUES(NULL, 'leute', 'mailmerge', 'de', 47, 999, '');
-INSERT INTO `ko_help` VALUES(NULL, 'tracking', '', 'en', 89, 0, '');
-INSERT INTO `ko_help` VALUES(NULL, 'tracking', '', 'de', 89, 0, '');
-INSERT INTO `ko_help` VALUES(NULL, 'tracking', 'submenu_export', 'en', 89, 1013, '');
-INSERT INTO `ko_help` VALUES(NULL, 'tracking', 'submenu_export', 'de', 89, 1023, '');
-INSERT INTO `ko_help` VALUES(NULL, 'kota', 'ko_tracking', 'en', 89, 1010, '');
-INSERT INTO `ko_help` VALUES(NULL, 'kota', 'ko_tracking', 'de', 89, 1020, '');
-INSERT INTO `ko_help` VALUES(NULL, 'tracking', 'enter_tracking', 'en', 89, 1011, '');
-INSERT INTO `ko_help` VALUES(NULL, 'tracking', 'enter_tracking', 'de', 89, 1021, '');
-INSERT INTO `ko_help` VALUES(NULL, 'tracking', 'list_trackings', 'en', 89, 1028, '');
-INSERT INTO `ko_help` VALUES(NULL, 'tracking', 'list_trackings', 'de', 89, 1029, '');
-INSERT INTO `ko_help` VALUES(NULL, 'admin', 'submenu_news', 'en', 40, 1036, '');
-INSERT INTO `ko_help` VALUES(NULL, 'admin', 'submenu_news', 'de', 40, 1037, '');
-INSERT INTO `ko_help` VALUES(NULL, 'tracking', 'tracking_settings', 'en', 89, 1047, '');
-INSERT INTO `ko_help` VALUES(NULL, 'tracking', 'tracking_settings', 'de', 89, 1049, '');
-INSERT INTO `ko_help` VALUES(NULL, 'admin', 'show_sms_log', 'en', 40, 1055, '');
-INSERT INTO `ko_help` VALUES(NULL, 'admin', 'show_sms_log', 'de', 40, 1060, '');
-INSERT INTO `ko_help` VALUES(NULL, 'admin', 'list_news', 'en', 40, 1036, '');
-INSERT INTO `ko_help` VALUES(NULL, 'admin', 'list_news', 'de', 40, 1059, '');
-INSERT INTO `ko_help` VALUES(NULL, 'daten', 'ical_links', 'en', 48, 152, '');
-INSERT INTO `ko_help` VALUES(NULL, 'daten', 'ical_links', 'de', 48, 415, '');
-INSERT INTO `ko_help` VALUES(NULL, 'daten', 'ical_links2', 'en', 0, 0, 'Right click on link and select "Copy link" to add the link to your clipboard. Paste it into your calendar application.');
-INSERT INTO `ko_help` VALUES(NULL, 'daten', 'ical_links2', 'de', 0, 0, 'Mit der rechten Maustaste auf den gew?nschten Link klicken und "Link-Adresse kopieren". Danach im Kalender-Programm als Kalender-URL einf?gen.');
-INSERT INTO `ko_help` VALUES(NULL, 'daten', 'kota.ko_reminder.text', 'de', 0, 0, 'Im Text der Nachricht können verschiedene Platzhalter eingefügt werden, die anschliessend vom kOOL durch Absender-, Empfänger-, oder Eventspezifische Informationen ersetzt werden.\nAls Beispiel:\n\n###r__salutation_formal_name###\nHier erhalten Sie wichtige Informationen zum Event ###e_title###:\nStartzeit: ###e_startzeit###, Startdatum: ###e_startdatum###.\n\nMit freundlichen Grüssen,\n###s_vorname### ###s_nachname###');
-INSERT INTO `ko_help` VALUES(NULL, 'daten', 'kota.ko_reminder.text', 'en', 0, 0, 'Several placeholders may be inserted into the text of the reminder. These will then be replaced by the corresponding information of an event, receiver or sender.\nAn Example:\n\n###r__salutation_formal_name###\nHere you get some important information concerning the event ###e_title###:\nStarting time: ###e_startzeit###, Starting date: ###e_startdatum###.\n\nYours sincerely,\n###s_vorname### ###s_nachname###');
-INSERT INTO `ko_help` VALUES(NULL, 'reservation', 'ical_links', 'en', 45, 1002, '');
-INSERT INTO `ko_help` VALUES(NULL, 'reservation', 'ical_links', 'de', 45, 1003, '');
-INSERT INTO `ko_help` VALUES(NULL, 'reservation', 'ical_links2', 'en', 0, 0, 'Right click on link and select "Copy link" to add the link to your clipboard. Paste it into your calendar application.');
-INSERT INTO `ko_help` VALUES(NULL, 'reservation', 'ical_links2', 'de', 0, 0, 'Mit der rechten Maustaste auf den gew?nschten Link klicken und "Link-Adresse kopieren". Danach im Kalender-Programm als Kalender-URL einf?gen.');
-INSERT INTO `ko_help` VALUES(NULL, 'leute', 'merge_duplicates', 'en', 47, 1068, '');
-INSERT INTO `ko_help` VALUES(NULL, 'leute', 'merge_duplicates', 'de', 47, 1069, '');
-INSERT INTO `ko_help` VALUES(NULL, 'leute', 'leute_settings', 'en', 47, 1113, '');
-INSERT INTO `ko_help` VALUES(NULL, 'leute', 'leute_settings', 'de', 47, 1110, '');
-INSERT INTO `ko_help` VALUES(NULL, 'reservation', 'list_items', 'en', 45, 242, '');
-INSERT INTO `ko_help` VALUES(NULL, 'reservation', 'list_items', 'de', 45, 473, '');
-INSERT INTO `ko_help` VALUES(NULL, 'groups', 'groups_settings', 'en', 46, 1119, '');
-INSERT INTO `ko_help` VALUES(NULL, 'groups', 'groups_settings', 'de', 46, 1120, '');
-INSERT INTO `ko_help` VALUES(NULL, 'donations', 'donation_settings', 'en', 67, 1123, '');
-INSERT INTO `ko_help` VALUES(NULL, 'donations', 'donation_settings', 'de', 67, 1125, '');
-INSERT INTO `ko_help` VALUES(NULL, 'donations', 'submenu_filter_amount', 'en', 0, 0, '<h1>Filter for the amount:</h1><ul><li><b>100-200</b>: Find amount between 100 and 200 (including)</li><li><b>&gt;100</b>: Amount greater than or equal to 100</li><li><b>&lt;100</b>: Amount smaller than or equal to 100</li><li><b>=100</b>: Amount is exactly 100</li><li><b>Other values</b>: Partial matches: "100" finds "100", "1000" and e.g. "1009"</li></ul>');
-INSERT INTO `ko_help` VALUES(NULL, 'donations', 'submenu_filter_amount', 'de', 0, 0, '<h1>Suche nach Betrag:</h1><ul><li><b>100-200</b>: Betrag zwischen 100 und 200 (inklusive)</li><li><b>&gt;100</b>: Betrag grösser als 100 (inklusive)</li><li><b>&lt;100</b>: Betrag kleiner als 100 (inklusive)</li><li><b>=100</b>: Betrag exakt 100</li><li><b>Sonstige Eingaben</b>: Teilsuche, z.B. "100" findet "100" aber auch "1000" oder "1009"</li></ul>');
-INSERT INTO `ko_help` VALUES(NULL, 'leute', 'filter_link_adv', 'de', 0, 0, '<h1>Manuelle Filter-Verknüpfung</h1>Für jeden angewandten Filter erscheint in obiger Liste eine Nummer, über die der Filter im Textfeld referenziert werden kann.<br />Beispiele:<ul><li><b>0 UND 1:</b> Damit wird der erste Filter ("0") mit einem logischen UND mit dem zweiten ("1") verknüpft.</li><li><b>0 UND (1 ODER 2)</b>: Der erste ("0") sowie entweder der zweite oder der dritte Filter ("(1 ODER 2)") müssen zutreffen.</li></ul>');
-INSERT INTO `ko_help` VALUES(NULL, 'leute', 'filter_link_adv', 'en', 0, 0, '<h1>Manually set filter links</h1>In the list above you can see a number for every currently applied filter. Use these in the input below to add a reference to each filter.<br />Some examples:<ul><li><b>0 AND 1:</b>The first ("0") and second ("1") filter will be linked by a logical AND.</li><li><b>0 AND (1 OR 2)</b>: The first ("0") filter and either the second or third filter ("(1 OR 2)")must match.</li></ul>');
-INSERT INTO `ko_help` VALUES(NULL, 'groups', 'kota.ko_groups.linked_group', 'en', '', '', 'When adding an address to the current group this option will also assign this address to the group specified here. This only applies to newly assigned addresses. If the address is removed from this group it will stay in the linked group.');
-INSERT INTO `ko_help` VALUES(NULL, 'groups', 'kota.ko_groups.linked_group', 'de', '', '', 'Beim Hinzufügen einer Adresse zu dieser Gruppe wird diese Adresse auch der verknüpften Gruppe zugewiesen. Dies gilt nur für Neuzuweisungen von Adressen zu dieser Gruppe. Wird eine Adresse aus dieser Gruppe entfernt, bleibt sie in der verknüpften Gruppe bestehen.');
+-- vesr, set_allgemein, set_layout, etiketten/pdf/individual, logs, kg, multiedit, inlineedit
+INSERT INTO `ko_help` VALUES(NULL, 'admin', '', 'de', 0, 0, '', 'http://kool.help/admin/benutzerverwaltung');
+INSERT INTO `ko_help` VALUES(NULL, 'leute', '', 'de', 0, 0, '', 'http://kool.help/module/adressen');
+INSERT INTO `ko_help` VALUES(NULL, 'home', '', 'de', 0, 0, '', 'http://kool.help/');
+INSERT INTO `ko_help` VALUES(NULL, 'daten', '', 'de', 0, 0, '', 'http://kool.help/module/termine');
+INSERT INTO `ko_help` VALUES(NULL, 'groups', '', 'de', 0, 0, '', 'http://kool.help/module/gruppen');
+INSERT INTO `ko_help` VALUES(NULL, 'reservation', '', 'de', 0, 0, '', 'http://kool.help/module/reservationen');
+INSERT INTO `ko_help` VALUES(NULL, 'donations', '', 'de', 0, 0, '', 'http://kool.help/module/spenden');
+INSERT INTO `ko_help` VALUES(NULL, 'rota', '', 'de', 0, 0, '', 'http://kool.help/module/dienstplan');
+INSERT INTO `ko_help` VALUES(NULL, 'subscription', '', 'de', 0, 0, '', 'http://kool.help/module/anmeldung');
+
+INSERT INTO `ko_help` VALUES(NULL, 'admin', 'show_logins', 'de', 0, 0, '', 'http://kool.help/admin/benutzerverwaltung');
+INSERT INTO `ko_help` VALUES(NULL, 'admin', 'set_new_login', 'de', 0, 0, '', 'http://kool.help/admin/benutzerverwaltung#benutzerverwaltung');
+INSERT INTO `ko_help` VALUES(NULL, 'admin', 'set_new_admingroup', 'de', 0, 0, '', 'http://kool.help/admin/benutzerverwaltung#benutzergruppen');
+INSERT INTO `ko_help` VALUES(NULL, 'admin', 'show_admingroups', 'de', 0, 0, '', 'http://kool.help/admin/benutzerverwaltung#benutzergruppen');
+INSERT INTO `ko_help` VALUES(NULL, 'admin', 'submenu_logins', 'de', 0, 0, '', 'http://kool.help/admin/benutzerverwaltung');
+INSERT INTO `ko_help` VALUES(NULL, 'admin', 'login_rights_leute', 'de', 0, 0, '', 'http://kool.help/admin/benutzerverwaltung#berechtigungen_fuer_das_leute-modul');
+INSERT INTO `ko_help` VALUES(NULL, 'leute', 'submenu_itemlist_spalten', 'de', 0, 0, '', 'http://kool.help/module/adressen#spalten');
+INSERT INTO `ko_help` VALUES(NULL, 'leute', 'submenu_filter', 'de', 0, 0, '', 'http://kool.help/module/adressen#filter');
+INSERT INTO `ko_help` VALUES(NULL, 'leute', 'submenu_meine_liste', 'de', 0, 0, '', 'http://kool.help/module/adressen#meine_liste');
+INSERT INTO `ko_help` VALUES(NULL, 'leute', 'submenu_aktionen', 'de', 0, 0, '', 'http://kool.help/module/adressen#exporte_aktionen');
+INSERT INTO `ko_help` VALUES(NULL, 'leute', 'submenu_schnellfilter', 'de', 0, 0, '', 'http://kool.help/module/adressen#schnellfilter');
+INSERT INTO `ko_help` VALUES(NULL, 'leute', 'show_all', 'de', 0, 0, '', 'http://kool.help/module/adressen#das_leute-modul');
+INSERT INTO `ko_help` VALUES(NULL, 'leute', 'version_history', 'de', 0, 0, '', 'http://kool.help/module/adressen#aenderungen_verfolgen');
+INSERT INTO `ko_help` VALUES(NULL, 'leute', 'merge_duplicates', 'de', 0, 0, '', 'http://kool.help/module/adressen#doppelte_adressen');
+INSERT INTO `ko_help` VALUES(NULL, 'leute', 'leute_settings', 'de', 0, 0, '', 'http://kool.help/module/adressen#einstellungen');
+INSERT INTO `ko_help` VALUES(NULL, 'leute', 'filter_link', 'de', 0, 0, '', 'http://kool.help/module/adressen#filter_kombinieren');
+INSERT INTO `ko_help` VALUES(NULL, 'leute', 'labels', 'de', 0, 0, '', 'http://kool.help/module/adressen#etiketten_erstellen');
+INSERT INTO `ko_help` VALUES(NULL, 'leute', 'sms', 'de', 0, 0, '', 'http://kool.help/module/adressen#sms_versenden');
+INSERT INTO `ko_help` VALUES(NULL, 'leute', 'mutationen', 'de', 0, 0, '', 'http://kool.help/module/adressen#mutationen');
+INSERT INTO `ko_help` VALUES(NULL, 'leute', 'revisions', 'de', 0, 0, '', 'http://kool.help/module/adressen#adressbereinigungen');
+INSERT INTO `ko_help` VALUES(NULL, 'leute', 'import', 'de', 0, 0, '', 'http://kool.help/module/adressen#import');
+INSERT INTO `ko_help` VALUES(NULL, 'leute', 'kota.ko_leute.groups', 'de', '', '', '', 'http://kool.help/module/gruppen#adresse_einer_gruppe_zuweisen');
+INSERT INTO `ko_help` VALUES(NULL, 'leute', 'kota.ko_leute.famid', 'de', '', '', '', 'http://kool.help/module/adressen#haushaltefamilien');
+INSERT INTO `ko_help` VALUES(NULL, 'daten', 'submenu_termine', 'de', 0, 0, '', 'http://kool.help/module/termine');
+INSERT INTO `ko_help` VALUES(NULL, 'daten', 'all_events', 'de', 0, 0, '', 'http://kool.help/module/termine');
+INSERT INTO `ko_help` VALUES(NULL, 'daten', 'submenu_itemlist_termingruppen', 'de', 0, 0, '', 'http://kool.help/module/termine#terminliste');
+INSERT INTO `ko_help` VALUES(NULL, 'daten', 'submenu_termingruppen', 'de', 0, 0, '', 'http://kool.help/module/termine#termingruppen');
+INSERT INTO `ko_help` VALUES(NULL, 'daten', 'all_groups', 'de', 0, 0, '', 'http://kool.help/module/termine#termingruppen');
+INSERT INTO `ko_help` VALUES(NULL, 'daten', 'submenu_reminder', 'de', 0, 0, '', 'http://kool.help/module/termine#erinnerungen');
+INSERT INTO `ko_help` VALUES(NULL, 'daten', 'submenu_filter', 'de', 0, 0, '', 'http://kool.help/module/termine#terminliste');
+INSERT INTO `ko_help` VALUES(NULL, 'daten', 'submenu_export', 'de', 0, 0, '', 'http://kool.help/module/termine#exporte');
+INSERT INTO `ko_help` VALUES(NULL, 'daten', 'daten_settings', 'de', 0, 0, '', 'http://kool.help/module/termine#einstellungen');
+INSERT INTO `ko_help` VALUES(NULL, 'daten', 'list_events_mod', 'de', 0, 0, '', 'http://kool.help/module/termine#termin-moderation');
+INSERT INTO `ko_help` VALUES(NULL, 'daten', 'ical_links', 'de', 0, 0, '', 'http://kool.help/module/termine#ical_import_und_export');
+INSERT INTO `ko_help` VALUES(NULL, 'groups', 'groups_settings', 'de', 0, 0, '', 'http://kool.help/module/gruppen#einstellungen');
+INSERT INTO `ko_help` VALUES(NULL, 'groups', 'submenu_groups', 'de', 0, 0, '', 'http://kool.help/module/gruppen');
+INSERT INTO `ko_help` VALUES(NULL, 'groups', 'submenu_roles', 'de', 0, 0, '', 'http://kool.help/module/gruppen#rollen');
+INSERT INTO `ko_help` VALUES(NULL, 'groups', 'submenu_export', 'de', 0, 0, '', 'http://kool.help/module/gruppen#exporte');
+INSERT INTO `ko_help` VALUES(NULL, 'groups', 'list_roles', 'de', 0, 0, '', 'http://kool.help/module/gruppen#rollen');
+INSERT INTO `ko_help` VALUES(NULL, 'groups', 'list_datafields', 'de', 0, 0, '', 'http://kool.help/module/gruppen#gruppen_datenfelder');
+INSERT INTO `ko_help` VALUES(NULL, 'groups', 'list_datafields', 'de', 0, 0, '', 'http://kool.help/module/gruppen#gruppen_datenfelder');
+INSERT INTO `ko_help` VALUES(NULL, 'groups', 'kota.ko_groups.type', 'de', '', '', '', 'http://kool.help/module/gruppen#platzhalter-gruppen');
+INSERT INTO `ko_help` VALUES(NULL, 'groups', 'kota.ko_groups.datafields', 'de', '', '', '', 'http://kool.help/module/gruppen#gruppen_datenfelder');
+INSERT INTO `ko_help` VALUES(NULL, 'groups', 'kota.ko_groups.mailing_alias', 'de', '', '', '', 'http://kool.help/module/gruppen_e-mails#e-mail_alias');
+INSERT INTO `ko_help` VALUES(NULL, 'groups', 'kota.ko_groups.stop', 'de', '', '', '', 'http://kool.help/module/gruppen#zeitliche_terminierung_der_gruppen');
+INSERT INTO `ko_help` VALUES(NULL, 'groups', 'kota.ko_groups.pid', 'de', '', '', '', 'http://kool.help/module/gruppen#hierarchie');
+INSERT INTO `ko_help` VALUES(NULL, 'reservation', 'submenu_objekte', 'de', 0, 0, '', 'http://kool.help/module/reservationen#reservations-objekte');
+INSERT INTO `ko_help` VALUES(NULL, 'reservation', 'submenu_export', 'de', 0, 0, '', 'http://kool.help/module/reservationen#exporte');
+INSERT INTO `ko_help` VALUES(NULL, 'reservation', 'neue_reservation', 'de', 0, 0, '', 'http://kool.help/module/reservationen#reservationen_erfassen');
+INSERT INTO `ko_help` VALUES(NULL, 'reservation', 'liste', 'de', 0, 0, '', 'http://kool.help/module/reservationen#liste');
+INSERT INTO `ko_help` VALUES(NULL, 'reservation', 'show_mod_res', 'de', 0, 0, '', 'http://kool.help/module/reservationen#moderation');
+INSERT INTO `ko_help` VALUES(NULL, 'reservation', 'submenu_filter', 'de', 0, 0, '', 'http://kool.help/module/reservationen#liste');
+INSERT INTO `ko_help` VALUES(NULL, 'reservation', 'res_settings', 'de', 0, 0, '', 'http://kool.help/module/reservationen#einstellungen');
+INSERT INTO `ko_help` VALUES(NULL, 'reservation', 'ical_links', 'de', 0, 0, '', 'http://kool.help/module/reservationen#ical-abo');
+INSERT INTO `ko_help` VALUES(NULL, 'reservation', 'list_items', 'de', 0, 0, '', 'http://kool.help/module/reservationen#reservations-objekte');
+INSERT INTO `ko_help` VALUES(NULL, 'rota', 'settings', 'de', 0, 0, '', 'http://kool.help/module/dienstplan#einstellungen');
+INSERT INTO `ko_help` VALUES(NULL, 'rota', 'schedule', 'de', 0, 0, '', 'http://kool.help/module/dienstplan#einteilen');
+INSERT INTO `ko_help` VALUES(NULL, 'rota', 'list_teams', 'de', 0, 0, '', 'http://kool.help/module/dienstplan#dienste');
+INSERT INTO `ko_help` VALUES(NULL, 'rota', 'ical_links', 'de', 0, 0, '', 'http://kool.help/module/dienstplan#ical-abo');
+INSERT INTO `ko_help` VALUES(NULL, 'rota', 'kota.ko_rota_teams.rotatype', 'de', 0, 0, '', 'http://kool.help/module/dienstplan#dienstwochen');
+INSERT INTO `ko_help` VALUES(NULL, 'rota', 'kota.ko_rota_teams.allow_consensus', 'de', 0, 0, '', 'http://kool.help/module/dienstplan#konsensus_doodle-umfrage');
+INSERT INTO `ko_help` VALUES(NULL, 'rota', 'submenu_rota', 'de', 0, 0, '', 'http://kool.help/module/dienstplan');
+INSERT INTO `ko_help` VALUES(NULL, 'donations', 'submenu_accounts', 'de', 0, 0, '', 'http://kool.help/module/spenden#konten');
+INSERT INTO `ko_help` VALUES(NULL, 'donations', 'submenu_filter', 'de', 0, 0, '', 'http://kool.help/module/spenden#spendenliste');
+INSERT INTO `ko_help` VALUES(NULL, 'donations', 'merge', 'de', 0, 0, '', 'http://kool.help/module/spenden#spenden_zusammenfassen');
+INSERT INTO `ko_help` VALUES(NULL, 'donations', 'submenu_export', 'de', 0, 0, '', 'http://kool.help/module/spenden#export');
+INSERT INTO `ko_help` VALUES(NULL, 'donations', 'list_donations', 'de', 0, 0, '', 'http://kool.help/module/spenden#spendenliste');
+INSERT INTO `ko_help` VALUES(NULL, 'donations', 'donation_settings', 'de', 0, 0, '', 'http://kool.help/module/spenden#einstellungen');
+INSERT INTO `ko_help` VALUES(NULL, 'tracking', '', 'de', 0, 0, '', 'http://kool.help/module/praesenzlisten');
+INSERT INTO `ko_help` VALUES(NULL, 'tracking', 'submenu_export', 'de', 0, 0, '', 'http://kool.help/module/praesenzlisten#export');
+INSERT INTO `ko_help` VALUES(NULL, 'subscription', 'submenu_forms', 'de', 0, 0, '', 'http://kool.help/module/anmeldung#formulare_erstellen');
+INSERT INTO `ko_help` VALUES(NULL, 'subscription', 'submenu_form_groups', 'de', 0, 0, '', 'http://kool.help/module/anmeldung#formulargruppen');
+INSERT INTO `ko_help` VALUES(NULL, 'subscription', 'submenu_double_opt_in', 'de', 0, 0, '', 'https://kool.help/module/anmeldung#double-opt-in_aktivieren');
+
+INSERT INTO `ko_help` VALUES(NULL, 'kota', 'ko_eventgruppen', 'de', 0, 0, '', 'http://kool.help/module/termine#termingruppen');
+INSERT INTO `ko_help` VALUES(NULL, 'kota', 'ko_resitem', 'de', 0, 0, '', 'http://kool.help/module/reservationen#reservations-objekte');
+INSERT INTO `ko_help` VALUES(NULL, 'kota', 'ko_donations', 'de', 0, 0, '', 'http://kool.help/module/spenden#spenden_erfassen');
+
+INSERT INTO `ko_help` VALUES(NULL, 'admin', 'login_rights_daten', 'de', 0, 0, '<b>2: </b>Zu den gewählten Termingruppen dürfen neue Termine erfasst, bestehende bearbeitet und gelöscht werden (inkl. Moderation gemäss Einstellung pro Termingruppe)<br />\r\n<b>3: </b>Rechte von 2 aber ohne Moderation auch bei moderierten Termingruppen<br/>\r\n<b>4: </b>Von Stufe-2-Benutzern erfasste Termine moderieren<br />\r\n<b>ALL-Rechte auf 3:</b><br />Termingruppen/Kalender erstellen', '');
+INSERT INTO `ko_help` VALUES(NULL, 'admin', 'login_rights_reservation', 'de', 0, 0, '<b>2:</b> Neue Reservationen erfassen, die aber je nach Objekt noch moderiert werden.<br /> <b>3: </b>Eigene Reservationen bearbeiten/löschen.<br /> <b>4:</b> Neue Reservationen ohne Moderation erfassen. Alle Reservationen zu den gewählten Objekten bearbeiten/löschen.<br /> <b>5:</b> Moderieren der Reservations-Anfragen<br /> <b>ALL-Rechte auf 4:</b> Neue Reservations-Gruppen und -Objekte erstellen', '');
+INSERT INTO `ko_help` VALUES(NULL, 'admin', 'login_rights_groups', 'de', 0, 0, '<b>2:</b> Personen Gruppen zuweisen oder Zuweisung aufheben.<br /> <b>3:</b> Gruppen und Rollen bearbeiten.<br /> <b>4:</b> Gruppen und Rollen löschen.', '');
+INSERT INTO `ko_help` VALUES(NULL, 'admin', 'login_rights_admin', 'de', 0, 0, 'Normalerweise sollte jeder Benutzer Berechtigungsstufe 1 für das Admin-Modul haben, um die eigenen Layout-Einstellungen bearbeiten zu können.', '');
+INSERT INTO `ko_help` VALUES(NULL, 'admin', 'login_rights_daten', 'en', 0, 0, '<b>2: </b>Add new events, edit or delete events for the selected event groups. Moderation needed if set for the event group.<br />\r\n<b>3: </b>Same as 2 but without moderation even if set for the event group.<br/>\r\n<b>4: </b>Moderate events entered by users with access level 2.<br />\r\n<b>ALL rights set to 3:</b><br />Create new event groups/calendars', '');
+INSERT INTO `ko_help` VALUES(NULL, 'admin', 'login_rights_reservation', 'en', 0, 0, '<b>2:</b> Add new reservations. Moderation needed for items with moderation.<br /> <b>3: </b>Edit/delete own reservations.<br /> <b>4:</b> Add new reservations without moderation and edit/delete all reservations for the given items.<br /> <b>4:</b> Moderate reservation requests.<br /> <b>ALL rights set to 4:</b> Create new reservation groups and items', '');
+INSERT INTO `ko_help` VALUES(NULL, 'admin', 'login_rights_groups', 'en', 0, 0, '<b>2:</b> Add people to groups or remove them.<br /> <b>3:</b> Edit groups and add or edit roles.<br /> <b>4:</b> Delete groups and roles.', '');
+INSERT INTO `ko_help` VALUES(NULL, 'admin', 'login_rights_admin', 'en', 0, 0, 'Usually every user should have access to the admin module with access level 1 to edit her own layout settings.', '');
+INSERT INTO `ko_help` VALUES(NULL, 'daten', 'ical_links2', 'en', 0, 0, 'Right click on link and select "Copy link" to add the link to your clipboard. Paste it into your calendar application.', '');
+INSERT INTO `ko_help` VALUES(NULL, 'daten', 'ical_links2', 'de', 0, 0, 'Mit der rechten Maustaste auf den gewünschten Link klicken und "Link-Adresse kopieren". Danach im Kalender-Programm als Kalender-URL einfügen.', '');
+INSERT INTO `ko_help` VALUES(NULL, 'daten', 'kota.ko_reminder.text', 'de', 0, 0, 'Im Text der Nachricht können verschiedene Platzhalter eingefügt werden, die anschliessend vom kOOL durch Absender-, Empfänger-, oder Eventspezifische Informationen ersetzt werden.\nAls Beispiel:\n\n###r__salutation_formal_name###\nHier erhalten Sie wichtige Informationen zum Event ###e_title###:\nStartzeit: ###e_startzeit###, Startdatum: ###e_startdatum###.\n\nMit freundlichen Grüssen,\n###s_vorname### ###s_nachname###', '');
+INSERT INTO `ko_help` VALUES(NULL, 'daten', 'kota.ko_reminder.text', 'en', 0, 0, 'Several placeholders may be inserted into the text of the reminder. These will then be replaced by the corresponding information of an event, receiver or sender.\nAn Example:\n\n###r__salutation_formal_name###\nHere you get some important information concerning the event ###e_title###:\nStarting time: ###e_startzeit###, Starting date: ###e_startdatum###.\n\nYours sincerely,\n###s_vorname### ###s_nachname###', '');
+INSERT INTO `ko_help` VALUES(NULL, 'reservation', 'ical_links2', 'en', 0, 0, 'Right click on link and select "Copy link" to add the link to your clipboard. Paste it into your calendar application.', '');
+INSERT INTO `ko_help` VALUES(NULL, 'reservation', 'ical_links2', 'de', 0, 0, 'Mit der rechten Maustaste auf den gewünschten Link klicken und "Link-Adresse kopieren". Danach im Kalender-Programm als Kalender-URL einfügen.', '');
+INSERT INTO `ko_help` VALUES(NULL, 'donations', 'submenu_filter_amount', 'en', 0, 0, '<h1>Filter for the amount:</h1><ul><li><b>100-200</b>: Find amount between 100 and 200 (including)</li><li><b>&gt;100</b>: Amount greater than or equal to 100</li><li><b>&lt;100</b>: Amount smaller than or equal to 100</li><li><b>=100</b>: Amount is exactly 100</li><li><b>Other values</b>: Partial matches: "100" finds "100", "1000" and e.g. "1009"</li></ul>', '');
+INSERT INTO `ko_help` VALUES(NULL, 'donations', 'submenu_filter_amount', 'de', 0, 0, '<h1>Suche nach Betrag:</h1><ul><li><b>100-200</b>: Betrag zwischen 100 und 200 (inklusive)</li><li><b>&gt;100</b>: Betrag grösser als 100 (inklusive)</li><li><b>&lt;100</b>: Betrag kleiner als 100 (inklusive)</li><li><b>=100</b>: Betrag exakt 100</li><li><b>Sonstige Eingaben</b>: Teilsuche, z.B. "100" findet "100" aber auch "1000" oder "1009"</li></ul>', '');
+INSERT INTO `ko_help` VALUES(NULL, 'leute', 'filter_link_adv', 'de', 0, 0, '<h1>Manuelle Filter-Verknüpfung</h1>Für jeden angewandten Filter erscheint in obiger Liste eine Nummer, über die der Filter im Textfeld referenziert werden kann.<br />Beispiele:<ul><li><b>0 UND 1:</b> Damit wird der erste Filter ("0") mit einem logischen UND mit dem zweiten ("1") verknüpft.</li><li><b>0 UND (1 ODER 2)</b>: Der erste ("0") sowie entweder der zweite oder der dritte Filter ("(1 ODER 2)") müssen zutreffen.</li></ul>', '');
+INSERT INTO `ko_help` VALUES(NULL, 'leute', 'filter_link_adv', 'en', 0, 0, '<h1>Manually set filter links</h1>In the list above you can see a number for every currently applied filter. Use these in the input below to add a reference to each filter.<br />Some examples:<ul><li><b>0 AND 1:</b>The first ("0") and second ("1") filter will be linked by a logical AND.</li><li><b>0 AND (1 OR 2)</b>: The first ("0") filter and either the second or third filter ("(1 OR 2)")must match.</li></ul>', '');
+INSERT INTO `ko_help` VALUES(NULL, 'groups', 'kota.ko_groups.linked_group', 'en', '', '', 'When adding an address to the current group this option will also assign this address to the group specified here. This only applies to newly assigned addresses. If the address is removed from this group it will stay in the linked group.', '');
+INSERT INTO `ko_help` VALUES(NULL, 'groups', 'kota.ko_groups.linked_group', 'de', '', '', 'Beim Hinzufügen einer Adresse zu dieser Gruppe wird diese Adresse auch der verknüpften Gruppe zugewiesen. Dies gilt nur für Neuzuweisungen von Adressen zu dieser Gruppe. Wird eine Adresse aus dieser Gruppe entfernt, bleibt sie in der verknüpften Gruppe bestehen.', '');
+
+INSERT INTO `ko_help` VALUES(NULL, 'subscription', 'kota.ko_subscription_forms.response_body_subscription', 'de', 0, 0, 'Platzhalter die hier verwendet werden können sind bei den Formularfeldern einsehbar.<br />Weitere Platzhalter:<dl><dt>###EDIT_LINK###</dt><dd>Fügt einen Link zum Bearbeiten der Anmeldung ein. Das funktioniert nur bei deaktivierter Moderation.</dd><dt>###SALUTATION_FORMAL###><dd>Formelle Anrede inkl. Name (z.B. Sehr geehrter Herr Muster)</dd><dt>###SALUTATION_INFORMAL###</dt><dd>Informelle Anrede inkl. Name (z.B. Lieber Peter)</dd></dl>', '');
+INSERT INTO `ko_help` VALUES(NULL, 'subscription', 'kota.ko_subscription_forms.response_body_edit', 'de', 0, 0, 'Platzhalter die hier verwendet werden können sind bei den Formularfeldern einsehbar.<br />Weitere Platzhalter:<dl><dt>###EDIT_LINK###</dt><dd>Fügt einen Link zum Bearbeiten der Anmeldung ein. Das funktioniert nur bei deaktivierter Moderation.</dd><dt>###SALUTATION_FORMAL###><dd>Formelle Anrede inkl. Name (z.B. Sehr geehrter Herr Muster)</dd><dt>###SALUTATION_INFORMAL###</dt><dd>Informelle Anrede inkl. Name (z.B. Lieber Peter)</dd></dl>', '');
+INSERT INTO `ko_help` VALUES(NULL, 'subscription', 'kota.ko_subscription_forms.moderated', 'de', '', '', 'Moderierte Anmeldungen müssen unter "Leute > Anmeldungen moderiert werden. Sonst wird sofort eine neue Adresse in kOOL gespeichert und ein Adressbereinigungs-Eintrag erstellt.', '');
+INSERT INTO `ko_help` VALUES(NULL, 'subscription', 'kota.ko_subscription_forms.protected', 'de', '', '', 'Diesen Link können Sie im Leute-Modul als Spalte einblenden und über den E-Mail Versand den einzelnen eingeladenen Personen zukommen lassen.', '');
+INSERT INTO `ko_help` VALUES(NULL, 'subscription', 'kota.ko_subscription_forms.edit_link', 'de', '', '', 'Mit diesem Link können die Benutzer ihre eigene Adresse und die Angaben zur Gruppenanmeldung später wieder bearbeiten.', '');
+INSERT INTO `ko_help` VALUES(NULL, 'subscription', 'kota.ko_subscription_forms.url_segment', 'de', '', '', 'Unter diesem Link ist das Anmeldeformular erreichbar. Persönliche Links können Sie aus dem Leute-Modul mit eigener Spalte und über den E-Mail Versand versenden.', '');
+INSERT INTO `ko_help` VALUES(NULL, 'subscription', 'kota.ko_subscription_forms.double_opt_in', 'de', '', '', '', 'https://kool.help/module/anmeldung#double-opt-in_aktivieren');
+
 
 CREATE TABLE `ko_kleingruppen` (
   `id` mediumint(4) unsigned zerofill NOT NULL AUTO_INCREMENT,
   `name` varchar(250) NOT NULL,
   `alter` varchar(20) NOT NULL DEFAULT '',
-  `geschlecht` enum('','m','w','mixed') NOT NULL,
-  `wochentag` enum('','monday','tuesday','wednesday','thursday','friday','saturday','sunday') NOT NULL,
+  `geschlecht` varchar(10) NOT NULL,
+  `wochentag` varchar(20) NOT NULL,
   `ort` varchar(250) NOT NULL,
   `zeit` tinytext NOT NULL,
-  `treffen` enum('','weekly','biweekly','once a month','twice a month','threetimes a month') NOT NULL,
+  `treffen` varchar(50) NOT NULL,
   `anz_frei` tinyint(4) NOT NULL DEFAULT '0',
   `kg-gen` mediumint(9) NOT NULL DEFAULT '0',
   `type` varchar(100) NOT NULL,
@@ -848,7 +753,7 @@ CREATE TABLE `ko_kleingruppen` (
 CREATE TABLE `ko_leute` (
   `id` mediumint(9) unsigned NOT NULL AUTO_INCREMENT,
   `famid` mediumint(9) NOT NULL DEFAULT '0',
-  `anrede` enum('','Mr','Mrs','Miss','Ms') NOT NULL,
+  `anrede` varchar(100) NOT NULL,
   `firm` varchar(250) NOT NULL,
   `department` varchar(250) NOT NULL,
   `vorname` varchar(50) NOT NULL,
@@ -865,18 +770,19 @@ CREATE TABLE `ko_leute` (
   `email` varchar(100) NOT NULL,
   `web` varchar(250) NOT NULL,
   `geburtsdatum` date NOT NULL,
-  `zivilstand` enum('','single','married','separated','divorced','widowed') NOT NULL,
-  `geschlecht` enum('','m','w') NOT NULL DEFAULT '',
-  `memo1` blob NOT NULL,
-  `memo2` blob NOT NULL,
+  `zivilstand` varchar(50) NOT NULL,
+  `geschlecht` varchar(10) NOT NULL DEFAULT '',
+  `memo1` text NOT NULL,
+  `memo2` text NOT NULL,
   `father` mediumint(9) NOT NULL DEFAULT '0',
   `mother` mediumint(9) NOT NULL DEFAULT '0',
   `spouse` mediumint(9) NOT NULL DEFAULT '0',
   `kinder` smallint(4) NOT NULL DEFAULT '0',
   `smallgroups` text NOT NULL,
   `lastchange` datetime NOT NULL,
-  `famfunction` enum('','husband','wife','child') NOT NULL,
+  `famfunction` varchar(20) NOT NULL,
   `groups` text NOT NULL,
+  `checkin_number` int(10) NOT NULL,
   `deleted` tinyint(4) NOT NULL DEFAULT '0',
   `hidden` tinyint(3) unsigned NOT NULL DEFAULT '0',
   `crdate` datetime NOT NULL,
@@ -891,8 +797,9 @@ CREATE TABLE `ko_leute` (
   KEY `crdate` (`crdate`),
   KEY `lastchange` (`lastchange`),
   KEY `famfunction` (`famfunction`),
+  KEY `checkin_number` (`checkin_number`),
   FULLTEXT KEY `groups` (`groups`)
-) ENGINE=MyISAM DEFAULT CHARSET=latin1 COLLATE latin1_german1_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE latin1_german1_ci;
 
 CREATE TABLE `ko_leute_changes` (
   `id` mediumint(8) unsigned NOT NULL AUTO_INCREMENT,
@@ -904,14 +811,14 @@ CREATE TABLE `ko_leute_changes` (
   PRIMARY KEY (`id`),
   KEY `liduiddate` (`leute_id`,`user_id`,`date`),
   KEY `date` (`date`)
-) ENGINE=MyISAM DEFAULT CHARSET=latin1 COLLATE latin1_german1_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE latin1_german1_ci;
 
 CREATE TABLE `ko_leute_mod` (
   `_id` mediumint(9) unsigned NOT NULL AUTO_INCREMENT,
   `_leute_id` mediumint(8) NOT NULL DEFAULT '0',
   `firm` varchar(255) NOT NULL,
   `department` varchar(255) NOT NULL,
-  `anrede` enum('','Herr','Frau') NOT NULL,
+  `anrede` varchar(100) NOT NULL,
   `vorname` varchar(100) NOT NULL,
   `nachname` varchar(100) NOT NULL,
   `adresse` varchar(100) NOT NULL,
@@ -926,14 +833,14 @@ CREATE TABLE `ko_leute_mod` (
   `email` varchar(100) NOT NULL,
   `web` varchar(100) NOT NULL,
   `geburtsdatum` date NOT NULL,
-  `geschlecht` enum('','m','w') NOT NULL,
-	`zivilstand` enum('','single','married','separated','divorced','widowed') NOT NULL,
-  `memo1` blob NOT NULL,
-  `memo2` blob NOT NULL,
+  `geschlecht` varchar(10) NOT NULL,
+	`zivilstand` varchar(50) NOT NULL,
+  `memo1` text NOT NULL,
+  `memo2` text NOT NULL,
   `father` mediumint(9) NOT NULL DEFAULT '0',
   `mother` mediumint(9) NOT NULL DEFAULT '0',
   `spouse` mediumint(9) NOT NULL DEFAULT '0',
-  `famfunction` enum('','husband','wife','child') NOT NULL,
+  `famfunction` varchar(20) NOT NULL,
   `rectype` varchar(10) NOT NULL,
   `_bemerkung` text NOT NULL,
   `_group_id` tinytext NOT NULL,
@@ -955,7 +862,7 @@ CREATE TABLE `ko_leute_revisions` (
   `cruser` mediumint(9) unsigned NOT NULL,
   `group_id` text NOT NULL,
 	PRIMARY KEY (`id`)
-) ENGINE=MyISAM DEFAULT CHARSET=latin1 COLLATE latin1_german1_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE latin1_german1_ci;
 
 CREATE TABLE `ko_leute_preferred_fields` (
   `id` mediumint(9) unsigned NOT NULL AUTO_INCREMENT,
@@ -967,6 +874,19 @@ CREATE TABLE `ko_leute_preferred_fields` (
   KEY `lid` (`lid`),
   KEY `field` (`field`)
 ) ENGINE=MyISAM DEFAULT CHARSET=latin1 COLLATE latin1_german1_ci;
+
+CREATE TABLE `ko_event_absence` (
+  `id` mediumint(9) unsigned NOT NULL AUTO_INCREMENT,
+  `leute_id` mediumint(9) unsigned NOT NULL,
+  `type` varchar(50) NOT NULL,
+  `description` text NOT NULL,
+  `from_date` datetime NOT NULL,
+  `to_date` datetime NOT NULL,
+  `crdate` datetime NOT NULL,
+  `cruser` mediumint(9) unsigned NOT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1 COLLATE latin1_german1_ci;
+
 
 CREATE TABLE `ko_log` (
   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
@@ -992,10 +912,12 @@ CREATE TABLE `ko_mailing_mails` (
   `from` varchar(255) NOT NULL,
   `subject` varchar(255) NOT NULL,
   `header` text NOT NULL,
-  `body` longtext NOT NULL,
+  `body` longblob NOT NULL,
   `sender_email` varchar(250) NOT NULL,
   `modify_rcpts` tinyint(1) NOT NULL DEFAULT '1',
 	`rectype` varchar(15) NOT NULL,
+	`crm_project_ids` varchar(100) NOT NULL,
+	`size` int(11) unsigned NOT NULL,
   PRIMARY KEY (`id`),
   KEY `status` (`status`,`code`)
 ) ENGINE=MyISAM DEFAULT CHARSET=latin1 COLLATE latin1_german1_ci;
@@ -1006,6 +928,8 @@ CREATE TABLE `ko_mailing_recipients` (
   `name` varchar(200) NOT NULL,
   `email` varchar(200) NOT NULL,
   `leute_id` mediumint(9) NOT NULL,
+  `placeholder_data` text NOT NULL,
+  `delivery_attempts` mediumint(2) unsigned NOT NULL,
   PRIMARY KEY (`id`),
   KEY `mail_id` (`mail_id`)
 ) ENGINE=MyISAM DEFAULT CHARSET=latin1 COLLATE latin1_german1_ci;
@@ -1144,6 +1068,7 @@ CREATE TABLE `ko_rota_teams` (
   `eg_id` text NOT NULL,
   `export_eg` mediumint(9) NOT NULL,
 	`sort` int(11) NOT NULL,
+	`schedule_subgroup_members` tinyint(1) NOT NULL,
   `allow_consensus` tinyint(4) NOT NULL DEFAULT '0',
 	`consensus_description` text NOT NULL,
 	`consensus_disable_maybe_option` tinyint(3) NOT NULL,
@@ -1161,6 +1086,14 @@ CREATE TABLE `ko_rota_consensus` (
   KEY `main` (`team_id`,`event_id`,`person_id`)
 ) ENGINE=MyISAM DEFAULT CHARSET=latin1 COLLATE latin1_german1_ci;
 
+
+CREATE TABLE `ko_rota_consensus_comment` (
+  `team_id` mediumint(8) unsigned NOT NULL,
+  `person_id` mediumint(8) unsigned NOT NULL,
+  `comment` text NOT NULL,
+  KEY `main` (`team_id`,`person_id`)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1 COLLATE latin1_german1_ci;
+
 CREATE TABLE `ko_scheduler_tasks` (
   `id` mediumint(8) unsigned NOT NULL AUTO_INCREMENT,
   `name` varchar(200) NOT NULL,
@@ -1172,12 +1105,15 @@ CREATE TABLE `ko_scheduler_tasks` (
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB  DEFAULT CHARSET=latin1 COLLATE latin1_german1_ci;
 
-INSERT INTO `ko_scheduler_tasks` VALUES(NULL, 'Delete old downloads', '47 2 * * *', 0, 'ko_task_delete_old_downloads', '0000-00-00 00:00:00', '0000-00-00 00:00:00');
+INSERT INTO `ko_scheduler_tasks` VALUES(NULL, 'Delete old data (downloads, unused gdf, ko_log, ko_mailing_mails tables)', '47 2 * * *', 0, 'ko_task_delete_old_downloads', '0000-00-00 00:00:00', '0000-00-00 00:00:00');
 INSERT INTO `ko_scheduler_tasks` VALUES(NULL, 'Mailing', '*/5 * * * *', 0, 'ko_task_mailing', '0000-00-00 00:00:00', '0000-00-00 00:00:00');
 INSERT INTO `ko_scheduler_tasks` VALUES(NULL, 'iCal import', '*/5 * * * *', 1, 'ko_task_import_events_ical', '0000-00-00 00:00:00', '0000-00-00 00:00:00');
 INSERT INTO `ko_scheduler_tasks` VALUES(NULL, 'Send Reminders', '*/15 * * * *', 0, 'ko_task_reminder', '0000-00-00 00:00:00', '0000-00-00 00:00:00');
 INSERT INTO `ko_scheduler_tasks` VALUES(NULL, 'Save group assignments history', CONCAT(10 + FLOOR( RAND( ) * 45 ), ' 23 * * *'), 1, 'ko_task_save_group_assignments', '0000-00-00 00:00:00', '0000-00-00 00:00:00');
-INSERT INTO `ko_scheduler_tasks` VALUES(NULL, 'Perform vesr import', '19 */2 * * *', 0, 'ko_task_vesr_import', '0000-00-00 00:00:00', '0000-00-00 00:00:00');
+INSERT INTO `ko_scheduler_tasks` VALUES(NULL, 'Perform vesr import (v11)', '34 */2 * * *', 0, 'ko_task_vesr_import', '0000-00-00 00:00:00', '0000-00-00 00:00:00');
+INSERT INTO `ko_scheduler_tasks` VALUES(NULL, 'Perform vesr import (CAMT)', '19 */2 * * *', 0, 'ko_task_vesr_camt_import', '0000-00-00 00:00:00', '0000-00-00 00:00:00');
+INSERT INTO `ko_scheduler_tasks` VALUES(NULL, 'Update Google Cloud Printers', '32 1 * * *', 0, 'ko_task_update_google_cloud_printers', '0000-00-00 00:00:00', '0000-00-00 00:00:00');
+INSERT INTO `ko_scheduler_tasks` VALUES(NULL, 'Statistics (Filter, general)', '45 23 * * *', 1, 'ko_task_create_new_statistics', '0000-00-00 00:00:00', '0000-00-00 00:00:00');
 
 CREATE TABLE `ko_settings` (
   `key` varchar(100) NOT NULL DEFAULT '',
@@ -1186,14 +1122,14 @@ CREATE TABLE `ko_settings` (
 ) ENGINE=MyISAM DEFAULT CHARSET=latin1 COLLATE latin1_german1_ci;
 
 INSERT INTO `ko_settings` VALUES('show_leute_cols', 'vorname,nachname,adresse,plz,ort');
-INSERT INTO `ko_settings` VALUES('leute_col_name', 'a:3:{s:2:"nl";a:28:{s:5:"famid";s:5:"Gezin";s:6:"anrede";s:6:"Aanhef";s:4:"firm";s:7:"Bedrijf";s:10:"department";s:8:"Afdeling";s:7:"vorname";s:8:"Voornaam";s:8:"nachname";s:10:"Achternaam";s:7:"adresse";s:5:"Adres";s:14:"adresse_zusatz";s:12:"Adresregel 2";s:3:"plz";s:8:"Postcode";s:3:"ort";s:10:"Woonplaats";s:4:"land";s:4:"Land";s:4:"telp";s:14:"Telefoon thuis";s:4:"telg";s:13:"Telefoon werk";s:5:"natel";s:6:"Mobiel";s:3:"fax";s:3:"Fax";s:5:"email";s:6:"E-mail";s:3:"web";s:3:"URL";s:12:"geburtsdatum";s:13:"Geboortedatum";s:10:"zivilstand";s:17:"Burgerlijke staat";s:10:"geschlecht";s:8:"Geslacht";s:5:"memo1";s:5:"Memo1";s:5:"memo2";s:5:"Memo2";s:6:"kinder";s:8:"Kinderen";s:11:"smallgroups";s:8:"Celgroep";s:10:"lastchange";s:16:"Laatst gewijzigd";s:11:"famfunction";s:9:"Gezinsrol";s:6:"groups";s:7:"Groepen";s:6:"hidden";s:9:"Verborgen";}s:2:"en";a:28:{s:5:"famid";s:6:"Family";s:6:"anrede";s:10:"Salutation";s:4:"firm";s:7:"Company";s:10:"department";s:10:"Department";s:7:"vorname";s:8:"Forename";s:8:"nachname";s:7:"Surname";s:7:"adresse";s:7:"Address";s:14:"adresse_zusatz";s:6:"Line 2";s:3:"plz";s:9:"Post code";s:3:"ort";s:9:"Town/City";s:4:"land";s:7:"Country";s:4:"telp";s:7:"Home no";s:4:"telg";s:7:"Work no";s:5:"natel";s:6:"Mobile";s:3:"fax";s:3:"Fax";s:5:"email";s:5:"Email";s:3:"web";s:3:"URL";s:12:"geburtsdatum";s:3:"DOB";s:10:"zivilstand";s:14:"Marital Status";s:10:"geschlecht";s:3:"Sex";s:5:"memo1";s:7:"Notes 1";s:5:"memo2";s:7:"Notes 2";s:6:"kinder";s:8:"Children";s:11:"smallgroups";s:11:"Smallgroups";s:10:"lastchange";s:11:"Last change";s:11:"famfunction";s:11:"Family role";s:6:"groups";s:6:"Groups";s:6:"hidden";s:6:"Hidden";}s:2:"de";a:28:{s:5:"famid";s:7:"Familie";s:6:"anrede";s:6:"Anrede";s:4:"firm";s:5:"Firma";s:10:"department";s:9:"Abteilung";s:7:"vorname";s:7:"Vorname";s:8:"nachname";s:8:"Nachname";s:7:"adresse";s:7:"Adresse";s:14:"adresse_zusatz";s:13:"AdresseZusatz";s:3:"plz";s:3:"PLZ";s:3:"ort";s:3:"Ort";s:4:"land";s:4:"Land";s:4:"telp";s:4:"TelP";s:4:"telg";s:4:"TelG";s:5:"natel";s:12:"Mobiltelefon";s:3:"fax";s:3:"Fax";s:5:"email";s:6:"E-Mail";s:3:"web";s:3:"Web";s:12:"geburtsdatum";s:12:"Geburtsdatum";s:10:"zivilstand";s:10:"Zivilstand";s:10:"geschlecht";s:10:"Geschlecht";s:5:"memo1";s:5:"Memo1";s:5:"memo2";s:5:"Memo2";s:6:"kinder";s:6:"Kinder";s:11:"smallgroups";s:12:"Kleingruppen";s:10:"lastchange";s:15:"LetzteAenderung";s:11:"famfunction";s:11:"FamFunktion";s:6:"groups";s:7:"Gruppen";s:6:"hidden";s:9:"Versteckt";}}');
 INSERT INTO `ko_settings` VALUES('mailing_mails_per_cycle', '30');
 INSERT INTO `ko_settings` VALUES('daten_perm_filter_ende', '');
 INSERT INTO `ko_settings` VALUES('res_perm_filter_start', '');
 INSERT INTO `ko_settings` VALUES('res_perm_filter_ende', '');
 INSERT INTO `ko_settings` VALUES('show_limit_groups', '20');
 INSERT INTO `ko_settings` VALUES('default_view_groups', 'list_groups');
-INSERT INTO `ko_settings` VALUES('res_show_persondata', '1');
+INSERT INTO `ko_settings` VALUES('show_limit_taxonomy', '20');
+INSERT INTO `ko_settings` VALUES('default_view_taxonomy', 'list_terms');
 INSERT INTO `ko_settings` VALUES('rota_export_calid', '');
 INSERT INTO `ko_settings` VALUES('show_limit_leute', '50');
 INSERT INTO `ko_settings` VALUES('info_name', '');
@@ -1214,37 +1150,28 @@ INSERT INTO `ko_settings` VALUES('xls_default_font', '');
 INSERT INTO `ko_settings` VALUES('xls_title_font', '');
 INSERT INTO `ko_settings` VALUES('xls_title_bold', '1');
 INSERT INTO `ko_settings` VALUES('xls_title_color', 'blue');
-INSERT INTO `ko_settings` VALUES('default_view_admin', 'set_layout');
+INSERT INTO `ko_settings` VALUES('default_view_admin', 'logins');
 INSERT INTO `ko_settings` VALUES('default_view_daten', 'show_cal_monat');
 INSERT INTO `ko_settings` VALUES('default_view_leute', 'show_all');
 INSERT INTO `ko_settings` VALUES('default_view_reservation', 'show_cal_monat');
-INSERT INTO `ko_settings` VALUES('show_limit_fileshare', '20');
-INSERT INTO `ko_settings` VALUES('fileshare_mailtext', 'You have received a file from <ABSENDER> (<ABSENDEREMAIL>). The following comments were added:\r\n---\r\n<TEXT>\r\n---\r\nDownload your file here: <LINK>');
-INSERT INTO `ko_settings` VALUES('default_view_fileshare', 'list_webfolders');
 INSERT INTO `ko_settings` VALUES('default_view_tools', '');
 INSERT INTO `ko_settings` VALUES('show_limit_kg', '20');
 INSERT INTO `ko_settings` VALUES('login_edit_person', '0');
-INSERT INTO `ko_settings` VALUES('default_view_tapes', 'list_tapes');
-INSERT INTO `ko_settings` VALUES('show_limit_tapes', '20');
-INSERT INTO `ko_settings` VALUES('tapes_new_plus', '7');
-INSERT INTO `ko_settings` VALUES('tapes_new_minus', '21');
-INSERT INTO `ko_settings` VALUES('tapes_guess_series', '1');
-INSERT INTO `ko_settings` VALUES('tapes_clear_printqueue', '0');
-INSERT INTO `ko_settings` VALUES('familie_col_name', 'a:3:{s:2:"de";a:10:{s:8:"nachname";s:8:"Nachname";s:7:"adresse";s:7:"Adresse";s:14:"adresse_zusatz";s:14:"Adresse Zusatz";s:3:"plz";s:3:"PLZ";s:3:"ort";s:3:"Ort";s:4:"land";s:4:"Land";s:4:"telp";s:5:"Tel P";s:9:"famanrede";s:15:"Familien-Anrede";s:12:"famfirstname";s:16:"Familien-Vorname";s:11:"famlastname";s:17:"Familien-Nachname";}s:2:"en";a:10:{s:8:"nachname";s:7:"Surname";s:7:"adresse";s:7:"Address";s:14:"adresse_zusatz";s:14:"Address line 2";s:3:"plz";s:9:"Post code";s:3:"ort";s:9:"Town/City";s:4:"land";s:7:"Country";s:4:"telp";s:10:"Home Phone";s:9:"famanrede";s:17:"Family Salutation";s:12:"famfirstname";s:16:"Family Firstname";s:11:"famlastname";s:15:"Family Lastname";}s:2:"nl";a:10:{s:8:"nachname";s:10:"Achternaam";s:7:"adresse";s:5:"Adres";s:14:"adresse_zusatz";s:12:"Adresregel 2";s:3:"plz";s:8:"Postcode";s:3:"ort";s:10:"Woonplaats";s:4:"land";s:4:"Land";s:4:"telp";s:14:"Telefoon thuis";s:9:"famanrede";s:12:"Aanhef gezin";s:12:"famfirstname";s:0:"";s:11:"famlastname";s:0:"";}}');
+INSERT INTO `ko_settings` VALUES('familie_col_name', 'a:3:{s:2:"de";a:10:{s:8:"nachname";s:8:"Nachname";s:7:"adresse";s:7:"Adresse";s:14:"adresse_zusatz";s:14:"Adresse Zusatz";s:3:"plz";s:3:"PLZ";s:3:"ort";s:3:"Ort";s:4:"land";s:4:"Land";s:4:"telp";s:5:"Tel P";s:9:"famanrede";s:15:"Haushalt-Anrede";s:12:"famfirstname";s:16:"Haushalt-Vorname";s:11:"famlastname";s:17:"Haushalt-Nachname";s:8:"famemail";s:15:"Haushalt-E-Mail";}s:2:"en";a:10:{s:8:"nachname";s:7:"Surname";s:7:"adresse";s:7:"Address";s:14:"adresse_zusatz";s:14:"Address line 2";s:3:"plz";s:9:"Post code";s:3:"ort";s:9:"Town/City";s:4:"land";s:7:"Country";s:4:"telp";s:10:"Home Phone";s:9:"famanrede";s:17:"Family Salutation";s:12:"famfirstname";s:16:"Family Firstname";s:11:"famlastname";s:15:"Family Lastname";}s:2:"nl";a:10:{s:8:"nachname";s:10:"Achternaam";s:7:"adresse";s:5:"Adres";s:14:"adresse_zusatz";s:12:"Adresregel 2";s:3:"plz";s:8:"Postcode";s:3:"ort";s:10:"Woonplaats";s:4:"land";s:4:"Land";s:4:"telp";s:14:"Telefoon thuis";s:9:"famanrede";s:12:"Aanhef gezin";s:12:"famfirstname";s:0:"";s:11:"famlastname";s:0:"";}}');
 INSERT INTO `ko_settings` VALUES('daten_perm_filter_start', '');
 INSERT INTO `ko_settings` VALUES('res_mandatory', '');
 INSERT INTO `ko_settings` VALUES('res_send_email', '');
 INSERT INTO `ko_settings` VALUES('res_allow_multires_for_guest', '0');
 INSERT INTO `ko_settings` VALUES('show_limit_donations', '20');
 INSERT INTO `ko_settings` VALUES('sms_country_code', '41');
-INSERT INTO `ko_settings` VALUES('change_password', '0');
-INSERT INTO `ko_settings` VALUES('leute_hidden_mode', '2');
+INSERT INTO `ko_settings` VALUES('change_password', '1');
 INSERT INTO `ko_settings` VALUES('rota_teamrole', '');
 INSERT INTO `ko_settings` VALUES('rota_leaderrole', '');
 INSERT INTO `ko_settings` VALUES('daten_access_calendar', '1');
 INSERT INTO `ko_settings` VALUES('tracking_add_roles', '0');
 INSERT INTO `ko_settings` VALUES('rota_showroles', '0');
 INSERT INTO `ko_settings` VALUES('mailing_max_recipients', '0');
+INSERT INTO `ko_settings` VALUES('mailing_max_attempts', '5');
 INSERT INTO `ko_settings` VALUES('mailing_only_alias', '0');
 INSERT INTO `ko_settings` VALUES('daten_gs_pid', '');
 INSERT INTO `ko_settings` VALUES('daten_gs_role', '');
@@ -1256,7 +1183,6 @@ INSERT INTO `ko_settings` VALUES('typo3_db', '');
 INSERT INTO `ko_settings` VALUES('typo3_user', '');
 INSERT INTO `ko_settings` VALUES('typo3_pwd', '');
 INSERT INTO `ko_settings` VALUES('mailing_allow_double', '0');
-INSERT INTO `ko_settings` VALUES('res_show_purpose', '1');
 INSERT INTO `ko_settings` VALUES('leute_real_delete', '0');
 INSERT INTO `ko_settings` VALUES('daten_show_mod_to_all', '0');
 INSERT INTO `ko_settings` VALUES('res_show_mod_to_all', '0');
@@ -1265,44 +1191,21 @@ INSERT INTO `ko_settings` VALUES('leute_assign_global_notification', '');
 INSERT INTO `ko_settings` VALUES('res_attach_ics_for_user', '');
 INSERT INTO `ko_settings` VALUES('res_access_mode', '0');
 INSERT INTO `ko_settings` VALUES('leute_allow_moderation', '1');
+INSERT INTO `ko_settings` VALUES('checkin_display_leute_fields', 'vorname,nachname,geburtsdatum');
+INSERT INTO `ko_settings` VALUES('checkin_max_results', '50');
+INSERT INTO `ko_settings` VALUES('leute_allow_import', '1');
 
-CREATE TABLE `ko_tapes` (
-  `id` mediumint(9) NOT NULL AUTO_INCREMENT,
-  `title` varchar(255) NOT NULL DEFAULT '',
-  `subtitle` varchar(255) NOT NULL DEFAULT '',
-  `preacher` varchar(255) NOT NULL DEFAULT '',
-  `date` date NOT NULL DEFAULT '0000-00-00',
-  `group_id` mediumint(9) NOT NULL,
-  `serie_id` mediumint(9) NOT NULL,
-  `item_number` varchar(200) NOT NULL,
-  `price` float NOT NULL,
-  PRIMARY KEY (`id`)
-) ENGINE=MyISAM DEFAULT CHARSET=latin1 COLLATE latin1_german1_ci;
-
-CREATE TABLE `ko_tapes_groups` (
-  `id` mediumint(9) NOT NULL AUTO_INCREMENT,
-  `name` varchar(255) NOT NULL DEFAULT '',
-  `printname` varchar(255) NOT NULL DEFAULT '',
-  PRIMARY KEY (`id`)
-) ENGINE=MyISAM DEFAULT CHARSET=latin1 COLLATE latin1_german1_ci;
-
-CREATE TABLE `ko_tapes_printlayout` (
-  `id` mediumint(9) NOT NULL AUTO_INCREMENT,
-  `name` varchar(100) NOT NULL DEFAULT '',
-  `default` tinyint(4) NOT NULL DEFAULT '0',
-  `data` text NOT NULL,
-  PRIMARY KEY (`id`)
-) ENGINE=MyISAM  DEFAULT CHARSET=latin1 COLLATE latin1_german1_ci;
-
-INSERT INTO `ko_tapes_printlayout` VALUES(2, 'Tapes 6x2', 0, 'a:6:{s:10:"page_width";s:3:"210";s:11:"page_height";s:3:"297";s:5:"items";s:2:"12";s:5:"rootx";a:12:{i:0;s:2:"12";i:1;s:3:"110";i:2;s:2:"12";i:3;s:3:"110";i:4;s:2:"12";i:5;s:3:"110";i:6;s:2:"12";i:7;s:3:"110";i:8;s:2:"12";i:9;s:3:"110";i:10;s:2:"12";i:11;s:3:"110";}s:5:"rooty";a:12:{i:0;s:2:"15";i:1;s:2:"15";i:2;s:2:"62";i:3;s:2:"62";i:4;s:3:"109";i:5;s:3:"109";i:6;s:3:"156";i:7;s:3:"156";i:8;s:3:"203";i:9;s:3:"203";i:10;s:3:"250";i:11;s:3:"250";}s:6:"layout";a:8:{s:5:"title";a:6:{s:2:"do";i:1;s:1:"x";s:1:"3";s:1:"y";s:1:"2";s:4:"font";s:6:"arialb";s:8:"fontsize";s:2:"10";s:5:"align";s:1:"L";}s:8:"subtitle";a:1:{s:2:"do";i:0;}s:4:"date";a:6:{s:2:"do";i:1;s:1:"x";s:2:"85";s:1:"y";s:1:"7";s:4:"font";s:5:"arial";s:8:"fontsize";s:1:"9";s:5:"align";s:1:"R";}s:5:"group";a:1:{s:2:"do";i:0;}s:5:"serie";a:1:{s:2:"do";i:0;}s:8:"preacher";a:6:{s:2:"do";i:1;s:1:"x";s:1:"3";s:1:"y";s:1:"7";s:4:"font";s:5:"arial";s:8:"fontsize";s:1:"9";s:5:"align";s:1:"L";}s:11:"item_number";a:1:{s:2:"do";i:0;}s:5:"price";a:1:{s:2:"do";i:0;}}}');
-INSERT INTO `ko_tapes_printlayout` VALUES(1, 'List', 0, 'a:6:{s:10:"page_width";s:3:"210";s:11:"page_height";s:3:"297";s:5:"items";s:2:"50";s:5:"rootx";a:50:{i:0;s:2:"20";i:1;s:2:"20";i:2;s:2:"20";i:3;s:2:"20";i:4;s:2:"20";i:5;s:2:"20";i:6;s:2:"20";i:7;s:2:"20";i:8;s:2:"20";i:9;s:2:"20";i:10;s:2:"20";i:11;s:2:"20";i:12;s:2:"20";i:13;s:2:"20";i:14;s:2:"20";i:15;s:2:"20";i:16;s:2:"20";i:17;s:2:"20";i:18;s:2:"20";i:19;s:2:"20";i:20;s:2:"20";i:21;s:2:"20";i:22;s:2:"20";i:23;s:2:"20";i:24;s:2:"20";i:25;s:2:"20";i:26;s:2:"20";i:27;s:2:"20";i:28;s:2:"20";i:29;s:2:"20";i:30;s:2:"20";i:31;s:2:"20";i:32;s:2:"20";i:33;s:2:"20";i:34;s:2:"20";i:35;s:2:"20";i:36;s:2:"20";i:37;s:2:"20";i:38;s:2:"20";i:39;s:2:"20";i:40;s:2:"20";i:41;s:2:"20";i:42;s:2:"20";i:43;s:2:"20";i:44;s:2:"20";i:45;s:2:"20";i:46;s:2:"20";i:47;s:2:"20";i:48;s:2:"20";i:49;s:2:"20";}s:5:"rooty";a:50:{i:0;s:2:"30";i:1;s:2:"35";i:2;s:2:"40";i:3;s:2:"45";i:4;s:2:"50";i:5;s:2:"55";i:6;s:2:"60";i:7;s:2:"65";i:8;s:2:"70";i:9;s:2:"75";i:10;s:2:"80";i:11;s:2:"85";i:12;s:2:"90";i:13;s:2:"95";i:14;s:3:"100";i:15;s:3:"105";i:16;s:3:"110";i:17;s:3:"115";i:18;s:3:"120";i:19;s:3:"125";i:20;s:3:"130";i:21;s:3:"135";i:22;s:3:"140";i:23;s:3:"145";i:24;s:3:"150";i:25;s:3:"155";i:26;s:3:"160";i:27;s:3:"165";i:28;s:3:"170";i:29;s:3:"175";i:30;s:3:"180";i:31;s:3:"185";i:32;s:3:"190";i:33;s:3:"195";i:34;s:3:"200";i:35;s:3:"205";i:36;s:3:"210";i:37;s:3:"215";i:38;s:3:"220";i:39;s:3:"225";i:40;s:3:"230";i:41;s:3:"235";i:42;s:3:"240";i:43;s:3:"245";i:44;s:3:"250";i:45;s:3:"255";i:46;s:3:"260";i:47;s:3:"265";i:48;s:3:"270";i:49;s:3:"275";}s:6:"layout";a:8:{s:5:"title";a:6:{s:2:"do";i:1;s:1:"x";s:1:"0";s:1:"y";s:1:"0";s:4:"font";s:6:"arialb";s:8:"fontsize";s:1:"9";s:5:"align";s:1:"L";}s:8:"subtitle";a:1:{s:2:"do";i:0;}s:4:"date";a:6:{s:2:"do";i:1;s:1:"x";s:3:"170";s:1:"y";s:1:"0";s:4:"font";s:5:"arial";s:8:"fontsize";s:1:"9";s:5:"align";s:1:"R";}s:5:"group";a:1:{s:2:"do";i:0;}s:5:"serie";a:1:{s:2:"do";i:0;}s:8:"preacher";a:6:{s:2:"do";i:1;s:1:"x";s:3:"100";s:1:"y";s:1:"0";s:4:"font";s:5:"arial";s:8:"fontsize";s:1:"9";s:5:"align";s:1:"L";}s:11:"item_number";a:1:{s:2:"do";i:0;}s:5:"price";a:1:{s:2:"do";i:0;}}}');
-INSERT INTO `ko_tapes_printlayout` VALUES(3, 'Tapes 6x1', 1, 'a:6:{s:10:"page_width";s:3:"210";s:11:"page_height";s:3:"297";s:5:"items";s:1:"6";s:5:"rootx";a:6:{i:0;s:2:"12";i:1;s:2:"12";i:2;s:2:"12";i:3;s:2:"12";i:4;s:2:"12";i:5;s:2:"12";}s:5:"rooty";a:6:{i:0;s:2:"15";i:1;s:2:"62";i:2;s:3:"109";i:3;s:3:"156";i:4;s:3:"203";i:5;s:3:"250";}s:6:"layout";a:8:{s:5:"title";a:6:{s:2:"do";i:1;s:1:"x";s:1:"3";s:1:"y";s:1:"2";s:4:"font";s:6:"arialb";s:8:"fontsize";s:2:"10";s:5:"align";s:1:"L";}s:8:"subtitle";a:1:{s:2:"do";i:0;}s:4:"date";a:6:{s:2:"do";i:1;s:1:"x";s:2:"85";s:1:"y";s:1:"7";s:4:"font";s:5:"arial";s:8:"fontsize";s:1:"9";s:5:"align";s:1:"R";}s:5:"group";a:1:{s:2:"do";i:0;}s:5:"serie";a:1:{s:2:"do";i:0;}s:8:"preacher";a:6:{s:2:"do";i:1;s:1:"x";s:1:"3";s:1:"y";s:1:"7";s:4:"font";s:5:"arial";s:8:"fontsize";s:1:"9";s:5:"align";s:1:"L";}s:11:"item_number";a:1:{s:2:"do";i:0;}s:5:"price";a:1:{s:2:"do";i:0;}}}');
-
-CREATE TABLE `ko_tapes_series` (
-  `id` mediumint(9) NOT NULL AUTO_INCREMENT,
-  `name` varchar(255) NOT NULL DEFAULT '',
-  `printname` varchar(255) NOT NULL DEFAULT '',
-  PRIMARY KEY (`id`)
+CREATE TABLE `ko_statistics` (
+	`id` bigint unsigned NOT NULL AUTO_INCREMENT,
+  `date` datetime NOT NULL,
+  `user_id` mediumint(9) NOT NULL,
+  `title` varchar(200) NOT NULL,
+  `filter_id` mediumint(9) unsigned NOT NULL,
+  `filter_hash` bigint NOT NULL,
+  `result` text NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `idx_ko_statistics_title` (`title`),
+  KEY `idx_ko_statistics_filter_id` (`filter_id`)
 ) ENGINE=MyISAM DEFAULT CHARSET=latin1 COLLATE latin1_german1_ci;
 
 CREATE TABLE `ko_tracking` (
@@ -1319,6 +1222,9 @@ CREATE TABLE `ko_tracking` (
   `description` text NOT NULL,
   `type_multiple` tinyint(4) NOT NULL DEFAULT '0',
 	`hidden` tinyint(4) NOT NULL DEFAULT '0',
+	`enable_checkin` tinyint(4) NOT NULL,
+	`checkin_guest_pass` varchar(40) NOT NULL,
+	`checkin_admin_pass` varchar(40) NOT NULL,
   PRIMARY KEY (`id`),
   KEY `group_id` (`group_id`)
 ) ENGINE=MyISAM DEFAULT CHARSET=latin1 COLLATE latin1_german1_ci;
@@ -1346,6 +1252,16 @@ CREATE TABLE `ko_tracking_groups` (
   `name` varchar(200) NOT NULL,
   PRIMARY KEY (`id`),
   KEY `name` (`name`)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1 COLLATE latin1_german1_ci;
+
+CREATE TABLE `ko_google_cloud_printers` (
+  `id` mediumint(9) unsigned NOT NULL AUTO_INCREMENT,
+  `google_id` varchar(200) NOT NULL,
+  `name` varchar(200) NOT NULL,
+  `path` varchar(200) NOT NULL,
+  `owner_name` varchar(200) NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `google_id` (`google_id`)
 ) ENGINE=MyISAM DEFAULT CHARSET=latin1 COLLATE latin1_german1_ci;
 
 CREATE TABLE `ko_userprefs` (
@@ -1406,9 +1322,11 @@ INSERT INTO `ko_userprefs` VALUES(45, 2, '', 'rota_pdf_names', '2', '');
 
 CREATE TABLE `ko_crm_projects` (
 	`id` mediumint(8) unsigned NOT NULL AUTO_INCREMENT,
+	`number` varchar(100) NOT NULL,
 	`title` varchar(100) NOT NULL,
 	`stopdate` date NOT NULL,
 	`status_ids` text NOT NULL,
+	`project_status` text NOT NULL,
 	`crdate` datetime NOT NULL,
 	`cruser` mediumint(8) NOT NULL,
 	PRIMARY KEY (`id`)
@@ -1417,7 +1335,7 @@ CREATE TABLE `ko_crm_projects` (
 CREATE TABLE `ko_crm_status` (
 	`id` mediumint(8) unsigned NOT NULL AUTO_INCREMENT,
 	`title` varchar(255) NOT NULL,
-	`default_deadline` date NOT NULL,
+	`default_deadline` smallint(4) NOT NULL,
 	`crdate` datetime NOT NULL,
 	`cruser` mediumint(8) NOT NULL,
 	PRIMARY KEY (`id`)
@@ -1432,6 +1350,7 @@ CREATE TABLE `ko_crm_contacts` (
 	`status_id` mediumint(8) unsigned NOT NULL,
 	`file` varchar(255) NOT NULL,
 	`project_id` mediumint(8) unsigned NOT NULL,
+	`deadline` DATE NOT NULL,
 	`reference` varchar(255) NOT NULL,
 	`crdate` datetime NOT NULL,
 	`cruser` mediumint(8) NOT NULL,
@@ -1444,4 +1363,81 @@ CREATE TABLE `ko_crm_mapping` (
 	`leute_id` mediumint(8) unsigned NOT NULL,
 	PRIMARY KEY (`id`),
   KEY `contact_id` (`contact_id`,`leute_id`)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1 COLLATE latin1_german1_ci;
+
+CREATE TABLE `ko_subscription_forms` (
+	`id` mediumint(8) unsigned NOT NULL AUTO_INCREMENT,
+	`crdate` datetime NOT NULL,
+	`cruser` mediumint(8) NOT NULL,
+	`form_group` mediumint(8) NOT NULL,
+	`title` varchar(255) NOT NULL,
+	`fields` text NOT NULL,
+	`groups` text NOT NULL,
+	`moderated` tinyint(3) NOT NULL,
+	`overflow` tinyint(3) NOT NULL,
+	`layout` varchar(255) NOT NULL,
+	`notification_to` varchar(255) NOT NULL,
+	`notification_subject` varchar(255) NOT NULL,
+	`notification_body` text NOT NULL,
+	`response` tinyint(1) NOT NULL,
+	`response_replyto` varchar(255) NOT NULL,
+	`response_subject_subscription` varchar(255) NOT NULL,
+	`response_body_subscription` text NOT NULL,
+	`response_subject_edit` varchar(255) NOT NULL,
+	`response_body_edit` text NOT NULL,
+	`confirmation_title` varchar(255) NOT NULL,
+	`confirmation_text` text NOT NULL,
+	`url_segment` varchar(255) NOT NULL,
+	`edit_link` tinyint(1) NOT NULL,
+	`protected` tinyint(1) NOT NULL,
+	`double_opt_in` tinyint(1) NOT NULL,
+	`double_opt_in_title` varchar(255) NOT NULL,
+	`double_opt_in_text` text NOT NULL,
+	PRIMARY KEY (`id`)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1 COLLATE latin1_german1_ci;
+
+CREATE TABLE `ko_subscription_form_groups` (
+	`id` mediumint(8) unsigned NOT NULL AUTO_INCREMENT,
+	`name` varchar(255) NOT NULL,
+	`crdate` datetime NOT NULL,
+	`cruser` mediumint(8) NOT NULL,
+	PRIMARY KEY (`id`)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1 COLLATE latin1_german1_ci;
+
+CREATE TABLE `ko_subscription_double_opt_in` (
+	`id` mediumint(8) unsigned NOT NULL AUTO_INCREMENT,
+	`data` text NOT NULL,
+	`form` mediumint(8) NOT NULL,
+	`status` tinyint(1) NOT NULL,
+	`email` varchar(255) NOT NULL,
+	`sent_time` datetime DEFAULT NULL,
+	`confirmation_time` datetime DEFAULT NULL,
+	`confirmation_userid` mediumint(9) NOT NULL,
+	PRIMARY KEY (`id`)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1 COLLATE latin1_german1_ci;
+
+CREATE TABLE `ko_leute_revision_trace` (
+	`lapsed_id` mediumint(8) unsigned NOT NULL,
+	`current_id` mediumint(8) unsigned NOT NULL,
+	`user_id` mediumint(8) unsigned NOT NULL,
+	`date` datetime NOT NULL,
+	PRIMARY KEY (`lapsed_id`)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1 COLLATE latin1_german1_ci;
+
+CREATE TABLE `ko_taxonomy_terms` (
+  `id` INT NOT NULL AUTO_INCREMENT,
+  `name` VARCHAR(100) NOT NULL,
+  `parent` INT NOT NULL,
+  `crdate` datetime NOT NULL,
+  `cruser` int(11) NOT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1 COLLATE latin1_german1_ci;
+
+CREATE TABLE `ko_taxonomy_index` (
+  `id` INT NOT NULL,
+  `node_id` INT NOT NULL,
+  `table` VARCHAR(45) NOT NULL,
+  `crdate` datetime NOT NULL,
+  `cruser` int(11) NOT NULL,
+  PRIMARY KEY (`id`, `node_id`, `table`)
 ) ENGINE=MyISAM DEFAULT CHARSET=latin1 COLLATE latin1_german1_ci;

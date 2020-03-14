@@ -2,7 +2,7 @@
 /***************************************************************
 *  Copyright notice
 *
-*  (c) 2003-2015 Renzo Lauper (renzo@churchtool.org)
+*  (c) 2003-2017 Renzo Lauper (renzo@churchtool.org)
 *  All rights reserved
 *
 *  This script is part of the kOOL project. The kOOL project is
@@ -49,9 +49,6 @@ ko_include_kota(array('ko_groups', 'ko_grouproles', 'ko_groups_datafields'));
 // Plugins einlesen:
 $hooks = hook_include_main("groups");
 if(sizeof($hooks) > 0) foreach($hooks as $hook) include_once($hook);
-
-//Smarty-Templates-Engine laden
-require($BASE_PATH."inc/smarty.inc");
 
 require($BASE_PATH."groups/inc/groups.inc");
 
@@ -131,7 +128,7 @@ if(isset($_GET) && isset($_GET["action"])) {
 
 
 		case 'setsort':
-			if($access['groups']['MAX'] < 3) continue;
+			if($access['groups']['MAX'] < 3) break;
 
 			$_SESSION['sort_groups'] = format_userinput($_GET['sort'], 'alphanum+', TRUE, 30);
 			ko_save_userpref($_SESSION['ses_userid'], 'sort_groups', $_SESSION['sort_groups']);
@@ -139,11 +136,11 @@ if(isset($_GET) && isset($_GET["action"])) {
 			ko_save_userpref($_SESSION['ses_userid'], 'sort_groups_order', $_SESSION['sort_groups_order']);
 
 			print 'main_content@@@';
-			print ko_groups_list(FALSE);
+			ko_groups_list();
 		break;
 
 		case "setstart":
-			if($access['groups']['MAX'] < 1) continue;
+			if($access['groups']['MAX'] < 1) break;
 
 			//Set list start
 			if(isset($_GET['set_start'])) {
@@ -156,20 +153,22 @@ if(isset($_GET) && isset($_GET["action"])) {
 	    }
 
 			print "main_content@@@";
-			print ko_groups_list(FALSE);
+			ko_groups_list();
 		break;
 
 
 		case "adddatafield":
-			if($access['groups']['MAX'] < 2) continue;
+			if($access['groups']['MAX'] < 2) break;
 
-			$description = format_userinput(urldecode($_GET['descr']), 'text', FALSE, 0, array('allquotes' => TRUE));
+			//JS encodeURIComponent() always encodes in UTF-8
+			$description = format_userinput(utf8_decode(rawurldecode($_GET['descr'])), 'text', FALSE, 0, array('allquotes'));
+
 			$type = format_userinput(urldecode($_GET['type']), 'alpha');
 			$reusable = format_userinput($_GET['reusable'], 'uint');
 			$private = format_userinput($_GET['private'], 'uint');
 			$preset = format_userinput($_GET['preset'], 'uint');
 			if($type == 'select' || $type == 'multiselect') {
-				$options = explode("\n", urldecode($_GET['options']));
+				$options = explode("\n", utf8_decode(rawurldecode($_GET['options'])));
 				$save_options = NULL;
 				foreach($options as $o) $save_options[] = trim($o);
 				$options = serialize($save_options);
@@ -193,7 +192,7 @@ if(isset($_GET) && isset($_GET["action"])) {
 		case "groupdatafieldsfilter":
 			$dfid = format_userinput($_GET["dfid"], "uint");
 			$df = db_select_data("ko_groups_datafields", "WHERE `id` = '$dfid'", "*", "", "", TRUE);
-			if(!$df["type"]) continue;
+			if(!$df["type"]) break;
 
 			switch($df["type"]) {
 				case "checkbox":
@@ -263,12 +262,12 @@ if(isset($_GET) && isset($_GET["action"])) {
 			hook_ajax_inline($ko_menu_akt, $action, $data);
 
 			print 'main_content@@@';
-			print ko_groups_list(FALSE);
+			ko_groups_list();
 		break;
 
 
 		case 'submitgeneralsearch':
-			if($access['groups']['MAX'] < 1) continue;
+			if($access['groups']['MAX'] < 1) break;
 			$value = format_userinput($_GET['value'], 'text');
 
 			$_SESSION['groups_search'] = $value;
@@ -279,7 +278,33 @@ if(isset($_GET) && isset($_GET["action"])) {
 			// draw result list
 			print '@@@';
 			print 'main_content@@@';
-			print ko_groups_list_search_results(FALSE);
+			ko_groups_list_search_results();
+		break;
+
+
+		case 'submittaxonomysearch':
+			ko_get_access("taxonomy");
+			if($access['taxonomy']['MAX'] < 1) break;
+			$value = format_userinput($_GET['value'], 'text');
+
+			$_SESSION['taxonomy_search'] = $value;
+
+
+			print 'general-search-li@@@';
+			print ko_get_searchbox_code('groups', 'general_only');
+
+			// draw result list
+			print '@@@';
+			print 'main_content@@@';
+			print ko_groups_list_taxonomy_search_results();
+		break;
+
+
+		case 'getassignmenthistory':
+			$groupId = format_userinput($_GET['gid'], 'uint');
+			if ($access['groups']['ALL'] < 1 && $access['groups'][zerofill($groupId, 6)] < 1) break;
+
+			print ko_groups_get_assignment_timeline('group', 'groups-assignment-history', $groupId);
 		break;
 
 
@@ -293,7 +318,7 @@ if(isset($_GET) && isset($_GET["action"])) {
 
 
 		case 'groupsearch':
-			if($access['groups']['MAX'] < 1) continue;
+			if($access['groups']['MAX'] < 1) break;
 
 			$string = format_userinput($_GET['query'], 'text');
 			if(!$string) {
@@ -313,7 +338,11 @@ if(isset($_GET) && isset($_GET["action"])) {
 			}
 
 
-			$input_name = format_userinput(substr($_GET['name'], 0, strrpos($_GET['name'], '[')), 'text');
+			if ($_GET['name'] == 'sel_linked_group') {
+				$input_name = "sel_linked_group[ko_groups][linked_groups]";
+			} else {
+				$input_name = format_userinput(substr($_GET['name'], 0, strrpos($_GET['name'], '[')), 'text');
+			}
 
 			$allGroups = db_select_data('ko_groups', "WHERE 1=1");
 			if ($includeRoles) $allRoles = db_select_data('ko_grouproles', "WHERE 1=1");
@@ -462,7 +491,7 @@ if(isset($_GET) && isset($_GET["action"])) {
 								$groupWhere = "(" . implode(" AND ", $groupWhere) . ")";
 							}
 
-							$matchedRoleIds = array_map(function($el){return $el['id'];}, db_select_data('ko_grouproles r', "WHERE 1=1 AND {$groupWhere}", 'id'));
+							$matchedRoleIds = array_map(function($el){return $el['id'];}, db_select_data('ko_grouproles r', "WHERE 1=1", 'id'));
 							$groupWhere = "EXISTS (SELECT r.`id` FROM `ko_grouproles` r WHERE g".($c).".`roles` REGEXP CONCAT('(^|,)', CONCAT(r.`id`, '(,|$)')) AND {$groupWhere})";
 						} else {
 							if (!$groupPart) {
@@ -560,9 +589,10 @@ if(isset($_GET) && isset($_GET["action"])) {
 					}
 					$currentFullGroupName = $allFullGroupNames[$gid];
 					$group = &$allGroups[substr($gid, 1)];
+					$placeholder = ($group['type'] == 1 ? TRUE : FALSE);
 					$groupName = $group['name'];
 					$addItems = array(
-						array('id' => $gid, 'name' => $groupName, 'displayName' => $groupName, 'title' => $currentFullGroupName),
+						array('id' => $gid, 'name' => $groupName, 'displayName' => $groupName, 'title' => $currentFullGroupName, 'placeholder' => $placeholder),
 					);
 					if ($includeRoles) {
 						if (!isset($group['rolesProcessed'])) {
@@ -588,9 +618,10 @@ if(isset($_GET) && isset($_GET["action"])) {
 						$name = $item['name'];
 						$displayName = $item['displayName'];
 						$title = $item['title'];
+						$placeholder = $item['placeholder'];
 
 						if (!isset($h[$name])) {
-							$h[$name] = array('id' => $id, 'name' => $name, 'displayName' => $displayName, 'title' => $title, 'children' => array());
+							$h[$name] = array('id' => $id, 'name' => $name, 'displayName' => $displayName, 'title' => $title, 'placeholder' => $placeholder, 'children' => array());
 						} else if ($h[$name]['id'] != $id) {
 							$origName = $name;
 							$cnt = 0;
@@ -599,7 +630,7 @@ if(isset($_GET) && isset($_GET["action"])) {
 								$cnt++;
 							}
 							if (!isset($h[$name])) {
-								$h[$name] = array('id' => $id, 'name' => $origName, 'displayName' => $displayName, 'title' => $title, 'children' => array());
+								$h[$name] = array('id' => $id, 'name' => $origName, 'displayName' => $displayName, 'title' => $title, 'placeholder' => $placeholder, 'children' => array());
 							}
 						}
 					}
@@ -637,7 +668,7 @@ if(isset($_GET) && isset($_GET["action"])) {
 						$prefix .= '&nbsp;&nbsp;';
 					}
 					$name = $allGroups[$h['id']]['name'];
-					$result[] = array('id' => utf8_encode($h['id']), 'name' => $prefix . utf8_encode($h['displayName']), 'title' => utf8_encode($h['title']));
+					$result[] = array('id' => utf8_encode($h['id']), 'name' => $prefix . utf8_encode($h['displayName']), 'title' => utf8_encode($h['title']), 'placeholder' => $h['placeholder']);
 				}
 				if (sizeof($h['children']) > 0 && !$h['childrenVisited']) {
 					//print("If: 1\n");

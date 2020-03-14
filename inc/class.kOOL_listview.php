@@ -2,7 +2,7 @@
 /***************************************************************
  *  Copyright notice
  *
- *  (c) 2003-2015 Renzo Lauper (renzo@churchtool.org)
+ *  (c) 2003-2017 Renzo Lauper (renzo@churchtool.org)
  *  All rights reserved
  *
  *  This script is part of the kOOL project. The kOOL project is
@@ -37,9 +37,30 @@ class kOOL_listview {
 	var $doFooter = FALSE;
 	var $disableMultiedit = FALSE;
 	var $disableAccessRights = FALSE;
+	var $disableManualSortingColumns = FALSE;
 	var $rowData = array();
 	var $manualAccess = array();
 	var $sortable = FALSE;
+	var $xls_file = NULL;
+	public $table;
+
+	protected $showForeignRows = FALSE;
+
+	/**
+	 * @param boolean $showForeignRows
+	 */
+	public function setShowForeignRows($showForeignRows)
+	{
+		$this->showForeignRows = $showForeignRows;
+	}
+
+	/**
+	 * @return boolean
+	 */
+	public function isShowForeignRows()
+	{
+		return $this->showForeignRows;
+	}
 
 
 	/**
@@ -51,12 +72,17 @@ class kOOL_listview {
 	 * @param limit: Set the limit of items to be shown on one page
 	 */
 	function init($module, $table, $editColumns="", $start="", $limit="") {
+		global $KOTA;
 		$this->module = $module;
 		$this->table = $table;
 		if($editColumns != "") $this->setEditColumns($editColumns);
 		if($start != "") $this->start = $start;
 		if($limit != "") $this->limit = $limit;
 		$this->session_id = session_id();
+
+		if($KOTA[$table]['_listview_config']['disableManualSortingColumns'] === TRUE) {
+			$this->disableManualSortingColumns = TRUE;
+		}
 	}//init()
 
 
@@ -183,7 +209,8 @@ class kOOL_listview {
 		$smarty->assign('tpl_itemlist_values', $itemselect_values);
 		$smarty->assign('tpl_itemlist_output', $itemselect_output);
 		$smarty->assign('tpl_itemlist_selected', $itemselect_selected);
-		//TODO?: Allow global: if($max_rights > 3) $smarty->assign('allow_global', TRUE);
+		ko_get_access_all($this->module, $_SESSION['ses_userid'], $accessMax);
+		if($accessMax > 3) $smarty->assign('allow_global', TRUE);
 		$smarty->assign('table', $this->table);
 		$smarty->assign('hide_table_html', TRUE);
 		$smarty->assign('show_flyout_header', TRUE);
@@ -213,11 +240,16 @@ class kOOL_listview {
 	}//showColItemlist()
 
 
-
 	/**
 	 * Render the list
 	 * Second argument may be xls to get an Excel file
 	 * Third parameter may be the file prefix for XLS export
+	 *
+	 * @param        $data
+	 * @param string $mode
+	 * @param string $file_prefix
+	 * @return false|mixed|string|void
+	 * @throws Exception
 	 */
 	function render($data, $mode="html", $file_prefix="") {
 		global $KOTA, $smarty, $ko_path;
@@ -277,25 +309,40 @@ class kOOL_listview {
 		}
 
 		//Multiedit
-		$multiedit = array();
-		if(!$this->disableMultiedit && ($this->disableAccessRights || $this->access['MAX'] >= $this->accessLevels['edit'])) {
-			foreach($KOTA[$this->table]["_listview"] as $col) {
-				if(!in_array($col['name'], $show_cols)) continue;
-				if(isset($col["multiedit"]) && $col["multiedit"] == FALSE) {
-					$multiedit[] = "";
-				} else {
-					$multiedit[] = $col["multiedit"] != "" ? $col["multiedit"] : $col["name"];
+		$footer_cols = array();
+
+		foreach($show_cols as $db_column) {
+			if(!in_array($db_column, array_column($KOTA[$this->table]['_listview'],"name"))) continue;
+
+			foreach($KOTA[$this->table]['_listview'] as $kota_col_id => $kota_col) {
+				if($kota_col['name'] == $db_column) {
+					$col = $kota_col;
 				}
 			}
-			$this->tmpl["show_multiedit"] = TRUE;
-			$this->tmpl["multiedit_cols"] = $multiedit;
-		} else {
-			$this->tmpl["show_multiedit"] = FALSE;
+
+			if(isset($col["multiedit"]) && $col["multiedit"] == FALSE) {
+				$footer_cols[] = "";
+			} else {
+				if(!$this->disableMultiedit && ($this->disableAccessRights || $this->access['MAX'] >= $this->accessLevels['edit'])) {
+					$footer_cols[] = $col["multiedit"] != "" ? $col["multiedit"] : $col["name"];
+				} else {
+					$footer_cols[] = "";
+				}
+			}
 		}
 
+		$this->tmpl["footer_cols"] = $footer_cols;
+		$this->tmpl['disableManualSortingColumns'] = $this->disableManualSortingColumns;
+
 		//Prepare header
-		foreach($KOTA[$this->table]["_listview"] as $col) {
-			if(!in_array($col['name'], $show_cols)) continue;
+		foreach($show_cols as $db_column) {
+			if(!in_array($db_column, array_column($KOTA[$this->table]["_listview"],"name"))) continue;
+
+			foreach($KOTA[$this->table]['_listview'] as $kota_col_id => $kota_col) {
+				if($kota_col['name'] == $db_column) {
+					$col = $kota_col;
+				}
+			}
 
 			//Filter
 			if($col['filter'] === TRUE) {
@@ -309,11 +356,13 @@ class kOOL_listview {
 				$filterfields = $col['multiedit'] ? $col['multiedit'] : $col['name'];
 				foreach(explode(',', $filterfields) as $f) {
 					if(!$f) continue;
-					if($_SESSION['kota_filter'][$this->table][$f] != '') $col['filter_state'] = 'active';
+					if(isset($_SESSION['kota_filter'][$this->table][$f])) $col['filter_state'] = 'active';
 				}
 			}
 
-			$col["name"] = getLL("kota_listview_".$this->table."_".$col["name"]);
+			$col['db_name'] = $this->table.":". $col['name'];
+
+			$col["name"] = getLL("kota_listview_".$this->table."_".$col["name"]) ? getLL("kota_listview_".$this->table."_".$col["name"]) : getLL("kota_".$this->table."_".$col["name"]);
 			$header[] = $col;
 		}
 		$this->tmpl["list"]["header"] = $header;
@@ -321,9 +370,7 @@ class kOOL_listview {
 		//Sorting
 		$this->tmpl["list"]["sort"] = $this->sort;
 		$this->tmpl['list']['sortable'] = $KOTA[$this->table]['_sortable'];
-
 		$this->tmpl['list']['table'] = $this->table;
-
 
 		$render_data = array(); $row_counter = 0;
 		//Go through all rows to be displayed
@@ -332,9 +379,10 @@ class kOOL_listview {
 			if(!$this->disableKotaProcess) kota_process_data($this->table, $value, ($mode == 'xls' ? 'xls,list' : 'list'), $log, $id);
 			//Assign values to list view array
 			$coli = 0;
-			foreach($KOTA[$this->table]['_listview'] as $col) {
-				if(!in_array($col['name'], $show_cols)) continue;
-				$col = $col['name'];
+			foreach($show_cols as $db_column) {
+				if(!in_array($db_column, array_column($KOTA[$this->table]['_listview'],"name"))) continue;
+
+				$col = $db_column;
 				if($this->columnLink[$col] && $mode == "html") {  //Add link for this column
 					$render_data["data"][$row_counter][$col] = $this->getColumnLink($col, $data, $id, $value[$col]);
 				} else {
@@ -373,7 +421,7 @@ class kOOL_listview {
 			}
 
 			//Add foreign_table columns here as they are not set in _listview or show_cols
-			if($mode == 'xls') {
+			if($mode == 'xls' && $this->showForeignRows) {
 				foreach($KOTA[$this->table] as $kota_col_id => $kota_col) {
 					$addRows = array();
 					if(substr($kota_col_id, 0, 1) == '_') continue;
@@ -563,12 +611,16 @@ class kOOL_listview {
 				}
 
 				//Check for access condition
+				$replacementData = array();
+				foreach ($data as $k => $v) {
+					$replacementData["@{$k}@"] = $v;
+				}
 				if(is_array($KOTA[$this->table]['_access']['condition'])) {
 					if(isset($KOTA[$this->table]['_access']['condition'][$type])) {
-						if(FALSE === eval(strtr($KOTA[$this->table]['_access']['condition'][$type], $data))) $r[$type] = FALSE;
+						if(FALSE === eval(strtr($KOTA[$this->table]['_access']['condition'][$type], $replacementData))) $r[$type] = FALSE;
 					}
 				} else if(isset($KOTA[$this->table]['_access']['condition'])) {
-					if(FALSE === eval(strtr($KOTA[$this->table]['_access']['condition'], $data))) $r[$type] = FALSE;
+					if(FALSE === eval(strtr($KOTA[$this->table]['_access']['condition'], $replacementData))) $r[$type] = FALSE;
 				}
 			}
 		}
@@ -588,7 +640,7 @@ class kOOL_listview {
 	 * Supply arrays with access rights for the entries to be displayed
 	 * Or set FALSE to disable check for access rights
 	 */
-	function setAccessRights($level, &$access, $chk_col='') {
+	function setAccessRights($level, &$access = null, $chk_col='') {
 		global $KOTA;
 
 		if($level == FALSE) {
@@ -596,8 +648,10 @@ class kOOL_listview {
 		} else {
 			//Check for all rights to be higher than all access levels
 			$all = TRUE;
-			foreach($level as $k => $v) {
-				if($access['ALL'] < $v) $all = FALSE;
+			if($access !== null) {
+				foreach($level as $k => $v) {
+					if($access['ALL'] < $v) $all = FALSE;
+				}
 			}
 			if($all) {  //Disable access rights if all rights are higher than all levels
 				$this->disableAccessRights = TRUE;

@@ -6,14 +6,14 @@
 (function ($) {
   $.fn.selectpicker.defaults = {
     noneSelectedText: 'Inget valt',
-    noneResultsText: 'Inget s√∂kresultat matchar {0}',
+    noneResultsText: 'Inget sˆkresultat matchar {0}',
     countSelectedText: function (numSelected, numTotal) {
       return (numSelected === 1) ? "{0} alternativ valt" : "{0} alternativ valda";
     },
     maxOptionsText: function (numAll, numGroup) {
       return [
-        'Gr√§ns uppn√•d (max {n} alternativ)',
-        'Gr√§ns uppn√•d (max {n} gruppalternativ)'
+        'Gr‰ns uppnÂd (max {n} alternativ)',
+        'Gr‰ns uppnÂd (max {n} gruppalternativ)'
       ];
     },
     selectAllText: 'Markera alla',

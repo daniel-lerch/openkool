@@ -3,6 +3,10 @@ table.table {
         width: auto;
     }
 
+    &.ko_list.affix {
+        position: relative;
+    }
+
     &.ko_list > tbody > tr > td {
         vertical-align: middle;
     }
@@ -40,9 +44,9 @@ table.table {
             border-bottom: 2px solid #666 !important;
         }
 
-        th {
+        th, td {
             &.ko_listh_filter_act {
-                background-color: @state-warning-bg;
+                background-color: @state-warning-bg !important;
             }
 
             &.ko_list {
@@ -56,6 +60,10 @@ table.table {
                 width: 10px;
                 height: 10px;
             }
+        }
+
+        th.dragable_column {
+            cursor: ew-resize;
         }
     }
 }
@@ -99,8 +107,32 @@ div.list_overlay {
     }
 }
 
-.list-action-header {
-    width: 20px;
+ul.list-action-header {
+    list-style: none;
+    padding: 0;
+    margin: 0 2px;
+    height: 19px;
+    display:inline-block;
+    white-space: nowrap;
+    vertical-align: middle;
+}
+
+li.list-action-header {
+    align-items: center;
+    vertical-align: middle;
+    width: 18px;
+    height: 100%;
+    display: inline-block;
+    line-height: 19px;
+    padding: 0;
+
+    > input,
+    > button {
+        height: 18px;
+        margin: auto;
+        vertical-align: middle;
+    }
+
 }
 
 
@@ -204,62 +236,116 @@ table.table > tbody > tr {
     }
 }
 
+.ko_list_check_all {
+    display: none;
+}
+
 @media only screen and (max-width: @screen-sm) {
-    table.table.ko_list{
+    .tablesaw-stack {
+        td.list-action-header {
+            width:100% !important;
+        }
+
+        .list-action-header .tablesaw-cell-label,
+        .list-edit-overlay .tablesaw-cell-label {
+            display: none;
+        }
+
+        .ko_list_footer {
+            display: none;
+        }
+
+        .row-even td {
+            background-color: #eeeeee;
+        }
+    }
+
+    .ko_list_check_all {
         display: block;
-        position: relative;
-        width: 100%;
-        border-collapse: collapse;
-        border-spacing: 0;
-        border: 1px solid @table-border-color;
+        margin: 10px;
+    }
+}
 
-        th {
-            display: block;
-            text-align: right;
-            min-height: 28px;
+
+.res-conflicts-table {
+    td {
+        padding:3px 6px;
+    }
+
+    tr.desc-line td {
+        padding-top: 0;
+    }
+}
+
+
+.fht-thead {
+    z-index: 100;
+
+    table.fht-table {
+        margin-bottom: 0;
+    }
+}
+
+
+h3.ko_list_title .list-add-new {
+	margin: 0 8px;
+}
+h3.ko_list_title .help-icon {
+	font-size: 14px;
+	margin-right: 8px;
+	padding-top: 4px;
+}
+
+.popover-content li {
+    list-style: none;
+}
+
+.input-group.inactive {
+	.input-group-addon {
+		background-color: darken(@row-inactive-bg, 5%);
+		color: @row-inactive-color;
+	}
+}
+
+
+.btn-toolbar {
+    @media screen and (max-width : (@screen-sm)) {
+        > .limiting-box,
+        > .page-select-box {
+            display: none;
         }
-        td {
-            display: block;
-            min-height: 28px;
-        }
-        > thead {
-            display: block;
+    }
+}
+
+
+.ko_list_footer_2 {
+    .form-group {
+        label {
             float: left;
-
-            > tr {
-                display: block;
-
-                > td, > th {
-                    border-left-width: 0px;
-                    border-top-width: 0px;
-                    border-right: 1px solid @table-border-color;
-                    border-bottom-width: 0px;
-                }
-            }
+            margin-top: 6px;
+            margin-right: 4px;
         }
-        > tbody {
-            display: block;
+
+        input, select {
+            min-width: 100px;
             width: auto;
-            position: relative;
-            overflow-x: auto;
-            white-space: nowrap;
 
-            > tr {
-                display: inline-block;
-                vertical-align: top;
-
-                > td, > th {
-                    border-left: 1px solid @table-border-color;
-                    border-top-width: 0px;
-                    border-right-width: 0px;
-                    border-bottom-width: 0px;
-                }
+            @media screen and (max-width: (@screen-sm)) {
+                width: 250px;
             }
         }
     }
-    tr.full-line-row {
-        width: 0px;
-        height: 0px;
-        overflow: hidden;
+}
+
+@media screen and (max-width : (@screen-sm)) {
+    h3.ko_list_title {
+        > .pagestats .btn-group {
+            display: none;
+        }
+        > .pagestats .btn-group.itemlist-box {
+					display: block;
+				}
     }
+
+
 }

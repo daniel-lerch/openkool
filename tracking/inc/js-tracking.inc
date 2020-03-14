@@ -122,3 +122,36 @@ $(document).ready(function() {
 });
 -->
 </script>
+
+<?php if(ko_get_setting('qz_tray_enable')) { ?>
+	<script src="/inc/qz-tray/rsvp-3.1.0.min.js" charset="UTF-8"></script>
+	<script src="/inc/qz-tray/sha-256.min.js" charset="UTF-8"></script>
+	<script src="/inc/qz-tray/qz-tray.js" charset="UTF-8"></script>
+	<script>
+		qz.security.setCertificatePromise(function(resolve,reject) {
+			$.ajax({url:'/inc/ajax.php',cache:false,dataType:'text',data:{sesid:'<?= session_id() ?>',action:'getcert'}}).then(resolve,reject);
+		});
+		qz.security.setSignaturePromise(function(toSign) {
+			return function(resolve,reject) {
+				$.ajax({url:'/inc/ajax.php',data:{sesid:'<?= session_id() ?>',action:'rsasign',sign:toSign}}).then(resolve,reject);
+			};
+		});
+		$(document).ready(function() {
+			var checkinLinks = $('.qzCheckinLinks');
+			if(checkinLinks.length) {
+				qz.websocket.connect({host:'<?= ko_get_setting('qz_tray_host') ?: 'localhost' ?>'}).then(function() {
+					qz.printers.find().then(function(data) {
+						data.forEach(function(name) {
+							checkinLinks.each(function() {
+								$(this).append(
+									$('<a>').attr('href','/checkin?t='+$(this).data('id')+'&qzp='+name).text(name),
+									'<br/>'
+								);
+							});
+						});
+					});
+				});
+			}
+		});
+	</script>
+<?php } ?>

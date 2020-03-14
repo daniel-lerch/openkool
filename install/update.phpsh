@@ -3,7 +3,7 @@
 /***************************************************************
 *  Copyright notice
 *
-*  (c) 2003-2015 Renzo Lauper (renzo@churchtool.org)
+*  (c) 2003-2017 Renzo Lauper (renzo@churchtool.org)
 *  All rights reserved
 *
 *  This script is part of the kOOL project. The kOOL project is
@@ -33,6 +33,7 @@ Possible options:
 -u: only updates
 -n: only inserts
 -p: preview
+-d: debug
 -h: help
 */
 
@@ -103,7 +104,7 @@ $dest .= $modDefs;
 
 
 if(!$options['only_inserts']) {
-	$updates = $updater->getUpdates($source, $dest);
+	$updates = $updater->getUpdates($source, $dest, false, $options['debug']);
 }
 
 if(!$options['only_updates']) {
@@ -205,6 +206,7 @@ function get_cli_options($argv) {
 		'only_updates' => FALSE,
 		'only_inserts' => FALSE,
 		'preview' => FALSE,
+		'debug' => FALSE,
 		'help' => FALSE,
 	);
 
@@ -222,6 +224,7 @@ function get_cli_options($argv) {
 				case 'u': $options['only_updates'] = TRUE; break;
 				case 'n': $options['only_inserts'] = TRUE; break;
 				case 'p': $options['preview'] = TRUE; break;
+				case 'd': $options['debug'] = TRUE; break;
 				case 'h': $options['help'] = TRUE; break;
 				default: return FALSE;
 			}
@@ -248,6 +251,7 @@ function print_help() {
 	print "-u: Only perform db ALTER commands (combine with -a or -i)\n";
 	print "-n: Only perform db INSERT commands (combine with -a or -i)\n";
 	print "-p: Preview: Only show SQL statements but don't change anything\n";
+	print "-d: Debug: Show debug info, e.g. original SQL statement for differences\n";
 	print "-h: Show this help\n";
 	print "\n";
 }

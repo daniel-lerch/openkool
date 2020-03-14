@@ -6,20 +6,31 @@
 {/if}
 
 {if !$tpl_hide_header}
-	<h3>{$tpl_titel}{if $help.show} {$help.link}{/if}</h3>
+	<h3 class="ko_list_title">{if $help.show}<span class="pull-left help-icon">{$help.link}</span>{/if}{$tpl_titel}</h3>
+{/if}
+
+{if $tpl_export_warning}
+	<div class="alert alert-danger" role="alert" id="leute-warning-export">{$tpl_export_warning}</div>
 {/if}
 
 <div class="subpart">
 
+	{assign var="doTab" value=false}
 	{assign var="firstTab" value=true}
 	{foreach key=id name=groups item=group from=$tpl_groups}
-		{if $group.tab}
+		{if $group.tab || $doTab}
+			{assign var="doTab" value=true}
+		{else}
+			{assign var="doTab" value=false}
+		{/if}
+		{if $doTab}
 			{if $firstTab}
 				<ul class="nav nav-tabs" style="font-size:1.1em" role="tablist">
 			{/if}
-			<li role="presentation"{if $firstTab} class="active"{/if}><a href="#tab_{$id}" aria-controls="user-settings" role="tab" data-toggle="tab">{$group.titel}</a></li>
+			<li role="presentation"{if $firstTab} class="active"{/if}><a href="#tab_{$id}" aria-controls="user-settings" role="tab" data-toggle="tab">{if $group.titel}{$group.titel}{else}{ll key="kota_layout_group_backup_title"}{/if}</a></li>
 			{assign var="firstTab" value=false}
 		{/if}
+		{assign var="doTab" value=false}
 	{/foreach}
 	{if !$firstTab}
 		</ul>
@@ -27,8 +38,14 @@
 	{/if}
 
 	<!-- Formular-Daten -->
+	{assign var="doTab" value=false}
 	{assign var="firstTab2" value=true}
 	{foreach key=id name=groups item=group from=$tpl_groups}
+		{if $group.tab || $doTab}
+			{assign var="doTab" value=true}
+		{else}
+			{assign var="doTab" value=false}
+		{/if}
 		{if $group.name}
 			{assign var="groupName" value=$group.name}
 		{else}
@@ -45,7 +62,7 @@
 						</label>
 					</div>
 						<div id="forall_group_{$groupName}" class="forall-group" style="display:none;">
-			{elseif $group.tab}
+			{elseif $doTab}
 				{if !$firstTab2}
 					</div>
 				{/if}
@@ -103,9 +120,10 @@
 								&nbsp;
 							{/if}
 							{if $input.descimg}<img src="{$ko_path}images/{$input.descimg}" border="0" />{/if}
-							<label for="{$input.name}">{$input.desc}</label>{if $input.help}&nbsp;{$input.help}{/if}
+							{if $input.title_pre_html}{$input.title_pre_html}{/if}
+							<label for="{$input.name}">{$input.desc}{if $input.is_mandatory} *{/if}</label>{if $input.help}&nbsp;{$input.help}{/if}
 						</div>
-						<div class="formular_content">
+						<div class="formular_content{if $input.contentclass} {$input.contentclass}{/if}">
 						{if $input.type == "_save"}
 							<p align="center">
 								{if $tpl_special_submit}
@@ -128,6 +146,8 @@
 									</button>
 								{/if}
 							</p>
+						{elseif $input.type == "_sep"}
+							<p></p>
 						{else}
 							{include file="$ko_path/templates/ko_formular_elements.tmpl"}
 						{/if}
@@ -136,21 +156,21 @@
 				{/foreach}
 			</div>
 		{/foreach}
-		{if $group.forAll}
-			<p align="center" style="margin-top: 10px;">
+		{if $group.show_save || $group.forAll}
+			<div class="btn-field">
 				{if $tpl_special_submit}
 					{$tpl_special_submit}
 				{else}
-					<button type="submit" class="btn btn-primary" name="submit" class="ko_form_submit {$submit_class}" value="{$tpl_submit_value}" onclick="{$tpl_onclick_action}set_action('{$tpl_action}', this)">
+					<button type="submit" class="btn btn-primary" name="submit" class="ko_form_submit {$submit_class}" value="{$tpl_submit_value}" onclick="var ok = check_mandatory_fields($(this).closest('form')); if (ok) {ldelim}{$tpl_onclick_action}set_action('{$tpl_action}', this){rdelim} else return false;">
 						{$tpl_submit_value} <i class="fa fa-save"></i>
 					</button>
 				{/if}
 				{if !$tpl_hide_cancel}
-					&nbsp;&nbsp;&nbsp;
 					<button type="submit" class="btn btn-danger" name="cancel" value="{$label_cancel}" onclick="set_action('{$tpl_cancel}', this);">
 						{$label_cancel} <i class="fa fa-remove"></i>
 					</button>
 				{/if}
+			</div>
 				{if $tpl_submit_as_new && !$force_hide_submit_as_new}
 					<br />
 					<button type="submit" class="btn btn-success" name="submit_as_new" value="{$tpl_submit_as_new}" onclick="set_action('{$tpl_action_as_new}', this);">
@@ -161,7 +181,7 @@
 		{/if}
 		{if $group.titel != ""}
 			{if !$group.forAll}
-				{if !$group.tab}
+				{if !$doTab}
 							</div>
 						</div>
 					</div>
@@ -172,6 +192,7 @@
 				</div>
 			{/if}
 		{/if}
+		{assign var="doTab" value=false}
 	{/foreach}
 
 	{if !$firstTab2}
@@ -187,26 +208,29 @@
 {if $tpl_special_submit}
 	{$tpl_special_submit}
 {else}
-	<button type="submit" class="btn btn-primary" name="submit" class="ko_form_submit {$submit_class}" value="{$tpl_submit_value}" onclick="var ok = check_mandatory_fields($(this).closest('form')); if (ok) {ldelim}{$tpl_onclick_action}set_action('{$tpl_action}', this){rdelim} else return false;">
+	<button type="submit" class="btn btn-primary" name="submit" class="ko_form_submit {$submit_class}" value="{$tpl_submit_value}" onclick="var ok = check_mandatory_fields($(this).closest('form')); if (ok) {ldelim} disable_onunloadcheck(); {$tpl_onclick_action}set_action('{$tpl_action}', this){rdelim} else return false;">
 		{$tpl_submit_value} <i class="fa fa-save"></i>
 	</button>
 {/if}
 {if !$tpl_hide_cancel}
-	<button type="submit" class="btn btn-danger" name="cancel" value="{$label_cancel}" onclick="set_action('{$tpl_cancel}', this);">
+	<button type="submit" class="btn btn-danger" name="cancel" value="{$label_cancel}" onclick="disable_onunloadcheck(); set_action('{$tpl_cancel}', this);">
 		{$label_cancel} <i class="fa fa-remove"></i>
 	</button>
 {/if}
 {if $tpl_submit_as_new && !$force_hide_submit_as_new}
 	<br />
-	<button type="submit" class="btn btn-success" name="submit_as_new" value="{$tpl_submit_as_new}" onclick="var ok = check_mandatory_fields($(this).closest('form')); if (ok) set_action('{$tpl_action_as_new}', this); else return false;">
+	<button type="submit" class="btn btn-success" name="submit_as_new" value="{$tpl_submit_as_new}" onclick="var ok = check_mandatory_fields($(this).closest('form')); if (ok) {ldelim} disable_onunloadcheck(); set_action('{$tpl_action_as_new}', this); {rdelim} else return false;">
 		{$tpl_submit_as_new} <i class="fa fa-plus"></i>
 	</button>
+{/if}
+{if $additional_button}
+	{$additional_button}
 {/if}
 </div>
 
 {if $tpl_legend}
 	<div style="margin-top: 10px; color: #666;">
-		<img src="{$ko_path}images/{$tpl_legend_icon}" alt="legend" border="0" align="left" />&nbsp;
+		{if $tpl_legend_icon}<img src="{$ko_path}images/{$tpl_legend_icon}" alt="legend" border="0" align="left" />&nbsp;{/if}
 		{$tpl_legend}
 	</div>
 {/if}

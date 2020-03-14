@@ -2,7 +2,7 @@
 /***************************************************************
 *  Copyright notice
 *
-*  (c) 2003-2015 Renzo Lauper (renzo@churchtool.org)
+*  (c) 2003-2017 Renzo Lauper (renzo@churchtool.org)
 *  All rights reserved
 *
 *  This script is part of the kOOL project. The kOOL project is
@@ -37,7 +37,7 @@ include('inc/rota.inc');
 //Redirect to SSL if needed
 ko_check_ssl();
 
-if(!ko_module_installed('rota')) header('Location: '.$BASE_URL.'index.php');
+if(!ko_module_installed('rota')) { header('Location: '.$BASE_URL.'index.php'); exit; }
 
 ob_end_flush();
 
@@ -47,9 +47,6 @@ $notifier = koNotifier::Instance();
 //Get access rights
 ko_get_access('daten');
 ko_get_access('rota');
-
-//Smarty-Templates-Engine laden
-require($ko_path.'inc/smarty.inc');
 
 //kOOL Table Array (ko_event used for settings to select event fields)
 ko_include_kota(array('ko_rota_teams', 'ko_event'));
@@ -77,21 +74,26 @@ if($_SERVER['HTTP_REFERER'] != '' && FALSE === strpos($_SERVER['HTTP_REFERER'], 
 switch($do_action) {
 
 	case 'schedule':
-		if($access['rota']['MAX'] < 1) continue;
+		if($access['rota']['MAX'] < 1) break;
 
 		$_SESSION['show'] = 'schedule';
 	break;
 
+	case 'planning':
+		if($access['rota']['MAX'] < 1) break;
+
+		$_SESSION['show'] = 'planning';
+	break;
 
 	case 'settings':
-		if($access['rota']['MAX'] < 2) continue;
+		if($access['rota']['MAX'] < 2) break;
 
 		$_SESSION['show_back'] = $_SESSION['show'];
 		$_SESSION['show'] = 'settings';
 	break;
 
 	case 'submit_rota_settings':
-		if($access['rota']['MAX'] < 2) continue;
+		if($access['rota']['MAX'] < 2) break;
 
 		//User settings
 		ko_save_userpref($_SESSION['ses_userid'], 'default_view_rota', format_userinput($_POST['sel_rota_default_view'], 'js'));
@@ -104,9 +106,9 @@ switch($do_action) {
 		if($access['rota']['MAX'] > 2) {
 			ko_save_userpref($_SESSION['ses_userid'], 'rota_orderby', format_userinput($_POST['orderby'], 'alpha'));
 			ko_save_userpref($_SESSION['ses_userid'], 'rota_pdf_names', format_userinput($_POST['pdf_names'], 'uint'));
-			ko_save_userpref($_SESSION['ses_userid'], 'rota_schedule_subgroup_members', format_userinput($_POST['schedule_subgroup_members'], 'uint'));
 		}
 		if($access['rota']['MAX'] > 1) {
+			ko_save_userpref($_SESSION['ses_userid'], 'rota_pdf_title', format_userinput($_POST['pdf_title'], 'alpha+'));
 			ko_save_userpref($_SESSION['ses_userid'], 'rota_pdf_fontsize', format_userinput($_POST['pdf_fontsize'], 'uint'));
 			ko_save_userpref($_SESSION['ses_userid'], 'rota_pdf_use_colors', format_userinput($_POST['pdf_use_colors'], 'uint'));
 		}
@@ -151,6 +153,7 @@ switch($do_action) {
 			ko_set_setting('consensus_eventfields', format_userinput($_POST['consensus_eventfields'], 'alphanumlist'));
 			ko_set_setting('consensus_description', format_userinput($_POST['consensus_description'], 'text'));
 			ko_set_setting('consensus_restrict_link', format_userinput($_POST['consensus_restrict_link'], 'uint'));
+			ko_set_setting('consensus_display_participation', format_userinput($_POST['consensus_display_participation'], 'uint'));
 		}
 
 		$_SESSION['show'] = $_SESSION['show_back'] ? $_SESSION['show_back'] : 'settings';
@@ -158,7 +161,7 @@ switch($do_action) {
 
 
 	case 'new_team':
-		if($access['rota']['MAX'] < 5) continue;
+		if($access['rota']['MAX'] < 5) break;
 
 		$_SESSION['show'] = 'new_team';
 		$onload_code = 'form_set_first_input();'.$onload_code;
@@ -166,7 +169,7 @@ switch($do_action) {
 
 
 	case 'submit_new_team':
-		if($access['rota']['MAX'] < 5) continue;
+		if($access['rota']['MAX'] < 5) break;
 
 		$new_id = kota_submit_multiedit('', 'new_rota_team');
 		if(!$notifier->hasErrors() && $new_id) {
@@ -190,7 +193,7 @@ switch($do_action) {
 	
 
 	case 'edit_team':
-		if($access['rota']['MAX'] < 5) continue;
+		if($access['rota']['MAX'] < 5) break;
 
 		$_SESSION['show'] = 'edit_team';
 		$onload_code = 'form_set_first_input();'.$onload_code;
@@ -198,13 +201,13 @@ switch($do_action) {
 
 
 	case 'submit_edit_team':
-		if($access['rota']['MAX'] < 5) continue;
+		if($access['rota']['MAX'] < 5) break;
 
 		list($table, $columns, $id, $hash) = explode('@', $_POST['id']);
 		$id = format_userinput($id, 'uint');
-		if(!$id) continue;
+		if(!$id) break;
 		$old = db_select_data('ko_rota_teams', "WHERE `id` = '$id'", '*', '', '', TRUE);
-		if($old['id'] != $id) continue;
+		if($old['id'] != $id) break;
 
 		kota_submit_multiedit('', 'edit_rota_team');
 
@@ -242,16 +245,18 @@ switch($do_action) {
 
 
 	case 'delete_team':
-		if($access['rota']['MAX'] < 5) continue;
+		if($access['rota']['MAX'] < 5) break;
 
 		$id = format_userinput($_POST['id'], 'uint');
-		if($access['rota']['ALL'] < 5 && $access['rota'][$id] < 5) continue;
+		if($access['rota']['ALL'] < 5 && $access['rota'][$id] < 5) break;
 
 		$old = db_select_data('ko_rota_teams', "WHERE `id` = '$id'", '*', '', '', TRUE);
 		db_delete_data('ko_rota_teams', "WHERE `id` = '$id'");
 
 		ko_log_diff('rota_delete_team', $old);
 
+		//Delete scheduling data
+		db_delete_data('ko_rota_schedulling', "WHERE `team_id` = '$id'");
 
 		//Delete events for this rota team
 		if(ko_get_setting('rota_export_weekly_teams') == 1 && $old['rotatype'] == 'week') {
@@ -271,7 +276,7 @@ switch($do_action) {
 
 
 	case 'multiedit':
-		if($access['rota']['MAX'] < 5) continue;
+		if($access['rota']['MAX'] < 5) break;
 
 		//Columns to be edited
 		$columns = explode(',', format_userinput($_POST['id'], 'alphanumlist'));
@@ -304,7 +309,7 @@ switch($do_action) {
 
 
 	case 'submit_multiedit':
-		if($access['rota']['MAX'] < 5) continue;
+		if($access['rota']['MAX'] < 5) break;
 
 		kota_submit_multiedit(5);
 		if(!$notifier->hasErrors()) $notifier->addInfo(1, $do_action);
@@ -313,7 +318,7 @@ switch($do_action) {
 
 
 	case 'ical_links':
-		if($access['rota']['MAX'] < 1) continue;
+		if($access['rota']['MAX'] < 1) break;
 
 		$_SESSION['show'] = 'ical_links';
 	break;
@@ -322,7 +327,7 @@ switch($do_action) {
 
 
 	case 'show_filesend':
-		if($access['rota']['MAX'] < 4) continue;
+		if($access['rota']['MAX'] < 4) break;
 
 		$get_data = $_GET;
 		$_SESSION['show'] = 'show_filesend';
@@ -330,7 +335,7 @@ switch($do_action) {
 
 
 	case 'filesend_upload':
-		if($access['rota']['MAX'] < 4) continue;
+		if($access['rota']['MAX'] < 4) break;
 
 		$get_data = $_POST;
 		$_SESSION['show'] = 'show_filesend';
@@ -342,7 +347,7 @@ switch($do_action) {
 			$upload_name = $_FILES['new_file']['name'];
 			$ext_ = explode('.', $upload_name);
 			$ext = strtolower($ext_[sizeof($ext_)-1]);
-			if(in_array($ext, $dissallow_ext)) continue;
+			if(in_array($ext, $dissallow_ext)) break;
 
 			$path = $BASE_PATH.'download/pdf/';
 			$filename = format_userinput($upload_name, 'alphanumlist', FALSE, 0, array(), '.');
@@ -356,7 +361,7 @@ switch($do_action) {
 
 
 	case 'filesend_delfile':
-		if($access['rota']['MAX'] < 4) continue;
+		if($access['rota']['MAX'] < 4) break;
 
 		$get_data = $_POST;
 
@@ -373,149 +378,8 @@ switch($do_action) {
 
 	case 'filesend':
 
-		/*
-
-		//Get logged in person and he's email addresses
-		$p = ko_get_logged_in_person();
-		if(!ko_get_leute_email($p, $emails)) $emails = array(ko_get_setting('info_email'));
-
-		//Check for valid sender address
-		$from_email = format_userinput($_POST['sender'], 'email');
-		if(!check_email($from_email) || !in_array($from_email, $emails)) continue;
-
-		//Build sender header with name and email address
-		$from_name = $p['vorname'] || $p['nachname'] ? $p['vorname'].' '.$p['nachname'] : $p['firm'];
-		$from = array($from_email => $from_name);
-
-
-		//Get file and filetype from submitted form
-		$filetype = $_POST['filetype'];
-		$send_files = array();
-		foreach($_POST['files'] as $k => $file) {
-			$file = realpath($BASE_PATH.$file);
-			if(substr($file, 0, strlen($BASE_PATH)) != $BASE_PATH) continue;
-			$send_files[$file] = basename($file);
-		}
-
-		$restrict_consensus_link = ko_get_setting('consensus_restrict_link') == 1 ? TRUE : FALSE;
-		$restrict_to_teams = NULL;
-		//Get recipients according to recipients mode
-		if(in_array($_POST['recipients'], array('schedulled', 'selectedschedulled', 'manualschedulled'))) {
-			if(substr($_POST['filetype'], 0, 5) == 'event') {
-				list($mode, $eventid) = explode(':', $filetype);
-			} else {
-				$events = ko_rota_get_events();
-				$eventid = array();
-				foreach($events as $e) {
-					$eventid[] = $e['id'];
-				}
-			}
-			//Only include shown rota teams
-			if($_POST['recipients'] == 'selectedschedulled') {
-				$team_ids = $_SESSION['rota_teams'];
-				if ($restrict_consensus_link) $restrict_to_teams = $team_ids;
-			} else if($_POST['recipients'] == 'manualschedulled') {
-				$team_ids = $_POST['sel_teams_schedulled'];
-				if ($restrict_consensus_link) $restrict_to_teams = $team_ids;
-			} else {
-				$team_ids = '';
-			}
-			$recipients = ko_rota_get_recipients_by_event($eventid, $team_ids, 4);
-		}
-		else if($_POST['recipients'] == 'single') {
-			$recipients = array();
-			foreach($_POST['single_id'] as $sid) {
-				$sid = format_userinput($sid, 'uint');
-				if(!$sid) continue;
-				ko_get_person_by_id($sid, $p);
-				if(!$p['id']) continue;
-				$recipients[] = $p;
-			}
-		}
-		else {
-			$roleid = '';
-			switch($_POST['recipients']) {
-				case 'selectedmembers':
-					$teams = $_SESSION['rota_teams'];
-					if ($restrict_consensus_link) $restrict_to_teams = $teams;
-				break;
-				case 'selectedleaders':
-					$teams = $_SESSION['rota_teams'];
-					if ($restrict_consensus_link) $restrict_to_teams = $teams;
-					$roleid = ko_get_setting('rota_leaderrole');
-				break;
-				case 'allrotamembers':
-					$teams = array_keys(db_select_data('ko_rota_teams', 'WHERE 1'));
-				break;
-				case 'allrotamembersconsensus':
-					$teams = array_keys(db_select_data('ko_rota_teams', 'WHERE `allow_consensus` = "1"'));
-				break;
-				case 'allrotaleaders':
-					$teams = array_keys(db_select_data('ko_rota_teams', 'WHERE 1'));
-					$roleid = ko_get_setting('rota_leaderrole');
-				break;
-				case 'manualmembers':
-					$teams = $_POST['sel_teams_members'];
-					if ($restrict_consensus_link) $restrict_to_teams = $teams;
-				break;
-				case 'manualleaders':
-					$teams = $_POST['sel_teams_leaders'];
-					if ($restrict_consensus_link) $restrict_to_teams = $teams;
-					$roleid = ko_get_setting('rota_leaderrole');
-				break;
-			}
-			$recipients = array();
-			foreach($teams as $teamID) {
-				if($access['rota']['ALL'] < 4 && $access['rota'][$teamID] < 4) continue;
-				$rec = ko_rota_get_team_members($teamID, TRUE, $roleid);
-				$recipients = array_merge($recipients, $rec['people']);
-			}
-		}
-
-		//Add members from selected group (if any)
-		if($_POST['recipients_group']) {
-			$gid = format_userinput($_POST['recipients_group'], 'uint');
-			if($gid) {
-				$group = db_select_data('ko_groups', "WHERE `id` = '$gid'", '*', '', '', TRUE);
-				if($group['id'] > 0 && $group['id'] == $gid) {
-					//Save userpref
-					ko_save_userpref($_SESSION['ses_userid'], 'rota_recipients_group', $gid);
-					//Get all group members
-					$group_members = db_select_data('ko_leute', "WHERE `deleted` = '0' AND `hidden` = '0' AND `groups` LIKE '%g$gid%'");
-					foreach($group_members as $member) {
-						$recipients[] = $member;
-					}
-				}
-			}
-		} else {
-			ko_save_userpref($_SESSION['ses_userid'], 'rota_recipients_group', '');
-		}
-
-		// If set, check all teams that should be visible in consensus for access of user
-		if($restrict_consensus_link) {
-			if($restrict_to_teams === NULL) {
-				$all_teams = db_select_data('ko_rota_teams', 'WHERE 1=1');
-				$restrict_to_teams = array_keys($all_teams);
-			}
-			if($access['rota']['ALL'] < 3) {
-				foreach($restrict_to_teams as $k => $t) {
-					if($access['rota'][$t] < 3) unset($restrict_to_teams[$k]);
-				}
-			}
-		}
-
-
-		//Remove double entries
-		$rec_ids = array();
-		foreach($recipients as $k => $v) {
-			if(in_array($v['id'], $rec_ids)) unset($recipients[$k]);
-			$rec_ids[] = $v['id'];
-		}
-
-		*/
-
-		if($access['rota']['MAX'] < 4) continue;
-		ko_rota_filesend_parse_post('SEND', $text, $subject, $recipients, $eventid, $restrict_to_teams, $from, $send_files);
+		if($access['rota']['MAX'] < 4) break;
+		ko_rota_filesend_parse_post('SEND', $text, $subject, $recipients, $eventid, $restrict_to_teams, $from, $reply_to, $send_files);
 
 		//Send file to recipients
 		$subject = strtr($subject, array("\n" => '', "\r" => ''));
@@ -524,7 +388,7 @@ switch($do_action) {
 		$no_email = $email_recipients = $noemail_recipients = $failed = array();
 		foreach($recipients as $recipient) {
 			if($recipient['_has_mail']) {
-				$success = ko_rota_filesend_send_mail('SEND', $text, $subject, $recipient, $send_files, $eventid, $from, $restrict_to_teams);
+				$success = ko_rota_filesend_send_mail('SEND', $text, $subject, $recipient, $send_files, $eventid, $from, $reply_to, $restrict_to_teams);
 
 				if ($success) $email_recipients[] = $success['email'].' ('.$recipient['id'].')';
 				else $failed[] = $recipient;
@@ -573,6 +437,13 @@ switch($do_action) {
 
 		ko_create_crm_contact_from_post(TRUE, array('reference' => 'ko_log:'.$log_id, 'leute_ids' => implode(',', $rec_ids)));
 
+		$_SESSION['show'] = 'schedule';
+	break;
+
+	case 'download_single_event_export':
+		$filename = $_GET['filename'];
+
+		$onload_code = "ko_popup('".$ko_path."download.php?action=file&amp;file=download/pdf/".$filename."');";
 		$_SESSION['show'] = 'schedule';
 	break;
 
@@ -730,6 +601,9 @@ switch($_SESSION['show']) {
 		ko_rota_ical_links();
 	break;
 
+	case 'planning':
+		ko_rota_planning_list();
+	break;
 
 	default:
     hook_show_case($_SESSION['show']);

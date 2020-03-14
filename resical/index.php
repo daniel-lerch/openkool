@@ -2,7 +2,7 @@
 /***************************************************************
 *  Copyright notice
 *
-*  (c) 2003-2015 Renzo Lauper (renzo@churchtool.org)
+*  (c) 2003-2017 Renzo Lauper (renzo@churchtool.org)
 *  All rights reserved
 *
 *  This script is part of the kOOL project. The kOOL project is
@@ -32,6 +32,7 @@ include($ko_path."reservation/inc/reservation.inc");
 
 $auth = FALSE;
 if(isset($_GET["ko_guest"])) {  //Stay with guest user
+	$auth = TRUE;
 }
 else if(isset($_GET['user'])) { //User hash given in URL
 	$userhash = $_GET['user'];
@@ -43,7 +44,7 @@ else if(isset($_GET['user'])) { //User hash given in URL
 
 	ko_get_logins($logins);
 	foreach($logins as $login) {
-		if(md5($login['id'].$login['password'].KOOL_ENCRYPTION_KEY) == $userhash) {
+		if($login['ical_hash'] == $userhash || md5($login['id'].$login['password'].KOOL_ENCRYPTION_KEY) == $userhash) {
 			$auth = TRUE;
 			$_SESSION['ses_username'] = $login['login'];
 			$_SESSION['ses_userid']   = $login['id'];
@@ -55,34 +56,32 @@ else if(isset($_GET['user'])) { //User hash given in URL
 else {
 	if (!isset($_SERVER['PHP_AUTH_USER'])) {
 		header("WWW-Authenticate: Basic realm=\"kOOL\"");
-		header("HTTP/1.0 401 Unauthorized");
+		header("HTTP/1.1 401 Unauthorized");
+		exit;
 	} else {
 		$user = format_userinput($_SERVER["PHP_AUTH_USER"], "text", TRUE, 32);
 		$pw = md5($_SERVER["PHP_AUTH_PW"]);
-		$result = mysqli_query(db_get_link(), "SELECT id,login FROM ko_admin WHERE `login` = '$user' AND `password` = '$pw'");
-		if(mysqli_num_rows($result) == 1) {
-			$row = mysqli_fetch_assoc($result);
-			if($row["login"] == $user) {
+		$where = "WHERE `login` = '$user' AND `password` = '$pw'";
+		$result = db_select_data("ko_admin", $where, "id,login", "", "LIMIT 1", TRUE, TRUE);
+		if(!empty($result['id'])) {
+			if($result["login"] == $user) {
 				$auth = TRUE;
-				$_SESSION["ses_username"] = $row["login"];
-				$_SESSION["ses_userid"]   = $row["id"];
+				$_SESSION["ses_username"] = $result["login"];
+				$_SESSION["ses_userid"]   = $result["id"];
 				ko_init();
 			}
 		}
 	}
 }
-if(!$auth) {
-	//header("HTTP/1.0 404 Not Found");
-	//exit;
-	$_SESSION["ses_username"] = "ko_guest";
-	$_SESSION["ses_userid"] = ko_get_guest_id();
-	ko_init();
-}
 
+if(!$auth) {
+	header("HTTP/1.1 401 Unauthorized"); exit;
+}
 
 if(!ko_module_installed("reservation")) {
-	header("HTTP/1.0 404 Not Found");
+	header("HTTP/1.1 404 Not Found"); exit;
 }
+
 //Get access rights
 ko_get_access('reservation', $_SESSION['ses_userid'], TRUE);
 ko_include_kota(array('ko_reservation'));
@@ -174,7 +173,11 @@ foreach($_GET as $k => $v) {
 	}
 	if(!$ok) continue;
 
-	$_SESSION['kota_filter']['ko_reservation'][$key] = urldecode($v);
+	if(count(explode("||",urldecode($v))) > 1) {
+		$_SESSION['kota_filter']['ko_reservation'][$key] = explode("||", urldecode($v));
+	} else {
+		$_SESSION['kota_filter']['ko_reservation'][$key][0] = urldecode($v);
+	}
 }
 $kota_where = kota_apply_filter('ko_reservation');
 if($kota_where != '') $z_where .= " AND ($kota_where) ";

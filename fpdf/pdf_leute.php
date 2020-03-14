@@ -1,5 +1,5 @@
 <?php
-require('mc_table.php');
+require_once('mc_table.php');
 
 class PDF_leute extends PDF_MC_Table {
 	var $layout;  //Holds the layout definition which will be used for rendering

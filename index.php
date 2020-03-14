@@ -2,7 +2,7 @@
 /***************************************************************
 *  Copyright notice
 *
-*  (c) 2003-2015 Renzo Lauper (renzo@churchtool.org)
+*  (c) 2003-2017 Renzo Lauper (renzo@churchtool.org)
 *  All rights reserved
 *
 *  This script is part of the kOOL project. The kOOL project is
@@ -55,6 +55,7 @@ else if(isset($_GET["action"])) {
 	if($_GET["action"] == "show_adressaenderung_fields") $do_action = "show_adressaenderung_fields";
 	else if($_GET["action"] == "submit_aa") $do_action = "submit_aa";
 	else if($_GET["action"] == "show_single_news") $do_action = "show_single_news";
+	else if($_GET["action"] == "delete_absence_cookie") $do_action = "delete_absence_cookie";
 	else $do_action = "";
 }
 else $do_action = "";
@@ -62,6 +63,18 @@ else $do_action = "";
 if(FALSE === format_userinput($do_action, "alpha+", TRUE, 50)) trigger_error("invalid action: ".$do_action, E_USER_ERROR);
 
 switch($do_action) {
+	case 'delete_absence_cookie':
+		$leute_id = $_SESSION['fm_absence_selected_person'];
+		$hash = array_search($leute_id, json_decode($_COOKIE['fm_absence_persons'], TRUE));
+		if (ko_fm_absence_check_hash($hash)) {
+			$absence_cookie = json_decode($_COOKIE['fm_absence_persons'], TRUE);
+			unset($absence_cookie[$hash]);
+			setcookie("fm_absence_persons", json_encode($absence_cookie), time()+(86400*365), "/", $_SERVER['HTTP_HOST']);
+			$_COOKIE['fm_absence_persons'] = json_encode($absence_cookie);
+			$notifier->addTextInfo(getLL('fm_absence_select_person_logout'));
+		}
+		$do_action = 'list_absence';
+		break;
 }//switch(do_action)
 
 
@@ -78,21 +91,26 @@ if(sizeof($hooks) > 0) foreach($hooks as $hook) include($hook);
 <meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1" />
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<link rel="SHORTCUT ICON" href="<?php print $ko_path; ?>images/kOOL_logo.ico" />
 <title><?php print $HTML_TITLE; ?></title>
 <?php
-print ko_include_css();
-print ko_include_js();
+$css_files = array(
+	$ko_path.'inc/fullcalendar/lib/fullcalendar.min.css',
+	$ko_path.'inc/fullcalendar/scheduler.min.css',
+);
+print ko_include_css($css_files);
+$js_files = array(
+	$ko_path.'inc/fullcalendar/lib/fullcalendar.min.js',
+	$ko_path.'inc/fullcalendar/scheduler.min.js',
+);
+print ko_include_js($js_files);
 include($ko_path.'inc/js-sessiontimeout.inc');
+include("{$ko_path}js-home.inc");
 ?>
 </head>
 
 <body onload="session_time_init();<?php if(isset($onload_code)) print $onload_code; ?>">
 
 <?php
-//Smarty-Templates-Engine laden
-require("$ko_path/inc/smarty.inc");
-
 /*
  * Gibt bei erfolgreichem Login das Menü aus, sonst einfach die Loginfelder
  */
@@ -113,7 +131,8 @@ switch($do_action) {
 		* Ein Adress-Änderungsantrag wurde abgeschickt
 		*/
 	case "submit_aa":
-		if(!$_POST["aa_id"]) continue;
+		if(!$_POST["aa_id"]) break;
+		if($_POST['cancel_aa']) break;
 
 		if(FALSE === ($aa_id = format_userinput($_POST["aa_id"], "int", TRUE))) {
 			trigger_error("invalid aa_id: ".$_POST["aa_id"], E_USER_ERROR);
@@ -169,20 +188,20 @@ switch($do_action) {
 		if(!$aa_use_nachname && $_POST["submit_fm_aa"]) $aa_use_nachname = format_userinput($_POST["txt_fm_aa_nachname"], "text");
 
 		//Vorname und Nachname müssen angegeben werden, denn sonst könnte Datenbank nach bestimmten Namen durchsucht werden...
-		if((!$_POST["txt_fm_aa_nachname"] || !$_POST["txt_fm_aa_vorname"]) && !$aa_use_id) continue;
+		if((!$_POST["txt_fm_aa_nachname"] || !$_POST["txt_fm_aa_vorname"]) && !$aa_use_id) break;
 
 		//Sicherheitscheck: (Felder nur anzeigen, wenn ID mit Namen und Vornamen übereinstimmen
 		//(so müssen ID, Name und Nachname bekannt sein, um die Felder manuell anzuzeigen)
 		if($aa_use_id > 0) {
 			ko_get_person_by_id($aa_use_id, $p);
-			if($p["vorname"] != $aa_use_vorname || $p["nachname"] != $aa_use_nachname) continue;
+			if($p["vorname"] != $aa_use_vorname || $p["nachname"] != $aa_use_nachname) break;
 			unset($p);
 		}
 
 		//Auf vorhandenen Eintrag prüfen und ID(s) merken
 		if(!$aa_use_id) {
 			$ids = ko_fuzzy_search(array("vorname" => $aa_use_vorname, "nachname" => $aa_use_nachname), "ko_leute", 1, FALSE, 3);
-			if(is_array($ids)) $fm_aa_ids = $ids;
+			if(is_array($ids)) $fm_aa_ids = array_merge($ids, array('-1'));
 		} else {
 			$fm_aa_ids = array($aa_use_id);
 		}
@@ -223,37 +242,41 @@ switch($do_action) {
 
 		//Falls genau eine ID gefunden (auch -1 für neu...), dann diese zum Bearbeiten ausgeben
 		if(sizeof($fm_aa_ids) == 1) {
+			if (!is_array($KOTA['ko_leute'])) ko_include_kota(array('ko_leute'));
+			$leuteKota = $KOTA['ko_leute'];
+
 			$smarty->assign("tpl_aa_show", "fields");
 			if($fm_aa_ids[0] > 0) ko_get_person_by_id($fm_aa_ids[0], $p);
 			$cols = db_get_columns("ko_leute_mod");
+
+			$exclude_cols = array('famfunction', 'memo1', 'memo2', 'rectype', 'father', 'mother', 'spouse', 'picture');
 			
 			//Only fill in values if ALL rights for people module
 			$do_fillout = ko_module_installed('leute') && ko_get_access_all('leute') > 0;
 
 			$tpl_input = array();
 			$counter = 0;
-			$col_namen = ko_get_leute_col_name();
+			$col_namen = ko_get_leute_col_name(FALSE, FALSE, 'all');
 			foreach($cols as $c) {
+				if(!$col_namen[$c['Field']]) continue;
+				if(in_array($c['Field'], $exclude_cols)) continue;
+
 				if(substr($c["Field"], 0, 1) != "_") {  //Alle Spalten, die mit "_" beginnen, ignorieren
 					$tpl_input[$counter]["name"] = "aa_input_".$c["Field"];
 					$tpl_input[$counter]["desc"] = $col_namen[$c["Field"]];
 					//Vor- und Nachname immer ausgeben, denn diese dürfen immer angezeigt werden, da diese ja vorher selber eingegeben wurden.
-					if($do_fillout || (!$do_fillout && ($c["Field"]=="vorname" || $c["Field"]=="nachname")))
-						$tpl_input[$counter]["value"] = ($fm_aa_ids[0] == -1) ? ${"aa_use_".$c["Field"]} : $p[$c["Field"]];
-					else
+					if($do_fillout || (!$do_fillout && ($c["Field"]=="vorname" || $c["Field"]=="nachname"))) {
+						if($KOTA['ko_leute'][$c['Field']]['form']['type'] == 'jsdate') {
+							$tpl_input[$counter]["value"] = sql2datum($p[$c['Field']]);
+						} else {
+							$tpl_input[$counter]["value"] = ($fm_aa_ids[0] == -1) ? ${"aa_use_".$c["Field"]} : $p[$c["Field"]];
+						}
+					} else {
 						$tpl_input[$counter]["value"] = "";
+					}
 
-					if(substr($c["Type"], 0, 7) == "varchar" || substr($c["Type"], 0, 4) == "date") {
-						$tpl_input[$counter]["type"] = "text";
-					}
-					if(substr($c["Type"], 0, 4) == "date") {
-						$tpl_input[$counter]["value"] = ($do_fillout) ? sql2datum($tpl_input[$counter]["value"]) : "";
-					}
-					if(substr($c["Type"], 0, 4) == "enum") {
-						$tpl_input[$counter]["type"] = "select";
-						$tpl_input[$counter]["values"] = db_get_enums("ko_leute_mod", $c["Field"]);
-						$tpl_input[$counter]["descs"] = db_get_enums_ll("ko_leute_mod", $c["Field"]);
-					}
+					$tpl_input[$counter] = array_merge($tpl_input[$counter], $leuteKota[$c['Field']]['form']);
+
 					$counter++;
 				}
 			}//foreach(cols as c)
@@ -277,6 +300,57 @@ switch($do_action) {
 		if($aa_display) $aa_content = $smarty->fetch("ko_fm_adressaenderung.tpl");
 	break;
 
+	case 'send_absence_token':
+		if ($_POST['fm_absence_personadd']) {
+			$recipient_email = format_userinput($_POST['fm_absence_personadd'],'email');
+
+			$laf = unserialize(ko_get_userpref(ko_get_guest_id(), "fm_absence_restriction"));
+			if(!isset($laf["filter"])) $filter_where = " AND `deleted` = '0' AND `hidden` = '0' ";
+			else apply_leute_filter($laf["filter"], $filter_where, FALSE, '', ko_get_guest_id());
+
+			$email_wheres = array();
+			foreach (array_merge(array('email'), $LEUTE_EMAIL_FIELDS) as $field) {
+				$email_wheres[] = "`{$field}` = '{$recipient_email}'";
+			}
+			if (sizeof($email_wheres) > 0) {
+				$filter_where.= " AND (" . implode(" OR ", $email_wheres) .")";
+			}
+
+			$requested_person = db_select_data("ko_leute", "WHERE 1=1 ".$filter_where, '*', '', 'LIMIT 1', TRUE);
+
+			if (!empty($requested_person)) {
+				$hash = ko_fm_absence_create_hash($requested_person);
+				$absence_url = $BASE_URL . "index.php?fm_absence_token=" . $hash;
+
+				$salut = ko_get_salutation($requested_person);
+				$subject = getLL('fm_absence_email_title');
+				$message = $salut . "\n\n" . sprintf(getLL('fm_absence_email_text'), $absence_url);
+				$message.= ko_email_signature('text');
+				ko_send_mail(ko_mail_get_from(), $recipient_email, $subject, $message);
+				$notifier->addTextInfo(getLL('ko_event_absence_info_mailsent'));
+			} else {
+				$notifier->addTextWarning(getLL('ko_event_absence_info_mailwarning'));
+			}
+
+		}
+		break;
+
+
+
+	case 'edit_absence':
+	case 'submit_absence':
+	case 'list_absence':
+		// action handled in ko_fm_absence
+		break;
+
+	case 'delete_absence':
+		require_once($ko_path.'daten/inc/daten.inc');
+		if(ko_daten_delete_absence(format_userinput($_REQUEST['id'],"uint"))) {
+			$notifier->addTextInfo(getLL('ko_event_absence_info_deleted'));
+		} else {
+			$notifier->addTextError(getLL('ko_event_absence_info_error'));
+		}
+		break;
 
 	//Default:
 	default:

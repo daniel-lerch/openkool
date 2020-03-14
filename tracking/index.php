@@ -2,7 +2,7 @@
 /***************************************************************
 *  Copyright notice
 *
-*  (c) 2003-2015 Renzo Lauper (renzo@churchtool.org)
+*  (c) 2003-2017 Renzo Lauper (renzo@churchtool.org)
 *  All rights reserved
 *
 *  This script is part of the kOOL project. The kOOL project is
@@ -38,7 +38,7 @@ include('inc/tracking.inc');
 ko_check_ssl();
 
 if(!ko_module_installed('tracking')) {
-	header('Location: '.$BASE_URL.'index.php');  //Absolute URL
+	header('Location: '.$BASE_URL.'index.php'); exit;
 }
 
 ob_end_flush();  //Puffer flushen
@@ -48,9 +48,6 @@ $notifier = koNotifier::Instance();
 
 //Get access rights
 ko_get_access('tracking');
-
-//Smarty-Templates-Engine laden
-require($ko_path.'inc/smarty.inc');
 
 //kOOL Table Array
 ko_include_kota(array('ko_tracking', 'ko_tracking_entries'));
@@ -80,7 +77,7 @@ switch($do_action) {
 
 	// Display
 	case 'list_trackings':
-		if($access['tracking']['MAX'] < 1) continue;
+		if($access['tracking']['MAX'] < 1) break;
 		if($_SESSION['show'] == 'list_trackings') $_SESSION['show_start'] = 1;
 		$_SESSION['show'] = 'list_trackings';
 	break;
@@ -89,7 +86,7 @@ switch($do_action) {
 
 	//Neu:
 	case 'new_tracking':
-		if($access['tracking']['MAX'] < 4) continue;
+		if($access['tracking']['MAX'] < 4) break;
 
 		$_SESSION['show'] = 'new_tracking';
 		$onload_code = 'form_set_first_input();'.$onload_code;
@@ -97,7 +94,7 @@ switch($do_action) {
 
 	case 'submit_new_tracking':
 	case 'submit_as_new_tracking':
-		if($access['tracking']['MAX'] < 4) continue;
+		if($access['tracking']['MAX'] < 4) break;
 
 		if($do_action == 'submit_as_new_tracking') {
 			list($table, $columns, $ids, $hash) = explode('@', $_POST['id']);
@@ -118,14 +115,14 @@ switch($do_action) {
 	//Bearbeiten
 	case 'edit_tracking':
 		$id = format_userinput($_POST['id'], 'uint');
-		if($access['tracking']['ALL'] < 3 && $access['tracking'][$id] < 3) continue;
+		if($access['tracking']['ALL'] < 3 && $access['tracking'][$id] < 3) break;
 
 		$_SESSION['show'] = 'edit_tracking';
 		$onload_code = 'form_set_first_input();'.$onload_code;
 	break;
 
 	case 'submit_edit_tracking':
-		if($access['tracking']['MAX'] < 3) continue;
+		if($access['tracking']['MAX'] < 3) break;
 
 		kota_submit_multiedit('', 'edit_tracking');
 		if(!$notifier->hasErrors()) {
@@ -139,7 +136,7 @@ switch($do_action) {
 
 	//Entering
 	case 'enter_tracking':
-		if($access['tracking']['MAX'] < 1) continue;
+		if($access['tracking']['MAX'] < 1) break;
 
 		//Get tracking id from GET
 		if(isset($_GET['id']) && (int)$_GET['id'] == $_GET['id'] && ($access['tracking']['ALL'] > 0 || $access['tracking'][$_GET['id']] > 0)) {
@@ -154,7 +151,7 @@ switch($do_action) {
 
 
 	case 'setdate':
-		if($access['tracking']['MAX'] < 1) continue;
+		if($access['tracking']['MAX'] < 1) break;
 
 		$newdate = format_userinput($_GET['date'], 'date');
 		if(strtotime($newdate) > 0) {
@@ -169,10 +166,10 @@ switch($do_action) {
 
 	//Löschen
 	case 'delete_tracking':
-		if($access['tracking']['MAX'] < 4) continue;
+		if($access['tracking']['MAX'] < 4) break;
 
 		$id = format_userinput($_POST['id'], 'uint');
-		if(!$id || ($access['tracking']['ALL'] < 4 && $access['tracking'][$id] < 4)) continue;
+		if(!$id || ($access['tracking']['ALL'] < 4 && $access['tracking'][$id] < 4)) break;
 
 		$old = db_select_data('ko_tracking', "WHERE `id` = '$id'", '*', '', '', TRUE);
 
@@ -184,14 +181,14 @@ switch($do_action) {
 
 
 	case 'confirm_tracking_entry':
-		if($access['tracking']['MAX'] < 2) continue;
+		if($access['tracking']['MAX'] < 2) break;
 
 		$id = format_userinput($_POST['id'], 'uint');
-		if(!$id) continue;
+		if(!$id) break;
 
 		$tentry = db_select_data('ko_tracking_entries', "WHERE `id` = '$id'", '*', '', '', TRUE);
-		if(!$tentry['id'] || $tentry['id'] != $id || $tentry['status'] == 0) continue;
-		if($access['tracking']['ALL'] < 2 && $access['tracking'][$tentry['tid']] < 2) continue;
+		if(!$tentry['id'] || $tentry['id'] != $id || $tentry['status'] == 0) break;
+		if($access['tracking']['ALL'] < 2 && $access['tracking'][$tentry['tid']] < 2) break;
 
 		db_update_data('ko_tracking_entries', "WHERE `id` = '$id'", array('status' => 0, 'last_change' => date('Y-m-d H:i:s')));
 		ko_log_diff('confirm_entered_tracking', $tentry);
@@ -201,14 +198,14 @@ switch($do_action) {
 
 
 	case 'delete_tracking_entry':
-		if($access['tracking']['MAX'] < 2) continue;
+		if($access['tracking']['MAX'] < 2) break;
 
 		$id = format_userinput($_POST['id'], 'uint');
-		if(!$id) continue;
+		if(!$id) break;
 
 		$tentry = db_select_data('ko_tracking_entries', "WHERE `id` = '$id'", '*', '', '', TRUE);
-		if(!$tentry['id'] || $tentry['id'] != $id || $tentry['status'] == 0) continue;
-		if($access['tracking']['ALL'] < 2 && $access['tracking'][$tentry['tid']] < 2) continue;
+		if(!$tentry['id'] || $tentry['id'] != $id || $tentry['status'] == 0) break;
+		if($access['tracking']['ALL'] < 2 && $access['tracking'][$tentry['tid']] < 2) break;
 
 		db_delete_data('ko_tracking_entries', "WHERE `id` = '$id'");
 		ko_log_diff('del_entered_tracking', $tentry);
@@ -221,7 +218,7 @@ switch($do_action) {
 	//Export
 	case 'export_tracking_xls':
 	case 'export_tracking_pdf':
-		if($access['tracking']['MAX'] < 1) continue;
+		if($access['tracking']['MAX'] < 1) break;
 
 		$mode = $do_action == 'export_tracking_xls' ? 'xls' : 'pdf';
 		$folder = $mode == 'xls' ? 'excel' : 'pdf';
@@ -235,10 +232,10 @@ switch($do_action) {
 		if($_SESSION['show'] == 'list_trackings') {
 			if(sizeof($tid) == 0) {
 				$notifier->addError(3, $do_action);
-				continue;
+				break;
 			} else if(sizeof($tid) > 1 && !$merge_available) {  //Only allow multiple selection if pdftk is available
 				$notifier->addError(4, $do_action);
-				continue;
+				break;
 			}
 		} else {
 			$tid = $_SESSION['tracking_id'];
@@ -291,7 +288,7 @@ switch($do_action) {
 	//Export multiple trackings in a zip file
 	case 'export_tracking_xls_zip':
 	case 'export_tracking_pdf_zip':
-		if($access['tracking']['MAX'] < 1) continue;
+		if($access['tracking']['MAX'] < 1) break;
 
 		$mode = $do_action == 'export_tracking_xls_zip' ? 'xls' : 'pdf';
 		$folder = $mode == 'xls' ? 'excel' : 'pdf';
@@ -340,13 +337,13 @@ switch($do_action) {
 
 	//Settings
 	case 'tracking_settings':
-		if($access['tracking']['MAX'] < 1) continue;
+		if($access['tracking']['MAX'] < 1) break;
 		$_SESSION['show_back'] = $_SESSION['show'];
 		$_SESSION['show'] = 'tracking_settings';
 	break;
 
 	case 'submit_tracking_settings':
-		if($access['tracking']['MAX'] < 1) continue;
+		if($access['tracking']['MAX'] < 1) break;
 
 		ko_save_userpref($_SESSION['ses_userid'], 'show_limit_trackings', format_userinput($_POST['txt_limit_trackings'], 'uint'));
 		ko_save_userpref($_SESSION['ses_userid'], 'tracking_date_limit', format_userinput($_POST['txt_limit_tracking_dates'], 'uint'));
@@ -361,6 +358,13 @@ switch($do_action) {
 
 		if($access['tracking']['MAX'] > 3) {
 			ko_set_setting('tracking_add_roles', format_userinput($_POST['sel_add_roles'], 'uint'));
+			ko_set_setting('checkin_display_leute_fields', format_userinput($_POST['sel_checkin_display_leute_fields'], 'alphanumlist'));
+			ko_set_setting('checkin_display_leute_fields', format_userinput($_POST['sel_checkin_display_leute_fields'], 'alphanumlist'));
+			ko_set_setting('checkin_max_results', format_userinput($_POST['txt_checkin_max_results'], 'int'));
+
+			if ($_SESSION['ses_userid'] == ko_get_root_id()) {
+				ko_set_setting('tracking_enable_checkin', format_userinput($_POST['chk_enable_checkin'], 'uint'));
+			}
 		}
 
 		$_SESSION['show'] = $_SESSION['show_back'] ? $_SESSION['show_back'] : 'list_trackings';
@@ -369,7 +373,7 @@ switch($do_action) {
 
 	// Mod
 	case 'mod_entries':
-		if($access['tracking']['MAX'] < 2) continue;
+		if($access['tracking']['MAX'] < 2) break;
 
 		$_SESSION['show'] = 'mod_entries';
 	break;
@@ -377,12 +381,12 @@ switch($do_action) {
 	case 'edit_tracking_mod':
 		$id = format_userinput($_POST['id'], 'uint');
 		if (!$id) $id = format_userinput($_GET['id'], 'uint');
-		if (!$id) continue;
+		if (!$id) break;
 
 		$trackingMod = db_select_data('ko_tracking_entries', "WHERE `id` = '{$id}'", 'id,tid,cruser', '', '', TRUE, TRUE);
-		if ($trackingMod['id'] != $id) continue;
+		if ($trackingMod['id'] != $id) break;
 
-		if($access['tracking']['ALL'] < 2 && $access['tracking'][$trackingMod['tid']] < 2) continue;
+		if($access['tracking']['ALL'] < 2 && $access['tracking'][$trackingMod['tid']] < 2) break;
 
 		$edit_id = $id;
 
@@ -394,18 +398,18 @@ switch($do_action) {
 
 	case 'submit_edit_tracking_mod':
 	case 'submit_edit_approve_tracking_mod':
-		if($access['tracking']['MAX'] < 2) continue;
+		if($access['tracking']['MAX'] < 2) break;
 
 		kota_submit_multiedit('', 'edit_tracking_mod');
 
 		if ($do_action == 'submit_edit_approve_tracking_mod') {
 			list($table, $col, $id, $hash) = explode('@', $_POST['id']);
 			$id = format_userinput($id, 'uint');
-			if(!$id) continue;
+			if(!$id) break;
 
 			$tentry = db_select_data('ko_tracking_entries', "WHERE `id` = '$id'", '*', '', '', TRUE);
-			if(!$tentry['id'] || $tentry['id'] != $id || $tentry['status'] == 0) continue;
-			if($access['tracking']['ALL'] < 2 && $access['tracking'][$tentry['tid']] < 2) continue;
+			if(!$tentry['id'] || $tentry['id'] != $id || $tentry['status'] == 0) break;
+			if($access['tracking']['ALL'] < 2 && $access['tracking'][$tentry['tid']] < 2) break;
 
 			db_update_data('ko_tracking_entries', "WHERE `id` = '$id'", array('status' => 0, 'last_change' => date('Y-m-d H:i:s')));
 			ko_log_diff('confirm_entered_tracking', $tentry);
@@ -442,14 +446,14 @@ switch($do_action) {
 		if(sizeof($do_ids) < 1) $notifier->addError(4, $do_action);
 
 		if($_SESSION['show'] == 'mod_entries') {
-			if($access['tracking']['MAX'] < 2) continue;
+			if($access['tracking']['MAX'] < 2) break;
 			if(!$notifier->hasErrors()) {
 				$_SESSION['show_back'] = $_SESSION['show'];
 				$order = 'ORDER BY '.$_SESSION['sort_modtrackings'].' '.$_SESSION['sort_modtrackings_order'];
 				$_SESSION['show'] = 'multiedit_mod';
 			}
 		} else {
-			if($access['tracking']['MAX'] < 3) continue;
+			if($access['tracking']['MAX'] < 3) break;
 			if(!$notifier->hasErrors()) {
 				$_SESSION['show_back'] = $_SESSION['show'];
 				$order = 'ORDER BY '.$_SESSION['sort_trackings'].' '.$_SESSION['sort_trackings_order'];
@@ -463,12 +467,12 @@ switch($do_action) {
 
 	case 'submit_multiedit':
 		if($_SESSION['show'] == 'multiedit_mod') {
-			if($access['tracking']['MAX'] < 2) continue;
+			if($access['tracking']['MAX'] < 2) break;
 			kota_submit_multiedit(2);
 
 			$_SESSION['show'] = $_SESSION['show_back'] ? $_SESSION['show_back'] : 'mod_entries';
 		} else {
-			if($access['tracking']['MAX'] < 3) continue;
+			if($access['tracking']['MAX'] < 3) break;
 			kota_submit_multiedit(3);
 
 			$_SESSION['show'] = $_SESSION['show_back'] ? $_SESSION['show_back'] : 'list_trackings';
@@ -481,7 +485,7 @@ switch($do_action) {
 
 	//Filter
 	case 'set_filter':
-		if($access['tracking']['MAX'] < 1) continue;
+		if($access['tracking']['MAX'] < 1) break;
 
 		foreach($_POST['tracking_filter'] as $key => $value) {
 			if(!$value) {  //No value means unset the filter

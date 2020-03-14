@@ -40,14 +40,17 @@
                 if (options.clickable) {
                     chart.data.series.forEach(function (series, seriesIndex) {
                         if (typeof series !== 'object') {
-                            series = {
-                                data: series
+                            chart.data.series[seriesIndex] = {
+                                value: series
                             };
+                            series = chart.data.series[seriesIndex];
                         }
 
                         series.className = series.className || chart.options.classNames.series + '-' + Chartist.alphaNumerate(seriesIndex);
                     });
                 }
+                console.log(chart.data.series);
+
 
                 var $chart = $(chart.container),
                     legendClass = chart instanceof Chartist.Pie ? 'ct-legend-inside' : '',
@@ -95,6 +98,8 @@
                         removedSeries.forEach(function (series) {
                             seriesCopy.splice(series, 1);
                         });
+
+                        console.log(chart.data.series);
 
                         chart.data.series = seriesCopy;
 

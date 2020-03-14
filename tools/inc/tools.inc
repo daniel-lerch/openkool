@@ -2,7 +2,7 @@
 /***************************************************************
 *  Copyright notice
 *
-*  (c) 2003-2015 Renzo Lauper (renzo@churchtool.org)
+*  (c) 2003-2017 Renzo Lauper (renzo@churchtool.org)
 *  All rights reserved
 *
 *  This script is part of the kOOL project. The kOOL project is
@@ -29,11 +29,11 @@ require_once($BASE_PATH.'inc/class.kOOL_listview.php');
 
 
 
-function ko_tools_mailing_mails($output=TRUE) {
+function ko_tools_mailing_mails() {
   $rows = db_get_count('ko_mailing_mails', 'id');
   if($_SESSION['show_start'] > $rows) $_SESSION['show_start'] = 1;
   $z_limit = 'LIMIT '.($_SESSION['show_start']-1).', '.$_SESSION['show_limit'];
-  $es = db_select_data('ko_mailing_mails', '', '*', 'ORDER BY id DESC', $z_limit);
+  $es = db_select_data('ko_mailing_mails', '', '*, NULL as body', 'ORDER BY id DESC', $z_limit);
 
   $access_check = $access_delete = array();
   foreach($es as $k => $e) {
@@ -63,11 +63,7 @@ function ko_tools_mailing_mails($output=TRUE) {
   $list->setRowClass("ko_list_hidden", 'return STATUS == 3;');
 
   //Output the list
-  if($output) {
-    $list->render($es);
-  } else {
-    print $list->render($es);
-  }
+	$list->render($es);
 }//ko_tools_mailing_mails()
 
 
@@ -255,56 +251,34 @@ function ko_tools_list_leute_db() {
 	global $smarty, $ko_path;
 	global $WEB_LANGS;
 
+	// include KOTA (for filters)
+	ko_include_kota(array('ko_leute'));
+
 	$table_cols = db_get_columns("ko_leute");
-	$col_names = unserialize(ko_get_setting("leute_col_name"));
+	$col_names = ko_get_leute_col_name();
 	ko_get_filters($filters, "leute");
 
 	print '<table class="table table-condensed"><tr>';
 	print '<td style="font-weight:bold;">&nbsp;</td>';
 	print '<td style="font-weight:bold;width:20%;">'.getLL("tools_listheader_people_field").'</td>';
-	foreach($WEB_LANGS as $lang) print '<td style="font-weight:bold;">'.getLL("tools_listheader_people_name")." ".strtoupper(substr($lang, 0, 2)).'</td>';
 	print '<td style="font-weight:bold;">'.getLL("tools_listheader_people_filter").'</td>';
 	print '</tr>';
 
 	$tabindex = 1;
 	foreach($table_cols as $c) {
-		if(!in_array($c["Field"], array("deleted"))) {
+		if(!in_array($c['Field'], array('deleted', 'cruserid'))) {
 			print '<tr>';
-			print '<td style="vertical-align:middle;"><button type="submit" class="btn btn-sm btn-default" alt="'.getLL("tools_people_del_col").'" title="'.getLL("tools_people_del_col").'" onclick="c=confirm('."'".getLL("tools_people_del_col_confirm")."'".');if(!c) return false;set_hidden_value('."'id', '".$c["Field"]."');".'set_action('."'delete_leute_col'".');"><i class="fa fa-remove icon-line-height" ></i></button></td>';
+			print '<td style="vertical-align:middle;">';
+			print '<button type="submit" class="btn btn-sm btn-default" title="'.getLL("tools_people_del_col").'" onclick="c=confirm('."'".getLL("tools_people_del_col_confirm")."'".');if(!c) return false;set_hidden_value('."'id', '".$c["Field"]."');".'set_action('."'delete_leute_col'".');"><i class="fa fa-remove icon-line-height" ></i></button>';
+			print '</td>';
 			print '<td style="vertical-align:middle;">'.$c["Field"].'</td>';
-			foreach($WEB_LANGS as $lang) {
-				list($l, $l2) = explode('_', $lang);
-				print '<td style="vertical-align:middle;"><input class="input-sm form-control" type="text" style="min-width:100px;" value="'.$col_names[$l][$c["Field"]].'" name="txt_col_name['.$l.']['.$c["Field"].']" tabindex="'.$tabindex.'" /></td>';
-				$tabindex++;
-			}
 
 			//Filter
-			$fid = 0;
-			$special_filters = array("age", "year", "role");
-			foreach($filters as $i => $f) {
-				if(!$fid && ko_get_filter_column($f["sql1"]) == $c["Field"] && !in_array($f["_name"], $special_filters)) {
-					$fid = $i;
-				}
-			}
-			if($fid != 0) {
-				ko_get_filter_by_id($fid, $f);
-				print '<td style="vertical-align:middle;">';
-				print '<table><tr><td>';
-				print '<div class="btn-group"><button class="btn btn-sm btn-danger" type="submit" src="'.$ko_path.'images/button_delete.gif" alt="'.getLL("tools_people_del_filter").'" title="'.getLL("tools_people_del_filter").'" onclick="c=confirm('."'".getLL("tools_people_del_filter_confirm")."'".');if(!c) return false;set_hidden_value('."'id', $fid);".'set_action('."'delete_leute_filter'".');"><i class="fa fa-remove icon-line-height"></i></button>';
-				print '<button class="btn btn-default btn-sm" type="submit" src="'.$ko_path.'images/icon_reload.png" alt="'.getLL("tools_people_renew_filter").'" title="'.getLL("tools_people_renew_filter").'" onclick="c=confirm('."'".getLL("tools_people_renew_filter_confirm")."'".');if(!c) return false;set_hidden_value('."'fid', $fid);set_hidden_value('id', '".$c["Field"]."'".');set_action('."'reload_leute_filter'".');"><i class="fa fa-refresh icon-line-height"></i></button></div>';
-				print '</td><td>';
-				print ko_tools_get_filter_group_select($f);
-				print '</td><td>';
-				print '<table><tr><td style="white-space:nowrap;">&nbsp;'.$f["name"].": ".$f["sql1"].' (</td><td style="white-space:nowrap;">'.$f["code1"].'</td></tr></table>';
-				print '</td></tr></table>';
-				print '</td>';
-				unset($filters[$fid]);
-			} else {
-				print '<td style="vertical-align:middle;">';
-				print '<button type="submit" class="btn btn-sm btn-success" src="'.$ko_path.'images/icon_plus.png" alt="'.getLL("tools_people_add_filter").'" title="'.getLL("tools_people_add_filter").'" onclick="set_hidden_value('."'id', '".$c["Field"]."');".'set_action('."'add_leute_filter'".');"><i class="fa fa-plus icon-line-height"></i></button>';
-				print '</td>';
-			}
+			print '<td style="vertical-align:middle;" id="leute-filter-settings-dbcol-'.$c["Field"].'" name="leute-filter-settings-dbcol-'.$c["Field"].'">';
+			print ko_tools_get_leute_filter_settings_code($c['Field'], NULL, $filters, $filterFound);
+			print '</td>';
 			print '</tr>';
+			if ($filterFound) unset($filters[$filterFound['id']]);
 		} else {
 			print '<tr><td colspan="2" style="color:grey">'.$c["Field"].'</td></tr>';
 		}
@@ -312,26 +286,79 @@ function ko_tools_list_leute_db() {
 
 	foreach($filters as $f) {
 		print '<tr><td>&nbsp;</td><td>&nbsp;</td>';
-		foreach($WEB_LANGS as $lang) print '<td>&nbsp;</td>';
-		print '<td>';
-		print '<table><tr><td><button class="btn btn-sm btn-danger" alt="'.getLL("tools_people_del_filter").'" title="'.getLL("tools_people_del_filter").'" onclick="c=confirm('."'".getLL("tools_people_del_filter_confirm")."'".');if(!c) return false;set_hidden_value('."'id', ".$f["id"].");".'set_action('."'delete_leute_filter'".');"><i class="fa fa-remove icon-line-height"></i></button></td>';
-		print "<td>";
-		print ko_tools_get_filter_group_select($f);
-		print "</td><td>";
-		print '<table><tr><td style="white-space:nowrap;">&nbsp;'.$f["name"]."&nbsp;: ".$f["sql1"]." (</td><td>".$f["code1"]."</td><td>)</td></tr></table>";
-		print '</td></tr></table></td></tr>';
+		print '<td id="leute-filter-settings-filter-'.$f["id"].'" name="leute-filter-settings-filter-'.$f["id"].'">';
+		print ko_tools_get_leute_filter_settings_code(NULL, $f, $filters);
+		print '</td></tr>';
 	}
 
 	print '</table>';
-
-	print '<input type="submit" onclick="set_action('."'save_leute_db'".');" value="'.getLL("save").'">';
 }//ko_tools_list_leute_db()
 
 
 
 
-function ko_tools_get_filter_group_select($filter) {
+function ko_tools_get_leute_filter_settings_code($fieldName=NULL, $filter=NULL, &$filters=NULL, &$filterFound=NULL) {
 	global $ko_path;
+
+	$html = '';
+
+	if ($fieldName == NULL) {
+		$html .= '<table><tr><td><button class="btn btn-sm btn-danger" type="button" title="'.getLL("tools_people_del_filter").'" onclick="c=confirm('."'".getLL("tools_people_del_filter_confirm")."'".');if(!c) return false;sendReq('."'../tools/inc/ajax.php', ['action', 'sesid', 'fid'], ['deleteleutefilter', kOOL.sid, '{$filter['id']}'], do_element".');"><i class="fa fa-remove icon-line-height"></i></button></td>';
+		$html .= "<td>";
+		$html .= ko_tools_get_filter_group_select($filter);
+		$html .= "</td><td>";
+		$html .= '<table><tr><td style="white-space:nowrap;">&nbsp;'.$filter["name"]."&nbsp;: ".$filter["sql1"]." (</td><td>".$filter["code1"]."</td><td>)</td></tr></table>";
+		$html .= '</td></tr></table>';
+	} else {
+		if ($filters == NULL) {
+			ko_get_filters($filters, "leute");
+		}
+
+		$fid = 0;
+		$special_filters = array("age", "year", "role"); // this array is also defined in tools/inc/ajax.php
+		foreach($filters as $i => $f) {
+			if(!$fid && ko_get_filter_column($f["sql1"], $f['dbcol']) == $fieldName && !in_array($f["_name"], $special_filters)) {
+				$fid = $i;
+			}
+		}
+
+		if($fid != 0) {
+			ko_get_filter_by_id($fid, $f);
+			$filterFound = $f;
+			$html .= '<table><tr><td>';
+			$html .= '<div class="btn-group">';
+			$html .= '<button class="btn btn-sm btn-danger" type="button" title="'.getLL("tools_people_del_filter").'" onclick="c=confirm('."'".getLL("tools_people_del_filter_confirm")."'".');if(!c) return false;sendReq('."'../tools/inc/ajax.php', ['action', 'sesid', 'fid', 'id'], ['deleteleutefilter', kOOL.sid, '{$fid}', '{$fieldName}'], do_element".');"><i class="fa fa-remove icon-line-height"></i></button>';
+			$fastFilter = $f['allow_fastfilter'];
+			$html .= '<button class="btn btn-sm '.($fastFilter ? 'btn-success' : 'btn-danger').'" type="button" title="'.getLL("tools_people_set_fastfilter").'" onclick="sendReq('."'../tools/inc/ajax.php', ['action', 'sesid', 'fid'], ['ableFastfilter', kOOL.sid, '{$fid}'], do_element".');"><i class="fa fa-search icon-line-height"></i></button>';
+			$html .= '<button class="btn btn-default btn-sm" type="button" src="'.$ko_path.'images/icon_reload.png" alt="'.getLL("tools_people_renew_filter").'" title="'.getLL("tools_people_renew_filter").'" onclick="c=confirm('."'".getLL("tools_people_renew_filter_confirm")."'".');if(!c) return false;sendReq('."'../tools/inc/ajax.php', ['action', 'sesid', 'id', 'fid'], ['reloadleutefilter', kOOL.sid, '{$fieldName}', '{$fid}'], do_element".');"><i class="fa fa-refresh icon-line-height"></i></button></div>';
+			$html .= '</td><td>';
+			$html .= ko_tools_get_filter_group_select($f, $filter);
+			$html .= '</td><td>';
+			$html .= '<table><tr><td style="white-space:nowrap;">&nbsp;'.$f["name"].": ".$f["sql1"].' (</td><td style="white-space:nowrap;">'.$f["code1"].'</td></tr></table>';
+			$html .= '</td></tr></table>';
+		} else {
+			$filterFound = FALSE;
+			$html .= '<button type="button" class="btn btn-sm btn-primary" src="'.$ko_path.'images/icon_plus.png" alt="'.getLL("tools_people_add_filter").'" title="'.getLL("tools_people_add_filter").'" onclick="sendReq('."'../tools/inc/ajax.php', ['action', 'sesid', 'id'], ['addleutefilter', kOOL.sid, '{$fieldName}'], do_element".');"><i class="fa fa-plus icon-line-height"></i></button>';
+		}
+	}
+
+	return $html;
+}
+
+
+/**
+ * Create a select-box with the groups (categories) as options
+ *
+ * @param Array $filter entry from ko_filter
+ * @param null $old_filter select option from old setting
+ * @return string HTML select-box
+ */
+function ko_tools_get_filter_group_select($filter, $old_filter = NULL) {
+	global $ko_path;
+
+	if($filter['group'] == 'misc' AND $old_filter !== NULL) {
+		$filter['group'] = $old_filter['group'];
+	}
 
 	//Select to change the filter's group
 	$filter_groups = '<select name="filter_group" class="input-sm form-control" onchange="sendReq(\''.$ko_path.'/tools/inc/ajax.php\', \'action,id,group,sesid\', \'setfiltergroup,'.$filter['id'].',\'+this.options[this.selectedIndex].value+\','.session_id().'\', do_element);">';
@@ -383,33 +410,6 @@ function ko_tools_list_familie_db() {
 
 	print '<input type="submit" onclick="set_action('."'save_familie_db'".');" value="'.getLL("save").'">';
 }//ko_tools_list_familie_db()
-
-
-
-
-function ko_tools_leute_formular() {
-	global $ko_path, $LEUTE_EXCLUDE;
-
-	$file = file($ko_path."config/leute_formular.inc");
-	$content = implode("", $file);
-	print '<textarea cols="100" rows="50" name="txt_leute_formular">';
-	print $content;
-	print '</textarea><br /><br />';
-	print '<input type="submit" name="submit" value="'.getLL("save").'" onclick="'."set_action('submit_save_leute_formular');".'" />';
-	print '&nbsp;&nbsp;<input type="reset" name="reset" value="'.getLL("reset").'" /><br /><br />';
-
-	print "<b>".getLL("tools_people_form_not_found")."</b><br />";
-	$cols = db_get_columns("ko_leute");
-	$exclude = array_merge($LEUTE_EXCLUDE, array('famfunction'));
-	foreach($cols as $c) {
-		$found = FALSE;
-		foreach($file as $f) {
-			if(strstr($f, $c["Field"])) $found = TRUE;
-		}
-		if(!$found && !in_array($c["Field"], $exclude)) print $c["Field"].", ";
-	}
-}//ko_tools_leute_formular()
-
 
 
 
@@ -547,28 +547,38 @@ function ko_tools_ll_overview() {
 
 
 function ko_tools_ll_edit($edit_lang, $edit_mode="all") {
-	global $ko_path, $default_lang;
+  global $ko_path, $default_lang, $BASE_PATH;
 
-	print '<b>'.$edit_lang.'</b><br /><br />';
-	
-	if($edit_lang != $default_lang) include($ko_path."locallang/locallang.$default_lang.php");
-	include($ko_path."locallang/locallang.$edit_lang.php");
-	print '<table border="1">';
-	$found = FALSE;
-	foreach($LL[$default_lang] as $d_i => $d_v) {
-		if($edit_mode == "empty" && isset($LL[$edit_lang][$d_i])) continue;
-		$found = TRUE;
+  if($edit_lang != 'de') $default_lang = 'de';
+  $csv = array();
 
-		$style = isset($LL[$edit_lang][$d_i]) ? 'color:green;' : 'color:red;font-weight:900';
-		print '<tr>';
-		print '<td style="'.$style.'">'.$d_i.'</td>';
-		print '<td style="'.$style.'">'.$d_v.'</td>';
-		$input_name = str_replace(" ", "@", str_replace(".", "@@", $d_i));
-		print '<td><input type="text" size="60" name="ll_txt_'.$input_name.'" value="'.str_replace('"', '', $LL[$edit_lang][$d_i]).'" /></td>';
-		print '</tr>';
-	}
-	print '</table>';
-	if($found) print '<div align="center"><input type="submit" name="submit" onclick="set_hidden_value('."'id', '$edit_lang');set_action('ll_edit_submit'".');" value="'.getLL("save").'" />';
+  print '<b>'.$edit_lang.'</b><br /><br />';
+
+  if($edit_lang != $default_lang) include($ko_path."locallang/locallang.$default_lang.php");
+  include($ko_path."locallang/locallang.$edit_lang.php");
+  print '<table border="1">';
+  $found = FALSE;
+  foreach($LL[$default_lang] as $d_i => $d_v) {
+    if($edit_mode == "empty" && isset($LL[$edit_lang][$d_i])) continue;
+    $found = TRUE;
+
+    $style = isset($LL[$edit_lang][$d_i]) ? 'color:green;' : 'color:red;font-weight:900';
+    print '<tr>';
+    print '<td style="'.$style.'">'.$d_i.'</td>';
+    print '<td style="'.$style.'">'.$d_v.'</td>';
+    $input_name = str_replace(" ", "@", str_replace(".", "@@", $d_i));
+    print '<td><input type="text" size="60" name="ll_txt_'.$input_name.'" value="'.str_replace('"', '', $LL[$edit_lang][$d_i]).'" /></td>';
+    print '</tr>';
+
+    $csv[] = array($d_i, $d_v);
+  }
+  print '</table>';
+  if($found) print '<div align="center"><input type="submit" name="submit" onclick="set_hidden_value('."'id', '$edit_lang');set_action('ll_edit_submit'".');" value="'.getLL("save").'" />';
+
+  $header = array('key', $default_lang, $edit_lang);
+  $filename = $BASE_PATH.'download/excel/ll_'.date('YmdHis').'.csv';
+  ko_export_to_csv($header, $csv, $filename);
+  print '<p><a href="/download/excel/'.basename($filename).'" target="_blank">CSV-Download</a></p>';
 }//ko_tools_ll_edit()
 
 
@@ -588,7 +598,7 @@ function ko_tools_write_ll_file($LL, $l) {
 	fputs($fp, '/***************************************************************
 *  Copyright notice
 *
-*  (c) 2003-2015 Renzo Lauper (renzo@churchtool.org)
+*  (c) 2003-2017 Renzo Lauper (renzo@churchtool.org)
 *  All rights reserved
 *
 *  This script is part of the kOOL project. The kOOL project is
@@ -664,7 +674,7 @@ function ko_tools_plugins_get_installed(&$plugins_available) {
 
 
 
-function ko_tools_plugins_list($output=TRUE) {
+function ko_tools_plugins_list() {
 	global $ko_path, $smarty, $PLUGIN_CONF, $UPDATER_CONF;
 
 	$plugins_available = ko_tools_plugins_get_available();
@@ -733,11 +743,7 @@ function ko_tools_plugins_list($output=TRUE) {
 	$list->setRowClass('row-success', 'return (INSTALLED == 1);');
 
 	//Output the list
-	if($output) {
-		$list->render($es);
-	} else {
-		print $list->render($es);
-	}
+	$list->render($es);
 }//ko_tools_plugins_list()
 
 
@@ -769,7 +775,7 @@ function ko_tools_list_sql_diffs($plugin) {
 
 
 
-function ko_list_tasks($output=TRUE) {
+function ko_list_tasks() {
 	global $smarty;
 	global $access;
 
@@ -789,11 +795,7 @@ function ko_list_tasks($output=TRUE) {
 	$list->setRowClass("ko_list_hidden", 'return STATUS == 0;');
 
 	//Output the list
-	if($output) {
-		$list->render($es);
-	} else {
-		print $list->render($es);
-	}
+	$list->render($es);
 }//ko_list_tasks()
 
 
@@ -873,24 +875,110 @@ function ko_tools_typo3_connection() {
 }//ko_tools_typo3_connection()
 
 
-
-
+/**
+ * Wrapper function to call miscellaneous small scripts to perform cleanups
+ * Implements Hook functions from tools/inc/clean.inc containing ko_tools_cleanup_
+ * and search for functions like my_tools_cleanup_" . $plugin["name"] in Tools-Plugins.
+ */
 function ko_tools_misc() {
-	$c = '';
-	$c .= '<h1>Set userprefs for all users</h1>';
-	$c .= '<form action="'.$ko_path.'tools/index.php" method="POST">';
-	$c .= 'Key: <select name="sel_userpref_key" size="0"><option value=""></option>';
-	$keys = db_select_distinct('ko_userprefs', '`key`', 'ORDER BY `key` ASC', 'WHERE `type` = \'\'');
-	foreach($keys as $key) {
-		$c .= '<option value="'.$key.'">'.$key.'</option>';
+	global $PLUGINS, $notifier;
+
+	include_once("cleanup.inc");
+	$functions = get_defined_functions();
+	$call_function = FALSE;
+	$sel_cleanup_functions = '<select name="call" class="input-sm form-control">';
+
+	foreach($functions['user'] AS $function) {
+		if (substr($function,0,17) == 'ko_tools_cleanup_') {
+			if ($_POST['call'] == $function) $call_function = $_POST['call'];
+			$sel_cleanup_functions.= '<option value="' . $function . '">' . getLL($function) . '</option>';
+		}
 	}
-	$c .= '</select><br />';
-	$c .= 'Value: <input type="text" name="txt_userpref_value" /><br />';
-	$c .= '<input type="submit" value="Save" onclick="set_action(\'submit_userpref\', this)" />';
-	$c .= '</form>';
+
+	$hooks = hook_include_main("tools");
+	foreach($hooks as $hook) include_once($hook);
+	foreach($PLUGINS as $plugin) {
+		$function = "my_tools_cleanup_" . $plugin["name"];
+		if(function_exists($function)) {
+			if ($_POST['call'] == $function) $call_function = $_POST['call'];
+			$sel_cleanup_functions.= '<option value="' . $function . '">' . getLL($function) . '</option>';
+		}
+	}
+
+	$sel_cleanup_functions.= "</select>";
+
+	$c = '<h1>Cleanup</h1>
+	<div class="row">
+	  <div class="col-md-6">
+    	<div class="input-group">
+			' . $sel_cleanup_functions . '
+		  <span class="input-group-btn">
+			<button type="submit" class="btn btn-default" onclick="set_action(\'misc\', this)" >Go!</button>
+		  </span>
+		</div>
+	  </div>
+	</div></form><br />';
+
+	if($call_function !== false) {
+		$c.= '<br /><div class="panel panel-primary">
+  			<div class="panel-heading">' . getLL($call_function) . '</div>
+  			<div class="panel-body">';
+		$c.= call_user_func($call_function);
+		$c.= '</div></div>';
+	}
+
+	if ($notifier->hasNotifications(koNotifier::ALL)) {
+		$notifier->notify();
+	}
+
 
 	print $c;
-}//ko_tools_misc()
+}
+
+
+
+function ko_tools_kota_fields() {
+	global $KOTA, $smarty;
+
+	ko_include_kota('_all');
+
+	$activeTable = $_SESSION['tools_kota_fields_table'];
+	if (!$activeTable) $activeTable = 'ko_leute';
+
+	$allTables = array_keys($KOTA);
+	sort($allTables);
+	$tableSelectInput = array(
+		'type' => 'select',
+		'name' => 'table_select',
+		'value' => $activeTable,
+		'values' => $allTables,
+		'descs' => $allTables,
+		'params' => ' onchange="sendReq(\'../tools/inc/ajax.php\', [\'action\', \'table\', \'sesid\'], [\'selkotatable\', $(this).val(), kOOL.sid], do_element);"',
+	);
+
+	$kotaListFields = isset($KOTA[$activeTable]['_listview']) ? ko_array_column($KOTA[$activeTable]['_listview'], 'name') : [];
+	$formLayout = $KOTA[$activeTable]['_form_layout'];
+	$dbFields_ = db_get_columns($activeTable);
+	$dbFields = array();
+	$noKotaListFields = $noKotaFormFields = array();
+	foreach ($dbFields_ as $dbField_) {
+		$dbField = $dbField_['Field'];
+		$dbFields[] = $dbField;
+
+		if (!in_array($dbField, $kotaListFields)) $noKotaListFields[] = $dbField;
+		if (!is_array($KOTA[$activeTable][$dbField]['form'])) $noKotaFormFields[] = $dbField;
+	}
+
+	sort($noKotaFormFields);
+	sort($noKotaListFields);
+
+	$smarty->assign('active_table', $activeTable);
+	$smarty->assign('form_layout', $formLayout);
+	$smarty->assign('no_kota_form_fields', implode(', ', $noKotaFormFields));
+	$smarty->assign('no_kota_list_fields', implode(', ', $noKotaListFields));
+	$smarty->assign('table_select_input', $tableSelectInput);
+	$smarty->display('ko_tools_kota_fields.tpl');
+}
 
 
 ?>

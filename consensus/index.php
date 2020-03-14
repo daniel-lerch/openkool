@@ -2,7 +2,7 @@
 /***************************************************************
  *  Copyright notice
  *
- *  (c) 2003-2015 Renzo Lauper (renzo@churchtool.org)
+ *  (c) 2003-2017 Renzo Lauper (renzo@churchtool.org)
  *  All rights reserved
  *
  *  This script is part of the kOOL project. The kOOL project is
@@ -33,7 +33,6 @@ $SMARTY_RENDER_TEMPLATE = null;
 
 require($ko_path.'inc/ko.inc');
 require($ko_path.'rota/inc/rota.inc');
-require($ko_path.'inc/smarty.inc');
 ko_include_kota(array('ko_rota_teams', 'ko_event'));
 require_once('consensus.inc');
 
@@ -56,32 +55,15 @@ if($_POST["action"]) {
 
 if(FALSE === format_userinput($do_action, "alpha+", TRUE, 30)) trigger_error("invalid action: ".$do_action, E_USER_ERROR);
 
-switch ($do_action) {
-	case '':
-		$get = explode('x', $_GET['x']);
+if($do_action == '') {
+	list($pass, $personId, $team_ids, $start, $span) = ko_consensus_check_hash($_GET['x']);
 
-		$personId = $get[0];
-		$start = substr($get[1], 0, 4) . '-' . substr($get[1], -4, -2) . '-' . substr($get[1], 6, 8);
-		$span = $get[2];
-		$team_ids = NULL;
-		if (sizeof($get) == 5) {
-			if ($get[3]) {
-				$team_ids = explode('-', $get[3]);
-			}
-			$key = $get[4];
-		} else {
-			$key = $get[3];
-		}
-
-		$pass = substr(md5($personId . $start . $span . ($team_ids == NULL ? '' : implode('-', $team_ids)) . KOOL_ENCRYPTION_KEY), 0, 6) == $key;
-
-
-		if ($pass) {
-			$_SESSION['show'] = 'list_consensus';
-		}
-		else {
-			$notifier->addError(1);
-		}
+	if ($pass) {
+		$_SESSION['show'] = 'list_consensus';
+	}
+	else {
+		$notifier->addError(1);
+	}
 }
 
 ?>
@@ -91,35 +73,40 @@ switch ($do_action) {
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="<?php print $_SESSION['lang']; ?>" lang="<?php print $_SESSION['lang']; ?>">
 <head>
 	<meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1" />
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<meta name="viewport" content="width=device-width, initial-scale=1" />
 	<title><?php print $HTML_TITLE.': '.getLL('ko_consensus'); ?></title>
 <?php
-print '<script type="text/javascript" src="' . $ko_path . 'consensus/consensus.js?'.filemtime($ko_path.'consensus/consensus.js').'"></script>';
 print '<script type="text/javascript" src="' . $ko_path . 'inc/jquery/jquery.js?'.filemtime($ko_path.'inc/jquery/jquery.js').'"></script>';
+print '<script type="text/javascript" src="' . $ko_path . 'consensus/consensus.js?'.filemtime($ko_path.'consensus/consensus.js').'"></script>';
 print '<script type="text/javascript" src="' . $ko_path . 'inc/bootstrap/core/js/bootstrap.min.js?'.filemtime($ko_path.'inc/tooltip.js').'"></script>';
 print '<script type="text/javascript" src="' . $ko_path . 'inc/tooltip.js?'.filemtime($ko_path.'inc/tooltip.js').'"></script>';
 include("js-consensus.inc");
 print '<link rel="stylesheet" type="text/css" href="'.$ko_path.'kool-base.css?'.filemtime($ko_path.'consensus/consensus.css').'" />';
 print '<link rel="stylesheet" type="text/css" href="'.$ko_path.'consensus/consensus.css?'.filemtime($ko_path.'consensus/consensus.css').'" />';
+foreach($PLUGINS as $p) {
+	$css_file = $ko_path.'plugins/'.$p['name'].'/consensus.css';
+	if(file_exists($css_file)) {
+		print '<link rel="stylesheet" type="text/css" href="'.$css_file.'?'.filemtime($css_file).'" />'."\n";
+	}
+}
 ?>
 </head>
 
-<body>
-	<div id="header">
-		<div id="kool-text">
-			<a href="http://www.churchtool.org">
-				<img src="<?= $ko_path . $FILE_LOGO_SMALL ?>">
-			</a>
+<body class="standalone"><div class="page">
+	<div name="wait_message" id="wait_message">
+		<img src="<?= $ko_path ?>images/load_anim.gif" alt="wait animation"/>
+	</div>
+
+	<div class="container-fluid" id="header">
+		<div class="row">
+			<div class="col-sm-7 col-xs-12"  id="logo">
+				<?php include($BASE_PATH . 'header.php') ?>
+			</div>
+			<div class="col-sm-5 hidden-xs"  id="title">
+				<h2><?= getLL('ko_consensus') ?></h2>
+			</div>
 		</div>
-		<div id="title">
-			<h1><?= getLL('ko_consensus') ?></h1>
-		</div>
-		<div id="logo">
-			<?php include($BASE_PATH . 'header.php') ?>
-		</div>
-		<div style="display:none;padding:10px;margin:5px 180px 10px 10px;background-color:#ddd;border:2px solid #3586bd;position:fixed;_position:absolute;right:0;top:0;_top:expression(eval(document.body.scrollTop));z-index:900;width:125px;text-align:center;" name="wait_message" id="wait_message">
-			<img src="<?= $ko_path ?>images/load_anim.gif" />
-		</div>
-		<br clear="all">
 	</div>
 	<div id="main">
 		<?php
@@ -137,5 +124,5 @@ print '<link rel="stylesheet" type="text/css" href="'.$ko_path.'consensus/consen
 		?>
 	</div>
 
-</body>
+</div></body>
 </html>

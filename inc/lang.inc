@@ -2,7 +2,7 @@
 /***************************************************************
 *  Copyright notice
 *
-*  (c) 2003-2015 Renzo Lauper (renzo@churchtool.org)
+*  (c) 2003-2017 Renzo Lauper (renzo@churchtool.org)
 *  All rights reserved
 *
 *  This script is part of the kOOL project. The kOOL project is
@@ -36,7 +36,7 @@ if(sizeof($LANGS) == 0) $LANGS = $LIB_LANGS;
 if(sizeof($LANGS2) == 0) $LANGS2 = $LIB_LANGS2;
 
 //Set a new language
-if($_GET["set_lang"]) {
+if(isset($_GET['set_lang'])) {
 	$new_lang = strtolower(format_userinput($_GET["set_lang"], "alpha", FALSE, 5));
 	list($new_lang, $new_lang2) = explode("_", $new_lang);
 	if(in_array($new_lang, $LANGS)) {

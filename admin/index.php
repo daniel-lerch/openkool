@@ -2,7 +2,7 @@
 /***************************************************************
 *  Copyright notice
 *
-*  (c) 2003-2015 Renzo Lauper (renzo@churchtool.org)
+*  (c) 2003-2017 Renzo Lauper (renzo@churchtool.org)
 *  All rights reserved
 *
 *  This script is part of the kOOL project. The kOOL project is
@@ -45,7 +45,7 @@ else if($_GET["action"]) $do_action = $_GET["action"];
 else $do_action = "";
 
 if(!ko_module_installed("admin") && !in_array($do_action, array('change_password', 'submit_change_password'))) {
-	header("Location: ".$BASE_URL."index.php");  //Absolute URL
+	header("Location: ".$BASE_URL."index.php"); exit;
 }
 
 ob_end_flush();  //Puffer flushen
@@ -57,12 +57,11 @@ if (ko_module_installed('vesr')) {
 }
 
 //kOOL Table Array
-ko_include_kota(array('ko_news', '_ko_sms_log', 'ko_log', 'ko_admingroups', 'ko_admin', 'ko_labels', 'ko_pdf_layout', 'ko_vesr'));
+ko_include_kota(array('ko_news', '_ko_sms_log', 'ko_log', 'ko_admingroups', 'ko_admin', 'ko_labels', 'ko_pdf_layout', 'ko_vesr', 'ko_vesr_camt', 'ko_google_cloud_printers', 'ko_detailed_person_exports'));
 
 //*** Plugins einlesen:
 $hooks = hook_include_main("admin");
 if(sizeof($hooks) > 0) foreach($hooks as $hook) include_once($hook);
-
 
 //Reset show_start if from another module
 if($_SERVER['HTTP_REFERER'] != '' && FALSE === strpos($_SERVER['HTTP_REFERER'], '/'.$ko_menu_akt.'/')) $_SESSION['show_start'] = 1;
@@ -71,51 +70,51 @@ switch($do_action) {
 
 	//Anzeigen
 	case "admin_settings":
-		if($access['admin']['MAX'] < 1) continue;
+		if($access['admin']['MAX'] < 1) break;
 		$_SESSION["show"] = "admin_settings";
 	break;
 
 	case "set_leute_pdf":
-		if($access['admin']['MAX'] < 2) continue;
+		if($access['admin']['MAX'] < 2) break;
 		$_SESSION["show"] = "set_leute_pdf";
 	break;
 
 	case "set_show_logins":
-		if($access['admin']['MAX'] < 5) continue;
+		if($access['admin']['MAX'] < 5) break;
 		if($_SESSION['show'] == 'show_logins') $_SESSION['show_start'] = 1;
 		$_SESSION['show'] = 'show_logins';
 	break;
 
 	case "show_logs":
-		if($access['admin']['MAX'] < 4) continue;
+		if($access['admin']['MAX'] < 4) break;
 		if($_SESSION['show'] == 'show_logs') $_SESSION['show_logs_start'] = 1;
 		$_SESSION['show'] = 'show_logs';
 	break;
 
 	case 'show_sms_log':
-		if($access['admin']['MAX'] < 1) continue;
-		if(!ko_module_installed('sms')) continue;
+		if($access['admin']['MAX'] < 1) break;
+		if(!ko_module_installed('sms')) break;
 		$_SESSION['show'] = 'show_sms_log';
 		$_SESSION['show_start'] = 1;
 	break;
 
 	case "submit_log_filter":
-		if($access['admin']['MAX'] < 4) continue;
+		if($access['admin']['MAX'] < 4) break;
 		$_SESSION["log_type"] = $_GET["set_log_filter"];
 	break;
 
 	case "submit_user_filter":
-		if($access['admin']['MAX'] < 4) continue;
+		if($access['admin']['MAX'] < 4) break;
 		$_SESSION["log_user"] = $_GET["set_user_filter"];
 	break;
 
 	case "submit_time_filter":
-		if($access['admin']['MAX'] < 1) continue;
+		if($access['admin']['MAX'] < 1) break;
 		$_SESSION["log_time"] = $_GET["set_time_filter"];
 	break;
 
 	case "submit_hide_guest":
-		if($access['admin']['MAX'] < 4) continue;
+		if($access['admin']['MAX'] < 4) break;
 
 		if($_GET["logs_hide_status"] == "true") {
 			$_SESSION["logs_hide_guest"] = TRUE;
@@ -126,7 +125,7 @@ switch($do_action) {
 	break;
 
 	case "submit_clear_guest":
-		if($_SESSION["ses_userid"] != ko_get_root_id()) continue;
+		if($_SESSION["ses_userid"] != ko_get_root_id()) break;
 		db_delete_data("ko_log", "WHERE `type`='guest'");
 		$notifier->addInfo(7, $do_action);
 	break;
@@ -139,7 +138,7 @@ switch($do_action) {
 	break;
 
 	case "submit_change_password":
-		if(ko_get_setting("change_password") == 1 && $_SESSION['ses_userid'] != ko_get_guest_id()) {
+		if(ko_get_setting("change_password") == 1 && $_SESSION['disable_password_change'] != 1 && $_SESSION['ses_userid'] != ko_get_guest_id()) {
 			$old = $_POST["txt_pwd_old"];
 			$new1 = $_POST["txt_pwd_new1"];
 			$new2 = $_POST["txt_pwd_new2"];
@@ -180,6 +179,9 @@ switch($do_action) {
 				ko_set_setting('mailing_only_alias', format_userinput($_POST['chk_mailing_only_alias'], 'uint'));
 				ko_set_setting('mailing_allow_double', format_userinput($_POST['chk_mailing_allow_double'], 'uint'));
 				ko_set_setting('mailing_from_email', format_userinput($_POST['txt_mailing_from_email'], 'email'));
+				ko_set_setting('force_mail_from', format_userinput($_POST['chk_force_mail_from'], 'uint'));
+				$max_attempts = (!is_numeric($_POST['txt_mailing_max_attempts']) ? 10 : $_POST['txt_mailing_max_attempts']);
+				ko_set_setting('mailing_max_attempts', format_userinput($max_attempts, 'uint'));
 			}
 
 			//XLS export
@@ -199,6 +201,8 @@ switch($do_action) {
 			}
 			$email_info = format_userinput($_POST['txt_contact_email'], 'email');
 			if(check_email($email_info)) ko_set_setting('info_email', $email_info);
+
+			ko_set_setting('pp_addresses', format_userinput($_POST['txt_pp_addresses'], 'text'));
 		}
 
 		// layout settings
@@ -209,8 +213,6 @@ switch($do_action) {
 			//Default-Seiten pro Modul
 			ko_save_userpref($uid, "default_view_admin", format_userinput($_POST["sel_admin"], "js"));
 			ko_save_userpref($uid, "show_limit_logins", format_userinput($_POST["show_limit_logins"], "uint"));
-			ko_save_userpref($uid, "default_view_tapes", format_userinput($_POST["sel_tapes"], "js"));
-			ko_save_userpref($uid, "default_view_fileshare", format_userinput($_POST["sel_fileshare"], "js"));
 			ko_save_userpref($uid, 'default_module', format_userinput($_POST['sel_default_module'], 'js'));
 
 			//Popupmenu-Einstellungen
@@ -234,9 +236,47 @@ switch($do_action) {
 
 			//Default-Seiten pro Modul
 			ko_save_userpref($uid, "default_view_admin", format_userinput($_POST["sel_admin_guest"], "js"));
-			ko_save_userpref($uid, "default_view_tapes", format_userinput($_POST["sel_tapes_guest"], "js"));
-			ko_save_userpref($uid, "default_view_fileshare", format_userinput($_POST["sel_fileshare_guest"], "js"));
 			ko_save_userpref($uid, 'default_module', format_userinput($_POST['sel_default_module_guest'], 'js'));
+			ko_save_userpref($uid, 'fm_absence_infotext', format_userinput($_POST['txt_fm_absence_infotext'], 'text'));
+
+			$save_filter = unserialize(ko_get_userpref($uid, "fm_absence_restriction"));
+			if(!$save_filter) $save_filter = array();
+			$filterset = array_merge((array)ko_get_userpref('-1', '', 'filterset'), (array)ko_get_userpref($_SESSION['ses_userid'], '', 'filterset'));
+
+			$filter = format_userinput($_POST["sel_fm_absence_restriction"], "js");
+			if($filter == -1) {
+				break;
+			} else if($filter == "") {
+				unset($save_filter);
+			} else {
+				//A new filter has been selected
+				if(preg_match('/sg[0-9]{4}/', $filter) == 1) {  //small group
+					$sg = db_select_data('ko_kleingruppen', "WHERE `id` = '".format_userinput($filter, 'uint')."'", '*', '', '', TRUE);
+					$sgFilter = db_select_data('ko_filter', "WHERE `typ` = 'leute' AND `name` = 'smallgroup'", 'id', '', '', TRUE);
+					$save_filter['value'] = $filter;
+					$save_filter['name'] = $sg['name'];
+					$save_filter['filter'] = array('link' => 'and', 0 => array(0 => $sgFilter['id'], 1 => array(1 => $sg['id']), 2 => 0));
+				} else if(preg_match('/g[0-9]{6}/', $filter) == 1) {  //group
+					$gid = substr($filter, -6);
+					$gr = db_select_data('ko_groups', "WHERE `id` = '$gid'", '*', '', '', TRUE);
+					$grFilter = db_select_data('ko_filter', "WHERE `typ` = 'leute' AND `name` = 'group'", 'id', '', '', TRUE);
+					$save_filter['value'] = $filter;
+					$save_filter['name'] = $gr['name'];
+					$save_filter['filter'] = array('link' => 'and', 0 => array(0 => $grFilter['id'], 1 => array(1 => $filter, 2 => ''), 2 => 0));
+				} else {  //filter preset
+					$save_filter["name"] = $filter;
+					$save_filter['value'] = $filter;
+					//Filter-Infos aus Filterset lesen
+					foreach($filterset as $set) {
+						if($set["key"] == $filter) {
+							$save_filter["filter"] = unserialize($set["value"]);
+						}
+					}
+				}
+			}
+
+			// save filter
+			ko_save_userpref($uid, 'fm_absence_restriction', serialize($save_filter));
 
 			//Popupmenu-Einstellungen
 			ko_save_userpref($uid, "menu_order", format_userinput($_POST["sel_menu_order_guest"], "alphanumlist"));
@@ -250,13 +290,18 @@ switch($do_action) {
 
 		}
 
+		if($access['admin']['MAX'] >= 5) {
+			ko_set_setting("qz_tray_enable", format_userinput($_POST['qz_tray_enable'],'uint'));
+			ko_set_setting("qz_tray_host", preg_replace('/[^a-zA-Z0-9\._-]/','',$_POST['qz_tray_host']));
+		}
+
 		$_SESSION["show"] = "admin_settings";
 	break;
 
 
 
 	case 'submit_sms_sender_id':
-		if(!ko_module_installed('sms') || $SMS_PARAMETER['provider'] != 'aspsms' || !$SMS_PARAMETER['user'] || !$SMS_PARAMETER['pass']) continue;
+		if(!ko_module_installed('sms') || $SMS_PARAMETER['provider'] != 'aspsms' || !$SMS_PARAMETER['user'] || !$SMS_PARAMETER['pass']) break;
 
 		$number = $_POST['sms_sender_id'];
 		$is_number = check_natel($number);
@@ -316,11 +361,11 @@ switch($do_action) {
 
 
 	case 'delete_sms_sender_id':
-		if($access['admin']['MAX'] < 2) continue;
+		if($access['admin']['MAX'] < 2) break;
 
-		if(!ko_module_installed('sms') || $SMS_PARAMETER['provider'] != 'aspsms' || !$SMS_PARAMETER['user'] || !$SMS_PARAMETER['pass']) continue;
+		if(!ko_module_installed('sms') || $SMS_PARAMETER['provider'] != 'aspsms' || !$SMS_PARAMETER['user'] || !$SMS_PARAMETER['pass']) break;
 		$senderID = urldecode($_GET['sender_id']);
-		if(!$senderID) continue;
+		if(!$senderID) break;
 		
 		$sender_ids = explode(',', ko_get_setting('sms_sender_ids'));
 		$new = array();
@@ -337,7 +382,7 @@ switch($do_action) {
 
 
 	case 'submit_sms_sender_id_clickatell':
-		if(!ko_module_installed('sms') || $SMS_PARAMETER['provider'] == 'aspsms' || !$SMS_PARAMETER['user'] || !$SMS_PARAMETER['pass']) continue;
+		if(!ko_module_installed('sms') || $SMS_PARAMETER['provider'] == 'aspsms' || !$SMS_PARAMETER['user'] || !$SMS_PARAMETER['pass']) break;
 
 		//Get all senderIDs
 		$sender_ids = explode(',', ko_get_setting('sms_sender_ids'));
@@ -372,17 +417,17 @@ switch($do_action) {
 
 
 	case "set_show_admingroups":
-		if($access['admin']['MAX'] < 5) continue;
+		if($access['admin']['MAX'] < 5) break;
 
 		$_SESSION["show"] = "show_admingroups";
 	break;
 
 
 	case "delete_admingroup":
-		if($access['admin']['MAX'] < 5) continue;
+		if($access['admin']['MAX'] < 5) break;
 
 		$id = format_userinput($_POST["id"], "uint");
-		if(!$id) continue;
+		if(!$id) break;
 
 		$old = db_select_data('ko_admingroups', "WHERE `id` = '$id'", '*', '', '', TRUE);
 
@@ -406,12 +451,12 @@ switch($do_action) {
 		}//if(ko_do_ldap())
 
 		//Log entry
-		ko_log("delete_admingroup", "id: $id, ".$old['name']);
+		ko_log_diff('delete_admingroup', $old);
 	break;
 
 
 	case "set_new_admingroup":
-		if($access['admin']['MAX'] < 5) continue;
+		if($access['admin']['MAX'] < 5) break;
 
 		$_SESSION["show"] = "new_admingroup";
 		$onload_code = "form_set_first_input();".$onload_code;
@@ -419,17 +464,17 @@ switch($do_action) {
 
 
 	case "edit_admingroup":
-		if($access['admin']['MAX'] < 5) continue;
+		if($access['admin']['MAX'] < 5) break;
 
 		$edit_id = format_userinput($_POST["id"], "uint");
-		if(!$edit_id) continue;
+		if(!$edit_id) break;
 		$_SESSION["show"] = "edit_admingroup";
 		$onload_code = "form_set_first_input();".$onload_code;
 	break;
 
 
 	case "submit_new_admingroup":
-		if($access['admin']['MAX'] < 5) continue;
+		if($access['admin']['MAX'] < 5) break;
 
 		//Gruppenname verlangen
 		$txt_name = format_userinput($_POST["txt_name"], "text");
@@ -448,13 +493,18 @@ switch($do_action) {
 			}
 			$data["modules"] = implode(",", $save_modules);
 
+			$data["disable_password_change"] = ($_POST["chk_disable_password_change"] ? 1 : 0);
+
 			//Gruppen-Daten speichern
 			$data["name"] = $txt_name;
 			$id = db_insert_data("ko_admingroups", $data);
 
 			//Log
-			ko_log("new_admingroup", "$id: $txt_name, Module: \"".implode(", ", $save_modules)."\"");
+			$logData = $data;
+			$logData = array_merge(array('id' => $id), $logData);
+			ko_log_diff('new_admingroup', $logData);
 		}//if(!error)
+
 		$edit_id = $id;
 		$_SESSION["show"] = $notifier->hasErrors() ? "new_admingroup" : "edit_admingroup";
 	break;
@@ -462,22 +512,29 @@ switch($do_action) {
 
 
 	case "submit_edit_admingroup":
-		if($access['admin']['MAX'] < 5) continue;
+		if($access['admin']['MAX'] < 5) break;
+
+		$log_message = array();
 
 		$data = array();
 		if(FALSE === ($id = format_userinput($_POST["id"], "uint", TRUE))) {
-	    trigger_error("Not allowed id: ".$id, E_USER_ERROR);
-    }
+		    trigger_error("Not allowed id: ".$id, E_USER_ERROR);
+    	}
+
+		$log_message[] = array('id' => $id);
+
 		//Gruppen-Name speichern
 		$name = format_userinput($_POST["txt_name"], "js");
 		if($_POST["txt_name"] != "") {
-			ko_save_admin("name", $id, $name, "admingroup");
+			$log_message[] = ko_save_admin("name", $id, $name, "admingroup");
 		} else {
 			$notifier->addError(12, $do_action);
-			continue;
+			break;
 		}
 		$_old_admingroup = ko_get_admingroups($id);
 		$old_admingroup = $_old_admingroup[$id];
+
+		$log_message[] = ko_save_admin("disable_password_change", $id, $_POST["chk_disable_password_change"], "admingroup");
 
 		//Module speichern
 		$save_modules = explode(",", format_userinput($_POST["sel_modules"], "alphanumlist"));
@@ -487,26 +544,22 @@ switch($do_action) {
 		}
 		foreach($MODULES as $m) {
       if(!in_array($m, $save_modules)) {
-				ko_save_admin($m, $id, "0", "admingroup");
+				$log_message[] = ko_save_admin($m, $id, "0", "admingroup");
 				if($m == "leute") {
-					ko_save_admin("leute_filter", $id, "0", "admingroup");
-					ko_save_admin("leute_spalten", $id, "0", "admingroup");
+					$log_message[] = ko_save_admin("leute_filter", $id, "0", "admingroup");
+					$log_message[] = ko_save_admin("leute_spalten", $id, "0", "admingroup");
 				}
 			}
 		}
-		ko_save_admin("modules", $id, implode(",", $save_modules), "admingroup");
+		$log_message[] = ko_save_admin("modules", $id, implode(",", $save_modules), "admingroup");
 
 
 		//Rechte speichern
-		$log_message  = "$name ($id): ";
-		$log_message .= getLL('admin_logins_modules').': "'.implode(", ", $save_modules).'", ';
-
 		$done_modules = array();
 		if(in_array("leute", $save_modules)) {  //Leute-Rechte
 			$done_modules[] = 'leute';
 			$leute_save_string = format_userinput($_POST["sel_rechte_leute"], "uint", FALSE, 1);
-			ko_save_admin("leute", $id, $leute_save_string, "admingroup");
-			$log_message .= getLL("module_leute").': "'.str_replace(",", ", ", $leute_save_string).'", ';
+			$log_message[] = ko_save_admin("leute", $id, $leute_save_string, "admingroup");
 
 			//Filter für Stufen
 			$save_filter = ko_get_leute_admin_filter($id, "admingroup");
@@ -545,7 +598,7 @@ switch($do_action) {
 					}
 				}
 			}//for(i=1..3)
-			ko_save_admin("leute_filter", $id, serialize($save_filter), "admingroup");
+			$log_message[] = ko_save_admin("leute_filter", $id, serialize($save_filter), "admingroup");
 
 			//Spaltenvorlagen
 			$save_preset = ko_get_leute_admin_spalten($id, "admingroup");
@@ -585,39 +638,40 @@ switch($do_action) {
 				//Add edit preset to view as edit also means view
 				if($save_preset["view"]) $save_preset["view"] = array_unique(array_merge((array)$save_preset["view"], (array)$save_preset["edit"]));
 			}
-			ko_save_admin("leute_spalten", $id, serialize($save_preset), "admingroup");
+			$log_message[] = ko_save_admin("leute_spalten", $id, serialize($save_preset), "admingroup");
+			if(sizeof($save_preset['view']) > 0) $log_message[] = 'leute_spalten view: '.implode(', ', $save_preset['view']);
+			if(sizeof($save_preset['edit']) > 0) $log_message[] = 'leute_spalten edit: '.implode(', ', $save_preset['edit']);
 
 			//Admin groups
 			$lag = format_userinput($_POST['sel_leute_admin_group'], 'alphanum', FALSE, 0, array(), ':');
-			ko_save_admin('leute_groups', $id, $lag, 'admingroup');
+			$log_message[] = ko_save_admin('leute_groups', $id, $lag, 'admingroup');
 
 			//Group subscriptions
 			$gs = format_userinput($_POST['chk_leute_admin_gs'], 'uint');
-			ko_save_admin('leute_gs', $id, $gs, 'admingroup');
+			$log_message[] = ko_save_admin('leute_gs', $id, $gs, 'admingroup');
 
 			//Allow user to assign people to own group
 			//Only store if $lag is set
 			if($lag) {
 				$assign = format_userinput($_POST['chk_leute_admin_assign'], 'uint');
-				ko_save_admin('leute_assign', $id, $assign, 'admingroup');
+				$log_message[] = ko_save_admin('leute_assign', $id, $assign, 'admingroup');
 			} else {
-				ko_save_admin('leute_assign', $id, 0, 'admingroup');
+				$log_message[] = ko_save_admin('leute_assign', $id, 0, 'admingroup');
 			}
 
 		}//if(leute_module)
 		else if(in_array('leute', explode(',', $old_admingroup['modules']))) {
 			//If leute module is removed from admingroup, then also set all leute_admin fields to 0
-			ko_save_admin('leute_assign', $id, 0, 'admingroup');
-			ko_save_admin('leute_gs', $id, 0, 'admingroup');
-			ko_save_admin('leute_groups', $id, '', 'admingroup');
+			$log_message[] = ko_save_admin('leute_assign', $id, 0, 'admingroup');
+			$log_message[] = ko_save_admin('leute_gs', $id, 0, 'admingroup');
+			$log_message[] = ko_save_admin('leute_groups', $id, '', 'admingroup');
 		}
 
 
 		if(in_array('groups', $save_modules)) {
 			$done_modules[] = 'groups';
 			$groups_save_string = format_userinput($_POST['sel_rechte_groups'], 'uint', FALSE, 1);
-			ko_save_admin('groups', $id, $groups_save_string, 'admingroup');
-			$log_message .= getLL('module_groups').': "'.str_replace(',', ', ', $leute_save_string).'", ';
+			$log_message[] = ko_save_admin('groups', $id, $groups_save_string, 'admingroup');
 
 			//Loop über die drei Rechte-Stufen
 			$mode = array('', 'view', 'new', 'edit', 'del');
@@ -695,13 +749,14 @@ switch($do_action) {
 							$egs = db_select_data('ko_eventgruppen', 'WHERE 1=1', '*', 'ORDER BY name ASC');
 							foreach($egs as $eid => $eg) $gruppen[$eid] = $eg;
 						}
-						ko_save_admin($module . '_force_global', $id, $_POST['sel_force_global_'.$module], "admingroups");
-						ko_save_admin($module . '_reminder_rights', $id, $_POST['sel_reminder_rights_'.$module], "admingroups");
+						$log_message[] = ko_save_admin($module . '_force_global', $id, $_POST['sel_force_global_'.$module], "admingroups");
+						$log_message[] = ko_save_admin($module . '_reminder_rights', $id, $_POST['sel_reminder_rights_'.$module], "admingroups");
+						$log_message[] = ko_save_admin($module . '_absence_rights', $id, $_POST['sel_absence_rights_'.$module], "admingroups");
 
 						//KOTA columns
 						$coltable = 'ko_event';
 						$savecols = format_userinput($_POST['kota_columns_'.$coltable], 'alphanumlist');
-						ko_save_admin('kota_columns_'.$coltable, $id, $savecols, 'admingroups');
+						$log_message[] = ko_save_admin('kota_columns_'.$coltable, $id, $savecols, 'admingroups');
 					break;
 					case "reservation":
 						if(ko_get_setting('res_access_mode') == 1) {
@@ -711,12 +766,12 @@ switch($do_action) {
 							ko_get_resgroups($resgroups);
 							foreach($resgroups as $gid => $g) $gruppen['grp'.$gid] = $g;
 						}
-						ko_save_admin($module . '_force_global', $id, $_POST['sel_force_global_'.$module], "admingroups");
+						$log_message[] = ko_save_admin($module . '_force_global', $id, $_POST['sel_force_global_'.$module], "admingroups");
 					break;
 					case 'rota': $gruppen = db_select_data('ko_rota_teams', '', '*', 'ORDER BY name ASC'); break;
-					case "tapes": ko_get_tapegroups($gruppen); break;
-					case "donations": $gruppen = db_select_data("ko_donations_accounts", "", "*", "ORDER BY number ASC"); break;
+					case "donations": $gruppen = db_select_data("ko_donations_accounts", "", "*", "ORDER BY number ASC, name ASC"); break;
 					case 'tracking': $gruppen = db_select_data('ko_tracking', '', '*', 'ORDER BY name ASC'); break;
+					case 'subscription': $gruppen = db_select_data('ko_subscription_form_groups','','*','ORDER BY name ASC'); break;
 
 					default:
 						$gruppen = hook_access_get_groups($module);
@@ -725,8 +780,7 @@ switch($do_action) {
 					$save_string .= format_userinput($_POST["sel_rechte_".$module."_".$g_i], "uint", FALSE, 1)."@".$g_i.",";
 				}
 			} else $save_string = "0 ";
-			ko_save_admin($module, $id, substr($save_string, 0, -1), 'admingroup');
-			$log_message .= getLL("module_".$module).': "'.str_replace(",", ", ", $save_string).'", ';
+			$log_message[] = ko_save_admin($module, $id, substr($save_string, 0, -1), 'admingroup');
 		}
 
 		$done_modules[] = 'tools';
@@ -737,14 +791,13 @@ switch($do_action) {
 			if(in_array($module, $save_modules)) {
 				$save_string = format_userinput($_POST['sel_rechte_'.$module], 'uint', FALSE, 1);
 			} else $save_string = '0';
-			ko_save_admin($module, $id, $save_string, "admingroup");
-			$log_message .= getLL("module_".$module).': "'.str_replace(",", ", ", $save_string).'", ';
+			$log_message[] = ko_save_admin($module, $id, $save_string, "admingroup");
 
 			//KOTA columns
 			if($module == 'kg') {
 				$coltable = 'ko_kleingruppen';
 				$savecols = format_userinput($_POST['kota_columns_'.$coltable], 'alphanumlist');
-				ko_save_admin('kota_columns_'.$coltable, $id, $savecols, 'admingroups');
+				$log_message[] = ko_save_admin('kota_columns_'.$coltable, $id, $savecols, 'admingroups');
 			}
 		}
 
@@ -759,7 +812,13 @@ switch($do_action) {
 		}//if(ko_do_ldap())
 
 
-		ko_log("edit_admingroup", $log_message);
+		$logTexts = array();
+		foreach($log_message as $lMessages) {
+			foreach($lMessages as $lKey => $lMessage) {
+				$logTexts[] = $lKey.': '.trim($lMessage);
+			}
+		}
+		ko_log('edit_admingroup', implode(', ', $logTexts));
 		$notifier->addInfo(1, $do_action);
 
 		$edit_id = $id;
@@ -768,13 +827,17 @@ switch($do_action) {
 
 
 	case "submit_edit_login":
-		if($access['admin']['MAX'] < 5) continue;
+		if($access['admin']['MAX'] < 5) break;
+
+		$log_message = array();
 
 		if(FALSE === ($id = format_userinput($_POST["id"], "uint", TRUE))) {
-	    trigger_error("Not allowed id: ".$id, E_USER_ERROR);
-    }
+			trigger_error("Not allowed id: ".$id, E_USER_ERROR);
+		}
 		//root darf nur von root bearbeitet werden
-		if($id == ko_get_root_id() && $_SESSION["ses_username"] != "root") continue;
+		if($id == ko_get_root_id() && $_SESSION["ses_username"] != "root") break;
+
+		$log_message[] = array('id' => $id);
 
 		//Altes Login speichern (für LDAP)
 		ko_get_login($id, $old_login);
@@ -783,21 +846,23 @@ switch($do_action) {
 		$login_name = format_userinput($_POST["txt_name"], "js");
 		if($_POST["txt_name"] != "") {
 			//Changing the name of ko_guest and root is not allowed
-			if($id != ko_get_guest_id() && $id != ko_get_root_id()) ko_save_admin("login", $id, $login_name);
+			if($id != ko_get_guest_id() && $id != ko_get_root_id()) $log_message[] = ko_save_admin("login", $id, $login_name);
 		} else {
 			$notifier->addError(1, $do_action);
-			continue;
+			break;
 		}
 
 		//Passwort neu setzen
 		if($_POST["txt_pwd1"] != "") {
 			if($_POST["txt_pwd1"] == $_POST["txt_pwd2"]) {
-				ko_save_admin("password", $id, md5($_POST["txt_pwd1"]));
+				$log_message[] = ko_save_admin("password", $id, md5($_POST["txt_pwd1"]));
 			} else {
 				$notifier->addError(2, $do_action);
-				continue;
+				break;
 			}
 		}
+
+		$log_message[] = ko_save_admin("disable_password_change", $id, $_POST["chk_disable_password_change"]);
 
 		//Module speichern
 		$save_modules = explode(",", format_userinput($_POST["sel_modules"], "alphanumlist"));
@@ -807,14 +872,14 @@ switch($do_action) {
 		}
 		foreach($MODULES as $m) {
 		if(!in_array($m, $save_modules)) {
-				ko_save_admin($m, $id, "0");
+				$log_message[] = ko_save_admin($m, $id, "0");
 				if($m == "leute") {
-					ko_save_admin("leute_filter", $id, "0");
-					ko_save_admin("leute_spalten", $id, "0");
+					$log_message[] = ko_save_admin("leute_filter", $id, "0");
+					$log_message[] = ko_save_admin("leute_spalten", $id, "0");
 				}
 			}
 		}
-		ko_save_admin("modules", $id, implode(",", $save_modules));
+		$log_message[] = ko_save_admin("modules", $id, implode(",", $save_modules));
 
 
 		//Admingroups speichern
@@ -823,26 +888,21 @@ switch($do_action) {
 		foreach($save_admingroups as $m_i => $m) {
 			if(!in_array($m, array_keys($admingroups))) unset($save_admingroups[$m_i]);
 		}
-		ko_save_admin("admingroups", $id, implode(",", $save_admingroups));
-
-
-		//Start log message
-		$log_message  = "$login_name ($id): ";
-		$log_message .= 'Module: "'.implode(", ", $save_modules).'", Admingroups: "'.implode(", ", $save_admingroups).'", ';
+		$log_message[] = ko_save_admin("admingroups", $id, implode(",", $save_admingroups));
 
 
 		//Assigned person from DB
 		$leute_id = format_userinput($_POST["sel_leute_id"], "uint");
 		db_update_data("ko_admin", "WHERE `id` = '$id'", array("leute_id" => $leute_id));
-		$log_message .= 'leute_id => '.$leute_id.', ';
+		$log_message[] = array('leute_id' => $leute_id);
 		//Admin email
 		$email = format_userinput($_POST['txt_email'], 'email');
 		db_update_data('ko_admin', 'WHERE `id` = \''.$id.'\'', array('email' => $email));
-		$log_message .= 'email => '.$email.', ';
+		$log_message[] = array('email' => $email);
 		//Admin mobile
 		$mobile = format_userinput($_POST['txt_mobile'], 'alphanum++');
 		db_update_data('ko_admin', 'WHERE `id` = \''.$id.'\'', array('mobile' => $mobile));
-		$log_message .= 'mobile => '.$mobile.', ';
+		$log_message[] = array('mobile' => $mobile);
 
 
 		//Rechte speichern
@@ -850,8 +910,7 @@ switch($do_action) {
 		if(in_array("leute", $save_modules)) {  //Leute-Rechte
 			$done_modules[] = 'leute';
 			$leute_save_string = format_userinput($_POST["sel_rechte_leute"], "uint", FALSE, 1);
-			ko_save_admin("leute", $id, $leute_save_string);
-			$log_message .= getLL("module_leute").': "'.str_replace(",", ", ", $leute_save_string).'", ';
+			$log_message[] = ko_save_admin("leute", $id, $leute_save_string);
 
 			//Filter für Stufen
 			$save_filter = ko_get_leute_admin_filter($id, "login");
@@ -889,8 +948,7 @@ switch($do_action) {
 					}
 				}
 			}//for(i=1..3)
-			ko_save_admin("leute_filter", $id, serialize($save_filter));
-			$log_message .= 'Leute filter: '.json_encode($save_filter).', ';
+			$log_message[] = ko_save_admin("leute_filter", $id, serialize($save_filter));
 
 			//Spaltenvorlagen
 			$save_preset = ko_get_leute_admin_spalten($id, "login");
@@ -930,42 +988,37 @@ switch($do_action) {
 				//Add edit preset to view as edit also means view
 				if($save_preset["view"]) $save_preset["view"] = array_unique(array_merge((array)$save_preset["view"], (array)$save_preset["edit"]));
 			}
-			ko_save_admin("leute_spalten", $id, serialize($save_preset));
-			$log_message .= 'Leute presets: '.json_encode($save_preset).', ';
+			$log_message[] = ko_save_admin("leute_spalten", $id, serialize($save_preset));
 
 			//Admin groups
 			$lag = format_userinput($_POST["sel_leute_admin_group"], "alphanum", FALSE, 0, array(), ":");
-			ko_save_admin("leute_groups", $id, $lag);
-			$log_message .= 'Leute assignGroup: '.$lag.', ';
+			$log_message[] = ko_save_admin("leute_groups", $id, $lag);
 
 			//Group subscriptions
 			$gs = format_userinput($_POST["chk_leute_admin_gs"], "uint");
-			ko_save_admin("leute_gs", $id, $gs);
-			$log_message .= 'Leute groupSubscription: '.$gs.', ';
+			$log_message[] = ko_save_admin("leute_gs", $id, $gs);
 
 			//Assign people to own group
 			//Only store if $gs is set
 			if($lag) {
 				$assign = format_userinput($_POST["chk_leute_admin_assign"], "uint");
-				ko_save_admin("leute_assign", $id, $assign);
-				$log_message .= 'Leute assignToGroup: '.$assign.', ';
+				$log_message[] = ko_save_admin("leute_assign", $id, $assign);
 			} else {
-				ko_save_admin('leute_assign', $id, 0);
+				$log_message[] = ko_save_admin('leute_assign', $id, 0);
 			}
 		}//if(in_array(leute, $save_modules))
 		else if(in_array('leute', explode(',', $old_login['modules']))) {
 			//If leute module is removed from login, then also set all leute_admin fields to 0
-			ko_save_admin('leute_assign', $id, 0);
-			ko_save_admin('leute_gs', $id, 0);
-			ko_save_admin('leute_groups', $id, '');
+			$log_message[] = ko_save_admin('leute_assign', $id, 0);
+			$log_message[] = ko_save_admin('leute_gs', $id, 0);
+			$log_message[] = ko_save_admin('leute_groups', $id, '');
 		}
 
 
 		if(in_array('groups', $save_modules)) {
 			$done_modules[] = 'groups';
 			$groups_save_string = format_userinput($_POST['sel_rechte_groups'], 'uint', FALSE, 1);
-			ko_save_admin('groups', $id, $groups_save_string);
-			$log_message .= getLL('module_groups').': "'.str_replace(',', ', ', $leute_save_string).'", ';
+			$log_message[] = ko_save_admin('groups', $id, $groups_save_string);
 
 			//Loop über die drei Rechte-Stufen
 			$mode = array('', 'view', 'new', 'edit', 'del');
@@ -1043,13 +1096,18 @@ switch($do_action) {
 							$egs = db_select_data('ko_eventgruppen', 'WHERE 1=1', '*', 'ORDER BY name ASC');
 							foreach($egs as $eid => $eg) $gruppen[$eid] = $eg;
 						}
-						ko_save_admin($module . '_force_global', $id, $_POST['sel_force_global_'.$module], "login");
-						ko_save_admin($module . '_reminder_rights', $id, $_POST['sel_reminder_rights_'.$module], "login");
+						$log_message[] = ko_save_admin($module . '_force_global', $id, $_POST['sel_force_global_'.$module], "login");
+						$log_message[] = ko_save_admin($module . '_reminder_rights', $id, $_POST['sel_reminder_rights_'.$module], "login");
+						if($id != ko_get_guest_id()) {
+							$log_message[] = ko_save_admin($module . '_absence_rights', $id, $_POST['sel_absence_rights_'.$module], "login");
+						} else {
+							ko_save_admin($module . '_absence_rights', $id, 0, "login");
+						}
 
 						//KOTA columns
 						$coltable = 'ko_event';
 						$savecols = format_userinput($_POST['kota_columns_'.$coltable], 'alphanumlist');
-						ko_save_admin('kota_columns_'.$coltable, $id, $savecols);
+						$log_message[] = ko_save_admin('kota_columns_'.$coltable, $id, $savecols);
 					break;
 					case "reservation":
 						if(ko_get_setting('res_access_mode') == 1) {
@@ -1059,13 +1117,13 @@ switch($do_action) {
 							ko_get_resgroups($resgroups);
 							foreach($resgroups as $gid => $g) $gruppen['grp'.$gid] = $g;
 						}
-						ko_save_admin($module . '_force_global', $id, $_POST['sel_force_global_'.$module], "login");
+						$log_message[] = ko_save_admin($module . '_force_global', $id, $_POST['sel_force_global_'.$module], "login");
 					break;
 					case 'rota': $gruppen = db_select_data('ko_rota_teams', '', '*', 'ORDER BY name ASC'); break;
-					case "tapes": ko_get_tapegroups($gruppen); break;
-					case "donations": $gruppen = db_select_data("ko_donations_accounts", "", "*", "ORDER BY number ASC"); break;
+					case "donations": $gruppen = db_select_data("ko_donations_accounts", "", "*", "ORDER BY number ASC, name ASC"); break;
 					case 'tracking': $gruppen = db_select_data('ko_tracking', '', '*', 'ORDER BY name ASC'); break;
 					case 'crm': ko_get_crm_projects($gruppen, '', '', 'ORDER BY `title` ASC'); break;
+					case 'subscription': $gruppen = db_select_data('ko_subscription_form_groups','','*','ORDER BY name ASC'); break;
 
 					default:
 						$gruppen = hook_access_get_groups($module);
@@ -1074,8 +1132,7 @@ switch($do_action) {
 					$save_string .= format_userinput($_POST["sel_rechte_".$module."_".$g_i], "uint", FALSE, 1)."@".$g_i.",";
 				}
 			} else $save_string = "0 ";
-			ko_save_admin($module, $id, substr($save_string, 0, -1));
-			$log_message .= getLL("module_".$module).': "'.str_replace(",", ", ", $save_string).'", ';
+			$log_message[] = ko_save_admin($module, $id, substr($save_string, 0, -1));
 		}
 
 		$done_modules[] = 'tools';
@@ -1086,19 +1143,24 @@ switch($do_action) {
 			if(in_array($module, $save_modules)) {
 				$save_string = format_userinput($_POST["sel_rechte_".$module], "uint", FALSE, 1);
 			} else $save_string = "0";
-			ko_save_admin($module, $id, $save_string);
-			$log_message .= getLL("module_".$module).': "'.str_replace(",", ", ", $save_string).'", ';
+			$log_message[] = ko_save_admin($module, $id, $save_string);
 
 			//KOTA columns
 			if($module == 'kg') {
 				$coltable = 'ko_kleingruppen';
 				$savecols = format_userinput($_POST['kota_columns_'.$coltable], 'alphanumlist');
-				ko_save_admin('kota_columns_'.$coltable, $id, $savecols);
+				$log_message[] = ko_save_admin('kota_columns_'.$coltable, $id, $savecols);
 			}
 		}
 
 
-		ko_log("edit_login", $log_message);
+		$logTexts = array();
+		foreach($log_message as $lMessages) {
+			foreach($lMessages as $lKey => $lMessage) {
+				$logTexts[] = $lKey.': '.trim($lMessage);
+			}
+		}
+		ko_log('edit_login', implode(', ', $logTexts));
 		$notifier->addInfo(1, $do_action);
 
 
@@ -1116,9 +1178,6 @@ switch($do_action) {
 			ko_admin_check_ldap_login($id);
 		}//if(ko_do_ldap())
 
-		//Initial Fileshare-Folders
-		ko_fileshare_check_inbox_shareroot($id);
-
 		//Go back to list of logins if no modules have changed
 		if($old_login['modules'] == implode(',', $save_modules)) $_SESSION['show'] = 'show_logins';
 	break;
@@ -1126,7 +1185,7 @@ switch($do_action) {
 
 
 	case "submit_neues_login":
-		if($access['admin']['MAX'] < 5) continue;
+		if($access['admin']['MAX'] < 5) break;
 
 		$txt_name = format_userinput($_POST["txt_name"], "js");
 	
@@ -1177,7 +1236,8 @@ switch($do_action) {
 			//Login-Daten speichern
 			$data["login"]      = $txt_name;
 			$data["password"]   = md5($_POST["txt_pwd1"]);
-			$data["last_login"] = strftime("%Y-%m-%d %H:%M:%S", time());
+			$data["disable_password_change"] = ($_POST["chk_disable_password_change"] ? 1 : 0);
+
 			$id = db_insert_data("ko_admin", $data);
 
 			$notifier->addInfo(2, $do_action);
@@ -1215,10 +1275,9 @@ switch($do_action) {
 			}
 
 			//Log
-			ko_log("new_login", "$id: $txt_name, Module: \"".implode(", ", $save_modules)."\"");
-
-			//Initial Fileshare-Folders
-			ko_fileshare_check_inbox_shareroot($id);
+			$logData = $data;
+			$logData = array_merge(array('id' => $id), $logData);
+			ko_log_diff('new_login', $logData);
 
 			//LDAP-Login
 			if(ko_do_ldap()) {
@@ -1232,7 +1291,7 @@ switch($do_action) {
 
 
 	case "set_new_login":
-		if($access['admin']['MAX'] < 5) continue;
+		if($access['admin']['MAX'] < 5) break;
 		$_SESSION["show"] = "new_login";
 		$onload_code = "form_set_first_input();".$onload_code;
 	break;
@@ -1241,12 +1300,12 @@ switch($do_action) {
 
 	//Bearbeiten
 	case "edit_login":
-		if($access['admin']['MAX'] < 5) continue;
+		if($access['admin']['MAX'] < 5) break;
 		if(FALSE === ($id = format_userinput($_POST["id"], "uint", TRUE))) {
 	    trigger_error("Not allowed id: ".$id, E_USER_ERROR);
     }
 		//root darf nur von root bearbeitet werden
-		if($id == ko_get_root_id() && $_SESSION["ses_username"] != "root") continue;
+		if($id == ko_get_root_id() && $_SESSION["ses_username"] != "root") break;
 
 		$_SESSION["show"] = "edit_login";
 		//Don't add form_set_first_input() to onload_code, so the username doens't trigger the autocomplete feature for the first password field
@@ -1255,19 +1314,19 @@ switch($do_action) {
 
 	//Löschen
 	case "delete_login":
-		if($access['admin']['MAX'] < 5) continue;
+		if($access['admin']['MAX'] < 5) break;
 
 		if(FALSE === ($id = format_userinput($_POST["id"], "uint", TRUE))) {
 	    trigger_error("Not allowed id: ".$id, E_USER_ERROR);
     }
-		if((int)$id == (int)ko_get_guest_id()) continue;  //ko_guest may not be deleted
-		if((int)$id == (int)ko_get_root_id()) continue;   //root may not be deleted
+		if((int)$id == (int)ko_get_guest_id()) break;  //ko_guest may not be deleted
+		if((int)$id == (int)ko_get_root_id()) break;   //root may not be deleted
 
 		//Get username before deleting it (for logging)
 		$old_login = db_select_data('ko_admin', "WHERE `id` = '$id'", '*', '', '', TRUE);
 
 		//Log message
-		ko_log('delete_login', $id.': '.$old_login['login']);
+		ko_log_diff('delete_login', $old_login);
 	
 		//Delete login
 		db_delete_data("ko_admin", "WHERE `id` = '$id'");
@@ -1287,15 +1346,92 @@ switch($do_action) {
 
 
 
+	//Detailed person export
+	case "list_detailed_person_exports":
+		if($access['admin']['MAX'] < 2) break;
+
+		$_SESSION['show'] = 'list_detailed_person_exports';
+	break;
+
+	case "new_detailed_person_export":
+		if($access['admin']['MAX'] < 2) break;
+
+		$_SESSION['show'] = 'new_detailed_person_export';
+		$onload_code = 'form_set_first_input();'.$onload_code;
+	break;
+
+	case 'edit_detailed_person_export':
+		$id = format_userinput($_POST['id'], 'uint');
+		if ($id == '') {
+			$id = format_userinput($_GET['id'], 'uint');
+		}
+		if (!$id) break;
+		if($access['admin']['ALL'] < 2) break;
+
+		$_SESSION['show'] = 'edit_detailed_person_export';
+		$onload_code = 'form_set_first_input();'.$onload_code;
+	break;
+
+	case "delete_detailed_person_export":
+		if($access['admin']['MAX'] < 2) break;
+		$id = format_userinput($_POST['id'], 'uint');
+		$entry = db_select_data('ko_detailed_person_exports', "WHERE `id` = '$id'", '*', '', '', TRUE, TRUE);
+		if(!$entry['id'] || $entry['id'] != $id) {
+			$notifier->addError(8, $do_action);
+			break;
+		}
+
+		db_delete_data('ko_detailed_person_exports', "WHERE `id` = '$id'");
+		ko_log_diff('del_detailed_person_exports', $entry);
+	break;
+
+
+	case "submit_new_detailed_person_export":
+	case "submit_as_new_detailed_person_export":
+		if($access['admin']['MAX'] < 2) break;
+
+		if($do_action == 'submit_as_new_detailed_person_export') {
+			list($table, $columns, $ids, $hash) = explode('@', $_POST['id']);
+			//Fake POST[id] for kota_submit_multiedit() to remove the id from the id. Otherwise this entry will be edited
+			$new_hash = md5(md5($mysql_pass.$table.implode(':', explode(',', $columns)).'0'));
+			$_POST['id'] = $table.'@'.$columns.'@0@'.$new_hash;
+		}
+
+		if (substr($_FILES['koi']['name']['ko_detailed_person_exports']['template'][0],-5) != ".docx") {
+			$notifier->addTextError(getLL('error_leute_export_details_docx_upload')); break;
+		}
+		$new_id = kota_submit_multiedit('', 'new_detailed_person_export');
+		if(!$notifier->hasErrors()) {
+			$_SESSION['show'] = 'list_detailed_person_exports';
+		}
+	break;
+
+	case "submit_edit_detailed_person_export":
+		if($access['admin']['ALL'] < 2) break;
+
+		list($table, $columns, $id, $hash) = explode("@", $_POST["id"]);
+		if ($_POST['koi']['ko_detailed_person_exports']['template_DELETE'][$id] == 1 &&
+			substr($_FILES['koi']['name']['ko_detailed_person_exports']['template'][$id],-5) != ".docx") {
+			$notifier->addTextError(getLL('error_leute_export_details_docx_upload')); break;
+		}
+		kota_submit_multiedit('', 'edit_detailed_person_export');
+
+		if(!$notifier->hasErrors()) {
+			$_SESSION['show'] = 'list_detailed_person_exports';
+		}
+	break;
+
+
+
 	//Etiketten-Vorlage
 	case "list_labels":
-		if($access['admin']['MAX'] < 2) continue;
+		if($access['admin']['MAX'] < 2) break;
 
 		$_SESSION['show'] = 'list_labels';
 	break;
 
 	case "new_label":
-		if($access['admin']['MAX'] < 2) continue;
+		if($access['admin']['MAX'] < 2) break;
 
 		$_SESSION['show'] = 'new_label';
 		$onload_code = 'form_set_first_input();'.$onload_code;
@@ -1306,20 +1442,20 @@ switch($do_action) {
 		if ($id == '') {
 			$id = format_userinput($_GET['id'], 'uint');
 		}
-		if (!$id) continue;
-		if($access['admin']['ALL'] < 2) continue;
+		if (!$id) break;
+		if($access['admin']['ALL'] < 2) break;
 
 		$_SESSION['show'] = 'edit_label';
 		$onload_code = 'form_set_first_input();'.$onload_code;
 	break;
 
 	case "delete_label":
-		if($access['admin']['MAX'] < 2) continue;
+		if($access['admin']['MAX'] < 2) break;
 		$id = format_userinput($_POST['id'], 'uint');
 		$entry = db_select_data('ko_labels', "WHERE `id` = '$id'", '*', '', '', TRUE, TRUE);
 		if(!$entry['id'] || $entry['id'] != $id) {
 			$notifier->addError(8, $do_action);
-			continue;
+			break;
 		}
 
 		db_delete_data('ko_labels', "WHERE `id` = '$id'");
@@ -1329,7 +1465,7 @@ switch($do_action) {
 
 	case "submit_new_label":
 	case "submit_as_new_label":
-		if($access['admin']['MAX'] < 2) continue;
+		if($access['admin']['MAX'] < 2) break;
 
 		if($do_action == 'submit_as_new_label') {
 			list($table, $columns, $ids, $hash) = explode('@', $_POST['id']);
@@ -1345,7 +1481,7 @@ switch($do_action) {
 	break;
 
 	case "submit_edit_label":
-		if($access['admin']['ALL'] < 2) continue;
+		if($access['admin']['ALL'] < 2) break;
 
 		kota_submit_multiedit('', 'edit_label');
 
@@ -1358,7 +1494,7 @@ switch($do_action) {
 	
 	//Identität annehmen (mit anderem Login einloggen)
 	case "sudo_login":
-		if($access['admin']['MAX'] < 5) continue;
+		if($access['admin']['MAX'] < 5) break;
 
 		$found = 0;
 		foreach($_POST["chk"] as $c_i => $c) {
@@ -1371,19 +1507,19 @@ switch($do_action) {
 		//Nur genau eine Selektion erlauben
 		if($found != 1) {
 			$notifier->addError(5, $do_action);
-			continue;
+			break;
 		}
 		
 		//ko_guest nicht erlauben
 		if($sudo_id == ko_get_guest_id()) {
 			$notifier->addError(6, $do_action);
-			continue;
+			break;
 		}
 
 		//root nicht erlauben
 		if($sudo_id == ko_get_root_id()) {
 			$notifier->addError(11, $do_action);
-			continue;
+			break;
 		}
 
 		//Auf gültiges Login testen
@@ -1396,13 +1532,22 @@ switch($do_action) {
 		}
 		if(!$found) {
 			$notifier->addError(11, $do_action);
-			continue;
+			break;
 		}
 
 		//Identität wechseln
 		$_SESSION["ses_userid"] = $sudo_id;
 		ko_get_login($sudo_id, $sudo_l);
 		$_SESSION["ses_username"] = $sudo_l["login"];
+		$_SESSION["disable_password_change"] = $sudo_l["disable_password_change"];
+
+		$u_admingroups = ko_get_admingroups($sudo_id);
+		foreach($u_admingroups AS $u_admingroup) {
+			if ($u_admingroup['disable_password_change'] == 1) {
+				$_SESSION["disable_password_change"] = 1;
+			}
+		}
+
 		ko_init();
 	break;
 
@@ -1412,17 +1557,17 @@ switch($do_action) {
 
 	//PDF layouts for address export
 	case "set_leute_pdf_new":
-		if($access['admin']['MAX'] < 2) continue;
+		if($access['admin']['MAX'] < 2) break;
 
 		$_SESSION["show"] = "new_leute_pdf";
 	break;
 
 
 	case "edit_leute_pdf":
-		if($access['admin']['MAX'] < 2) continue;
+		if($access['admin']['MAX'] < 2) break;
 
 		$layout_id = format_userinput($_POST["id"], "uint");
-		if(!$layout_id) continue;
+		if(!$layout_id) break;
 
 		$_SESSION["show"] = "edit_leute_pdf";
 	break;
@@ -1431,7 +1576,7 @@ switch($do_action) {
 	case "submit_new_leute_pdf":
 	case "submit_edit_leute_pdf":
 	case "submit_as_new_leute_pdf":
-		if($access['admin']['MAX'] < 2) continue;
+		if($access['admin']['MAX'] < 2) break;
 
 		if($do_action == "submit_edit_leute_pdf") {
 			$layout_id = format_userinput($_POST["layout_id"], "uint");
@@ -1486,10 +1631,10 @@ switch($do_action) {
 
 
 	case "delete_leute_pdf":
-		if($access['admin']['MAX'] < 2) continue;
+		if($access['admin']['MAX'] < 2) break;
 
 		$id = format_userinput($_POST["id"], "uint");
-		if(!$id) continue;
+		if(!$id) break;
 
 		$old = db_select_data('ko_pdf_layout', "WHERE `id` = '$id' AND `type` = 'leute'", '*', '', '', TRUE);
 
@@ -1503,14 +1648,14 @@ switch($do_action) {
 
 	//News
 	case 'list_news':
-		if($access['admin']['MAX'] < 2) continue;
+		if($access['admin']['MAX'] < 2) break;
 
 		$_SESSION['show'] = 'list_news';
 	break;
 
 
 	case 'new_news':
-		if($access['admin']['MAX'] < 2) continue;
+		if($access['admin']['MAX'] < 2) break;
 
 		$_SESSION['show'] = 'new_news';
 		$onload_code = 'form_set_first_input();'.$onload_code;
@@ -1519,7 +1664,7 @@ switch($do_action) {
 
 	case 'submit_new_news':
 	case 'submit_as_new_news':
-		if($access['admin']['MAX'] < 2) continue;
+		if($access['admin']['MAX'] < 2) break;
 
 		if($do_action == 'submit_as_new_news') {
 			list($table, $columns, $ids, $hash) = explode('@', $_POST['id']);
@@ -1534,7 +1679,7 @@ switch($do_action) {
 
 
 	case 'edit_news':
-		if($access['admin']['MAX'] < 2) continue;
+		if($access['admin']['MAX'] < 2) break;
 
 		$id = format_userinput($_POST['id'], 'uint');
 		$_SESSION['show'] = 'edit_news';
@@ -1543,7 +1688,7 @@ switch($do_action) {
 
 
 	case 'submit_edit_news':
-		if($access['admin']['MAX'] < 2) continue;
+		if($access['admin']['MAX'] < 2) break;
 
 		kota_submit_multiedit('', 'edit_news');
 		if(!$notifier->hasErrors()) $_SESSION['show'] = 'list_news';
@@ -1551,10 +1696,10 @@ switch($do_action) {
 
 
 	case 'delete_news':
-		if($access['admin']['MAX'] < 2) continue;
+		if($access['admin']['MAX'] < 2) break;
 
 		$id = format_userinput($_POST['id'], 'uint');
-		if(!$id) continue;
+		if(!$id) break;
 
 		$old = db_select_data('ko_news', "WHERE `id` = '$id'", '*', '', '', TRUE);
 		db_delete_data('ko_news', "WHERE `id` = '$id'");
@@ -1565,54 +1710,229 @@ switch($do_action) {
 
 
 	case 'sms_log_mark':
-		if($_SESSION['ses_userid'] != ko_get_root_id()) continue;
+		if($_SESSION['ses_userid'] != ko_get_root_id()) break;
 
 		db_insert_data('ko_log', array('type' => 'sms_mark', 'user_id' => $_SESSION['ses_userid'], 'date' => date('Y-m-d H:m:i')));
 	break;
 
 
 
-	case 'delete_vesr':
-		if($access['vesr'] < 1) continue;
+	case 'delete_v11':
+		if($access['vesr'] < 1) break;
 
 		$id = format_userinput($_POST['id'], 'uint');
-		if(!$id) continue;
+		if(!$id) break;
 
 		$entry = db_select_data('ko_vesr', "WHERE `id` = '$id'", '*', '', '', TRUE);
-		if(!$entry['id'] || $entry['id'] != $id) continue;
+		if(!$entry['id'] || $entry['id'] != $id) break;
 
 		db_delete_data('ko_vesr', "WHERE `id` = '$id'");
 		ko_log_diff('delete_vesr', $entry);
 		$notifier->addInfo(10);
 	break;
 
+	case 'delete_camt':
+		if($access['vesr'] < 1) break;
+
+		$id = format_userinput($_POST['id'], 'uint');
+		if(!$id) break;
+
+		$entry = db_select_data('ko_vesr_camt', "WHERE `id` = '$id'", '*', '', '', TRUE);
+		if(!$entry['id'] || $entry['id'] != $id) break;
+
+		db_delete_data('ko_vesr_camt', "WHERE `id` = '$id'");
+		ko_log_diff('delete_vesr_camt', $entry);
+		$notifier->addInfo(10);
+		break;
+
 	case 'vesr_import':
-		if ($access['vesr'] < 1) continue;
+		if ($access['vesr'] < 1) break;
 
 		$_SESSION['show_back'] = $_SESSION['show'];
 		$_SESSION['show'] = 'vesr_import';
 	break;
 
 	case 'submit_vesr_import':
-		if($access['vesr'] < 1) continue;
+		if($access['vesr'] < 1) break;
 
-		if(is_array($_FILES['esrpayment_file'])) {
-			$upload_dir = $BASE_PATH.'my_images/v11/';
-			$filename = 'vesr_'.date('Ymd_His').'.v11';
-			move_uploaded_file($_FILES['esrpayment_file']['tmp_name'], $upload_dir.$filename);
-			$file = $upload_dir.$filename;
-			if(!file_exists($file)) $notifier->addError(19);
+		// TODO: handle camt upload
+		@mkdir("{$BASE_PATH}my_images/mt940", 0775);
+		@mkdir("{$BASE_PATH}my_images/camt", 0775);
+		@mkdir("{$BASE_PATH}my_images/camt/done", 0775);
+		@mkdir("{$BASE_PATH}my_images/v11", 0775);
+		if(is_array(($esrFile = $_FILES['esrpayment_file']))) {
+			if (strtolower(substr($esrFile['name'], -4)) == '.v11' || strtolower(substr($esrFile['name'], -4)) == '.esr') { // v11 import
+				$upload_dir = $BASE_PATH.'my_images/v11/';
+				$filename = 'vesr_'.date('Ymd_His').'.v11';
+				move_uploaded_file($_FILES['esrpayment_file']['tmp_name'], $upload_dir.$filename);
+				$file = $upload_dir.$filename;
+				if(!file_exists($file)) $notifier->addError(19);
 
-			if (ko_vesr_is_duplicate_file($filename)) {
-				unlink($upload_dir.$filename);
-				$notifier->addError(21);
-			} else {
-				$vesr_error = ko_vesr_import ($file, $vesr_data, $vesr_done);
-				if($vesr_error) {
-					$notifier->addError($vesr_error);
+				if (ko_vesr_is_duplicate_file($filename)) {
 					unlink($upload_dir.$filename);
+					$notifier->addError(21);
+				} else {
+					$vesr_error = ko_vesr_import($file, $vesr_data, $vesr_done);
+					if($vesr_error) {
+						$notifier->addError($vesr_error);
+						unlink($upload_dir.$filename);
+					}
+				}
+			} else if (strtolower(substr($esrFile['name'], -4)) == '.zip' || strtolower(substr($esrFile['name'], -4)) == '.xml') { // camt import
+
+				$PREVIEW_CAMT_IMPORT = ($_REQUEST['preview'] ? TRUE : FALSE);
+
+				try {
+					if(!$PREVIEW_CAMT_IMPORT) {
+						$upload_dir = $BASE_PATH.'my_images/camt/';
+						$processingFolder = $BASE_PATH.'my_images/camt/';
+
+						if(is_file($upload_dir."done/".$esrFile['name'])) {
+							throw new \LPC\LpcEsr\CashManagement\ProcessingException(getLL('error_admin_24'));
+						}
+
+						move_uploaded_file($esrFile['tmp_name'], $upload_dir.$esrFile['name']);
+
+						$reader = new \LPC\LpcEsr\CashManagement\OfflineReader();
+						$reader->setMessageFolder($processingFolder);
+						$reader->setSourceFolder($upload_dir);
+
+						$processor = new \LPC\LpcEsr\CashManagement\koProcessor;
+						$reader->registerProcessor($processor);
+						$reader->readAll();
+						$vesr_camt_done = $processor->getDoneRows();
+						$vesr_camt_total = $processor->getDoneTotal();
+					} else {
+						$reader = new \LPC\LpcEsr\CashManagement\OfflineReader();
+						$reader->parseXml(file_get_contents($esrFile['tmp_name']),$esrFile['name']);
+						$camtImport = $reader->getMessagesToProcess();
+					}
+				} catch(\LPC\LpcEsr\CashManagement\ParsingException $ex) {
+					$notifier->addError(23, $do_action);
+					ko_log('camt_parse_error', 'Error while parsing ' . ($upload_dir.$esrFile['name']) .' '. $ex->getMessage());
+				}
+				catch(\LPC\LpcEsr\CashManagement\ProcessingException $ex) {
+					$notifier->addError(24, $do_action);
+					ko_log('camt_parse_error', 'Error while parsing ' . ($upload_dir.$esrFile['name']) .' '. $ex->getMessage());
+				}
+			} else { // mt940 import
+
+				$upload_dir = $BASE_PATH.'my_images/mt940/';
+				$filename = 'vesr_'.date('Ymd_His').'.txt';
+				move_uploaded_file($esrFile['tmp_name'], $upload_dir.$filename);
+
+				class Zkb extends \Kingsquare\Parser\Banking\Mt940\Engine
+				{
+					/**
+					 * returns the name of the bank.
+					 *
+					 * @return string
+					 */
+					protected function parseStatementBank()
+					{
+						return 'ZKB';
+					}
+
+					/**
+					 * Overloaded: Is applicable if second line has ZKB.
+					 *
+					 * {@inheritdoc}
+					 */
+					public static function isApplicable($string)
+					{
+						$firstLine = strtok($string, "\n\r");
+						return strpos($firstLine, 'ZKB') !== false;
+					}
+
+					/**
+					 * uses the 61 field to determine the value timestamp.
+					 *
+					 * @return int
+					 */
+					protected function parseTransactionValueTimestamp()
+					{
+						$results = [];
+						if (preg_match_all('/[:\n]?24:(\d{6})/s', $this->getCurrentTransactionData(), $results)
+							&& !empty($results[1])
+						) {
+							return $this->sanitizeTimestamp($results[1], 'ymd');
+						}
+
+						return $this->parseTransactionTimestamp('61');
+					}
+
+					/**
+					 * @param string $string
+					 *
+					 * @return string
+					 */
+					protected function sanitizeDescription($string)
+					{
+						$string = preg_replace('/\r+/', '', trim($string));
+						$string = preg_replace('/\?(\d+|ZKB|ZI):[^\n:\?]*/', '', $string);
+						return trim(preg_replace('/\n+/', "\n", $string));
+					}
+
+
+				}
+
+				$parser = new \Kingsquare\Parser\Banking\Mt940();
+				\Kingsquare\Parser\Banking\Mt940\Engine::registerEngine(Zkb::class, 1);
+				$parsedStatements = $parser->parse(file_get_contents($upload_dir.$filename));
+
+				$allAccounts = db_select_data('ko_donations_accounts', "WHERE 1=1");
+				foreach ($allAccounts as &$account) {
+					$account['search_name'] = strtolower(str_replace(array(' ', "'", '"', '+', '-', '.', ','), array('', '', '', '', '', '', ''), $account['name']));
+					$account['search_number'] = strtolower(str_replace(array(' ', "'", '"', '+', '-', '.', ','), array('', '', '', '', '', '', ''), $account['number']));
+				}
+
+				$nNewMods = 0;
+				foreach ($parsedStatements as $statement) {
+					foreach ($statement->getTransactions() as $transaction) {
+						// Skip payments (Debit) in import
+						if ($transaction->getDebitCredit() == "D") { continue; }
+
+						$comment = $transaction->getDescription();
+						$searchComment = strtolower(str_replace(array(' ', "'", '"', '+', '-', '.', ','), array('', '', '', '', '', '', ''), $comment));
+						$account = NULL;
+						foreach ($allAccounts as $a) {
+							if (strpos($searchComment, $account['search_name']) !== FALSE || strpos($searchComment, $account['search_number']) !== FALSE) {
+								$account = $a;
+								break;
+							}
+						}
+						if ($account) $accountId = $account['id'];
+						else $accountId = 0;
+
+						$commentLines = ko_array_filter_empty(explode("\n", $comment));
+						$foundAddress = ko_fuzzy_address_search($commentLines, $transaction->getAccountName());
+						
+						$donationMod = array(
+							'date' => $transaction->getEntryTimestamp('Y-m-d'),
+							'account' => $accountId,
+							'amount' => $transaction->getPrice(),
+							'valutadate' => $transaction->getValueTimestamp('Y-m-d'),
+							'comment' => $transaction->getDescription(),
+							'_crdate' => date('Y-m-d H:i:s'),
+							'_cruser' => $_SESSION['ses_userid'],
+							'_p_firm' => $foundAddress['firm'],
+							'_p_department' => $foundAddress['department'],
+							'_p_adresse' => $foundAddress['address'],
+							'_p_adresse_zusatz' => $foundAddress['postfach'],
+							'_p_plz' => $foundAddress['zip'],
+							'_p_ort' => $foundAddress['city'],
+						);
+						db_insert_data('ko_donations_mod', $donationMod);
+						$nNewMods++;
+					}
+				}
+				if ($nNewMods > 0) {
+					$notifier->addInfo(11, '', array($nNewMods));
+				} else {
+					$notifier->addError(22);
 				}
 			}
+
 		} else {
 			$notifier->addError(20);
 		}
@@ -1620,15 +1940,21 @@ switch($do_action) {
 		$_SESSION['show'] = 'vesr_import';
 	break;
 
+	case 'vesr_archive':
+		if($access['vesr'] < 1) break;
+
+		$_SESSION['show'] = 'vesr_archive';
+	break;
+
 	case 'vesr_settings':
-		if ($access['vesr'] < 2) continue;
+		if ($access['vesr'] < 2) break;
 
 		$_SESSION['show_back'] = $_SESSION['show'];
 		$_SESSION['show'] = 'vesr_settings';
 	break;
 
 	case 'submit_vesr_settings':
-		if ($access['vesr'] < 2) continue;
+		if ($access['vesr'] < 2) break;
 
 		ko_set_setting('vesr_import_email_host', format_userinput($_POST['txt_vesr_import_email_host'], 'text'));
 		ko_set_setting('vesr_import_email_user', format_userinput($_POST['txt_vesr_import_email_user'], 'text'));
@@ -1640,12 +1966,48 @@ switch($do_action) {
 		ko_set_setting('vesr_import_email_pass', $value);
 		ko_set_setting('vesr_import_email_ssl', format_userinput($_POST['chk_vesr_import_email_ssl'], 'uint'));
 		ko_set_setting('vesr_import_email_port', format_userinput($_POST['chk_vesr_import_email_port'], 'uint'));
-		ko_set_setting('vesr_import_email_report_address', format_userinput($_POST['txt_vesr_import_email_report_address'], 'email'));
+		ko_set_setting('vesr_import_email_report_address', format_userinput($_POST['txt_vesr_import_email_report_address'], 'email', FALSE, 0, array(), ','));
+
+		if ($_SESSION['ses_userid'] == ko_get_root_id()) {
+			ko_set_setting('camt_import_port', $_POST['txt_camt_import_port']);
+			ko_set_setting('camt_import_user', $_POST['txt_camt_import_user']);
+			ko_set_setting('camt_import_host', $_POST['txt_camt_import_host']);
+			ko_set_setting('camt_import_public_key', str_replace("\n", "\r\n", str_replace("\r", '', $_POST['txt_camt_import_public_key'])));
+			ko_set_setting('camt_import_private_key', str_replace("\n", "\r\n", str_replace("\r", '', $_POST['txt_camt_import_private_key'])));
+			ko_set_setting('currencyconverterapi_key', $_POST['txt_currencyconverterapi_key']);
+		}
 
 		$_SESSION['show'] = $_SESSION['show_back'] ? $_SESSION['show_back'] : 'show_logins';
 	break;
 
+	case 'google_cloud_printers':
+		if ($access['admin']['MAX'] < 5) break;
 
+		$_SESSION['show'] = 'google_cloud_printers';
+	break;
+
+	case 'qz_tray_printers':
+		if ($access['admin']['MAX'] < 5) break;
+
+		$_SESSION['show'] = 'qz_tray_printers';
+	break;
+
+	case 'refresh_google_cloud_printers':
+		if ($access['admin']['MAX'] < 5) break;
+
+		ko_update_google_cloud_printers();
+
+		$task = db_select_data('ko_scheduler_tasks', "WHERE `call` = 'ko_task_update_google_cloud_printers'", '*', '', '', TRUE);
+		if ($task['status'] == 0) {
+			db_update_data('ko_scheduler_tasks', "WHERE `call` = 'ko_task_update_google_cloud_printers'", array('status' => 1));
+		}
+	break;
+
+	case 'show_pubkey':
+		if($_SESSION['ses_userid'] == ko_get_root_id()) {
+			$_SESSION['show'] = 'show_pubkey';
+		}
+	break;
 
 	//Default:
   default:
@@ -1689,9 +2051,6 @@ if(!$_SESSION['sort_news_order']) $_SESSION['sort_news_order'] = 'DESC';
 
 //Include submenus
 ko_set_submenues();
-
-//Smarty-Templates-Engine laden
-require("$ko_path/inc/smarty.inc");
 ?>
 <!DOCTYPE html 
   PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
@@ -1784,6 +2143,13 @@ switch($_SESSION["show"]) {
 	case "new_label":
 		ko_admin_formular_labels(($_SESSION['show'] == 'new_label' ? 'new' : 'edit'), $id);
 	break;
+	case "list_detailed_person_exports";
+		ko_admin_list_detailed_person_exports();
+	break;
+	case "edit_detailed_person_export":
+	case "new_detailed_person_export":
+		ko_admin_formular_detailed_person_export(($_SESSION['show'] == 'new_detailed_person_export' ? 'new' : 'edit'), $id);
+	break;
 	case "set_leute_pdf";
 		ko_list_leute_pdf();
 	break;
@@ -1837,9 +2203,43 @@ switch($_SESSION["show"]) {
 	break;
 	case 'vesr_import':
 		if(isset($vesr_data) && isset($vesr_done) && is_array($vesr_data)) {
-			ko_vesr_overview($vesr_data, $vesr_done);
+			$reportAttachment = ko_vesr_v11_overview($vesr_data, $vesr_done, TRUE, TRUE);
+			$report['mails'][0]['attachments'][] = getLL('filename') . ': ' . $esrFile['name'] . "<br>" . $reportAttachment;
+			$total = $vesr_data['totals'];
+			$total['total'] = $vesr_data['total'];
+			$reportfile = ko_vesr_create_reportattachment(array($esrFile['name']), $total, $vesr_done, "v11");
+			$attachment = Swift_Attachment::newInstance($reportfile->Output('','S'),'report_esr_import.pdf','application/pdf');
+			ko_vesr_send_emailreport($report, 'v11', [$attachment]);
 		}
+		if (isset($vesr_camt_done) && isset($vesr_camt_total) && is_array($vesr_camt_done)) {
+			$reportAttachment = ko_vesr_camt_overview($vesr_camt_total, $vesr_camt_done, TRUE, TRUE);
+			$report['mails'][0]['attachments'][] = getLL('filename') . ': ' . $esrFile['name'] . "<br>" . $reportAttachment;
+			if (!$PREVIEW_CAMT_IMPORT) {
+				$reportfile = ko_vesr_create_reportattachment(array($esrFile['name']), $vesr_camt_total, $vesr_camt_done,  "camt");
+				$attachment = Swift_Attachment::newInstance($reportfile->Output('','S'),'report_esr_import.pdf','application/pdf');
+				ko_vesr_send_emailreport($report, 'camt', [$attachment]);
+			}
+		}
+
+		if ($PREVIEW_CAMT_IMPORT) {
+			ko_vesr_camt_preview($camtImport);
+		}
+
 		ko_show_vesr_import();
+	break;
+	case 'vesr_archive':
+		ko_admin_vesr_archive();
+	break;
+
+	case 'google_cloud_printers':
+		ko_list_google_cloud_printers();
+	break;
+	case 'qz_tray_printers':
+		ko_list_qz_tray_printers();
+	break;
+
+	case 'show_pubkey':
+		ko_admin_show_pubkey();
 	break;
 
 	default:

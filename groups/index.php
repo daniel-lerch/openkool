@@ -2,7 +2,7 @@
 /***************************************************************
 *  Copyright notice
 *
-*  (c) 2003-2015 Renzo Lauper (renzo@churchtool.org)
+*  (c) 2003-2017 Renzo Lauper (renzo@churchtool.org)
 *  All rights reserved
 *
 *  This script is part of the kOOL project. The kOOL project is
@@ -31,14 +31,19 @@ ob_start();  //Ausgabe-Pufferung starten
 $ko_path = "../";
 $ko_menu_akt = "groups";
 
-include($ko_path . "inc/ko.inc");
-include("inc/groups.inc");
+include_once($ko_path . "inc/ko.inc");
+include_once("inc/groups.inc");
 
 //Redirect to SSL if needed
 ko_check_ssl();
 
 if(!ko_module_installed("groups")) {
-	header("Location: ".$BASE_URL."index.php");  //Absolute URL
+	header("Location: ".$BASE_URL."index.php"); exit;
+}
+
+//Don't allow checkin user
+if($_SESSION['ses_userid'] == ko_get_checkin_user_id()) {
+	header('Location: '.$BASE_URL.'index.php'); exit;
 }
 
 ob_end_flush();  //Puffer flushen
@@ -49,12 +54,11 @@ $notifier = koNotifier::Instance();
 ko_get_access('groups');
 
 //kOOL Table Array
-ko_include_kota(array('ko_groups', 'ko_grouproles', 'ko_groups_datafields'));
+ko_include_kota(array('ko_groups', 'ko_grouproles', 'ko_groups_datafields', 'ko_groups_assignment_history'));
 
 
 //Alle Gruppen einlesen
 ko_get_groups($all_groups);
-
 
 //*** Plugins einlesen:
 $hooks = hook_include_main("groups");
@@ -82,7 +86,44 @@ switch($do_action) {
 			if($_GET["gid"] == "NULL") $_SESSION["show_gid"] = "NULL";
 			else $_SESSION["show_gid"] = format_userinput($_GET["gid"], "uint");
 		} else {
-			if(!isset($_SESSION["show_gid"]) || ko_get_userpref($_SESSION["ses_userid"], "groups_show_top") == 1) $_SESSION["show_gid"] = "NULL";
+			if(!isset($_SESSION["show_gid"])) {
+				$_SESSION['show_gid'] = 'NULL';
+				if(ko_get_userpref($_SESSION["ses_userid"], "groups_show_top") == 1) {
+					$_SESSION["show_gid"] = "NULL";
+				} else {
+					//If read access is not given for all groups:
+					// Go as deep into the group structure as possible, by opening all groups where there
+					// is access to only one group on this level
+					if($access['groups']['ALL'] < 1) {
+						$allIds = array_filter(array_keys($access['groups']), function($e) {return is_numeric($e);});
+						$topIds = array();
+						if(sizeof($allIds) > 0) {
+							$topIds = db_select_data('ko_groups', "WHERE `pid` IS NULL AND `id` IN (".implode(',', $allIds).")", 'id,pid');
+						}
+						if(sizeof($topIds) == 1) {
+							$stop = FALSE;
+							$parentId = array_pop(array_keys($topIds));
+							$counter = 0;
+							while(!$stop) {
+								$counter++;
+								if($counter > 100) $stop = TRUE;
+								$childrenIds = db_select_data('ko_groups', "WHERE `pid` = '$parentId' AND `id` IN (".implode(',', $allIds).")", 'id,pid');
+								if(sizeof($childrenIds) > 1) {
+									$stop = TRUE;
+								} else if(sizeof($childrenIds) < 1) {
+									$stop = TRUE;
+									$parentId = $lastParentId;
+								} else {
+									$lastParentId = $parentId ? $parentId : 'NULL';
+									$parentId = array_pop(array_keys($childrenIds));
+								}
+							}
+							$_SESSION['show_gid'] = $parentId;
+						}
+					}
+				}
+
+			}
 		}
 
 		$id = $_SESSION["show_gid"];
@@ -99,13 +140,13 @@ switch($do_action) {
 	break;
 
 	case "list_roles":
-		if($access['groups']['MAX'] < 1) continue;
+		if($access['groups']['MAX'] < 1) break;
 		$_SESSION["show"] = "list_roles";
 		$_SESSION["show_back"] = $_SESSION["show"];
 	break;
 
 	case "list_datafields":
-		if($access['groups']['MAX'] < 3) continue;
+		if($access['groups']['MAX'] < 3) break;
 		$_SESSION["show"] = "list_datafields";
 		$_SESSION["show_back"] = $_SESSION["show"];
 	break;
@@ -115,7 +156,7 @@ switch($do_action) {
 	break;
 
 	case "exportxls":
-		if($access['groups']['MAX'] < 1) continue;
+		if($access['groups']['MAX'] < 1) break;
 
 		//Gruppen
 		ko_get_grouproles($roles);
@@ -153,7 +194,6 @@ switch($do_action) {
 		$gs_pid = ko_get_setting('daten_gs_pid');
 		$headerrow[] = getLL('kota_ko_groups_description');
 		if($gs_pid) $headerrow[] = getLL('groups_listheader_event');
-		$headerrow[] = getLL('kota_ko_groups_start');
 		$headerrow[] = getLL('kota_ko_groups_stop');
 		$headerrow[] = getLL('kota_listview_ko_groups_nump');
 		$headerrow[] = getLL('kota_ko_groups_maxcount');
@@ -198,8 +238,7 @@ switch($do_action) {
 				}
 			}
 
-			//Start and stop
-			$data[$rowcounter][] = $grp['start'] != '0000-00-00' ? strftime($DATETIME['dmY'], strtotime($grp['start'])) : '-';
+			//Stop
 			$data[$rowcounter][] = $grp['stop'] != '0000-00-00' ? strftime($DATETIME['dmY'], strtotime($grp['stop'])) : '-';
 
 			//Total number of assigned addresses
@@ -244,22 +283,22 @@ switch($do_action) {
 	  * Neu
 		*/
 	case "new_group":
-		if($access['groups']['MAX'] < 3) continue;
+		if($access['groups']['MAX'] < 3) break;
 		$_SESSION["show"] = "new_group";
 		$onload_code = "form_set_first_input();".$onload_code;
 	break;
 
 
 	case "submit_new_group":
-		if($access['groups']['MAX'] < 3) continue;
+		if($access['groups']['MAX'] < 3) break;
 
 		$data = array();
 		$data['pid']             = format_userinput($_POST['sel_parentgroup'], 'uint');
 		$data['pid']             = $data['pid'] ? $data['pid'] : 'NULL';
 
 		//Access check for pid
-		if($data['pid'] == 'NULL' && $access['groups']['ALL'] < 3) continue;
-		if($data['pid'] != 'NULL' && $access['groups']['ALL'] < 3 && $access['groups'][$data['pid']] < 3) continue;
+		if($data['pid'] == 'NULL' && $access['groups']['ALL'] < 3) break;
+		if($data['pid'] != 'NULL' && $access['groups']['ALL'] < 3 && $access['groups'][$data['pid']] < 3) break;
 
 		$data['linked_group']             = format_userinput($_POST['sel_linked_group'], 'uint');
 		$data['linked_group']             = $data['linked_group'] ? $data['linked_group'] : 'NULL';
@@ -268,7 +307,6 @@ switch($do_action) {
 
 		$data["name"]            = format_userinput($_POST["txt_name"], "js");
 		$data["description"]     = format_userinput($_POST["txt_description"], "text");
-		$data["start"]           = sql_datum(format_userinput($_POST["txt_datum"], "date"));
 		$data["stop"]            = sql_datum(format_userinput($_POST["txt_datum2"], "date"));
 		$data['deadline']        = sql_datum(format_userinput($_POST['txt_deadline'], 'date'));
 		$data["roles"]           = format_userinput($_POST["sel_roles"], "intlist");
@@ -292,6 +330,7 @@ switch($do_action) {
 			$data['mailing_reply_to'] = format_userinput($_POST['sel_mailing_reply_to'], 'alpha');
 			$data['mailing_modify_rcpts'] = format_userinput($_POST['sel_mailing_modify_rcpts'], 'uint');
 			$data['mailing_rectype'] = format_userinput($_POST['sel_mailing_rectype'], 'alpha');
+			$data['mailing_crm_project_id'] = format_userinput($_POST['sel_mailing_crm_project_id'],'uint');
 
 			$data['mailing_prefix']  = format_userinput($_POST["txt_mailing_prefix"], "text");
 		}
@@ -322,6 +361,14 @@ switch($do_action) {
 
 		//In DB Speichern
 		$new_id = db_insert_data("ko_groups", $data);
+
+		if(ko_module_installed("taxonomy")) {
+			$taxonomy_terms = explode(",", format_userinput($_POST["terms"], "intlist"));
+			ko_taxonomy_clear_terms_on_node("ko_groups", $new_id);
+			ko_taxonomy_attach_terms_to_node($taxonomy_terms, "ko_groups", $new_id);
+		}
+
+		$GLOBALS['insertedIds']['ko_groups'][] = $new_id;
 		ko_get_groups($all_groups);
 		//Loggen
 		ko_log_diff("new_group", $data);
@@ -332,14 +379,14 @@ switch($do_action) {
 
 
 	case "new_role":
-		if($access['groups']['MAX'] < 3) continue;
+		if($access['groups']['MAX'] < 3) break;
 
 		$_SESSION["show"] = "new_role";
 		$onload_code = "form_set_first_input();".$onload_code;
 	break;
 
 	case 'submit_new_role':
-		if($access['groups']['MAX'] < 3) continue;
+		if($access['groups']['MAX'] < 3) break;
 
 		kota_submit_multiedit('', 'new_role', $changes);
 		if(!$notifier->hasErrors()) {
@@ -351,7 +398,7 @@ switch($do_action) {
 
 
 	case 'submit_as_new_role':
-		if($access['groups']['MAX'] < 3) continue;
+		if($access['groups']['MAX'] < 3) break;
 
 		list($table, $columns, $ids, $hash) = explode('@', $_POST['id']);
 		//Fake POST[id] for kota_submit_multiedit() to remove the id from the data. Otherwise this entry will be edited.
@@ -384,14 +431,13 @@ switch($do_action) {
 
 	case "submit_edit_group":
 		$id = format_userinput($_POST["id"], "uint");
-		if($access['groups']['ALL'] < 3 && $access['groups'][$id] < 3) continue;
+		if($access['groups']['ALL'] < 3 && $access['groups'][$id] < 3) break;
 
 		$old_group = $all_groups[$id];
 
 		$data = array();
 		$data["name"]            = format_userinput($_POST["txt_name"], "js");
 		$data["description"]     = format_userinput($_POST["txt_description"], "text");
-		$data["start"]           = sql_datum(format_userinput($_POST["txt_datum"], "date"));
 		$data["stop"]            = sql_datum(format_userinput($_POST["txt_datum2"], "date"));
 		$data['deadline']        = sql_datum(format_userinput($_POST['txt_deadline'], 'date'));
 		$data["linked_group"]    = format_userinput($_POST["sel_linked_group"], "uint");
@@ -410,9 +456,17 @@ switch($do_action) {
 			$data['mailing_reply_to'] = format_userinput($_POST['sel_mailing_reply_to'], 'alpha');
 			$data['mailing_modify_rcpts'] = format_userinput($_POST['sel_mailing_modify_rcpts'], 'uint');
 			$data['mailing_rectype'] = format_userinput($_POST['sel_mailing_rectype'], 'alpha');
+			$data['mailing_crm_project_id'] = format_userinput($_POST['sel_mailing_crm_project_id'],'uint');
 
 			$data['mailing_prefix']  = format_userinput($_POST["txt_mailing_prefix"], "text");
 		}
+
+		if(ko_module_installed("taxonomy")) {
+			$taxonomy_terms = explode(",", format_userinput($_POST["terms"], "intlist"));
+			ko_taxonomy_clear_terms_on_node("ko_groups", $id);
+			ko_taxonomy_attach_terms_to_node($taxonomy_terms, "ko_groups", $id);
+		}
+
 		$data["roles"]           = format_userinput($_POST["sel_roles"], "intlist");
 		$data["type"]            = format_userinput($_POST["chk_type"], "uint");
 		$data["ezmlm_list"]      = format_userinput($_POST["txt_ezmlm_list"], "email");
@@ -504,7 +558,7 @@ switch($do_action) {
 
 	case "edit_role":
 		$edit_id = format_userinput($_POST["id"], "uint");
-		if($access['groups']['MAX'] < 3) continue;
+		if($access['groups']['MAX'] < 3) break;
 
 		//Check for access level 3 for all group this role is being used in
 		$groups = db_select_data("ko_groups", "WHERE `roles` LIKE '$edit_id'");
@@ -520,7 +574,7 @@ switch($do_action) {
 
 
 	case 'submit_edit_role':
-		if($access['groups']['MAX'] < 3) continue;
+		if($access['groups']['MAX'] < 3) break;
 
 		list($table, $col, $edit_id) = explode('@', $_POST['id']);
 
@@ -544,7 +598,7 @@ switch($do_action) {
 
 	case "edit_datafield":
 		$edit_id = format_userinput($_POST["id"], "uint");
-		if($access['groups']['MAX'] < 3) continue;
+		if($access['groups']['MAX'] < 3) break;
 
 		$_SESSION["show"] = "edit_datafield";
 		$onload_code = "form_set_first_input();".$onload_code;
@@ -552,7 +606,7 @@ switch($do_action) {
 
 
 	case "submit_edit_datafield":
-		if($access['groups']['MAX'] < 3) continue;
+		if($access['groups']['MAX'] < 3) break;
 
 		kota_submit_multiedit('', 'edit_datafield');
 		if(!$notifier->hasErrors()) {
@@ -560,6 +614,66 @@ switch($do_action) {
 			$notifier->addInfo(2, $do_action);
 		}
 		$_SESSION['show'] = 'list_datafields';
+	break;
+
+	case "submit_delete_assignment_history_entry":
+		list($table, $col, $edit_id) = explode('@', $_POST['id']);
+		$where = " AND `id` = {$edit_id} AND stop < NOW() AND stop IS NOT null";
+		if(db_get_count('ko_groups_assignment_history', 'id',$where) != 1) break;
+		db_delete_data("ko_groups_assignment_history", "WHERE 1=1 " . $where);
+	break;
+
+	case "submit_edit_assignment_history_entry":
+		list($table, $col, $edit_id) = explode('@', $_POST['id']);
+
+		if ($table != 'ko_groups_assignment_history') break;
+		$editEntry = db_select_data('ko_groups_assignment_history', "WHERE `id` = {$edit_id}", '*', '', '', TRUE);
+		if (!$editEntry || $editEntry['id'] != $edit_id) break;
+		$group_id = zerofill($editEntry['group_id'], 6);
+
+		if (!$access['leute']) ko_get_access('leute');
+		$accessGroups = max($access['groups']['ALL'], $access['groups'][$group_id]);
+		$accessLeute = max($access['leute']['ALL'], $access['leute'][$editEntry['person_id']]);
+		if($accessGroups < 2 || $accessLeute < 2) break;
+
+		$entry = array();
+		foreach($_POST['koi']['ko_groups_assignment_history'] as $col => $v) {
+			if ($col == 'start' || $col == 'stop') {
+				$entry[$col] = sql_datetime($v[$edit_id]);
+			} else {
+				$entry[$col] = $v[$edit_id];
+			}
+		}
+		foreach (array('id', 'person_id', 'group_id', 'role_id', 'start_is_exact', 'stop_is_exact') as $f) {
+			$entry[$f] = $editEntry[$f];
+		}
+
+		$error = ko_groups_assignment_history_check_entry($entry);
+		if ($error) {
+			switch ($error) {
+				case 1:
+					$notifier->addError(6, $do_action);
+					break;
+				case 2:
+					$notifier->addError(7, $do_action);
+					break;
+				case 3:
+					$notifier->addError(8, $do_action);
+					break;
+				case 4:
+					$notifier->addError(9, $do_action);
+					break;
+				case 5:
+					$notifier->addError(10, $do_action);
+					break;
+			}
+		} else {
+			kota_submit_multiedit('', 'edit_assignment_history_entry');
+		}
+
+		if(!$notifier->hasErrors()) {
+			$notifier->addInfo(8, $do_action);
+		}
 	break;
 
 
@@ -586,6 +700,8 @@ switch($do_action) {
 			ko_update_groups_and_roles($del_id);
 			//Remove connection of events to this group (from group subscriptions)
 			db_update_data('ko_event', "WHERE `gs_gid` LIKE 'g$del_id%'", array('gs_gid' => ''));
+
+			ko_taxonomy_delete_node($del_id, "ko_groups");
 
 			$notifier->addInfo(1, $do_action);
 		}
@@ -635,6 +751,8 @@ switch($do_action) {
 			ko_log_diff("del_grouprole", $old_role[$del_id]);
 			ko_update_grouprole_filter();
 
+			ko_groups_assignment_history_handle_removed_roles();
+
 			$notifier->addInfo(1, $do_action);
 		}
 		$_SESSION["show"] = "list_roles";
@@ -644,14 +762,14 @@ switch($do_action) {
 
 	case "delete_datafield":
 		$del_id = format_userinput($_POST["id"], "uint");
-		if($access['groups']['MAX'] < 3) continue;
+		if($access['groups']['MAX'] < 3) break;
 
 		//Prüfen, ob Datenfeld noch irgendwo verwendet wird, dann kann man es nicht löschen
 		$num = db_get_count("ko_groups", "id", "AND `datafields` REGEXP '$del_id'");
 		if($num == 0) {
-			$old = db_select_data("ko_groups_datafields", "WHERE `id` = '$del_id'");
+			$old = db_select_data("ko_groups_datafields", "WHERE `id` = '$del_id'", '*', '', '', TRUE);
 			db_delete_data("ko_groups_datafields", "WHERE `id` = '$del_id'");
-			ko_log("del_datafield", $old["description"]." (".$old["type"].")");
+			ko_log_diff("del_datafield", $old);
 		}
 	break;
 
@@ -662,12 +780,9 @@ switch($do_action) {
 		ko_save_userpref($_SESSION['ses_userid'], 'show_limit_groups', format_userinput($_POST['txt_limit_groups'], 'uint'));
 		ko_save_userpref($_SESSION['ses_userid'], 'default_view_groups', format_userinput($_POST['sel_default_view'], 'js'));
 		ko_save_userpref($_SESSION['ses_userid'], 'show_passed_groups', format_userinput($_POST['chk_show_passed_groups'], 'uint'));
+		ko_save_userpref($_SESSION['ses_userid'], 'groups_people_include_start', format_userinput($_POST['chk_groups_people_include_start'], 'uint'));
 		ko_save_userpref($_SESSION['ses_userid'], 'groups_filterlink_add_column', format_userinput($_POST['chk_groups_filterlink_add_column'], 'uint'));
 		ko_save_userpref($_SESSION['ses_userid'], 'groups_show_top', format_userinput($_POST['chk_groups_show_top'], 'uint'));
-
-		if ($access['groups']['ALL'] && ko_module_installed('mailing')) {
-			ko_set_setting('group_mailing_from_email', format_userinput($_POST['txt_group_mailing_from_email'], 'email'));
-		}
 
 		$_SESSION['show'] = $_SESSION['show_back'] ? $_SESSION['show_back'] : 'groups_settings';
 	break;
@@ -676,7 +791,7 @@ switch($do_action) {
 
 
 	case "multiedit":
-		if($access['groups']['MAX'] < 3) continue;
+		if($access['groups']['MAX'] < 3) break;
 
 		//Zu bearbeitende Spalten
 		$columns = explode(",", format_userinput($_POST["id"], "alphanumlist"));
@@ -735,10 +850,10 @@ switch($do_action) {
 
 	case "submit_multiedit":
 		if($_SESSION["show"] == "multiedit") {
-			if($access['groups']['MAX'] < 3) continue;
+			if($access['groups']['MAX'] < 3) break;
 			kota_submit_multiedit(3);
 		} else if($_SESSION["show"] == "multiedit_roles") {
-			if($access['groups']['MAX'] < 3) continue;
+			if($access['groups']['MAX'] < 3) break;
 			kota_submit_multiedit(3);
 		}
 
@@ -749,14 +864,14 @@ switch($do_action) {
 
 
 	case 'set_dffilter':
-		if($access['groups']['ALL'] < 3) continue;
+		if($access['groups']['ALL'] < 3) break;
 		$_SESSION['groups_show_hidden_datafields'] = TRUE;
 		ko_save_userpref($_SESSION['ses_userid'], 'groups_show_hidden_datafields', 1);
 	break;
 
 
 	case 'unset_dffilter':
-		if($access['groups']['ALL'] < 3) continue;
+		if($access['groups']['ALL'] < 3) break;
 		$_SESSION['groups_show_hidden_datafields'] = FALSE;
 		ko_save_userpref($_SESSION['ses_userid'], 'groups_show_hidden_datafields', 0);
 	break;
@@ -766,7 +881,7 @@ switch($do_action) {
 
 	case 'export_pdf':
 		$layout_id = format_userinput($_GET['layout_id'], 'uint');
-		if(!$layout_id) continue;
+		if(!$layout_id) break;
 
 		$layout = db_select_data('ko_pdf_layout', "WHERE `id` = '$layout_id'", '*', '', '', TRUE);
 		if($layout['data'] != '' && substr($layout['data'], 0, 4) == 'FCN:' && function_exists(substr($layout['data'], 4))) {
@@ -784,24 +899,35 @@ switch($do_action) {
 
 	case 'export_xls_with_people':
 		$presetId = format_userinput($_GET['preset_id'], 'uint');
-		$preset = db_select_data('ko_userprefs', "WHERE `id` = {$presetId}", '*', '', '', TRUE);
-		if (!$preset || $preset['id'] != $presetId || !in_array($preset['user_id'], array(-1, $_SESSION['ses_userid']))) continue;
+		if ($presetId != '') {
+			$preset = db_select_data('ko_userprefs', "WHERE `id` = {$presetId}", '*', '', '', TRUE);
+			if (!$preset || $preset['id'] != $presetId || !in_array($preset['user_id'], array(-1, $_SESSION['ses_userid']))) break;
+		} else {
+			// no presetId given, so we show default cols
+			$preset['value'] = ko_get_setting("show_leute_cols");
+		}
 
 		$cols = explode(',', $preset['value']);
 
 		if ($_GET['ids']) {
 			$ids = explode(',', format_userinput($_GET['ids'], 'intlist'));
-
 			$ids_ = array();
 			foreach ($ids as $v) {
 				if (!$v) continue;
 				$v = zerofill($v, 6);
+
+				//Check access
 				if ($access['groups']['ALL'] < 1 && $access['groups'][$v] < 1) continue;
+
 				$ids_[] = $v;
 			}
-			$idf = $ids_;
+			if(sizeof($ids_) > 0) {
+				$ids = $ids_;
+			} else {
+				$ids = array($_SESSION['show_gid']);
+			}
 		} else {
-			$ids = array($_SESSION["show_gid"]);
+			$ids = array($_SESSION['show_gid']);
 		}
 
 		$filename = ko_groups_export_xls_with_people($ids, $cols);
@@ -817,20 +943,21 @@ switch($do_action) {
 	case 'copy_group':
 		if (sizeof($_POST['chk']) != 1) {
 			$notifier->addError(4);
-			continue;
+			break;
 		}
 		$id = key($_POST['chk']);
 		if ($access['groups']['ALL'] < 3 && $access['groups'][$id] < 3) {
 			$notifier->addError(5);
-			continue;
+			break;
 		}
 
-		list($oldToNew, $hierarchy) = ko_copy_group_recursively($id);
+		list($oldToNew, $hierarchy) = ko_copy_group_recursively($id, ($_POST['copy_group_type']==2 ? TRUE:FALSE));
 		if (!$notifier->hasErrors()) {
 			ko_groups_get_hierarchy_lines($hierarchy, $lines);
 			$msg = implode("<br>", $lines);
 			$notifier->addInfo(7, '', array($msg));
 
+			reset($oldToNew);
 			$edit_id = current($oldToNew);
 			while (strlen($edit_id) < 6) $edit_id = '0' . $edit_id;
 			$_SESSION['show'] = 'edit_group';
@@ -855,10 +982,18 @@ hook_action_handler_add($do_action);
 
 
 //Reread access rights if necessary
-if(in_array($do_action, array('submit_new_group', 'submit_edit_group', 'delete_group', 'submit_edit_login_rights'))) {
+if(in_array($do_action, array('submit_new_group', 'submit_edit_group', 'delete_group'))) {
 	ko_get_access('groups', '', TRUE);
 	ko_get_groups($all_groups);
 }
+
+
+
+// If we are handling a request that was redirected by /inc/form.php, then exit here
+if ($asyncFormSubmit == 1) {
+	throw new Exception('async-form-submit-dummy-exception');
+}
+
 
 
 //***Defaults einlesen
@@ -874,9 +1009,6 @@ if(!$_SESSION["show_start"]) $_SESSION["show_start"] = 1;
 $_SESSION["show_limit"] = ko_get_userpref($_SESSION["ses_userid"], "show_limit_groups");
 if(!$_SESSION["show_limit"]) $_SESSION["show_limit"] = ko_get_setting("show_limit_groups");
 if(!isset($_SESSION['groups_show_hidden_datafields'])) $_SESSION['groups_show_hidden_datafields'] = ko_get_userpref($_SESSION['ses_userid'], 'groups_show_hidden_datafields');
-
-//Smarty-Templates-Engine laden
-require("$ko_path/inc/smarty.inc");
 
 //Include submenus
 ko_set_submenues();
@@ -894,40 +1026,11 @@ ko_set_submenues();
 print ko_include_css();
 
 $js_files = array();
-if($_SESSION['show'] == 'edit_login_rights') $js_files[] = $ko_path.'inc/selectmenu.js';
 print ko_include_js($js_files);
 
 include($ko_path.'inc/js-sessiontimeout.inc');
 include('inc/js-groups.inc');
 
-
-//Bei der Bearbeitung von Login-Rechten Ajax einbinden und alles für die drei selectmenus
-if($_SESSION['show'] == 'edit_login_rights') {
-	//Show dummy-groups (Platzhalter) because the rights will be propagated downwards to all children
-	$show_all_types = TRUE;
-	//Show all groups, also terminated ones:
-	$show_passed_groups = ko_get_userpref($_SESSION['ses_userid'], 'show_passed_groups');
-	ko_save_userpref($_SESSION['ses_userid'], 'show_passed_groups', 1);
-	//View
-	$list_id = 1;
-	include($ko_path."leute/inc/js-groupmenu.inc");
-	$loadcode = "initList($list_id, document.formular.sel_ds1_sel_rights_view);";
-	//New
-	$list_id = 2;
-	include($ko_path."leute/inc/js-groupmenu.inc");
-	$loadcode .= "initList($list_id, document.formular.sel_ds1_sel_rights_new);";
-	//Edit
-	$list_id = 3;
-	include($ko_path."leute/inc/js-groupmenu.inc");
-	$loadcode .= "initList($list_id, document.formular.sel_ds1_sel_rights_edit);";
-	//Del
-	$list_id = 4;
-	include($ko_path."leute/inc/js-groupmenu.inc");
-	$loadcode .= "initList($list_id, document.formular.sel_ds1_sel_rights_del);";
-	$onload_code = $loadcode.$onload_code;
-	//Reset setting to original value
-	ko_save_userpref($_SESSION['ses_userid'], 'show_passed_groups', $show_passed_groups);
-}
 ?>
 </head>
 
@@ -960,7 +1063,7 @@ hook_show_case_pre($_SESSION["show"]);
 switch($_SESSION["show"]) {
 
 	case "list_groups":
-		ko_groups_list(TRUE, $highlight_group);
+		ko_groups_list($highlight_group);
 	break;
 
 	case "new_group":
@@ -1001,10 +1104,6 @@ switch($_SESSION["show"]) {
 
 	case 'multiedit_roles':
 		ko_multiedit_formular('ko_grouproles', $do_columns, $do_ids, $order, array('cancel' => 'list_roles'));
-	break;
-
-	case "edit_login_rights":
-		ko_groups_rights_formular($edit_id);
 	break;
 
 	case "groups_settings":

@@ -14,6 +14,9 @@
         color: #000;
     }
 
+    a[href]:after {
+        content: none;
+    }
 
 
     table.footer {
@@ -61,6 +64,7 @@
         display: none;
     }
 
+    div.fht-head,
     .ko_list_footer_2,
     th.ko_list_footer{
         display: none;
@@ -110,6 +114,7 @@
     th.list-numberfield,
     th.list-overlay-field,
     th.list-overlay,
+    td.list-action-header,
     td.list-check,
     td.list-family,
     td.list-version,
@@ -139,5 +144,37 @@
     div.rota-statusall,
     div.rota-header {
         display: none;
+    }
+
+    div.paymentList {
+        h3 {
+            display: none;
+        }
+        div.panel {
+            border: none;
+        }
+        div.panel > div.panel-heading {
+            display: none;
+        }
+        li.payment a.btn {
+            display: none;
+        }
+        li.payment {
+            display: none;
+            padding: 10px 0;
+            border: none;
+        }
+        li.payment.in {
+            display: block;
+            page-break-after:always;
+        }
+        li.payment div.title, h2 {
+            font-size: 12pt;
+            line-height:14pt;
+        }
+    }
+
+    #footer {
+        display:none;
     }
 }

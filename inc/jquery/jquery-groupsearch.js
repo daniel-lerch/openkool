@@ -28,7 +28,7 @@
 			adescs: [],
 			atitles: [],
 			value: '',
-			removalWarning: 'do you really want to proceed?',
+			removalWarning: 'Wollen Sie diese Zuweisung wirklich entfernen?',
 			showRemovalWarning: true,
 			disabled: false,
 			exclude: '',
@@ -146,6 +146,8 @@
 			this.updateValue();
 
 			this.listen();
+
+			this.$element.trigger('groupsearch.init');
 		},
 
 		initLayout: function () {
@@ -180,6 +182,25 @@
 				},
 				highlighter: function (item) {
 					return item;
+				},
+				select: function () {
+					var val = this.$menu.find('.active').data('value');
+					var input = this.$element.parent().parent().find('[data-disallowplaceholder="true"]');
+					this.$element.data('active', val);
+					if (this.autoSelect || val) {
+						var newVal = this.updater(val);
+						if (input.data('disallowplaceholder') === true && newVal.placeholder) {
+							alert("Platzhalter können nicht als Gruppe gesetzt werden.");
+							return false; // prevent default selection
+						}
+
+						this.$element
+							.val(this.displayText(newVal) || newVal)
+							.change();
+						this.afterSelect(newVal);
+					}
+
+					return this.hide();
 				}
 			});
 
@@ -203,7 +224,7 @@
 					if (this.disabled) {
 						this.$buttonsWrapper.append('<div class="col-sm-6"><button type="button" style="width:100%" class="btn btn-default btn-sm" title="'+group.title+'" data-id="'+group.id+'" disabled>'+name+'</button></div>');
 					} else {
-						this.$buttonsWrapper.append('<div class="col-sm-6"><button type="button" style="width:100%" class="groupsearch-button btn btn-default btn-sm" title="'+group.title+'" data-id="'+group.id+'">'+name+'<i class="text-danger pull-right fa fa-remove icon-line-height"></i></button></div>');
+						this.$buttonsWrapper.append('<div class="col-sm-6"><button type="button" style="width:100%" class="groupsearch-button btn btn-default btn-sm" title="'+group.title+'" data-id="'+group.id+'"><span class="pull-left">'+name+'</span><i class="text-danger pull-right fa fa-remove icon-line-height"></i></button></div>');
 					}
 				}
 			} else {
@@ -213,7 +234,7 @@
 					if (!this.disabled) removeButtonHtml = '<i class="text-danger pull-right fa fa-remove icon-line-height"></i>';
 					this.$button
 						.show()
-						.html(this.selectedGroups[0].name.replace(/&nbsp;/gi,'')+removeButtonHtml)
+						.html('<span class="pull-left">'+this.selectedGroups[0].name.replace(/&nbsp;/gi,'')+'</span>'+removeButtonHtml)
 						.attr('title', this.selectedGroups[0].title);
 				}
 				else {
@@ -228,7 +249,7 @@
 			this.selectedGroups.forEach(function(group) {
 				values.push(group.id);
 			});
-			this.$element.val(values.join(','));
+			this.$element.val(values.join(',')).trigger("change");
 		},
 
 		listen: function () {
@@ -258,8 +279,13 @@
 			}
 		},
 
-		add: function () {
-			var group = this.$input.typeahead('getActive');
+		add: function (group) {
+			if (typeof(group) == 'undefined') group = this.$input.typeahead('getActive');
+			var input = this.$element.parent().parent().find('[data-disallowplaceholder="true"]');
+			if (input.data('disallowplaceholder') === true  && group.placeholder) {
+				return false; // prevent default selection
+			}
+
 			if (this.multiple) {
 				var found = false;
 				this.selectedGroups.forEach(function(e) {

@@ -2,7 +2,7 @@
 /***************************************************************
 *  Copyright notice
 *
-*  (c) 2003-2015 Renzo Lauper (renzo@churchtool.org)
+*  (c) 2003-2017 Renzo Lauper (renzo@churchtool.org)
 *  All rights reserved
 *
 *  This script is part of the kOOL project. The kOOL project is
@@ -38,7 +38,7 @@ include("inc/donations.inc");
 ko_check_ssl();
 
 if(!ko_module_installed("donations")) {
-	header("Location: ".$BASE_URL."index.php");  //Absolute URL
+	header("Location: ".$BASE_URL."index.php"); exit;
 }
 
 ob_end_flush();  //Puffer flushen
@@ -51,9 +51,6 @@ $notifier = koNotifier::Instance();
 
 //*** Rechte auslesen
 ko_get_access('donations');
-
-//Smarty-Templates-Engine laden
-require("$ko_path/inc/smarty.inc");
 
 //kOOL Table Array
 ko_include_kota(array('ko_donations', 'ko_donations_accounts'));
@@ -82,25 +79,25 @@ switch($do_action) {
 
 	// Display
 	case 'list_donations':
-		if($access['donations']['MAX'] < 1) continue;
+		if($access['donations']['MAX'] < 1) break;
 		if($_SESSION['show'] == 'list_donations') $_SESSION['show_start'] = 1;
 		$_SESSION['show'] = 'list_donations';
 	break;
 
 	case "list_accounts":
-		if($access['donations']['MAX'] < 4) continue;
+		if($access['donations']['MAX'] < 4) break;
 		if($_SESSION['show'] == 'list_accounts') $_SESSION['show_start'] = 1;
 		$_SESSION['show'] = 'list_accounts';
 	break;
 
 	case "list_reoccuring_donations":
-		if($access['donations']['MAX'] < 1) continue;
+		if($access['donations']['MAX'] < 1) break;
 		$_SESSION["show"] = "list_reoccuring_donations";
 		$_SESSION["show_start"] = 1;
 	break;
 
 	case "list_donations_mod":
-		if($access['donations']['MAX'] < 1) continue;
+		if($access['donations']['MAX'] < 1) break;
 		$_SESSION["show"] = "list_donations_mod";
 		$_SESSION["show_start"] = 1;
 	break;
@@ -111,21 +108,21 @@ switch($do_action) {
 
 	//Neu:
 	case 'new_donation':
-		if($access['donations']['MAX'] < 2) continue;
+		if($access['donations']['MAX'] < 2) break;
 
 		$_SESSION['show'] = 'new_donation';
 		$onload_code = 'form_set_first_input();'.$onload_code;
 	break;
 
 	case 'new_promise':
-		if($access['donations']['MAX'] < 2) continue;
+		if($access['donations']['MAX'] < 2) break;
 
 		$_SESSION['show'] = 'new_promise';
 		$onload_code = 'form_set_first_input();'.$onload_code;
 	break;
 
 	case 'submit_new_donation':
-		if($access['donations']['MAX'] < 2) continue;
+		if($access['donations']['MAX'] < 2) break;
 
 		kota_submit_multiedit('', 'new_donation', $changes);
 
@@ -140,11 +137,14 @@ switch($do_action) {
 				$info_txt_add .= $k.': <b>'.$v.'</b>, ';
 			}
 			if($info_txt_add != '') $info_txt_add = '<br />'.substr($info_txt_add, 0, -2); // TODO:
+
+			//Don't set person again for new form
+			unset($_POST['koi']['ko_donations']['person'][0]);
 		}
 	break;
 
 	case 'submit_as_new_donation':
-		if($access['donations']['MAX'] < 2) continue;
+		if($access['donations']['MAX'] < 2) break;
 
 		list($table, $columns, $ids, $hash) = explode('@', $_POST['id']);
 		//Fake POST[id] for kota_submit_multiedit() to remove the id from the id. Otherwise this entry will be edited
@@ -161,7 +161,7 @@ switch($do_action) {
 
 
 	case 'submit_new_promise':
-		if($access['donations']['MAX'] < 2) continue;
+		if($access['donations']['MAX'] < 2) break;
 
 		$id = kota_submit_multiedit('', 'new_donation');
 		if(!$notifier->hasErrors()) {
@@ -183,13 +183,13 @@ switch($do_action) {
 
 
 	case 'do_promise':
-		if($access['donations']['MAX'] < 2) continue;
+		if($access['donations']['MAX'] < 2) break;
 
 		$id = format_userinput($_POST['id'], 'uint');
-		if(!$id) continue;
+		if(!$id) break;
 
 		$old = db_select_data('ko_donations', "WHERE `id` = '$id'", '*', '', '', TRUE);
-		if($access['donations']['ALL'] < 2 && $access['donations'][$old['account']] < 2) continue;
+		if($access['donations']['ALL'] < 2 && $access['donations'][$old['account']] < 2) break;
 
 		//Set promise flag
 		db_update_data('ko_donations', "WHERE `id` = '$id'", array('promise' => 0));
@@ -203,7 +203,7 @@ switch($do_action) {
 
 
 	case "new_account":
-		if($access['donations']['MAX'] < 4) continue;
+		if($access['donations']['MAX'] < 4) break;
 
 		$_SESSION["show"] = "new_account";
 		$onload_code = "form_set_first_input();".$onload_code;
@@ -212,7 +212,7 @@ switch($do_action) {
 
 	case "submit_new_account":
 	case "submit_edit_account":
-		if($access['donations']['MAX'] < 4) continue;
+		if($access['donations']['MAX'] < 4) break;
 
 		$mode = $do_action == "submit_edit_account" ? "edit" : "new";
 
@@ -223,7 +223,7 @@ switch($do_action) {
 			$new_id = kota_submit_multiedit("", ($mode == "edit" ? "edit_account" : "new_account"));
 
 			$_SESSION["show"] = "list_accounts";
-			$_SESSION["show_accounts"][] = $new_id;
+			$_SESSION["show_donations_accounts"][] = $new_id;
 		}
 	break;
 
@@ -232,7 +232,7 @@ switch($do_action) {
 
 	//Bearbeiten
 	case "edit_donation":
-		if($access['donations']['MAX'] < 3) continue;
+		if($access['donations']['MAX'] < 3) break;
 
 		$id = format_userinput($_POST["id"], "uint");
 		$_SESSION["show"] = "edit_donation";
@@ -240,7 +240,7 @@ switch($do_action) {
 	break;
 
 	case "submit_edit_donation":
-		if($access['donations']['MAX'] < 3) continue;
+		if($access['donations']['MAX'] < 3) break;
 
 		kota_submit_multiedit("", "edit_donation");
 
@@ -252,7 +252,7 @@ switch($do_action) {
 
 
 	case "edit_account":
-		if($access['donations']['MAX'] < 4) continue;
+		if($access['donations']['MAX'] < 4) break;
 
 		$id = format_userinput($_POST["id"], "uint");
 		$_SESSION["show"] = "edit_account";
@@ -265,20 +265,20 @@ switch($do_action) {
 
 	//Merging
 	case "merge":
-		if($access['donations']['MAX'] < 3) continue;
+		if($access['donations']['MAX'] < 3) break;
 		
 		$_SESSION["show"] = "merge";
 	break;
 
 
 	case "submit_merge":
-		if($access['donations']['MAX'] < 3) continue;
+		if($access['donations']['MAX'] < 3) break;
 
 		//Get selected people
 		$person1 = format_userinput($_POST["merge_person1"], "uint");
-		if(!$person1) continue;
+		if(!$person1) break;
 		$person2 = format_userinput($_POST["merge_person2"], "intlist");
-		if(!$person2) continue;
+		if(!$person2) break;
 		$merge_from = explode(",", $person2);
 
 		//Prepare IN string for DB query
@@ -289,7 +289,7 @@ switch($do_action) {
 		$in = substr($in, 0, -2);
 
 		//Get all donations of these people and reassign them to person1
-		$donations2 = db_select_data("ko_donations", "WHERE `person` IN ($id)", "*");
+		$donations2 = db_select_data("ko_donations", "WHERE `person` IN ($in)", "*");
 		foreach($donations2 as $donation) {
 			db_update_data("ko_donations", "WHERE `id` = '".$donation["id"]."'", array("person" => $person1));
 		}
@@ -303,10 +303,10 @@ switch($do_action) {
 	case 'submit_donations_mod':
 	case 'submit_donations_mod_aa':
 		$id = format_userinput($_POST['donations_mod_id'], 'uint');
-		if (!$id) continue;
+		if (!$id) break;
 		ko_get_donations_mod($donationMod, $id);
-		if (!$donationMod) continue;
-		if ($access['donations']['MAX'] < 3) continue;
+		if (!$donationMod) break;
+		if ($access['donations']['MAX'] < 3) break;
 		$pid = format_userinput($_POST['donations_mod_person_id'], 'alphanum');
 
 		$valutadate = sql_datum(format_userinput($_POST['valutadate_' . $id], 'text'));
@@ -319,27 +319,31 @@ switch($do_action) {
 		$account = db_select_data('ko_donations_accounts', "WHERE `id` = '" . $account . "'", "*", '', '', TRUE, TRUE);
 		if (!$account || $access['donations'][$account['id']] < 2) {
 			$notifier->addError(7);
-			continue;
+			break;
+		}
+		if ($account['archived']) {
+			$notifier->addError(8);
+			break;
 		}
 
 		$p = array();
 		foreach ($donationMod as $key => $value) {
 			if (substr($key, 0, 3) == '_p_') {
 				$pKey = substr($key, 3);
-				$p[$pKey] = $value;
+				$p[$pKey] = format_userinput($_POST[$key . '_' . $id], 'text');
 			}
 		}
 
 		if ($pid == 'selected' && !$addToSelectedPerson) {
 			$notifier->addError(5);
-			continue;
+			break;
 		}
 
 		if ($pid == 'selected') {
 			ko_get_person_by_id($addToSelectedPerson, $pData);
 			if (!$pData) {
 				$notifier->addError(6);
-				continue;
+				break;
 			}
 			if ($do_action == 'submit_donations_mod_aa') {
 				$p["_leute_id"] = $pData['id'];
@@ -366,7 +370,7 @@ switch($do_action) {
 			ko_get_person_by_id($pid, $pData);
 			if (!$pData) {
 				$notifier->addError(6);
-				continue;
+				break;
 			}
 			if ($do_action == 'submit_donations_mod_aa') {
 				$p["_leute_id"] = $pData['id'];
@@ -383,6 +387,7 @@ switch($do_action) {
 			'amount' => $donationMod['amount'],
 			'date' => $donationMod['date'],
 			'person' => $person,
+			'camt_uid' => $donationMod['camt_uid'],
 		);
 		$new_donation_id = db_insert_data('ko_donations', $donation);
 		db_delete_data('ko_donations_mod', 'where `id` = ' . $id);
@@ -392,10 +397,10 @@ switch($do_action) {
 
 	case 'submit_del_donations_mod':
 		$id = format_userinput($_POST['donations_mod_id'], 'uint');
-		if (!$id) continue;
+		if (!$id) break;
 		ko_get_donations_mod($donationMod, $id);
-		if (!$donationMod) continue;
-		if ($access['donations']['MAX'] < 3) continue;
+		if (!$donationMod) break;
+		if ($access['donations']['MAX'] < 3) break;
 
 		db_delete_data('ko_donations_mod', 'where `id` = ' . $id);
 		ko_log_diff($do_action, $donationMod);
@@ -409,16 +414,16 @@ switch($do_action) {
 	//Reoccuring donations
 	case "do_reoccuring_donation":
 	case "do_reoccuring_donations":
-		if($access['donations']['MAX'] < 2) continue;
+		if($access['donations']['MAX'] < 2) break;
 
 		$use_date = FALSE;
 		$use_amount = FALSE;
 
 		if($do_action == "do_reoccuring_donation") {
 			$id = format_userinput($_POST["id"], "uint");
-			if(!$id) continue;
+			if(!$id) break;
 			$donation = db_select_data('ko_donations', 'WHERE `id` = \''.$id.'\'', '*', '', '', TRUE);
-			if($access['donations']['ALL'] < 2 && $access['donations'][$donation['account']] < 2) continue;
+			if($access['donations']['ALL'] < 2 && $access['donations'][$donation['account']] < 2) break;
 
 			$ids = array($id);
 
@@ -484,13 +489,13 @@ switch($do_action) {
 
 	//Löschen
 	case "delete_donation":
-		if($access['donations']['MAX'] < 3) continue;
+		if($access['donations']['MAX'] < 3) break;
 
 		$id = format_userinput($_POST["id"], "uint");
-		if(!$id) continue;
+		if(!$id) break;
 
 		$old = db_select_data("ko_donations", "WHERE `id` = '$id'", "*", "", "", TRUE);
-		if($access['donations']['ALL'] < 3 && $access['donations'][$old['account']] < 3) continue;
+		if($access['donations']['ALL'] < 3 && $access['donations'][$old['account']] < 3) break;
 
 		db_delete_data("ko_donations", "WHERE `id` = '$id'");
 		ko_log_diff("del_donation", $old);
@@ -498,10 +503,10 @@ switch($do_action) {
 
 
 	case "delete_account":
-		if($access['donations']['MAX'] < 4) continue;
+		if($access['donations']['MAX'] < 4) break;
 
 		$id = format_userinput($_POST["id"], "uint");
-		if(!$id) continue;
+		if(!$id) break;
 
 		$old = db_select_data("ko_donations_accounts", "WHERE `id` = '$id'", "*", "", "", TRUE);
 
@@ -512,12 +517,12 @@ switch($do_action) {
 
 
 	case "delete_reoccuring_donation":
-		if($access['donations']['MAX'] < 2) continue;
+		if($access['donations']['MAX'] < 2) break;
 
 		$id = format_userinput($_POST["id"], "uint");
-		if(!$id) continue;
+		if(!$id) break;
 		$donation = db_select_data('ko_donations', "WHERE `id` = '$id'", '*', '', '', TRUE);
-		if($access['donations']['ALL'] < 3 && $access['donations'][$donation['account']] < 3) continue;
+		if($access['donations']['ALL'] < 3 && $access['donations'][$donation['account']] < 3) break;
 
 		db_update_data("ko_donations", "WHERE `id` = '$id'", array("reoccuring" => 0));
 		ko_log("edit_donation", "id: $id: reoccuring --> 0");
@@ -529,8 +534,8 @@ switch($do_action) {
 
 	//Multiedit
 	case "multiedit":
-		if($_SESSION["show"] == "list_accounts" && $access['donations']['MAX'] < 4) continue;
-		if($_SESSION["show"] == "list_donations" && $access['donations']['MAX'] < 3) continue;
+		if($_SESSION["show"] == "list_accounts" && $access['donations']['MAX'] < 4) break;
+		if($_SESSION["show"] == "list_donations" && $access['donations']['MAX'] < 3) break;
 
 		//Zu bearbeitende Spalten
 		$columns = explode(",", format_userinput($_POST["id"], "alphanumlist"));
@@ -578,10 +583,10 @@ switch($do_action) {
 
 	case "submit_multiedit":
 		if($_SESSION["show"] == "multiedit_accounts") {
-			if($access['donations']['MAX'] < 4) continue;
+			if($access['donations']['MAX'] < 4) break;
 			kota_submit_multiedit(4);
 		} else if($_SESSION["show"] == "multiedit") {
-			if($access['donations']['MAX'] < 3) continue;
+			if($access['donations']['MAX'] < 3) break;
 			kota_submit_multiedit(3);
 		}
 
@@ -594,7 +599,7 @@ switch($do_action) {
 
 	//Filter
 	case "set_filter":
-		if($access['donations']['MAX'] < 1) continue;
+		if($access['donations']['MAX'] < 1) break;
 
 		foreach($_POST["donations_filter"] as $key => $value) {
 			if(!$value) {  //No value means unset the filter
@@ -612,7 +617,7 @@ switch($do_action) {
 
 
 	case "clear_filter":
-		if($access['donations']['MAX'] < 1) continue;
+		if($access['donations']['MAX'] < 1) break;
 
 		unset($_SESSION["donations_filter"]);
 		if(!$_SESSION["show"]) $_SESSION["show"] = "list_donations";
@@ -621,10 +626,10 @@ switch($do_action) {
 
 
 	case "set_person_filter":
-		if($access['donations']['MAX'] < 1) continue;
+		if($access['donations']['MAX'] < 1) break;
 
 		$id = format_userinput($_GET["id"], "uint");
-		if(!$id) continue;
+		if(!$id) break;
 
 		$_SESSION["donations_filter"]["person"] = $id;
 		if(!$_SESSION["show"] || $_GET['set_show']) $_SESSION["show"] = "list_donations";
@@ -633,7 +638,7 @@ switch($do_action) {
 
 
 	case "clear_person_filter":
-		if($access['donations']['MAX'] < 1) continue;
+		if($access['donations']['MAX'] < 1) break;
 
 		unset($_SESSION["donations_filter"]["person"]);
 		if(!$_SESSION["show"]) $_SESSION["show"] = "list_donations";
@@ -646,14 +651,14 @@ switch($do_action) {
 
 	//Stats
 	case "show_stats":
-		if($access['donations']['MAX'] < 1) continue;
+		if($access['donations']['MAX'] < 1) break;
 
 		$_SESSION["show"] = "show_stats";
 	break;
 
 
 	case "set_stats_year":
-		if($access['donations']['MAX'] < 1) continue;
+		if($access['donations']['MAX'] < 1) break;
 
 		$year = format_userinput($_GET["year"], "uint", FALSE, 4);
 		if(!$year) $year = date("Y");
@@ -669,26 +674,33 @@ switch($do_action) {
 
 	//Export
 	case "export_donations":
-		if($access['donations']['MAX'] < 1) continue;
+		if($access['donations']['MAX'] < 1) break;
 
 		$mode = format_userinput($_GET['export_mode'], 'alphanum');
-		if(!$mode) continue;
+		if(!$mode) $mode = format_userinput($_POST['export_mode'], 'alphanum');
+		if(!$mode) break;
 
 		switch($mode) {
 			case "person":
-				$filename = ko_donations_export_person('person');
-			break;  //person
-
 			case 'family':
-				$filename = ko_donations_export_person('family');
-			break;  //family
-
 			case 'couple':
-				$filename = ko_donations_export_person('couple');
-			break;  //couple
+				if (!ko_get_setting('donations_show_export_page') && !isset($_POST['donation_account'])) {
+					// Skip export page & set empty donation_account: ko_donations_export_person will be called w/o create refnr.
+					$_POST['donation_account'] = '';
+				}
+
+				if (isset($_POST['donation_account'])) {
+					$filename = ko_donations_export_person($mode);
+					$_SESSION['show'] = $_SESSION['show_back'];
+				} else {
+					$_SESSION['show_back'] = $_SESSION['show'];
+					$_SESSION['show'] = 'export_donations_settings';
+					$_SESSION['export_donations']['export_mode'] = $mode;
+				}
+			break;  //person, family, couple
 
 			case "all":
-				$filename = ko_list_donations(TRUE, "xls", TRUE);
+				$filename = ko_list_donations("xls", TRUE);
 			break;  //all
 
 			case "statsM":
@@ -699,7 +711,7 @@ switch($do_action) {
 				if(substr($mode, 0, 6) == 'statsY') {
 					$year = intval(substr($mode, 6));
 					if(!$year) $year = date('Y');
-					$filename = ko_donations_stats(TRUE, 'xls', $year);
+					$filename = ko_donations_stats('xls', $year);
 				}
 				else if($mode == intval($mode) && $mode > 0) {
 					//Check for ID from ko_pdf_layout
@@ -753,8 +765,35 @@ switch($do_action) {
 	break;
 
 
+
+	case 'add_to_my_list':
+		apply_donations_filter($z_where, $z_limit);
+		$ids = array();
+		if($_POST['chk']) {
+			$ids = array_keys($_POST['chk']);
+		}
+		if(sizeof($ids) > 0) {
+			$where = "WHERE `id` IN (".(implode(',', $ids)).") ";
+		} else {
+			$where = "WHERE 1=1 ";
+		}
+
+		$entries = db_select_data('ko_donations', "{$where} {$z_where}");
+
+		$_SESSION['my_list'] = array();
+		foreach($entries as $d) {
+			if(intval($d['person'])) {
+				$id = intval($d['person']);
+				if(!in_array($id, $_SESSION['my_list'])) $_SESSION['my_list'][$id] = $id;
+			}
+		}
+
+		koNotifier::Instance()->addInfo(7);
+	break;
+
+
 	case 'donation_settings':
-		if($access['donations']['MAX'] < 1) continue;
+		if($access['donations']['MAX'] < 1) break;
 
 		$_SESSION['show_back'] = $_SESSION['show'];
 		$_SESSION['show'] = 'donation_settings';
@@ -763,7 +802,7 @@ switch($do_action) {
 
 
 	case 'submit_settings':
-		if($access['donations']['MAX'] < 1) continue;
+		if($access['donations']['MAX'] < 1) break;
 
 		ko_save_userpref($_SESSION['ses_userid'], 'default_view_donations', format_userinput($_POST['sel_donations'], 'js'));
 		ko_save_userpref($_SESSION['ses_userid'], 'show_limit_donations', format_userinput($_POST['txt_limit_donations'], 'uint'));
@@ -782,6 +821,7 @@ switch($do_action) {
 				ko_set_setting('ps_filter_sel_ds1_koi[ko_donations][person]', $filter[0]['value']);
 			}
 			ko_set_setting('donations_use_promise', format_userinput($_POST['chk_use_promise'], 'uint'));
+			ko_set_setting('donations_show_export_page', format_userinput($_POST['chk_show_export_page'], 'uint'));
 		}
 
 		$_SESSION['show'] = $_SESSION['show_back'] ? $_SESSION['show_back'] : 'donation_settings';
@@ -811,13 +851,13 @@ if(in_array($do_action, array('delete_account', 'submit_new_account'))) {
 
 
 //*** Default-Werte auslesen
-if(!isset($_SESSION["show_accounts"]) || $_SESSION["show_accounts"] == "") {
+if(!isset($_SESSION["show_donations_accounts"]) || $_SESSION["show_donations_accounts"] == "") {
   $show_accounts_string = ko_get_userpref($_SESSION["ses_userid"], "show_donations_accounts");
   if($show_accounts_string) {
-    $_SESSION["show_accounts"] = explode(",", $show_accounts_string);
+    $_SESSION["show_donations_accounts"] = explode(",", $show_accounts_string);
   } else {
 		$accounts = db_select_data("ko_donations_accounts", "", "*");
-    $_SESSION["show_accounts"] = array_keys($accounts);
+    $_SESSION["show_donations_accounts"] = array_keys($accounts);
   }
 }
 $_SESSION["show_limit"] = ko_get_userpref($_SESSION["ses_userid"], "show_limit_donations");
@@ -856,6 +896,10 @@ include($ko_path.'inc/js-sessiontimeout.inc');
 include('inc/js-donations.inc');
 if ($_SESSION['show'] == 'list_donations_mod') {
 	include('inc/js-donationsmod.inc');
+}
+if (ko_module_installed('crm') && in_array($_SESSION['show'], array('export_donations_settings'))) {
+	ko_get_access('crm');
+	include($ko_path.'crm/inc/js-selproject.inc');
 }
 ?>
 </head>
@@ -943,12 +987,12 @@ switch($_SESSION["show"]) {
 		ko_multiedit_formular("ko_donations_accounts", $do_columns, $do_ids, $order, array("cancel" => "list_accounts"));
 	break;
 
-	case 'donation_thanks_preview':
-		ko_donations_thanks_preview();
-	break;
-
 	case 'donation_settings':
 		ko_donations_settings();
+	break;
+
+	case 'export_donations_settings':
+		ko_donations_export_settings();
 	break;
 
 

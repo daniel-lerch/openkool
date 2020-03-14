@@ -8,10 +8,12 @@ CKEDITOR.stylesSet.add( 'my_styles', [
 ] );
 
 CKEDITOR.editorConfig = function( config ) {
+	config.allowedContent = true;
+
 	config.language = kOOL.language;
 	config.toolbar = 'DatenToolbar';
 
-	config.extraPlugins = 'image,richcombo,listblock,floatpanel,panel,stylescombo';
+	config.extraPlugins = 'image,richcombo,listblock,floatpanel,panel,stylescombo,sourcearea';
 
 	config.toolbar_DatenToolbar =
 		[
@@ -20,7 +22,7 @@ CKEDITOR.editorConfig = function( config ) {
 			{ name: 'paragraph', items : [ 'NumberedList','BulletedList','-','Blockquote' ] },
 			{ name: 'links', items : [ 'Link','Unlink','Anchor' ] },
 			{ name: 'images', items : [ 'Image' ] },
-			{ name: 'styles', items: [ 'Styles' ] }
+			{ name: 'styles', items: [ 'Styles', 'Source' ] }
 		];
 
 	config.removeDialogTabs = 'link:advanced;image:advanced';

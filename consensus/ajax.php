@@ -2,7 +2,7 @@
 /***************************************************************
  *  Copyright notice
  *
- *  (c) 2003-2015 Renzo Lauper (renzo@churchtool.org)
+ *  (c) 2003-2017 Renzo Lauper (renzo@churchtool.org)
  *  All rights reserved
  *
  *  This script is part of the kOOL project. The kOOL project is
@@ -69,5 +69,17 @@ if(isset($_POST) && isset($_POST["action"])) {
 
 			print json_encode($rv);
 		break;
+
+		case "savecomment":
+			$teamId = format_userinput($_POST["team_id"], "int");
+			$comment = format_userinput($_POST["comment"], "text");
+			$x = format_userinput($_POST["x"], "text");
+
+			list($pass, $personId, $team_ids, $start, $span) = ko_consensus_check_hash($x);
+			if($pass) {
+				ko_consensus_save_comment($teamId, $personId, $comment);
+			}
+
+			break;
 	}
 }

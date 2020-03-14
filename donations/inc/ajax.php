@@ -2,7 +2,7 @@
 /***************************************************************
 *  Copyright notice
 *
-*  (c) 2003-2015 Renzo Lauper (renzo@churchtool.org)
+*  (c) 2003-2017 Renzo Lauper (renzo@churchtool.org)
 *  All rights reserved
 *
 *  This script is part of the kOOL project. The kOOL project is
@@ -47,9 +47,6 @@ ko_include_kota(array('ko_donations', 'ko_donations_accounts'));
 $hooks = hook_include_main("donations");
 if(sizeof($hooks) > 0) foreach($hooks as $hook) include_once($hook);
  
-//Smarty-Templates-Engine laden
-require($BASE_PATH."inc/smarty.inc");
- 
 require($BASE_PATH."donations/inc/donations.inc");
 
 //HOOK: Submenus einlesen
@@ -79,9 +76,9 @@ if(isset($_GET) && isset($_GET["action"])) {
 
 			print "main_content@@@";
 			if($_SESSION["show"] == "list_donations") {
-				print ko_list_donations(FALSE);
+				ko_list_donations();
 			} else {
-				print ko_list_accounts(FALSE);
+				ko_list_accounts();
 			}
 		break;
 
@@ -92,41 +89,98 @@ if(isset($_GET) && isset($_GET["action"])) {
 
 			print "main_content@@@";
 			if($_SESSION['show'] == 'list_donations') {
-				print ko_list_donations(FALSE);
+				ko_list_donations();
 			} else if($_SESSION['show'] == 'list_reoccuring_donations') {
-				print ko_list_reoccuring_donations(FALSE);
+				ko_list_reoccuring_donations();
 			}
 		break;
 
 
 		case "itemlist":
+		case 'itemlistRedraw':
+		case "itemlistgroup":
+
+			$globalMinRights = 4;
+			$groupColumn = 'account_group';
+			$table = 'ko_donations_accounts';
+			$tableOrdering = "ORDER BY `number` ASC, name ASC";
+			$sessionShowKey = 'show_donations_accounts';
+			$sessionStatesKey = 'donations_accounts_group_states';
+			$presetType = 'accounts_itemset';
+			$module = 'donations';
+
+
+			if($action == 'itemlistRedraw') {
+				$action = 'itemlist';
+				$redraw = TRUE;
+			}
 			//ID and state of the clicked field
 			$id = format_userinput($_GET["id"], "js");
 			$state = $_GET["state"] == "true" ? "checked" : "";
 
-			if($state == "checked") {  //Select it
-				if(!in_array($id, $_SESSION["show_accounts"])) $_SESSION["show_accounts"][] = $id;
-				//Move it to the place according to the list-order
-				$accounts = db_select_data("ko_donations_accounts", "", "*", "ORDER by number ASC");
-				foreach($accounts as $i_i => $i) {
-					if($access['donations']['ALL'] < 1 && $access['donations'][$i_i] < 1) continue;
-					if(in_array($i_i, $_SESSION["show_accounts"])) $new_value[] = $i_i;
+			//Single group selected
+			if($action == "itemlist") {
+				if($state == "checked") {  //Select it
+					if(!in_array($id, $_SESSION[$sessionShowKey])) $_SESSION[$sessionShowKey][] = $id;
+				} else {  //deselect it
+					if(in_array($id, $_SESSION[$sessionShowKey])) $_SESSION[$sessionShowKey] = array_diff($_SESSION[$sessionShowKey], array($id));
 				}
-				$_SESSION["show_accounts"] = $new_value;
-			} else {  //deselect it
-				if(in_array($id, $_SESSION["show_accounts"])) $_SESSION["show_accounts"] = array_diff($_SESSION["show_accounts"], array($id));
 			}
+			//groups selected or unselected
+			else if($action == "itemlistgroup") {
+				if ($id == '@@archived@@') {
+					$elements = db_select_data($table, "WHERE `archived` = 1", "*", $tableOrdering);
+				} else {
+					$elements = db_select_data($table, "WHERE `{$groupColumn}` = '$id' AND `archived` = 0", "*", $tableOrdering);
+				}
+				foreach($elements as $eid => $element) {
+					if(!$access[$module][$eid]) continue;
+					if($state == "checked") {  //Select it
+						if(!in_array($eid, $_SESSION[$sessionShowKey])) $_SESSION[$sessionShowKey][] = $eid;
+					} else {  //Deselect it
+						if(in_array($eid, $_SESSION[$sessionShowKey])) $_SESSION[$sessionShowKey] = array_diff($_SESSION[$sessionShowKey], array($eid));
+					}
+				}//foreach(elements)
+			}
+
+			//Get rid of invalid element ids
+			$allElements = db_select_data($table, "WHERE 1=1", "id, {$groupColumn}", '', '', FALSE, TRUE);
+			$allElementIds = ko_array_column($allElements, 'id');
+			foreach($_SESSION[$sessionShowKey] as $k => $eid) {
+				if(!in_array($eid, $allElementIds)) {
+					unset($_SESSION[$sessionShowKey][$k]);
+				}
+			}
+
 			//Save userpref
-			ko_save_userpref($_SESSION["ses_userid"], "show_donations_accounts", implode(",", $_SESSION["show_accounts"]));
+			ko_save_userpref($_SESSION["ses_userid"], $sessionShowKey, implode(",", $_SESSION[$sessionShowKey]));
 
 			print "main_content@@@";
 			switch($_SESSION["show"]) {
 				case "list_donations":
-					ko_list_donations(FALSE);
-				break;
+					ko_list_donations();
+					break;
 				case "show_stats":
-					ko_donations_stats(FALSE);
-				break;
+					ko_donations_stats();
+					break;
+			}
+
+			//Find position of submenu for redraw
+			if($action == "itemlistgroup" || $redraw) {
+				if(in_array($_SESSION['show'], array('list_donations', 'show_stats'))) print '@@@';
+				print submenu_donations("itemlist_accounts", "open", 2);
+				$done = TRUE;
+			} else if($allElements[$id][$groupColumn]) {
+				//Update number of checked elements for this group
+				$groupId = $allElements[$id][$groupColumn];
+				$num = 0;
+				foreach($allElements as $element) {
+					if($access[$module][$element['id']] < 1) continue;
+					if($element[$groupColumn] == $groupId && in_array($element['id'], $_SESSION[$sessionShowKey])) $num++;
+				}
+				if(in_array($_SESSION['show'], array('list_donations', 'show_stats'))) print '@@@';
+				print 'group_'.$groupId.'@@@'.$num;
+				$done = TRUE;
 			}
 		break;
 
@@ -135,7 +189,7 @@ if(isset($_GET) && isset($_GET["action"])) {
 
 			//save new value
 			if($_GET["name"] == "") continue;
-			$new_value = implode(",", $_SESSION["show_accounts"]);
+			$new_value = implode(",", $_SESSION["show_donations_accounts"]);
 			$user_id = ($access['donations']['MAX'] > 3 && $_GET['global'] == 'true') ? '-1' : $_SESSION['ses_userid'];
 			$name = format_userinput($_GET["name"], "js", FALSE, 0, array("allquotes"));
 			ko_save_userpref($user_id, $name, $new_value, "accounts_itemset");
@@ -176,23 +230,23 @@ if(isset($_GET) && isset($_GET["action"])) {
 
 			if($name == '_all_') {
 				$accounts = db_select_data('ko_donations_accounts', '');
-				$_SESSION["show_accounts"] = array_keys($accounts);
+				$_SESSION["show_donations_accounts"] = array_keys($accounts);
 			} else if($name == '_none_') {
-				$_SESSION['show_accounts'] = array();
+				$_SESSION['show_donations_accounts'] = array();
 			} else {
 				if(substr($name, 0, 3) == '@G@') $value = ko_get_userpref('-1', substr($name, 3), "accounts_itemset");
 				else $value = ko_get_userpref($_SESSION['ses_userid'], $name, "accounts_itemset");
-				$_SESSION["show_accounts"] = explode(",", $value[0]["value"]);
+				$_SESSION["show_donations_accounts"] = explode(",", $value[0]["value"]);
 			}
-			ko_save_userpref($_SESSION['ses_userid'], 'show_donations_accounts', implode(',', $_SESSION['show_accounts']));
+			ko_save_userpref($_SESSION['ses_userid'], 'show_donations_accounts', implode(',', $_SESSION['show_donations_accounts']));
 
 			print "main_content@@@";
 			switch($_SESSION["show"]) {
 				case "list_donations":
-					ko_list_donations(FALSE);
+					ko_list_donations();
 				break;
 				case "show_stats":
-					ko_donations_stats(FALSE);
+					ko_donations_stats();
 				break;
 			}
 			print "@@@";

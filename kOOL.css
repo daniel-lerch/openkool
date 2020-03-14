@@ -703,3 +703,22 @@ div.empty_address_line input, div.empty_address_line select {
 div.empty_address_line input {
 	width:150px;
 }
+
+
+
+select#searchbox_taxonomy:required:invalid {
+	color: #999;
+}
+select#searchbox_taxonomy:required:invalid option {
+	color: #555;
+}
+
+
+@media screen and (max-width: 768px) {
+  h3.ko_list_title > .pagestats .btn-group {
+    display: none;
+  }
+  h3.ko_list_title > .pagestats .btn-group.itemlist-box {
+    display: block;
+  }
+}

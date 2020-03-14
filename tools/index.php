@@ -2,7 +2,7 @@
 /***************************************************************
 *  Copyright notice
 *
-*  (c) 2003-2015 Renzo Lauper (renzo@churchtool.org)
+*  (c) 2003-2017 Renzo Lauper (renzo@churchtool.org)
 *  All rights reserved
 *
 *  This script is part of the kOOL project. The kOOL project is
@@ -39,7 +39,7 @@ include($ko_path.'inc/class.mcrypt.php');
 ko_check_ssl();
 
 if(!ko_module_installed("tools") || $_SESSION["ses_username"] != "root") {
-	header("Location: ".$BASE_URL."index.php");  //Absolute URL
+	header("Location: ".$BASE_URL."index.php"); exit;
 }
 
 ob_end_flush();  //Puffer flushen
@@ -48,9 +48,6 @@ $notifier = koNotifier::Instance();
 $default_lang = $LIB_LANGS[0];
 
 ko_get_access('tools');
-
-//Smarty-Templates-Engine laden
-require($ko_path.'inc/smarty.inc');
 
 //kOOL Table Array
 ko_include_kota(array('ko_scheduler_tasks', 'ko_plugins', 'ko_mailing_mails'));
@@ -82,10 +79,10 @@ switch($do_action) {
 
 	case 'mailing_confirm':
 		$mid = format_userinput($_POST['id'], 'uint');
-		if(!$mid) continue;
+		if(!$mid) break;
 
-		$mail = db_select_data('ko_mailing_mails', "WHERE `id` = '$mid'", '*', '', '', TRUE);
-		if(!$mail['id'] || $mail['status'] > 1) continue;
+		$mail = db_select_data('ko_mailing_mails', "WHERE `id` = '$mid'", '*, NULL AS body', '', '', TRUE);
+		if(!$mail['id'] || $mail['status'] > 1) break;
 		if(intval($mail['user_id']) > 0) {
 			ko_get_login(intval($mail['user_id']), $login);
 		} else {
@@ -100,7 +97,7 @@ switch($do_action) {
 
   case 'mailing_delete':
 		$mid = format_userinput($_POST['id'], 'uint');
-    if(!$mid) continue;
+    if(!$mid) break;
 
     db_delete_data('ko_mailing_mails', "WHERE `id` = '$mid'");
     db_delete_data('ko_mailing_recipients', "WHERE `mail_id` = '$mid'");
@@ -150,7 +147,7 @@ switch($do_action) {
 			$notifier->addError(9);
 		}
 		else {
-			$success = ko_send_mail(ko_get_setting('info_email'), $_POST['testmail']['receiver'], $_POST['testmail']['subject'], $_POST['testmail']['text']);
+			$success = ko_send_mail(ko_mail_get_from(), $_POST['testmail']['receiver'], $_POST['testmail']['subject'], $_POST['testmail']['text']);
 			if (!$notifier->hasNotifications(koNotifier::DEBUG | koNotifier::ERROR) && $success) {
 				$notifier->addInfo(6, '', array($_POST['testmail']['receiver']));
 			}
@@ -164,11 +161,6 @@ switch($do_action) {
 
 	case "show_leute_db":
 		$_SESSION["show"] = "show_leute_db";
-	break;
-
-
-	case "show_leute_formular":
-		$_SESSION["show"] = "show_leute_formular";
 	break;
 
 
@@ -237,7 +229,7 @@ switch($do_action) {
 		//Not in list of available plugins
 		if(!in_array($new_plugin, $plugins_available)) $notifier->addError(2, $do_action);
 		//Already installed
-		if(in_array($new_plugin, $plugins_installed)) continue;
+		if(in_array($new_plugin, $plugins_installed)) break;
 		//Check for config-file
 		$conf_file = $ko_path."plugins/".$new_plugin."/config.php";
 		if(!file_exists($conf_file)) $notifier->addError(3, $do_action);
@@ -282,7 +274,7 @@ switch($do_action) {
 		$plugins_available = ko_tools_plugins_get_available();
 		$plugins_installed = ko_tools_plugins_get_installed($plugins_available);
 		//Not in list of available plugins or not installed
-		if(!in_array($del_plugin, $plugins_available) || !in_array($del_plugin, $plugins_installed)) continue;
+		if(!in_array($del_plugin, $plugins_available) || !in_array($del_plugin, $plugins_installed)) break;
 		//Check for config-file
 		$conf_file = $ko_path."plugins/".$del_plugin."/config.php";
 		if(!file_exists($conf_file)) $notifier->addError(3, $do_action);
@@ -313,12 +305,12 @@ switch($do_action) {
 
 	case 'plugins_show_sql_diffs':
 		$plugin_id = $_GET['plugin'];
-		if (!$plugin_id) continue;
+		if (!$plugin_id) break;
 
 		$plugins_available = ko_tools_plugins_get_available();
 		$plugins_installed = ko_tools_plugins_get_installed($plugins_available);
 
-		if (!in_array($plugin_id, $plugins_installed)) continue;
+		if (!in_array($plugin_id, $plugins_installed)) break;
 
 		$_SESSION['show_back'] = $_SESSION['show'];
 		$_SESSION['show'] = 'plugins_show_sql_diffs';
@@ -328,11 +320,11 @@ switch($do_action) {
 	case 'submit_plugins_sql_diffs':
 
 		$plugin = $_POST['id'];
-		if (!$plugin) continue;
+		if (!$plugin) break;
 
 		$plugins_available = ko_tools_plugins_get_available();
 		$plugins_installed = ko_tools_plugins_get_installed($plugins_available);
-		if (!in_array($plugin, $plugins_installed)) continue;
+		if (!in_array($plugin, $plugins_installed)) break;
 
 		require_once($ko_path.'inc/class.dbStructUpdater.php');
 		$updater = new dbStructUpdater($UPDATER_CONF);
@@ -447,7 +439,7 @@ switch($do_action) {
 		if(ko_do_ldap()) {
 			$id = format_userinput($_GET["id"], "uint");
 			ko_get_login($id, $login);
-			if(!$login["login"] && $login["password"]) continue;
+			if(!$login["login"] && $login["password"]) break;
 
 			$ldap = ko_ldap_connect();
 			//Delete old Login
@@ -483,7 +475,7 @@ switch($do_action) {
 		foreach($cols as $c) {
 			if($c["Field"] == $value) $found = TRUE;
 		}
-		if(!$found) continue;
+		if(!$found) break;
 
 		//Spalte aus DB löschen
 		$query = "ALTER TABLE `ko_leute` DROP `$value`";
@@ -531,7 +523,7 @@ switch($do_action) {
 		foreach($cols as $c) {
 			if($c["Field"] == $value) $found = TRUE;
 		}
-		if(!$found) continue;
+		if(!$found) break;
 
 		//Spalte aus DB löschen
 		$query = "ALTER TABLE `ko_familie` DROP `$value`";
@@ -661,9 +653,9 @@ switch($do_action) {
 		$pos = format_userinput($_GET["pos"], "alpha", FALSE, 5);
 
 		//Auf vorhandenes Submenu und Login testen
-		if(!ko_check_submenu($sm, $mid)) continue;
+		if(!ko_check_submenu($sm, $mid)) break;
 		ko_get_login($lid, $login);
-		if(!$login["login"]) continue;
+		if(!$login["login"]) break;
 
 		//Submenu hinzufügen
 		ko_tools_add_submenu(array($sm), array($lid), $mid, $pos);
@@ -675,7 +667,7 @@ switch($do_action) {
 
 	case "add_to_modul":
 		$modul = format_userinput($_POST["sel_add_modul"], "alpha");
-		if(!in_array($modul, $MODULES)) continue;
+		if(!in_array($modul, $MODULES)) break;
 
 		$logins = array();
 		foreach($_POST["chk"] as $c_i => $c) {
@@ -695,18 +687,6 @@ switch($do_action) {
 
 
 
-	case "submit_save_leute_formular":
-		$file = $_POST['txt_leute_formular'];
-		if(get_magic_quotes_gpc()) $file = stripslashes($file);
-		$fp = fopen($ko_path."config/leute_formular.inc", "w");
-		fputs($fp, $file);
-		fclose($fp);
-		$notifier->addInfo(5, $do_action);
-	break;
-
-
-
-
 	case "ll_overview":
 		$_SESSION["show"] = "ll_overview";
 	break;
@@ -716,14 +696,14 @@ switch($do_action) {
 	case "ll_edit_all":
 		$edit_lang = format_userinput($_GET["lang"], "alpha", FALSE, 2);
 		$edit_mode = $do_action == "ll_edit" ? "empty" : "all";
-		if(!in_array($edit_lang, $LIB_LANGS)) continue;
+		if(!in_array($edit_lang, $LIB_LANGS)) break;
 		else $_SESSION["show"] = "ll_edit";
 	break;
 
 
 	case "ll_edit_submit":
 		$edit_lang = format_userinput($_POST["id"], "alpha", FALSE, 2);
-		if(!in_array($edit_lang, $LIB_LANGS)) continue;
+		if(!in_array($edit_lang, $LIB_LANGS)) break;
 
 		//Include default language definitions
 		include($ko_path."locallang/locallang.".$default_lang.".php");
@@ -777,7 +757,7 @@ switch($do_action) {
 
 	case 'delete_task':
 		$id = format_userinput($_POST['id'], 'uint');
-		if(!$id) continue;
+		if(!$id) break;
 
 		db_delete_data('ko_scheduler_tasks', "WHERE `id` = '$id'");
 	break;
@@ -875,15 +855,8 @@ switch($do_action) {
 		$_SESSION['show'] = 'tools_misc';
 	break;
 
-
-	case 'submit_userpref':
-		$key = $_POST['sel_userpref_key'];
-		$value = $_POST['txt_userpref_value'];
-		ko_get_logins($logins);
-		foreach($logins as $lid => $login) {
-			ko_save_userpref($lid, $key, $value);
-		}
-		$_SESSION['show'] = 'tools_misc';
+	case 'kota_fields':
+		$_SESSION['show'] = 'kota_fields';
 	break;
 
 
@@ -973,21 +946,17 @@ switch($_SESSION["show"]) {
 		ko_tools_list_leute_db();
 	break;
 
-	case "show_leute_formular":
-		ko_tools_leute_formular();
-	break;
-
 	case "show_familie_db":
 		ko_tools_list_familie_db();
 	break;
 
 	case "ldap_export":
-		if(!$ldap_enabled) continue;
+		if(!$ldap_enabled) break;
 		else ko_tools_ldap_export();
 	break;
 
 	case "list_ldap_logins":
-		if(!$ldap_enabled) continue;
+		if(!$ldap_enabled) break;
 		else ko_tools_ldap_logins();
 	break;
 
@@ -1004,7 +973,7 @@ switch($_SESSION["show"]) {
 	break;
 
 	case "plugins_show_sql_diffs":
-		if (!$plugin_id) continue;
+		if (!$plugin_id) break;
 		ko_tools_list_sql_diffs($plugin_id);
 	break;
 
@@ -1030,6 +999,10 @@ switch($_SESSION["show"]) {
 
 	case 'tools_misc':
 		ko_tools_misc();
+	break;
+
+	case 'kota_fields':
+		ko_tools_kota_fields();
 	break;
 
 

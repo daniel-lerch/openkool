@@ -5,9 +5,6 @@
 <input type="hidden" name="_id" id="_id" value="" />
 <input type="hidden" name="lid" id="lid" value="" />
 
-{if $tpl_list_empty}
-	{$label_no_entries}
-{else}
 	<div class="row">
 		<div class="col-sm-6">
 			<span style="font-weight: bold;">&nbsp;{$label_filter}:&nbsp;</span>
@@ -20,12 +17,14 @@
 		</div>
 	</div>
 	<br>
-
+{if $tpl_list_empty}
+	{$label_no_entries}
+{else}
 	{foreach item=p from=$tpl_gs}
 		<div class="panel panel-default">
 			<div class="panel-heading">
 				<h4 class="panel-title">
-					{$label_new_groupsubscription} <b>{$p.groupname}</b>
+					{$label_new_groupsubscription} <b {tooltip text=$p.groupname_full}>{$p.groupname}</b>
 					{if $p.ezmlm}&nbsp;<sup>{$p.ezmlm}</sup>{/if}
 					{if $p.group_limit}&nbsp;({$p.group_limit}){/if}
 				</h4>
@@ -117,10 +116,10 @@
 							{foreach item=dbp from=$p.db}
 								<div style="width:auto;" data-toggle="tooltip" data-html="true" data-container="body" title="{$dbp.adressdaten}">{if $dbp.firm}{$dbp.firm}{/if} {if $dbp.department}({$dbp.department}){/if} {$dbp.name}</div>
 								<div class="btn-group btn-group-sm">
-									<button type="submit" class="btn btn-sm btn-primary" style="width:50%;" onclick="set_action('submit_gs', this);set_hidden_value('_id', '{$dbp._id}', this);set_hidden_value('gid', '{$dbp.gid}', this);set_hidden_value('lid', '{$dbp.lid}', this);this.submit">
+									<button type="submit" class="btn btn-sm btn-primary" onclick="set_action('submit_gs', this);set_hidden_value('_id', '{$dbp._id}', this);set_hidden_value('gid', '{$dbp.gid}', this);set_hidden_value('lid', '{$dbp.lid}', this);this.submit">
 										{$label_ok}
 									</button>
-									<button type="submit" class="btn btn-sm btn-primary" style="width:50%;" onclick="set_action('submit_gs_aa', this);set_hidden_value('_id', '{$dbp._id}', this);set_hidden_value('gid', '{$dbp.gid}', this);set_hidden_value('lid', '{$dbp.lid}', this);this.submit">
+									<button type="submit" class="btn btn-sm btn-primary" onclick="set_action('submit_gs_aa', this);set_hidden_value('_id', '{$dbp._id}', this);set_hidden_value('gid', '{$dbp.gid}', this);set_hidden_value('lid', '{$dbp.lid}', this);this.submit">
 										{$label_ok_and_mutation}
 									</button>
 								</div>
@@ -135,7 +134,7 @@
 									excludeSql: '`hidden` = 0'
 									{rdelim});
 							</script>
-							<div class="btn-group btn-group-sm">
+							<div class="btn-group btn-group-sm" style="margin-top: 5px;">
 								<button class="btn btn-sm btn-primary" type="submit" name="submit" value="{$label_ok}" onclick="set_action('submit_gs_ps', this);set_hidden_value('_id', '{$p._id}', this);set_hidden_value('gid', '{$p.ps.gid}', this);this.submit">
 									{$label_ok}
 								</button>

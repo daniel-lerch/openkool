@@ -1,0 +1,53 @@
+#checkin {
+    padding: 0px;
+    background-color: white;
+}
+
+#search-bar {
+    background-color: darken(@brand-primary, 20%);
+    padding: 15px 0 0 0;
+
+    width: 100%;
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 100;
+}
+#search-bar-placeholder {
+    padding: 15px 0 0 0;
+    margin-bottom: 15px;
+}
+
+.form-group-placeholder {
+    height: 31px;
+    margin-bottom: 15px;
+}
+
+body.guest {
+	.checkin-search-result {
+		&.checked-in {
+			&:hover {
+					cursor: default;
+					background: none;
+			}
+		}
+	}
+}
+
+#outer-login-wrapper {
+    display: table;
+    position: absolute;
+    height: 100%;
+    width: 100%;
+}
+
+#middle-login-wrapper {
+    display: table-cell;
+    vertical-align: middle;
+}
+
+#inner-login-wrapper {
+    margin-left: auto;
+    margin-right: auto;
+}
+

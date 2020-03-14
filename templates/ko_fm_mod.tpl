@@ -15,18 +15,18 @@
 	</div>
 {/if}
 
-<!-- Adressänderungen: -->
-{if $tpl_show_aa}
-<div style="display:block;">
-	{if $tpl_open_mod_aa}
-		<a href="leute/index.php?action=show_aa">
+<!-- Events: -->
+{if $tpl_show_event}
+		<div style="display:block;">
+	{if $tpl_open_mod_event}
+		<a href="daten/index.php?action=list_events_mod">
 	{/if}
-	{$tpl_text_aa}
-	{if $tpl_open_mod_aa}
-		&nbsp;<span class="badge badge-warning">{$tpl_num_aa}</span>
+	{$tpl_text_event}
+	{if $tpl_open_mod_event}
+		&nbsp;<span class="badge badge-warning">{$tpl_num_event}</span>
 		</a>
 	{/if}
-</div>
+		</div>
 {/if}
 
 <!-- Gruppen-Anmeldungen: -->
@@ -43,15 +43,29 @@
 	</div>
 {/if}
 
-<!-- Events: -->
-{if $tpl_show_event}
-		<div style="display:block;">
-	{if $tpl_open_mod_event}
-		<a href="daten/index.php?action=list_events_mod">
+<!-- Adressänderungen: -->
+{if $tpl_show_aa}
+<div style="display:block;">
+	{if $tpl_open_mod_aa}
+		<a href="leute/index.php?action=show_aa">
 	{/if}
-	{$tpl_text_event}
-	{if $tpl_open_mod_event}
-		&nbsp;<span class="badge badge-warning">{$tpl_num_event}</span>
+	{$tpl_text_aa}
+	{if $tpl_open_mod_aa}
+		&nbsp;<span class="badge badge-warning">{$tpl_num_aa}</span>
+		</a>
+	{/if}
+</div>
+{/if}
+
+<!-- Donations: -->
+{if $tpl_show_donations}
+		<div style="display:block;">
+	{if $tpl_open_mod_donations}
+		<a href="donations/index.php?action=list_donations_mod">
+	{/if}
+	{$tpl_text_donations}
+	{if $tpl_open_mod_donations}
+		&nbsp;<span class="badge badge-warning">{$tpl_num_donations}</span>
 		</a>
 	{/if}
 		</div>

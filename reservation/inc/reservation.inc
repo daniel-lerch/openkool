@@ -2,7 +2,7 @@
 /***************************************************************
 *  Copyright notice
 *
-*  (c) 2003-2015 Renzo Lauper (renzo@churchtool.org)
+*  (c) 2003-2017 Renzo Lauper (renzo@churchtool.org)
 *  All rights reserved
 *
 *  This script is part of the kOOL project. The kOOL project is
@@ -28,7 +28,7 @@
 require_once($BASE_PATH.'inc/class.kOOL_listview.php');
 
 
-function ko_list_reservations($output=TRUE) {
+function ko_list_reservations() {
 	global $smarty, $access;
 
 	if($access['reservation']['MAX'] < 1) return;
@@ -41,6 +41,8 @@ function ko_list_reservations($output=TRUE) {
 	}
 	ko_get_reservationen($es, $z_where, $z_limit, 'res');
 
+	ko_get_resitems($resitems, "",'WHERE 1 ');
+
 
 	//Build fake access array for each reservation not just by item_id
 	$res_access = array();
@@ -49,7 +51,10 @@ function ko_list_reservations($output=TRUE) {
 	} else {
 		foreach($es as $e) {
 			//Edit and delete
-			if($access['reservation'][$e['item_id']] > 3 || ($e['user_id'] == $_SESSION['ses_userid'] && $_SESSION['ses_userid'] != ko_get_guest_id() && $access['reservation'][$e['item_id']] > 2)) {
+			if($access['reservation'][$e['item_id']] > 3
+				|| ($e['user_id'] == $_SESSION['ses_userid'] && $_SESSION['ses_userid'] != ko_get_guest_id() && $access['reservation'][$e['item_id']] > 2)
+				|| ($resitems[$e['item_id']]['moderation'] == 0 && $access['reservation'][$e['item_id']] > 2)
+				) {
 				$res_access[$e['id']] = 3;
 			} else {
 				$res_access[$e['id']] = 0;
@@ -65,10 +70,18 @@ function ko_list_reservations($output=TRUE) {
 	$list->setAccessRights(array('edit' => 3, 'delete' => 3), $res_access, 'id');
 
 
+	$resWithEvent = array();
+	foreach ($es as $res) {
+		ko_get_events($events, "AND ko_event.`reservationen` REGEXP '(^|,){$res['id']}(,|$)'");
+		if ($events && sizeof($events) == 1) {
+			$resWithEvent[] = $res['id'];
+		}
+	}
+
+
 	$list->setActions(array('edit' => array('action' => 'edit_reservation'),
 													'delete' => array('action' => 'delete_res',
-																						'confirm' => TRUE,
-																						'additional_row_js' => "if(###SERIE_ID### > 0) {c2 = confirm('".getLL("res_delete_serie_confirm")."');set_hidden_value('mod_confirm', c2);}"),
+																						'additional_row_js' => "if ([".implode(',', $resWithEvent)."].indexOf(###ID###) >= 0) {c = confirm('".str_replace("'", "\'", getLL('res_delete_res_confirm_event'))."');if(!c) return false;c3 = confirm('".getLL("res_delete_event_confirm")."');set_hidden_value('mod_confirm', 0);set_hidden_value('del_event', c3);} else {c = confirm('".str_replace("'", "\'", getLL('res_delete_res_confirm'))."');if(!c) return false;set_hidden_value('del_event', 0);if(###SERIE_ID### > 0) {c2 = confirm('".getLL("res_delete_serie_confirm")."');set_hidden_value('mod_confirm', c2);}}"),
 																						)
 										);
 	if ($access['reservation']['MAX'] > 1 && db_get_count('ko_resitem', 'id') > 0) $list->setActionNew('neue_reservation');
@@ -79,20 +92,51 @@ function ko_list_reservations($output=TRUE) {
 	$list_footer = $smarty->get_template_vars('list_footer');
 	if($access['reservation']['MAX'] > 3) {
 		$list_footer[] = array('label' => getLL('res_list_footer_del_label'), 'button' => '<input type="submit" onclick="c=confirm('."'".getLL("res_list_footer_del_button_confirm")."'".');if(!c) return false;set_action(\'del_selected\');" value="'.getLL("res_list_footer_del_button").'" />');
-
 	}
+
+	if($access['daten']['MAX'] > 1) {
+		if($access['daten']['ALL'] < 3) {
+			$egs = $egs_mod = array();
+			foreach($access['daten'] as $k => $v) {
+				if(!intval($k)) continue;
+				if($v >= 2) $egs[] = $k;
+				if($v >= 3) $egs_mod[] = $k;
+			}
+
+			$z_where = " AND (`id` IN ('".implode("','", $egs_mod)."')
+			OR (`id` IN ('".implode("','", $egs)."') AND `moderation` = 0))";
+		} else {
+			$z_where = '';
+		}
+		ko_get_eventgruppen($eventgroups,'', $z_where);
+		$eventgroup_select = "<select name=\"sel_eventgroup\" class=\"form-control input-group-sm\">";
+
+		foreach ($eventgroups AS $eventgroup) {
+			$eventgroup_select .= "<option value='" . $eventgroup['id'] . "'>" . $eventgroup['name'] . "</option>";
+		}
+		$eventgroup_select .= "</select>";
+
+		$list_footer[] = [
+			'button' => '
+				 <div class="form-group">
+				 	<label for="sel_eventgroup">' . getLL('res_list_footer_new_event_label')  . '</label>
+				 	<div class="input-group col-xs-3">
+						' . $eventgroup_select . '
+						<div class="input-group-btn">
+							<button class="btn btn-sm btn-primary form-control" onclick="c=confirm(\''.getLL('res_list_footer_new_event_confirm').'\'); if (!c) return false;  set_action(\'new_event_selected\');$(\'form[name=&quot;formular&quot;]\').submit();">'.getLL('res_list_footer_new_event_button').'</button>
+						</div>
+					</div>
+				</div>',
+			];
+	}
+
 	$list->setFooter($list_footer);
 
 	$list->setWarning(kota_filter_get_warntext('ko_reservation'));
 
 
 	//Output the list
-	if($output) {
-		$list->render($es);
-	} else {
-		print $list->render($es);
-	}
-
+	$list->render($es);
 }//ko_list_reservations()
 
 
@@ -101,7 +145,7 @@ function ko_list_reservations($output=TRUE) {
 
 //Type ist entweder "res" für eine Liste der normalen Reservationen
 // oder "mod" für eine Liste der zu moderierenden Reservationen
-function ko_show_res_liste($type="res", $output=TRUE) {
+function ko_show_res_liste($type="res") {
 	global $smarty, $DATETIME, $RES_GUEST_FIELDS_FORCE;
 	global $access, $KOTA;
 		
@@ -133,7 +177,14 @@ function ko_show_res_liste($type="res", $output=TRUE) {
 	} else {
 		$z_where = ' AND 1=2 ';
 	}
-	$z_where .= kota_apply_filter('ko_reservation_mod');
+	$kota_where = kota_apply_filter('ko_reservation_mod');
+  if($kota_where) $z_where .= ' AND '.$kota_where;
+
+	//Set time filter
+	$start = ko_daten_parse_time_filter($_SESSION['filter_start']);
+	if ($start != '') $z_where .= "AND enddatum >= '$start'";
+	$ende = ko_daten_parse_time_filter($_SESSION['filter_ende'], '');
+	if ($ende != '') $z_where .= "AND startdatum <= '$ende'";
 
 	//Personen-Daten anzeigen oder nicht
 	$guest_fields = array_merge(ko_get_setting("res_show_fields_to_guest"), $RES_GUEST_FIELDS_FORCE);
@@ -190,7 +241,7 @@ function ko_show_res_liste($type="res", $output=TRUE) {
 		}
 
 		//Delete-Button
-		if($access['reservation'][$e['item_id']] > 4 || ($_SESSION["ses_userid"] != ko_get_guest_id() && $e["user_id"] == $_SESSION["ses_userid"])) {
+		if($access['reservation'][$e['item_id']] > 4 || ($_SESSION["ses_userid"] != ko_get_guest_id() && $e["user_id"] == $_SESSION["ses_userid"] && !ko_get_setting('res_access_prevent_lvl2_del'))) {
 			$manual_access['delete'][$e_i] = TRUE;
 			$tpl_list_data[$e_i]["show_delete_button"] = TRUE;
 			$tpl_list_data[$e_i]["alt_delete"] = getLL("res_mod_decline");
@@ -242,17 +293,13 @@ function ko_show_res_liste($type="res", $output=TRUE) {
 	$list->setFooter($list_footer);
 
 	//Output the list
-	if($output) {
-		$list->render($es);
-	} else {
-		print $list->render($es);
-	}
+	$list->render($es);
 }//ko_show_res_liste()
 
 
 
 
-function ko_show_items_liste($output=TRUE) {
+function ko_show_items_liste() {
 	global $smarty, $access;
 
 	if($access['reservation']['MAX'] < 4) return;
@@ -278,11 +325,7 @@ function ko_show_items_liste($output=TRUE) {
 	$list->setStats($rows);
 	
 	//Output the list
-	if($output) {
-		$list->render($res);
-	} else {
-		print $list->render($res);
-	}
+	$list->render($res);
 }//ko_show_items_liste()
 
 
@@ -306,7 +349,7 @@ function ko_formular_reservation($mode, $id, $data=array()) {
 		$r = $r_[$id];
 
 		//Info über Reservation für Moderator
-		if($access['reservation']['MAX'] > 3) {
+		if($access['reservation']['MAX'] > 1 && $_SESSION['ses_userid'] != ko_get_guest_id()) {
 			ko_get_login($r['user_id'], $res_login);
 			$res_info  = getLL('res_info_cdate').': <b>'.sqldatetime2datum($r['cdate']).'</b>';
 			$res_info .= '<br />'.getLL('res_info_user').': <b>'.$res_login['login'].' ('.$r['user_id'].')</b>';
@@ -322,7 +365,7 @@ function ko_formular_reservation($mode, $id, $data=array()) {
 		unset($r['_event_id']); // TODO: what to do with _event_id?
 
 		//Info über Reservation für Moderator
-		if($access['reservation']['MAX'] > 3) {
+		if($access['reservation']['MAX'] > 1 && $_SESSION['ses_userid'] != ko_get_guest_id()) {
 			ko_get_login($r['user_id'], $res_login);
 			$res_info  = getLL('res_info_cdate').': <b>'.sqldatetime2datum($r['cdate']).'</b>';
 			$res_info .= '<br />'.getLL('res_info_user').': <b>'.$res_login['login'].' ('.$r['user_id'].')</b>';
@@ -347,18 +390,21 @@ function ko_formular_reservation($mode, $id, $data=array()) {
 
 		//Or else use Data of logged in user
 		} else {
-			$p = ko_get_logged_in_person();
+			$p = ko_get_logged_in_person('', FALSE);
 			if($p['id'] || $p['email']) {
 				$email = ko_get_userpref($_SESSION['ses_userid'], 'res_prefill_email');
 				if (!$email) $email = 'email';
 				$phone = ko_get_userpref($_SESSION['ses_userid'], 'res_prefill_tel');
 				if (!$phone) $phone = $p['telg']?'telg':'telp';
+				$name = ko_get_userpref($_SESSION['ses_userid'], 'res_prefill_name');
+				if(trim($name) == '-') $fillName = '';
+				else $fillName = ($name ? $name : ($p['vorname'].' '.$p['nachname']));
 				kota_assign_values(
 					'ko_reservation',
 					array(
-						'name' => $p['vorname'].' '.$p['nachname'],
-						'email' => $p[$email],
-						'telefon' => $p[$phone]
+						'name' => $fillName,
+						'email' => ($email == '_none' ? '' : $p[$email]),
+						'telefon' => ($phone == '_none' ? '' : $p[$phone]),
 					)
 				);
 			}
@@ -380,6 +426,7 @@ function ko_formular_reservation($mode, $id, $data=array()) {
 		case "monatlich1": $true = 3; break;
 		case "monatlich2": $true = 4; break;
 		case "holidays": $true = 5; break;
+		case "dates": $true = 6; break;
 		default: $true = 0;
 	}
 	for($i=0; $i<6; $i++) {
@@ -421,13 +468,23 @@ function ko_formular_reservation($mode, $id, $data=array()) {
 		$sel_code_holidays_offset .= '<option value="'.sprintf("%+d", $i).'"'.($i == 0?' selected="selected"':'').'>'.sprintf("%+d", $i).'</option>';
 	}
 
-	$repeat_descs[] = getLL("daten_repeat_none");
-	$repeat_descs[] = sprintf(getLL("daten_repeat_daily"), ' </label><input type="text" name="txt_repeat_tag" value="'.$txt_repeat_tag.'" size="2" /> ', '<label>');
-	$repeat_descs[] = sprintf(getLL("daten_repeat_weekly"), ' </label><input type="text" name="txt_repeat_woche" value="'.$txt_repeat_woche.'" size="2" /> ', '<label>');
-	$repeat_descs[] = sprintf(getLL("daten_repeat_monthly1"), ' </label><select name="sel_monat1_nr" size="0">'.$sel1_code.'</select><select name="sel_monat1_tag" size="0">'.$sel2_code.'</select><label>');
-	$repeat_descs[] = sprintf(getLL("daten_repeat_monthly2"), ' </label><input type="text" name="txt_repeat_monat2" value="'.$txt_repeat_monat2.'" size="2" /> ', '<label>');
-	$repeat_descs[] = sprintf(getLL("daten_repeat_holidays"), ' </label><select name="sel_repeat_holidays">'.$sel_code_holidays.'</select><select name="sel_repeat_holidays_offset">'.$sel_code_holidays_offset.'</select>'.getLL('days').' <label>');
+	// dates
+	$localSmarty = clone($smarty);
+	$sel_code_dates_input = array(
+		'type' => 'multidateselect',
+		'name' => 'sel_repeat_dates',
+		'avalue' => $_POST['sel_repeat_dates'],
+	);
+	$localSmarty->assign('input', $sel_code_dates_input);
+	$sel_code_dates = $localSmarty->fetch('ko_formular_elements.tmpl');
 
+	$repeat_descs[] = getLL("daten_repeat_none");
+	$repeat_descs[] = sprintf(getLL("daten_repeat_daily"), ' </label><input class="res-conflict-field" type="text" name="txt_repeat_tag" value="'.$txt_repeat_tag.'" size="2" /> ', '<label>');
+	$repeat_descs[] = sprintf(getLL("daten_repeat_weekly"), ' </label><input class="res-conflict-field" type="text" name="txt_repeat_woche" value="'.$txt_repeat_woche.'" size="2" /> ', '<label>');
+	$repeat_descs[] = sprintf(getLL("daten_repeat_monthly1"), ' </label><select class="res-conflict-field" name="sel_monat1_nr" size="0">'.$sel1_code.'</select><select class="res-conflict-field" name="sel_monat1_tag" size="0">'.$sel2_code.'</select><label>');
+	$repeat_descs[] = sprintf(getLL("daten_repeat_monthly2"), ' </label><input class="res-conflict-field" type="text" name="txt_repeat_monat2" value="'.$txt_repeat_monat2.'" size="2" /> ', '<label>');
+	$repeat_descs[] = sprintf(getLL("daten_repeat_holidays"), ' </label><select class="res-conflict-field" name="sel_repeat_holidays">'.$sel_code_holidays.'</select><select class="res-conflict-field" name="sel_repeat_holidays_offset">'.$sel_code_holidays_offset.'</select>'.getLL('days').' <label>');
+	$repeat_descs[] = sprintf(getLL("daten_repeat_dates"), ' </label>'.$sel_code_dates.'<label>');
 
 	//Repeat-Stop
 	$values = array(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31);
@@ -461,7 +518,7 @@ function ko_formular_reservation($mode, $id, $data=array()) {
 	}
 
 	//Eventgroup select to exclude holidays
-	$holiday_code = '<select name="sel_repeat_eg" size="0"><option value=""></option>';
+	$holiday_code = '<select class="res-conflict-field" name="sel_repeat_eg" size="0"><option value=""></option>';
 	$value = $_POST['sel_repeat_eg'] ? format_userinput($_POST['sel_repeat_eg'], 'uint') : '';
 	foreach(ko_get_eventgruppen_for_select() as $entry) {
 		$sel = $value == $entry['value'] && !$entry['disabled'] ? ' selected="selected"' : '';
@@ -472,30 +529,17 @@ function ko_formular_reservation($mode, $id, $data=array()) {
 	}
 	$holiday_code .= '</select>';
 
-	$repeat_stop  = '<select name="sel_bis_tag" size="0">'.$sel_day_code.'</select>&nbsp;&nbsp;';
-	$repeat_stop .= '<select name="sel_bis_monat" size="0">'.$sel_month_code.'</select>&nbsp;&nbsp;';
-	$repeat_stop .= '<select name="sel_bis_jahr" size="0">'.$sel_year_code.'</select>';
-	$repeat_stop .= '<br />'.getLL("daten_repeat_or").'<br /><input type="text" name="txt_num_repeats" size="4" maxlength="3" value="'.($_POST['txt_num_repeats'] ? $_POST['txt_num_repeats'] : '').'" onkeyup="repeat_disable(this.value);" />&nbsp;'.getLL("daten_repeat_iterations").' <a href="#" onclick="return false;" '.ko_get_tooltip_code(getLL('res_repeat_iterations_help')).'><i class="fa fa-question-circle"></i></a>';
+	$repeat_stop  = '<select class="res-conflict-field" name="sel_bis_tag" size="0">'.$sel_day_code.'</select>&nbsp;&nbsp;';
+	$repeat_stop .= '<select class="res-conflict-field" name="sel_bis_monat" size="0">'.$sel_month_code.'</select>&nbsp;&nbsp;';
+	$repeat_stop .= '<select class="res-conflict-field" name="sel_bis_jahr" size="0">'.$sel_year_code.'</select>';
+	$repeat_stop .= '<br />'.getLL("daten_repeat_or").'<br /><input class="res-conflict-field" type="text" name="txt_num_repeats" size="4" maxlength="3" value="'.($_POST['txt_num_repeats'] ? $_POST['txt_num_repeats'] : '').'" onkeyup="repeat_disable(this.value);" />&nbsp;'.getLL("daten_repeat_iterations").' <a href="#" onclick="return false;" '.ko_get_tooltip_code(getLL('res_repeat_iterations_help')).'><i class="fa fa-question-circle"></i></a>';
 	$repeat_stop .= '<script>repeat_disable($(\'[name="txt_num_repeats"]\')[0].value);</script>';
 	$repeat_stop .= '<br /><br />'.getLL('daten_repeat_eg').'<br />'.$holiday_code;
 
 
 
 	//Formular aufbauen
-	$mandatory = explode(",", ko_get_setting("res_mandatory"));
 	$gc = 0;
-
-	// add default fields to mandatory fields
-	if (!in_array('item_id', $mandatory)) $mandatory[] = 'item_id';
-	if (!in_array('startdatum', $mandatory)) $mandatory[] = 'startdatum';
-
-	//add mandatory-flags and mandatory class
-	foreach($KOTA[$table] as $key => $kota_field) {
-		if(in_array($key, $mandatory)) {
-			$KOTA[$table][$key]["form"]["desc"] = getLL("kota_ko_reservation_".$key)." *";
-			$KOTA[$table][$key]["form"]["add_class"] .= ' mandatory';
-		}
-	}
 
 	//allow multiple objects to be reserved at once
 	if($mode == "neu" && ($_SESSION["ses_userid"] != ko_get_guest_id() || ko_get_setting("res_allow_multires_for_guest")) ) {
@@ -505,74 +549,104 @@ function ko_formular_reservation($mode, $id, $data=array()) {
 	$KOTA[$table]["item_id"]["form"]["params"] = "size=\"5\" onchange=\"javascript:changeResItem($(this).data('value'));\"";
 
 	//get first part of form from kota
-	$group = ko_multiedit_formular($table, "", $id, "", "", TRUE);
-	$group[$gc]["titel"] = "";
-	$rowcounter = sizeof($group[$gc]["row"])+1;
-	
+	$group = ko_multiedit_formular($table, "", $id, "", "", TRUE, '', TRUE, 'formular', '2');
+	$group[0]['groups'][$gc]["title"] = "";
+	$group[0]['groups'][$gc]["group"] = TRUE;
+	$group[0]['groups'][$gc]["state"] = 'open';
+
+	$rowcounter = sizeof($group[0]['groups'][$gc]["rows"])+1;
 
 	//Wiederholungen (nur bei Neu)
 	if($mode == "neu") {
-		$group[++$gc] = array("titel" => getLL("daten_repeat"), "state" => $true == 0 ? "closed" : "open", "colspan" => 'colspan="2"');
-		$group[$gc]["row"][$rowcounter]["inputs"][0] = array("desc" => getLL("daten_repeat_title1"),
-																 "type" => "radio",
-																 "name" => "rd_wiederholung",
-																 "values" => array("keine", "taeglich", "woechentlich", "monatlich1", "monatlich2", "holidays"),
-																 "descs" => $repeat_descs,
-																 "separator" => "<br />",
-																 "value" => isset($_POST["rd_wiederholung"]) ? $_POST["rd_wiederholung"] : "keine"
-																 );
-		$group[$gc]["row"][$rowcounter++]["inputs"][1] = array("desc" => getLL("daten_repeat_title2"),
-																 "type" => "html",
-																 "value" => $repeat_stop
-																 );
+		$group[0]['groups'][++$gc] = array("titel" => getLL("daten_repeat"), "group" => TRUE, "state" => $true == 0 ? "closed" : "open", "colspan" => 'colspan="2"');
+		$group[0]['groups'][$gc]["rows"][$rowcounter]["inputs"][0] = array(
+			"desc" => getLL("daten_repeat_title1"),
+			"type" => "radio",
+			"name" => "rd_wiederholung",
+			"values" => array("keine", "taeglich", "woechentlich", "monatlich1", "monatlich2", "holidays", "dates"),
+			"descs" => $repeat_descs,
+			"separator" => "<br />",
+			"add_class" => "res-conflict-field",
+			"value" => isset($_POST["rd_wiederholung"]) ? $_POST["rd_wiederholung"] : "keine"
+		);
+		$group[0]['groups'][$gc]["rows"][$rowcounter++]["inputs"][1] = array("desc" => getLL("daten_repeat_title2"),
+			"type" => "html",
+			"value" => $repeat_stop
+		);
 	}
 	if(in_array($mode, array("edit", 'edit_mod')) && $r["serie_id"]) {
-		$group[$gc]["row"][$rowcounter++]["inputs"][0] = array("type" => "   ");
-		$group[$gc]["row"][$rowcounter++]["inputs"][0] = array("desc" => getLL("res_serie_title"),
-																 "type" => "checkbox",
-																 "name" => "chk_serie",
-																 "value" => "1",
-																 "desc2" => getLL("res_serie_apply")." (".db_get_count($table, "id", "AND `serie_id` = '".$r["serie_id"]."'").")",
-																 "colspan" => 'colspan="2"',
-																 );
+		$group[0]['groups'][$gc]["rows"][$rowcounter++]["inputs"][0] = array("type" => "   ");
+		$group[0]['groups'][$gc]["rows"][$rowcounter++]["inputs"][0] = array(
+			"desc" => getLL("res_serie_title"),
+			"type" => "checkbox",
+			"name" => "chk_serie",
+			"value" => "1",
+			"desc2" => getLL("res_serie_apply")." (".db_get_count($table, "id", "AND `serie_id` = '".$r["serie_id"]."'").")",
+			"colspan" => 'colspan="2"',
+			"add_class" => "res-conflict-field",
+		);
 	}
-	if($access['reservation']['MAX'] > 3 && in_array($mode, array("edit", 'edit_mod'))) {
-		$group[$gc]["row"][$rowcounter++]["inputs"][0] = array("type" => "   ");
-		$group[$gc]["row"][$rowcounter++]["inputs"][0] = array("desc" => getLL("res_info_title"),
-																 "type" => "html",
-																 "value" => $res_info,
-																 "colspan" => 'colspan="2"',
-																 );
+	if($access['reservation']['MAX'] > 1 && in_array($mode, array("edit", 'edit_mod')) && $_SESSION['ses_userid'] != ko_get_guest_id()) {
+		$group[0]['groups'][$gc]["rows"][$rowcounter++]["inputs"][0] = array("type" => "   ");
+		$group[0]['groups'][$gc]["rows"][$rowcounter++]["inputs"][0] = array(
+			"desc" => getLL("res_info_title"),
+			"type" => "html",
+			"value" => $res_info,
+			"colspan" => 'colspan="2"',
+			"add_class" => "res-conflict-field",
+		);
 	}
+
+	$group[0]['groups'][++$gc] = array("titel" => getLL("res_conflicts"), "group" => TRUE, "state" => "open", "colspan" => 'colspan="2"', 'name' => 'res-conflicts', 'appearance' => 'danger');
+	$group[0]['groups'][$gc]['rows'][$rowcounter++]['inputs'][0] = array(
+		'desc' => '',
+		'type' => 'html',
+		'value' => '<script>$("#group_res-conflicts").hide();</script>',
+	);
 
 	switch ($mode) {
 		case 'edit':
+			if(
+				$access['reservation'][$r['item_id']] > 3 ||
+				(
+					$_SESSION["ses_userid"] == $r["user_id"] &&
+					$_SESSION["ses_userid"] != ko_get_guest_id() &&
+					$access['reservation'][$r['item_id']] > 2
+				)
+			) {
+				if(empty($group[0]['groups'][0]['options'])) {
+					unset($group[0]['groups'][0]['options']);
+				}
+				$group[0]['groups'][0]['options']['delete_action'] = 'delete_res';
+			}
+
 			$smarty->assign("tpl_titel", getLL("res_edit_reservation"));
 			$smarty->assign("tpl_action", "submit_edit_reservation");
 
 			$smarty->assign("tpl_submit_as_new", getLL('res_submit_as_new'));
 			$smarty->assign("tpl_action_as_new", "submit_neue_reservation");
-		break;
+			break;
 		case 'edit_mod':
 			$smarty->assign("tpl_titel", getLL("res_edit_mod"));
 
 			$specialSubmit =
-'<button type="submit" class="btn btn-primary" name="submit" class="ko_form_submit" value="'.getLL("res_edit_mod").'" onclick="var ok = check_mandatory_fields($(this).closest(\'form\')); if (ok) {set_action(\'submit_edit_res_mod\', this)} else return false;">
+				'<button type="submit" class="btn btn-primary" name="submit" class="ko_form_submit" value="'.getLL("res_edit_mod").'" onclick="var ok = check_mandatory_fields($(this).closest(\'form\')); if (ok) {disable_onunloadcheck(); set_action(\'submit_edit_res_mod\', this)} else return false;">
 	'.getLL("save").' <i class="fa fa-save"></i>
 </button>';
 			if ($access['reservation']['ALL'] > 3 || $access['reservation'][$r['item_id']] > 3) {
 				$specialSubmit .=
-'<button type="submit" class="btn btn-success" name="submit" class="ko_form_submit" value="'.getLL("res_edit_and_approve_mod").'" onclick="var ok = check_mandatory_fields($(this).closest(\'form\')); if (ok) {set_action(\'submit_approve_edit_res_mod\', this)} else return false;">
+					'<button type="submit" class="btn btn-success" name="submit" class="ko_form_submit" value="'.getLL("res_edit_and_approve_mod").'" onclick="var ok = check_mandatory_fields($(this).closest(\'form\')); if (ok) {disable_onunloadcheck(); set_action(\'submit_approve_edit_res_mod\', this)} else return false;">
 	'.getLL("res_edit_and_approve_mod").' <i class="fa fa-check"></i>
 </button>';
 			}
 			$smarty->assign("tpl_special_submit", $specialSubmit);
-		break;
+			break;
 		case 'neu':
 			$smarty->assign("tpl_titel", getLL("res_new_res"));
 			$smarty->assign("tpl_action", "submit_neue_reservation");
-		break;
+			break;
 	}
+
 	$smarty->assign("tpl_submit_value", getLL("save"));
 	$smarty->assign("tpl_id", $id);
 
@@ -583,7 +657,7 @@ function ko_formular_reservation($mode, $id, $data=array()) {
 
 	$smarty->assign("help", ko_get_help("reservation", "neue_reservation"));
 
-	$smarty->display("ko_formular.tpl");
+	$smarty->display("ko_formular2.tpl");
 }//ko_formular_reservation()
 
 
@@ -631,13 +705,14 @@ function ko_formular_item($mode, $id) {
 }//ko_formular_item()
 
 
-
-
 /**
-  * Stores a new reservation to be moderated
-	*/
-function ko_res_store_moderation($data) {
-	$mod_txt = array();
+ * Stores a new reservation to be moderated
+ * @param array $data
+ * @param bool $sendEmails
+ */
+function ko_res_store_moderation($data, $sendEmails=TRUE) {
+	$clientEmail = array();
+	$mod_obj = array();
 	$items = db_select_data("ko_resitem", "WHERE 1=1", "*");
 
 	foreach($data as $res) {
@@ -658,32 +733,71 @@ function ko_res_store_moderation($data) {
 		ko_log_diff('new_mod_res', $log_data);
 
 		//Prepare email text for moderators
-		if($resitem["moderation"] == 2) {
+		if($resitem['moderation'] == 2 && $sendEmails) {
 			$txt = ko_get_res_infotext($res);
 			//Add links to confirm and delete reservation
 			$txt .= "\n".ko_get_mod_links($res, $new_id);
-			$mod_txt[$resitem["gruppen_id"]] .= $txt."\n\n";
+			$mod_obj[$resitem["gruppen_id"]]['items'][$resitem['id']].= $txt."\n\n";
+			if(check_email($res['email']) && sizeof($clientEmail) < 1) $clientEmail[$res['email']] = $res['name'];
 		}
 	}//foreach(data as res)
 
-
 	//Inform all moderators for the different resgroups
-	$done = array();
-	foreach($mod_txt as $gid => $txt) {
-		if(!$txt || !$gid) continue;
-		$mailtext = str_replace("[RES]", "\n\n".$txt, getLL("res_email_mod_text"));
-		$mods = ko_get_moderators_by_resgroup($gid);
-		foreach($mods as $mod) {
-			//Send moderation emails to same email address only once
-			if(!$mod['email'] || in_array($mod['email'], $done)) continue;
-
-			//Replace USERHASH in confirm/delete links for each moderator
-			$text = str_replace('###USERHASH###', md5($mod['id'].KOOL_ENCRYPTION_KEY), $mailtext);
-			ko_send_mail(ko_get_setting("info_email"), $mod["email"], "[kOOL] ".getLL("res_email_mod_subject"), ko_emailtext($text));
-			$done[] = $mod['email'];
-		}
+	if($sendEmails) {
+		ko_res_send_mod_mail($mod_obj, $clientEmail);
 	}
 }//ko_res_store_moderation()
+
+/**
+ * Send moderation emails containing objects. Mails will be grouped for each moderator.
+ *
+ * @param array $objects grouped reservations
+ */
+function ko_res_send_mod_mail($objects, $clientEmail = array()) {
+	global $MAIL_TRANSPORT;
+
+	$mods = db_select_data("ko_admin AS a LEFT JOIN ko_leute as l ON a.leute_id = l.id",
+		"WHERE (a.disabled = '0' OR a.disabled = '')",
+		"a.id AS id, a.email AS admin_email, l.vorname as vorname, l.nachname as nachname, l.id as leute_id");
+
+	//Set proper emails for moderators
+	ko_get_moderators_email($mods);
+
+	foreach($mods as $mod) {
+		$mod['user_access'] = ko_get_access('reservation', $mod['id'], TRUE, TRUE, 'login', FALSE);
+		if(!$mod['user_access']) continue;
+
+		$group_txt_full = '';
+		$res_access_mode = ko_get_setting("res_access_mode");
+		foreach($objects as $gid => $items) {
+			if(!$gid) continue;
+			foreach($items['items'] as $item_id => $item) {
+				if($mod['user_access']['reservation']['ALL'] < 5) {
+					if (
+						($res_access_mode == 0 && $mod['user_access']['reservation']['grp' . $gid] < 5) ||
+						($res_access_mode == 1 && $mod['user_access']['reservation'][$item_id] < 5)
+					) continue;
+				}
+
+				$group_txt_full .= $item;
+			}
+		}
+
+		if(empty($group_txt_full)) continue;
+
+		if(!check_email($mod['email'])) continue;
+
+		$mailtext = str_replace("[RES]", "\n\n".$group_txt_full, getLL("res_email_mod_text"));
+		//Replace USERHASH in confirm/delete links for each moderator
+		$text = str_replace('###USERHASH###', md5($mod['id'].KOOL_ENCRYPTION_KEY), $mailtext);
+
+    if(sizeof($clientEmail) > 0) $replyTo = $clientEmail;
+    else $replyTo = array();
+
+		ko_send_mail(ko_mail_get_from(), $mod['email'], getLL('email_subject_prefix').getLL("res_email_mod_subject"), ko_emailtext($text), array(), array(), array(), $replyTo);
+	}
+}//ko_res_send_mod_mail()
+
 
 
 
@@ -769,10 +883,10 @@ function ko_res_mod_approve($ids, $notification=TRUE) {
 		$smarty->assign("txt_empfaenger", implode(", ", array_unique($email_rec)));
 		$smarty->assign('txt_empfaenger_semicolon', implode('; ', array_unique($email_rec)));
 		$smarty->assign("tpl_ohne_email", ($r["email"] == "" ? implode(", ", array_unique($noemail_rec)) : getLL("res_mod_no")) );
-		$p = ko_get_logged_in_person();
+		$p = ko_get_logged_in_person('', FALSE);
 		$smarty->assign("tpl_show_bcc_an_mich", ($p["email"] ? TRUE : FALSE));
 		$smarty->assign("tpl_show_send", TRUE);
-		$smarty->assign('txt_betreff', ('[kOOL] '.(sizeof($new_ids) > 1 ? getLL('res_emails_mod_confirm_subject') : getLL('res_email_mod_confirm_subject'))) );
+		$smarty->assign('txt_betreff', (getLL('email_subject_prefix').(sizeof($new_ids) > 1 ? getLL('res_emails_mod_confirm_subject') : getLL('res_email_mod_confirm_subject'))) );
 		$smarty->assign('tpl_res_ids', implode(',', $new_ids));
 
 		$smarty->assign('txt_emailtext', ((sizeof($new_ids) > 1 ? getLL('res_emails_mod_confirm_text') : getLL('res_email_mod_confirm_text'))."\n\n".ko_html($res_text)) );
@@ -789,8 +903,8 @@ function ko_res_mod_approve($ids, $notification=TRUE) {
 /**
   * Stores a new reservation and sends all necessary emails
 	*/
-function ko_res_store_reservation($data, $send_user_email, &$double_error_txt, &$success, &$failure) {
-	global $access, $BASE_PATH;
+function ko_res_store_reservation($data, $send_user_email, &$double_error_txt = null, &$success = null, &$failure = null) {
+	global $access, $BASE_PATH, $MAIL_TRANSPORT;
 
 	$ids = array();  //Will hold the ids of the new reservations
 	$res_txt = "";
@@ -822,6 +936,7 @@ function ko_res_store_reservation($data, $send_user_email, &$double_error_txt, &
 		if(!$res["cdate"]) $res["cdate"] = strftime("%Y-%m-%d %H:%M:%S", time());
 		if(!$res["user_id"]) $res["user_id"] = $_SESSION["ses_userid"];
 		$do_event = $res["_event_id"]; unset($res["_event_id"]);
+		unset($res['event_id']);  //Only used for list view
 
 		$new_id = db_insert_data("ko_reservation", $res);
 		$txt = ko_get_res_infotext($res);
@@ -841,7 +956,10 @@ function ko_res_store_reservation($data, $send_user_email, &$double_error_txt, &
 		}
 
 		//Store user's email address
-		if($send_user_email && !$user_email && $res["email"]) $user_email = $res["email"];
+		if($send_user_email && !$user_email && $res['email']) {
+			$user_email = $res['email'];
+			$user_name = $res['name'];
+		}
 
 		//Update event, this reservation belongs to
 		if($do_event) {
@@ -859,6 +977,25 @@ function ko_res_store_reservation($data, $send_user_email, &$double_error_txt, &
 	}//foreach(data as res)
 
 
+	//Get replyTo email (current user)
+	if($_SESSION['ses_userid'] != ko_get_guest_id()) {
+		$p = ko_get_logged_in_person();
+
+		if($p['vorname'] || $p['nachname']) {
+			$login = $p['vorname'].' '.$p['nachname'];
+		} else {
+			$login = $_SESSION['ses_username'];
+		}
+		$replyToUser = array( (check_email($p['email']) ? $p['email'] : ko_get_setting('info_email')) => $login);
+	} else {
+		$replyToUser = array(ko_get_setting('info_email') => ko_get_setting('info_name'));
+	}
+
+	$replyTo = check_email($user_email) ? array($user_email => $user_name) : array();
+
+	$from_email = ko_mail_get_from();
+
+
 	//1: Mail to user who did the reservation
 	if($send_user_email && $user_email) {
 		$mailtext = getLL("res_email_confirm_text")."\n\n".$res_txt;
@@ -869,7 +1006,8 @@ function ko_res_store_reservation($data, $send_user_email, &$double_error_txt, &
 		} else {
 			$file = NULL;
 		}
-		ko_send_mail(ko_get_setting("info_email"), $user_email, "[kOOL] ".getLL("res_email_confirm_subject"), $mailtext, $file);
+
+		ko_send_mail($from_email, $user_email, getLL('email_subject_prefix').getLL("res_email_confirm_subject"), $mailtext, $file, array(), array(), $replyToUser);
 	}
 
 	//2: Mail for moderator, if user with access level 4 has made a reservation of a moderated object
@@ -881,7 +1019,7 @@ function ko_res_store_reservation($data, $send_user_email, &$double_error_txt, &
 				//Check user_pref for this moderator
 				if (!$mod['email']) continue;
 				if(ko_get_userpref($mod["id"], "do_mod_email_for_edit_res") == 1) {
-					ko_send_mail(ko_get_setting("info_email"), $mod["email"], "[kOOL] ".getLL("res_email_mod3_subject"), $mailtext);
+					ko_send_mail($from_email, $mod["email"], getLL('email_subject_prefix').getLL("res_email_mod3_subject"), $mailtext, array(), array(), array(), $replyTo);
 				}
 			}
 		}
@@ -894,7 +1032,7 @@ function ko_res_store_reservation($data, $send_user_email, &$double_error_txt, &
 		foreach($recipients as $rec) {
 			$rec = trim($rec);
 			if(!check_email($rec)) continue;
-			ko_send_mail(ko_get_setting('info_email'), $rec, getLL('res_email_confirm_subject'), getLL('res_email_confirm_text')."\n\n".$data['leadtext']."\n\n".$data['text']);
+			ko_send_mail($from_email, $rec, getLL('res_email_confirm_subject'), getLL('res_email_confirm_text')."\n\n".$data['leadtext']."\n\n".$data['text'], array(), array(), array(), $replyTo);
 		}//foreach(recipients)
 	}
 
@@ -909,7 +1047,7 @@ function ko_res_store_reservation($data, $send_user_email, &$double_error_txt, &
 	*/
 function ko_res_settings() {
 	global $smarty;
-	global $access;
+	global $access, $MODULES;
 	global $LEUTE_MOBILE_FIELDS;
 	global $LEUTE_EMAIL_FIELDS;
 	global $RES_GUEST_FIELDS_FORCE;
@@ -963,8 +1101,8 @@ function ko_res_settings() {
 	$frmgroup[$gc]['row'][$rowcounter++]['inputs'][0] = array('desc' => getLL('res_settings_monthly_title'),
 			'type' => 'select',
 			'name' => 'sel_monthly_title',
-			'values' => array('item_id', 'zweck', 'name'),
-			'descs' => array(getLL('kota_ko_reservation_item_id'), getLL('kota_ko_reservation_zweck'), getLL('kota_ko_reservation_name')),
+			'values' => array('item_id', 'zweck', 'name', 'item_id_zweck'),
+			'descs' => array(getLL('kota_ko_reservation_item_id'), getLL('kota_ko_reservation_zweck'), getLL('kota_ko_reservation_name'), getLL('kota_ko_reservation_item_id_zweck')),
 			'value' => $value,
 			);
 	$value = ko_get_userpref($_SESSION['ses_userid'], 'res_mark_sunday');
@@ -1024,13 +1162,31 @@ function ko_res_settings() {
 			'value' => $value,
 			);
 	$value = ko_get_userpref($_SESSION['ses_userid'], 'res_export_show_legend');
-	$frmgroup[$gc]['row'][$rowcounter++]['inputs'][0] = array('desc' => getLL('res_settings_export_show_legend'),
+	$frmgroup[$gc]['row'][$rowcounter]['inputs'][0] = array('desc' => getLL('res_settings_export_show_legend'),
 			'type' => 'switch',
 			'name' => 'sel_export_show_legend',
 			'label_0' => getLL('no'),
 			'label_1' => getLL('yes'),
 			'value' => $value == '' ? 0 : $value,
 			);
+
+	$value = ko_get_userpref($_SESSION['ses_userid'], 'res_name_in_pdffooter');
+	$frmgroup[$gc]['row'][$rowcounter++]['inputs'][1] = array('desc' => getLL('res_settings_name_in_pdffooter'),
+		'type' => 'switch',
+		'name' => 'sel_name_in_pdffooter',
+		'label_0' => getLL('no'),
+		'label_1' => getLL('yes'),
+		'value' => $value === null ? 1 : $value,
+	);
+
+	$value = ko_get_userpref($_SESSION['ses_userid'], 'res_contact_in_export');
+	$frmgroup[$gc]['row'][$rowcounter++]['inputs'][1] = array('desc' => getLL('res_settings_contact_in_export'),
+		'type' => 'switch',
+		'name' => 'sel_contact_in_export',
+		'label_0' => getLL('no'),
+		'label_1' => getLL('yes'),
+		'value' => $value == '' ? 0 : $value,
+	);
 
 	$frmgroup[$gc]['row'][$rowcounter++]['inputs'][0] = array('type' => '   ');
 
@@ -1071,28 +1227,47 @@ function ko_res_settings() {
 				'value' => $value,
 				);
 
-		$values = array_unique(array_merge(array('telp', 'telg'), $LEUTE_MOBILE_FIELDS));
-		$descs = array();
-		foreach ($values as $v) {
-			$descs[] = getLL('kota_ko_leute_'.$v);
-		}
-		$value = ko_get_userpref($_SESSION['ses_userid'], 'res_prefill_tel');
-		$frmgroup[$gc]['row'][$rowcounter++]['inputs'][1] = array('desc' => getLL('res_settings_prefill_tel'),
-			'type' => 'select',
-			'name' => 'sel_prefill_tel',
-			'values' => $values,
-			'descs' => $descs,
-			'value' => $value,
-		);
+		if(in_array('leute', $MODULES)) {
+			//Prefill: name
+			$value = ko_get_userpref($_SESSION['ses_userid'], 'res_prefill_name');
+			$frmgroup[$gc]['row'][$rowcounter++]['inputs'][1] = array('desc' => getLL('res_settings_prefill_name'),
+				'type' => 'text',
+				'name' => 'txt_prefill_name',
+				'value' => $value,
+			);
 
-		if (sizeof($LEUTE_EMAIL_FIELDS) > 1) {
-			$values = $LEUTE_EMAIL_FIELDS;
+			//Prefill: phone
+			$values = array_unique(array_merge(array('_none', 'telp', 'telg'), $LEUTE_MOBILE_FIELDS));
 			$descs = array();
 			foreach ($values as $v) {
-				$descs[] = getLL('kota_ko_leute_'.$v);
+				if($v == '_none') {
+					$descs[] = getLL('none');
+				} else {
+					$descs[] = getLL('kota_ko_leute_'.$v);
+				}
+			}
+			$value = ko_get_userpref($_SESSION['ses_userid'], 'res_prefill_tel');
+			$frmgroup[$gc]['row'][$rowcounter]['inputs'][0] = array('desc' => getLL('res_settings_prefill_tel'),
+				'type' => 'select',
+				'name' => 'sel_prefill_tel',
+				'values' => $values,
+				'descs' => $descs,
+				'value' => $value,
+			);
+
+			//Prefill: email
+			$values = array_merge(array('_none'), $LEUTE_EMAIL_FIELDS);
+			$descs = array();
+			foreach ($values as $v) {
+				if($v == '_none') {
+					$descs[] = getLL('none');
+				} else {
+					$descs[] = getLL('kota_ko_leute_'.$v);
+				}
 			}
 			$value = ko_get_userpref($_SESSION['ses_userid'], 'res_prefill_email');
-			$frmgroup[$gc]['row'][$rowcounter++]['inputs'][0] = array('desc' => getLL('res_settings_prefill_email'),
+			if(!$value) $value = 'email';
+			$frmgroup[$gc]['row'][$rowcounter++]['inputs'][1] = array('desc' => getLL('res_settings_prefill_email'),
 				'type' => 'select',
 				'name' => 'sel_prefill_email',
 				'values' => $values,
@@ -1101,6 +1276,46 @@ function ko_res_settings() {
 			);
 		}
 
+		// preset for filtering reservations in home
+		$presets = ko_get_userpref($_SESSION['ses_userid'], '', 'res_itemset');
+		$presets = $presets?$presets:array();
+		$globalPresets = ko_get_userpref(-1, '', 'res_itemset');
+		$globalPresets = $globalPresets?$globalPresets:array();
+		$presetNames = array_merge(array(''), array_column($presets, 'key'), array_map(function($e){return "[G] {$e['key']}";}, $globalPresets));
+		$values = $descs = $presetNames;
+		$value = ko_get_userpref($_SESSION['ses_userid'], 'res_fm_filter');
+		$frmgroup[$gc]['row'][$rowcounter]['inputs'][0] = array('desc' => getLL('res_settings_fm_filter'),
+			'type' => 'select',
+			'name' => 'sel_fm_filter',
+			'values' => $values,
+			'descs' => $descs,
+			'value' => $value
+		);
+
+		//Email to be used for moderation emails
+		if($access['reservation']['MAX'] > 4) {
+			$values = $LEUTE_EMAIL_FIELDS;
+			$descs = array();
+			foreach ($values as $v) {
+				$descs[] = getLL('kota_ko_leute_'.$v);
+			}
+			//Add admin email from login as option
+			array_unshift($values, 'admin');
+			array_unshift($descs, getLL('admin_logins_email'));
+
+			//Add option to not get any emails
+			array_push($values, 'none');
+			array_push($descs, getLL('res_settings_mod_email_none'));
+
+			$value = ko_get_userpref($_SESSION['ses_userid'], 'res_mod_email');
+			$frmgroup[$gc]['row'][$rowcounter++]['inputs'][1] = array('desc' => getLL('res_settings_mod_email'),
+				'type' => 'select',
+				'name' => 'sel_mod_email',
+				'values' => $values,
+				'descs' => $descs,
+				'value' => $value,
+			);
+		}
 	}
 
 
@@ -1111,43 +1326,24 @@ function ko_res_settings() {
 		$frmgroup[$gc]['titel'] = getLL('settings_title_global');
 		$frmgroup[$gc]['tab'] = TRUE;
 
-		// mandatory fields
-		$mandatoryFields = db_get_columns('ko_reservation');
-		$mandatoryFieldsExclude = array('id', 'item_id', 'cdate', 'user_id', 'last_change', 'code', 'serie_id', 'linked_items');
-		$mandatory_values = array();
-		foreach ($mandatoryFields as $mandatoryField) {
-			if (!in_array($mandatoryField['Field'], $mandatoryFieldsExclude)) {
-				$mandatory_values[] = $mandatoryField['Field'];
-				$mandatory_descs[] = (trim(getLL('kota_ko_reservation_' . $mandatoryField['Field'])) == '' ? $mandatoryField['Field'] : getLL('kota_ko_reservation_' . $mandatoryField['Field']));
-			}
-		}
-		$mandatory_avalues = explode(',', ko_get_setting('res_mandatory'));
-		foreach($mandatory_avalues as $v_i => $v) {
-			$mandatory_adescs[$v_i] = (trim(getLL('kota_ko_reservation_'.$v)) == '' ? $v : getLL('kota_ko_reservation_'.$v));
-		}
-
-		$frmgroup[$gc]['row'][$rowcounter]['inputs'][0] = array('desc' => getLL('res_settings_mandatory'),
-			 'type' => 'checkboxes',
-			 'name' => 'sel_mandatory',
-			 'values' => $mandatory_values,
-			 'descs' => $mandatory_descs,
-			 'avalues' => $mandatory_avalues,
-			 'avalue' => implode(',', $mandatory_avalues),
-			 'size' => '6',
-			 );
-
 		$value = ko_html(ko_get_setting('res_send_email'));
-		$frmgroup[$gc]['row'][$rowcounter++]['inputs'][1] = array('desc' => getLL('res_settings_send_email'),
+		$frmgroup[$gc]['row'][$rowcounter++]['inputs'][0] = array('desc' => getLL('res_settings_send_email'),
 				'type' => 'text',
 				'name' => 'txt_send_email',
 				'value' => $value,
 				'params' => 'size="60"',
 				);
 
+		// mandatory fields
+		$frmgroup[$gc]['row'][$rowcounter]['inputs'][0] = kota_get_mandatory_fields_choices_for_sel('ko_reservation');
+		$frmgroup[$gc]['row'][$rowcounter++]['inputs'][1] = kota_get_mandatory_fields_choices_for_sel('ko_reservation', TRUE);
+
+
+		$resFieldsExclude = array('id', 'item_id', 'cdate', 'user_id', 'last_change', 'code', 'serie_id', 'linked_items');
 		$fields = db_get_columns('ko_reservation');
 		$values = $descs = array();
 		foreach ($fields as $field) {
-			if (!in_array($field['Field'], $mandatoryFieldsExclude) && !in_array($field['Field'], $RES_GUEST_FIELDS_FORCE)) {
+			if (!in_array($field['Field'], $resFieldsExclude) && !in_array($field['Field'], $RES_GUEST_FIELDS_FORCE)) {
 				$values[] = $field['Field'];
 				$descs[] = (trim(getLL('kota_ko_reservation_' . $field['Field'])) == '' ? $field['Field'] : getLL('kota_ko_reservation_' . $field['Field']));
 			}
@@ -1186,6 +1382,25 @@ function ko_res_settings() {
 			'value' => $value,
 		);
 
+		$value = ko_get_setting('res_allow_exports_for_guest');
+		$avalues = array_filter(array_map(function($el) {return trim($el);}, explode(',', $value)), function($el) {return $el != '';});
+		$adescs = array();
+		foreach($avalues as $k => $av) {
+			$adescs[] = getLL('res_settings_allow_exports_for_guest_'.$av);
+		}
+		$avalue = implode(',', $avalues);
+		$frmgroup[$gc]['row'][$rowcounter++]['inputs'][0] = array('desc' => getLL('res_settings_allow_exports_for_guest'),
+			'type' => 'checkboxes',
+			'size' => 2,
+			'name' => 'sel_allow_exports_for_guest',
+			'avalues' => $avalues,
+			'avalue' => $avalue,
+			'adescs' => $adescs,
+			'values' => array('xls', 'pdf'),
+			'descs' => array(getLL('res_settings_allow_exports_for_guest_xls'), getLL('res_settings_allow_exports_for_guest_pdf')),
+		);
+
+
 		$value = ko_get_setting('res_show_mod_to_all');
 		$frmgroup[$gc]['row'][$rowcounter]['inputs'][0] = array('desc' => getLL('res_settings_show_mod_to_all'),
 				'type' => 'switch',
@@ -1211,7 +1426,136 @@ function ko_res_settings() {
 				'descs' => array(getLL('res_settings_access_mode_0'), getLL('res_settings_access_mode_1')),
 				'value' => $value,
 				);
+
+		$value = ko_get_setting('res_access_prevent_lvl2_del');
+		$frmgroup[$gc]['row'][$rowcounter]['inputs'][1] = array('desc' => getLL('res_settings_prevent_lvl2_del'),
+			'type' => 'switch',
+			'name' => 'chk_prevent_lvl2_del',
+			'value' => $value,
+		);
 	}
+
+
+
+	if(!isset($access['admin'])) ko_get_access('admin');
+	if($access['admin']['ALL'] > 2) {
+		$gc++;
+		$frmgroup[$gc]['titel'] = getLL('settings_title_guest');
+		$frmgroup[$gc]['tab'] = TRUE;
+
+		$uid = ko_get_guest_id();
+
+		$frmgroup[$gc]['row'][$rowcounter]['inputs'][0] = array('desc' => getLL('res_settings_default_view'),
+				'type' => 'select',
+				'name' => 'guest_sel_reservation',
+				'values' => array('liste', 'show_cal_monat', 'show_cal_woche', 'show_resource_month', 'show_resource_week', 'show_resource_day'),
+				'descs' => array(getLL('submenu_reservation_liste'), getLL('submenu_reservation_cal_month'), getLL('submenu_reservation_cal_week'), getLL('daten_resource_month'), getLL('daten_resource_week'), getLL('daten_resource_day')),
+				'value' => ko_html(ko_get_userpref($uid, 'default_view_reservation'))
+				);
+		$frmgroup[$gc]['row'][$rowcounter++]['inputs'][1] = array('desc' => getLL('admin_settings_limits_numberof_reservations'),
+				'type' => 'text',
+				'params' => 'size="10"',
+				'name' => 'guest_txt_limit_reservation',
+				'value' => ko_html(ko_get_userpref($uid, 'show_limit_reservation'))
+				);
+
+
+		$frmgroup[$gc]['row'][$rowcounter]['inputs'][0] = array('desc' => getLL('admin_settings_view_weekcal_start'),
+				'type' => 'text',
+				'params' => 'size="10"',
+				'name' => 'guest_txt_cal_woche_start',
+				'value' => ko_html(ko_get_userpref($uid, 'cal_woche_start'))
+				);
+		$frmgroup[$gc]['row'][$rowcounter++]['inputs'][1] = array('desc' => getLL('admin_settings_view_weekcal_stop'),
+				'type' => 'text',
+				'params' => 'size="10"',
+				'name' => 'guest_txt_cal_woche_end',
+				'value' => ko_html(ko_get_userpref($uid, 'cal_woche_end'))
+				);
+
+		$frmgroup[$gc]['row'][$rowcounter++]['inputs'][1] = array('desc' => getLL('admin_settings_view_weekcal_intermediate_times'),
+			'type' => 'text',
+			'params' => 'size="30"',
+			'name' => 'guest_txt_cal_woche_intermediate_times',
+			'value' => ko_html(ko_get_userpref($uid, 'cal_woche_intermediate_times'))
+		);
+
+		$frmgroup[$gc]['row'][$rowcounter++]['inputs'][0] = array('type' => '   ');
+
+		$value = ko_get_userpref($uid, 'res_monthly_title');
+		$frmgroup[$gc]['row'][$rowcounter++]['inputs'][0] = array('desc' => getLL('res_settings_monthly_title'),
+				'type' => 'select',
+				'name' => 'guest_sel_monthly_title',
+				'values' => array('item_id', 'zweck', 'name', 'item_id_zweck'),
+				'descs' => array(getLL('kota_ko_reservation_item_id'), getLL('kota_ko_reservation_zweck'), getLL('kota_ko_reservation_name'), getLL('kota_ko_reservation_item_id_zweck')),
+				'value' => $value,
+				);
+		$value = ko_get_userpref($uid, 'res_mark_sunday');
+		$frmgroup[$gc]['row'][$rowcounter]['inputs'][0] = array('desc' => getLL('res_settings_mark_sunday'),
+				'type' => 'switch',
+				'name' => 'guest_sel_mark_sunday',
+				'label_0' => getLL('no'),
+				'label_1' => getLL('yes'),
+				'value' => $value == '' ? 0 : $value,
+				);
+		$value = ko_html(ko_get_userpref($uid, 'show_dateres_combined'));
+		$frmgroup[$gc]['row'][$rowcounter++]['inputs'][1] = array('desc' => getLL('admin_settings_options_dateres_combined'),
+				'type' => 'switch',
+				'name' => 'guest_sel_show_dateres_combined',
+				'label_0' => getLL('no'),
+				'label_1' => getLL('yes'),
+				'value' => $value == '' ? 0 : $value,
+				);
+
+		$frmgroup[$gc]['row'][$rowcounter++]['inputs'][0] = array('type' => '   ');
+
+		$value = ko_get_userpref($uid, 'res_pdf_show_time');
+		$frmgroup[$gc]['row'][$rowcounter]['inputs'][0] = array('desc' => getLL('res_settings_pdf_show_time'),
+				'type' => 'select',
+				'name' => 'guest_sel_pdf_show_time',
+				'values' => array('2', '1', '0'),
+				'descs' => array(getLL('res_settings_pdf_show_time_2'), getLL('res_settings_pdf_show_time_1'), getLL('no')),
+				'value' => $value
+				);
+		$value = ko_get_userpref($uid, 'res_pdf_show_comment');
+		$frmgroup[$gc]['row'][$rowcounter++]['inputs'][1] = array('desc' => getLL('res_settings_pdf_show_comment'),
+				'type' => 'switch',
+				'name' => 'guest_sel_pdf_show_comment',
+				'label_0' => getLL('no'),
+				'label_1' => getLL('yes'),
+				'value' => $value == '' ? 0 : $value,
+				);
+		$value = ko_get_userpref($uid, 'res_pdf_week_start');
+		$monday = date_find_last_monday(date('Y-m-d'));
+		$daynames[] = strftime('%A', strtotime($monday));
+		for($i=1; $i<7; $i++) {
+			$daynames[] = strftime('%A', strtotime(add2date($monday, 'tag', $i, TRUE)));
+		}
+		$frmgroup[$gc]['row'][$rowcounter]['inputs'][0] = array('desc' => getLL('res_settings_pdf_week_start'),
+				'type' => 'select',
+				'name' => 'guest_sel_pdf_week_start',
+				'values' => array(1,2,3,4,5,6,0),
+				'descs' => $daynames,
+				'value' => $value,
+				);
+		$value = ko_get_userpref($uid, 'res_pdf_week_length');
+		$frmgroup[$gc]['row'][$rowcounter++]['inputs'][1] = array('desc' => getLL('res_settings_pdf_week_length'),
+				'type' => 'select',
+				'name' => 'guest_sel_pdf_week_length',
+				'values' => array(1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21),
+				'descs' => array(1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21),
+				'value' => $value,
+				);
+		$value = ko_get_userpref($uid, 'res_export_show_legend');
+		$frmgroup[$gc]['row'][$rowcounter++]['inputs'][0] = array('desc' => getLL('res_settings_export_show_legend'),
+				'type' => 'switch',
+				'name' => 'guest_sel_export_show_legend',
+				'label_0' => getLL('no'),
+				'label_1' => getLL('yes'),
+				'value' => $value == '' ? 0 : $value,
+				);
+	}
+
 
 	//Allow plugins to add further settings
 	hook_form('reservation_settings', $frmgroup, '', '');
@@ -1255,96 +1599,39 @@ function check_entries(&$koi) {
 	}
 
 	//check for all the mandatory fields
-	foreach(explode(",", ko_get_setting("res_mandatory")) as $man) {
-		if($man && !$koi[$man]) return 12;
+	if (!kota_check_mandatory_fields('ko_reservation', $koi['id'], $koi)) {
+		return 60;
 	}
 
 	return 0;
 }//check_entries()
 
 
-
-
 /**
-  * Überprüft auf Doppelbelegungen
-	*/
-function ko_res_check_double($item, $datum1, $datum2, $zeit1, $zeit2, &$error_txt, $id=0) {
-	$datum1 = sql_datum($datum1);
-	$datum2 = ($datum2) ? sql_datum($datum2) : $datum1;
-	$zeit1  = sql_zeit($zeit1);
-	$zeit2  = sql_zeit($zeit2);
-	//Reservations without time last all day long, so set endtime to midnight
-	if($zeit1 == "" && $zeit2 == "") $zeit2 = "23:59";
-
-	//Mit id Selbsttest ausschliessen
-	$where  = "WHERE `id`!='$id' ";
-
-	//check for the right item and possibly linked items
-	ko_get_resitem_by_id($item, $resitem_);
-	$resitem = $resitem_[$item];
-	if($resitem["linked_items"] != "") {  //item with linked items
-		//check for all linked items in all linked items of the made reservations
-		$or = array();
-		foreach(array_merge(array($item), explode(",", $resitem["linked_items"])) as $linked_item) {
-			$or[] = "`linked_items` REGEXP '(^|,)".$linked_item."($|,)'";
-		}
-		//and check for item and the linked items
-		$check_itemids = $item.",".$resitem["linked_items"];
-		$where .= " AND (`item_id` IN ($check_itemids) OR (".implode(" OR ", $or).")) ";
-	}
-	else {  //no linked items, so only check for item and linked items of made reservations
-		$where .= "AND (`item_id`='$item' OR `linked_items` REGEXP '(^|,)$item($|,)') ";
-	}
-
-	//check for overlapping date and time
-	$where .= " AND (
-		( DATE_ADD(`startdatum`, INTERVAL `startzeit` HOUR_SECOND) >= DATE_ADD('$datum1', INTERVAL '$zeit1' HOUR_MINUTE) 
-			AND DATE_ADD(`startdatum`, INTERVAL `startzeit` HOUR_SECOND) < DATE_ADD('$datum2', INTERVAL '$zeit2' HOUR_MINUTE) )
-		OR ( DATE_ADD(`enddatum`, INTERVAL IF(`endzeit`='00:00:00','23:59:59',`endzeit`) HOUR_SECOND) > DATE_ADD('$datum1', INTERVAL '$zeit1' HOUR_MINUTE) 
-			AND DATE_ADD(`enddatum`, INTERVAL IF(`endzeit`='00:00:00','23:59:59',`endzeit`) HOUR_SECOND) <= DATE_ADD('$datum2', INTERVAL '$zeit2' HOUR_MINUTE) )
-		OR ( DATE_ADD(`startdatum`, INTERVAL `startzeit` HOUR_SECOND) < DATE_ADD('$datum1', INTERVAL '$zeit1' HOUR_MINUTE) 
-				AND DATE_ADD(`enddatum`, INTERVAL IF(`endzeit`='00:00:00','23:59:59',`endzeit`) HOUR_SECOND) > DATE_ADD('$datum2', INTERVAL '$zeit2' HOUR_MINUTE) )
-		)";
-
-	$rows = db_select_data("ko_reservation", $where);
-
-	$error_txt = '';
-	foreach($rows as $row) {
-		$error_txt .= $resitem['name'].' - ';
-		$error_txt .= sql2datum($row['startdatum']) . ( ($row['startdatum']==$row['enddatum']) ? '' : ('-' . sql2datum($row['enddatum'])) );
-		if($row['startzeit'] == '00:00:00' && $row['endzeit'] == '00:00:00') {
-			$error_txt .= ' '.getLL('time_all_day');
-		} else {
-			$error_txt .= ' '.substr($row['startzeit'],0,-3).'-'.substr($row['endzeit'],0,-3);
-		}
-		//Only show purpose (zweck) if setting allows it for guest user
-		if(($_SESSION['ses_userid'] != ko_get_guest_id() || ko_get_setting('res_show_purpose')) && trim($row['zweck']) != '') {
-			$error_txt .= ' "'.(strlen($row['zweck']) > 30 ? substr($row['zweck'], 0, 30).'..' : $row['zweck']).'"';
-		}
-		//Only show details about person if setting allows it for guest-user
-		if(($_SESSION['ses_userid'] != ko_get_guest_id() || ko_get_setting('res_show_persondata')) && trim($row['name']) != '') {
-			$error_txt .= ' '.getLL('by').' '.$row['name'].', '.$row['email'].', '.$row['telefon'];
-		}
-	}
-	return ($error_txt) ? FALSE : TRUE;
-}//ko_res_check_double()
-
-
-
-/**
-  * Liefert eine textliche Zusammenstellung einer Reservation für die Bestätigungs-Emails
-	*/
+ * Create a text with all informations about given reservation.
+ * Excluding fields which are set through globa var $RES_EXCLUDED_FIELDS_IN_INFOTEXT
+ * @param $data Array information about the rservation
+ *
+ * @return string containing key:value with translations
+ */
 function ko_get_res_infotext($data) {
+	global $RES_EXCLUDED_FIELDS_IN_INFOTEXT;
+
+	kota_process_data("ko_reservation", $data, "pdf,xls,list,pre");
+
 	$txt = "";
-	$list = kota_get_list($data, "ko_reservation");
-	foreach($list as $key => $value) {
-		if($key == getLL("kota_ko_reservation_enddatum") || $key == getLL("kota_ko_reservation_endzeit")) continue;
-		if($value) $txt .= "$key: ".strip_tags(ko_unhtml($value))."\n";
+	foreach($data as $key => $value) {
+		if(in_array($key, $RES_EXCLUDED_FIELDS_IN_INFOTEXT)) continue;
+
+		$ll_key = getLL("kota_ko_reservation_".$key);
+		if(!$ll_key) continue;
+		if(!$value) continue;
+
+		$txt .= "$ll_key: ".strip_tags(ko_unhtml($value))."\n";
 	}
-	if($data["code"]) $txt .= getLL("res_code").": ".$data["code"]."\n";
 
 	return $txt;
-}//ko_get_res_infotext()
+}
 
 
 
@@ -1398,11 +1685,7 @@ function apply_res_filter(&$z_where, &$z_limit, $_start=NULL, $_ende=NULL, $user
 	$ende = ko_daten_parse_time_filter($use_ende, '');
 	if ($ende != '') $z_where .= "AND startdatum <= '$ende'";
 
-	//Check for proper access
-	$show_items = array();
-	foreach($use_items as $item) {
-		if($item && $access['reservation'][$item] > 0) $show_items[] = $item;
-	}
+	$show_items = ko_get_resitems_with_linked_items($use_items);
 
 	if(sizeof($show_items) == 0) {
 		if($user_id > 0 && $user_id != ko_get_guest_id()) $z_where .= " AND `user_id` = '$user_id' ";
@@ -1433,17 +1716,32 @@ function apply_res_filter(&$z_where, &$z_limit, $_start=NULL, $_ende=NULL, $user
   * Löscht eine Reservation gemäss der übergebenen ID
 	* Führt Rechte-Check durch
 	*/
-function do_del_res($id, $del_serie=FALSE) {
-	global $access;
+function do_del_res($id, $del_serie=FALSE, $delEvent=FALSE) {
+	global $access, $BASE_PATH;
 
 	//Reservation auslesen für Rechte-Check und Log-Meldung
-  ko_get_res_by_id($id, $r_); $r = $r_[$id];
+	ko_get_res_by_id($id, $r_); $r = $r_[$id];
 
 	//Check access rights
 	if($access['reservation'][$r['item_id']] > 3 || ($_SESSION["ses_userid"] == $r["user_id"] && $_SESSION["ses_userid"] != ko_get_guest_id() && $access['reservation'][$r['item_id']] > 2) ) {
 		//Delete reservation
 		db_delete_data("ko_reservation", "WHERE `id` = '$id'");
 		ko_log_diff("delete_res", $r);
+
+		if (trim($id) && $delEvent && ko_module_installed('daten')) {
+			require_once("{$BASE_PATH}daten/inc/daten.inc");
+			ko_get_access('daten');
+
+			$events = db_select_data('ko_event', "WHERE `reservationen` REGEXP '(^|,){$id}(,|$)'");
+			foreach ($events as $event) {
+				$resIds = ko_array_filter_empty(explode(',', $event['reservationen']));
+				foreach ($resIds as $resId) {
+					do_del_res($resId);
+				}
+
+				do_del_termin($event['id']);
+			}
+		}
 
 		//Delete whole serie if set
 		if(intval($r["serie_id"]) > 0 && $del_serie) {
@@ -1454,6 +1752,21 @@ function do_del_res($id, $del_serie=FALSE) {
 			db_delete_data("ko_reservation", "WHERE `serie_id` = '".intval($r["serie_id"])."'");
 
 			foreach($all_res as $r) {
+				$id = $r['id'];
+				if (trim($id) && $delEvent && ko_module_installed('daten')) {
+					require_once("{$BASE_PATH}daten/inc/daten.inc");
+					ko_get_access('daten');
+
+					$events = db_select_data('ko_event', "WHERE `reservationen` REGEXP '(^|,){$id}(,|$)'");
+					foreach ($events as $event) {
+						$resIds = ko_array_filter_empty(explode(',', $event['reservationen']));
+						foreach ($resIds as $resId) {
+							do_del_res($resId);
+						}
+
+						do_del_termin($event['id']);
+					}
+				}
 				ko_log_diff('delete_res', $r);
 			}
 		}
@@ -1472,7 +1785,7 @@ function do_del_res($id, $del_serie=FALSE) {
 function ko_res_calendar() {
 	global $ko_path;
 
-	//Add the link to the year view
+	//Add Select for months / weeks / days
 	$code  = '';
 	$code .= '<div id="ko_calendar">';
 	$code .= '<div class="fc-mwselect fc-mwselect-res">';
@@ -1483,14 +1796,16 @@ function ko_res_calendar() {
 	$code .= '</div>';
 
 	//Add PDF link
-	$code .= '<table style="margin-left:12px" cellspacing="0" cellpadding="3" id="pdf_link_footer">';
-	$code .= '<tr><td style="border-left-style:solid;border-left-width:1px">&nbsp;</td></tr>';
-	$code .= '<tr><td style="border-left-style:solid;border-left-width:1px;border-bottom-width:1px;border-bottom-style:solid;">';
-	$code .= '<a href="" onclick="sendReq(\'inc/ajax.php\', \'action\', \'pdfcalendar\', show_box); return false;">';
-	$code .= '&nbsp;<i class="fa fa-file-pdf-o"></i>&nbsp;'.getLL("res_list_footer_pdf_label").'</a>';
-	$code .= '<span name="res_pdf_link" id="res_pdf_link">&nbsp;</span>';
-	$code .= '</td></tr>';
-	$code .= '</table>';
+	if($_SESSION['ses_userid'] != ko_get_guest_id() || FALSE !== strpos(ko_get_setting('res_allow_exports_for_guest'), 'pdf')) {
+		$code .= '<table style="margin-left:12px" cellspacing="0" cellpadding="3" id="pdf_link_footer">';
+		$code .= '<tr><td style="border-left-style:solid;border-left-width:1px">&nbsp;</td></tr>';
+		$code .= '<tr><td style="border-left-style:solid;border-left-width:1px;border-bottom-width:1px;border-bottom-style:solid;">';
+		$code .= '<a href="" onclick="sendReq(\'inc/ajax.php\', \'action\', \'pdfcalendar\', show_box); return false;">';
+		$code .= '&nbsp;<i class="fa fa-file-pdf-o"></i>&nbsp;'.getLL("res_list_footer_pdf_label").'</a>';
+		$code .= '<span name="res_pdf_link" id="res_pdf_link">&nbsp;</span>';
+		$code .= '</td></tr>';
+		$code .= '</table>';
+	}
 
 	print $code;
 }//ko_res_calendar()
@@ -1530,7 +1845,7 @@ function ko_get_resitems_css() {
 
 
 function ko_res_ical_links() {
-	global $RESICAL_URL, $BASE_URL, $access;
+	global $RESICAL_URL, $BASE_URL, $access, $BASE_PATH;
 
 	if($_SESSION['ses_userid'] == ko_get_guest_id() && !ko_get_setting('res_show_ical_links_to_guest')) return FALSE;
 	if(!defined('KOOL_ENCRYPTION_KEY') || trim(KOOL_ENCRYPTION_KEY) == '') {
@@ -1538,17 +1853,23 @@ function ko_res_ical_links() {
 	}
 
 	ko_get_login($_SESSION['ses_userid'], $login);
-	$base_link = ($RESICAL_URL ? $RESICAL_URL : $BASE_URL.'resical/').'?' . ($_SESSION['ses_userid'] == ko_get_guest_id() ? 'guest=1' : 'user='.md5($_SESSION['ses_userid'].$login['password'].KOOL_ENCRYPTION_KEY));
+
+	if(empty($login['ical_hash'])) {
+		require_once($BASE_PATH.'admin/inc/admin.inc');
+		$login['ical_hash'] = ko_admin_revoke_ical_hash($_SESSION['ses_userid']);
+	}
+
+	$base_link = ($RESICAL_URL ? $RESICAL_URL : $BASE_URL . 'resical/') . '?' . ($_SESSION['ses_userid'] == ko_get_guest_id() ? 'guest=1' : 'user=' . $login['ical_hash']);
 
 	$help  = ko_get_help('reservation', 'ical_links');
 	$help2 = ko_get_help('reservation', 'ical_links2');
 
-	$content = '';
-	$content .= '<div class="ical-links">';
-	$content .= '<h1>'.getLL('res_ical_links_title').($help['show'] == 1 ? '&nbsp;'.$help['link'] : '').'</h1>';
+	$content = '<div class="container-fluid"><div class="row">';
+	$content .= '<div class="ical-links col-md-8">';
+	$content .= '<h3 class="ko_list_title">'.($help['show'] ? '&nbsp;<span class="pull-left help-icon">'.$help['link'].'</span>' : '').'<span class="pull-left">'.getLL('res_ical_links_title').'</span><br clear="all" /></h3>';
 	$content .= '<p>'.getLL('res_ical_links_description').'</p>';
 
-	$content .= '<h4>'.getLL('res_ical_links_title_all').($help2['show'] == 1 ? '&nbsp;'.$help2['link'] : '').'</h4>';
+	$content .= '<h4>'.($help2['show'] == 1 ? $help2['link'].'&nbsp;' : '').getLL('res_ical_links_title_all').'</h4>';
 	$content .= ko_get_ical_link($base_link, getLL('all')).'<br />';
 
 	$link = $base_link.'&items='.implode(',', $_SESSION['show_items']);
@@ -1556,7 +1877,7 @@ function ko_res_ical_links() {
 	if(sizeof($_SESSION['kota_filter']['ko_reservation']) > 0) {
 		foreach($_SESSION['kota_filter']['ko_reservation'] as $k => $v) {
 			if(!$v) continue;
-			$link .= '&kota_'.$k.'='.urlencode($v);
+			$link .= '&kota_'.$k.'='.urlencode(implode("||",$v));
 		}
 	}
 	$content .= ko_get_ical_link($link, getLL('res_ical_links_current')).'<br />';
@@ -1565,7 +1886,7 @@ function ko_res_ical_links() {
 	$link = $base_link.'&own=1';
 	$content .= ko_get_ical_link($link, getLL('res_ical_links_own')).'<br />';
 
-	$content .= '<h4>'.getLL('res_ical_links_title_presets').($help2['show'] == 1 ? '&nbsp;'.$help2['link'] : '').'</h4>';
+	$content .= '<h4>'.($help2['show'] == 1 ? $help2['link'].'&nbsp;' : '').getLL('res_ical_links_title_presets').'</h4>';
 	$itemset = array_merge((array)ko_get_userpref('-1', '', 'res_itemset', 'ORDER BY `key` ASC'), (array)ko_get_userpref($_SESSION['ses_userid'], '', 'res_itemset', 'ORDER BY `key` ASC'));
 	foreach($itemset as $i) {
 		if(!$i['key'] || !$i['value']) continue;
@@ -1573,7 +1894,7 @@ function ko_res_ical_links() {
 		$content .= ko_get_ical_link($base_link.'&items=p'.$i['id'], $label).'<br />';
 	}
 
-	$content .= '<h4>'.getLL('res_ical_links_title_single').($help2['show'] == 1 ? '&nbsp;'.$help2['link'] : '').'</h4>';
+	$content .= '<h4>'.($help2['show'] == 1 ? $help2['link'].'&nbsp;' : '').getLL('res_ical_links_title_single').'</h4>';
 	ko_get_resgroups($resgroups);
 	foreach($resgroups as $gid => $group) {
 		if($access['reservation']['ALL'] < 1 && $access['reservation']['grp'.$gid] < 1) continue;
@@ -1589,6 +1910,17 @@ function ko_res_ical_links() {
 
 	$content .= '</div>';
 
+	if($_SESSION['ses_userid'] != ko_get_guest_id()) {
+		$content .= '<div class="col-md-4">';
+		$content .= '
+		<h3>' . getLL("ical_links_revoke_title") . '</h3>
+		<p>' . getLL("ical_links_revoke_text") . '</p>
+		<button type="submit" class="btn btn-sm btn-danger" onclick="c=confirm(\''.getLL("ical_links_revoke_jsquestion").'\');if(!c) return false;set_action(\'ical_links_revoke\');" value="revoke">'.getLL("ical_links_revoke_button").'</button>';
+		$content .= '</div>';
+	}
+
+	$content .= '</div></div>';
+
 	print $content;
 }//ko_res_ical_links()
 
@@ -1596,11 +1928,11 @@ function ko_res_ical_links() {
 
 
 function ko_reservation_export_months($num, $month, $year) {
-	global $BASE_PATH;
+	global $BASE_PATH, $EVENT_ABSENCE_COLOR;
 
 	//Start pdf
 	define('FPDF_FONTPATH',$BASE_PATH.'fpdf/schriften/');
-	require($BASE_PATH.'fpdf/fpdf.php');
+	include_once($BASE_PATH.'fpdf/fpdf.php');
 	$pdf = new FPDF('L', 'mm', 'A4');
 	$pdf->Open();
 	$pdf->SetAutoPageBreak(true, 10);
@@ -1617,7 +1949,7 @@ function ko_reservation_export_months($num, $month, $year) {
 	} else if($num == 1) {
 		$months[] = $month;
 		$filename = getLL('res_filename_pdf').str_to_2($month).'_'.$year.'_'.strftime('%d%m%Y_%H%M%S', time()).'.pdf';
-	} else break;
+	} else return FALSE;
 
 	ko_get_resitems($resitems);
 
@@ -1634,6 +1966,16 @@ function ko_reservation_export_months($num, $month, $year) {
 		$endstamp = mktime(1,1,1, ($month == 12 ? 1 : $month+1), 0, ($month == 12 ? $year+1 : $year));
 		$z_where .= ' AND `enddatum` >= \''.strftime('%Y-%m-%d', $startstamp).'\' AND `startdatum` <= \''.strftime('%Y-%m-%d', $endstamp).'\'';
 		ko_get_reservationen($reservations, $z_where, '', 'res', 'ORDER BY startzeit,item_name ASC');
+
+		//Absence
+		if(ko_module_installed('daten') && $_SESSION['show_absences_res']) {
+			require_once($BASE_PATH . 'daten/inc/daten.inc');
+			$absenceEvents = ko_get_absences_for_calendar(date("Y-m-d", $startstamp), date("Y-m-d", $endstamp), "ko_reservation");
+			if(sizeof($absenceEvents) > 0) {
+				$items['absence'] = array('id' => 'absence', 'farbe' => $EVENT_ABSENCE_COLOR, 'name' => getLL('absence_eventgroup'), 'shortname' => getLL('absence_eventgroup_short'));
+				$reservations = $reservations + $absenceEvents;
+			}
+		}
 
 		//Calendar weeks
 		$kw = array();
@@ -1743,6 +2085,9 @@ function ko_reservation_get_title($res, $item, $mode) {
 	else if($mode == 'name') {
 		$title['text'] = $res['name'] ? $res['name'] : $item_name;
 	}
+	else if($mode == 'item_id_zweck') {
+		$title['text'] = $item_name.($res['zweck'] ? ': '.$res['zweck'] : '');
+	}
 	else {
 		if($res[$mode]) $title['text'] = $res[$mode];
 		else $title['text'] = '';
@@ -1760,4 +2105,57 @@ function ko_reservation_get_title($res, $item, $mode) {
 
 	return $title;
 }//ko_reservation_get_title()
+
+
+/**
+ * Set uploaded files of a new/modified reservation series to all reservations.
+ * Update Database field and copy file.
+ *
+ * @param Integer $serie_id Id of serie
+ * @param Integer|null $origin Reservation Id to use as parent
+ * @return bool
+ */
+function ko_res_update_serie_files($serie_id, $origin = NULL) {
+	global $KOTA, $BASE_PATH;
+
+	$table = "ko_reservation";
+	$series = db_select_data($table, "WHERE serie_id = ". $serie_id, "*", "ORDER BY item_id ASC");
+	if(count($series) == 0) {
+		$table = "ko_reservation_mod";
+		$series = db_select_data($table, "WHERE serie_id = ". $serie_id, "*", "ORDER BY item_id ASC");
+	}
+
+	if(count($series) == 0) {
+		return FALSE;
+	}
+
+	$columns = db_get_columns("ko_reservation");
+	$file_origin = $file_origin_id = NULL;
+
+	// copy files for every res in series
+	foreach ($columns AS $kota_field) {
+		if ($KOTA['ko_reservation'][$kota_field['Field']]['form']['type'] == 'file') {
+
+			if ($origin != NULL) {
+				$file_origin = $series[$origin][$kota_field['Field']];
+				$file_origin_id = $origin;
+			}
+
+			foreach($series AS $serie) {
+				if ($file_origin === NULL) {
+					$file_origin = $serie[$kota_field['Field']];
+					$file_origin_id = $serie['id'];
+					continue;
+				}
+
+				$file_destination = str_replace($file_origin_id, $serie['id'], $file_origin);
+				copy($BASE_PATH . "/" . $file_origin, $BASE_PATH . "/" . $file_destination);
+				db_update_data($table, "WHERE `id` = ".$serie['id'], array($kota_field['Field'] => $file_destination));
+			}
+		}
+	}
+
+	return TRUE;
+}
+
 ?>

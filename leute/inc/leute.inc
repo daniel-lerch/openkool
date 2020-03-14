@@ -2,7 +2,7 @@
 /***************************************************************
 *  Copyright notice
 *
-*  (c) 2003-2015 Renzo Lauper (renzo@churchtool.org)
+*  (c) 2003-2017 Renzo Lauper (renzo@churchtool.org)
 *  All rights reserved
 *
 *  This script is part of the kOOL project. The kOOL project is
@@ -31,7 +31,7 @@ if(ko_module_installed("kg") && file_exists($ko_path."leute/inc/kg.inc"))
 
 
 //Define basic chart types for leute module (may be extended by plugins)
-$LEUTE_CHART_TYPES = array('roles', 'subgroups', 'age_bar', 'lastchange', 'age_pie', 'birthday_months', 'sex', 'famfunction', 'city', 'zip', 'country');
+$LEUTE_CHART_TYPES = array('statistics', 'roles', 'subgroups', 'age_bar', 'lastchange', 'age_pie', 'birthday_months', 'sex', 'civilstatus', 'famfunction', 'city', 'zip', 'country', 'taufbuch', 'rodel');
 
 $mailmerge_signature_ext = array('gif', 'jpg', 'jpeg', 'png', 'pdf');
 
@@ -43,584 +43,326 @@ function ko_formular_leute($mode, $id=0, $show_save_as_new=true) {
 	global $js_calendar;
 	global $access;
 	global $SMALLGROUPS_ROLES, $RECTYPES;
-	global $LEUTE_NO_FAMILY;
+	global $LEUTE_NO_FAMILY, $ASYNC_FORM_TAG;
 
-	if($mode == "edit") {
+	if ($mode == "edit") {
 		ko_get_person_by_id($id, $person);
-		if(!$person["id"] || $person["deleted"] == "1") return false;
+		if (!$person["id"] || $person["deleted"] == "1") return false;
 	}
 
-	//Datenbank-Spalten auslesen
-	$leute_cols = db_get_columns("ko_leute");
-	foreach($leute_cols as $c_i => $c) {
-		if(!in_array($c["Field"], $LEUTE_EXCLUDE)) {
-			$endpos = strpos($c["Type"], "(") ? strpos($c["Type"], "(") : strlen($c["Type"]);
-			$endpos2 = strpos($c["Type"], ")") ? strpos($c["Type"], ")") : strlen($c["Type"]);
-			$input_type[$c["Field"]] = substr($c["Type"], 0, $endpos);
-			$input_size[$c["Field"]] = ($endpos && $endpos2) ? substr($c["Type"], ($endpos+1), ($endpos2-$endpos-1)) : 0;
-		}
-	}
+	$colNames = ko_get_leute_col_name(FALSE, FALSE, 'all');
 
 	//get the cols, for which this user has edit-rights (saved in allowed_cols[edit])
 	$allowed_cols = ko_get_leute_admin_spalten($_SESSION['ses_userid'], 'all', ($id === 0 ? -1 : $id));
 
-
-
-	//Familien-Daten
-	if(!is_array($allowed_cols["view"]) || in_array("famid", $allowed_cols["view"])) {
-		ko_get_familien($familien);
-
-		//Familien-Select
-		$fam_sel["values"][] = "0";
-		$fam_sel["descs"][] = getLL("form_leute_none");
-		$fam_sel["titles"][] = getLL("form_leute_none");
-		foreach($familien as $f) {
-			$fam_sel["values"][] = $f["famid"];
-			$fam_sel["descs"][] = $f["id"];
-			$fam_sel["titles"][] = $f["detailed_id"];
-		}
-
-		//Familien-Funktion
-		$ffs = db_get_enums_ll("ko_leute", "famfunction");
-		foreach($ffs as $f => $ll) {
-			$function_sel["values"][] = $f;
-			$function_sel["descs"][] = $ll;
-		}
-		//Aktive Funktion selektieren
-		$function_sel["sel"] = $person["famfunction"];
-
-		//Familie Ja oder Nein
-		if($person["famid"] != 0) {
-			$smarty->assign("fam", true);
-
-			//Familien-ID
-			$familie = ko_get_familie($person["famid"]);
-			$smarty->assign("fam_id", $familie["id"]);
-
-			//Aktive Familie selektieren
-			$fam_sel["sel"] = $person["famid"];
-		}//if(person[famid] != 0)
-
-		else {
-			$smarty->assign("fam", false);
-		}
-		$smarty->assign("fam_sel", $fam_sel);
-		$smarty->assign("famfunction", $function_sel);
-
-		//Familien-Felder (für edit und neu)
-		$familie_col_name = ko_get_family_col_name();
-		$familien_cols = db_get_columns("ko_familie");
-		$fc = 0;
-		foreach($familien_cols as $col_) {
-			$col = $col_["Field"];
-			$type = $col_["Type"];
-			if(!in_array($col, array_merge($FAMILIE_EXCLUDE, $COLS_LEUTE_UND_FAMILIE))) {
-				$cols_familie[$fc]["desc"] = $familie_col_name[$col] ? $familie_col_name[$col] : $col;
-				$cols_familie[$fc]["name"] = "input_".$col;
-				if($mode == "edit" && $person["famid"] != 0) {
-					$cols_familie[$fc]["value"] = $familie[$col];
-				} else {
-					$cols_familie[$fc]["value"] = "";
-				}
-				if(substr($type, 0, 4) == "enum") {
-					$cols_familie[$fc]["type"] = "select";
-					$ffs = db_get_enums_ll("ko_familie", $col);
-					foreach($ffs as $f => $ll) {
-						$cols_familie[$fc]["values"][] = $f;
-						$cols_familie[$fc]["descs"][] = $ll;
-					}
-				} else {
-					$cols_familie[$fc]["type"] = "text";
-				}
-				$fc++;
-			}
-		}//foreach(familien_cols)
-		$smarty->assign("cols_familie", $cols_familie);
-		if(is_array($allowed_cols["edit"]) && !in_array("famid", $allowed_cols["edit"])) $smarty->assign("fam_params", ' disabled="disabled" ');
-
-		$family_ = ko_get_family2($person['id']);
-		$family = array();
-		foreach($family_ as $k => $p) {
-			if ($access['leute']['ALL'] < 1 && $access['leute'][$p['id']] < 1) continue;
-			$title  = $p['firm'].' '.$p['vorname'].' '.$p['nachname'];
-			$title .= $p['adresse'] != '' ? ' - '.$p['adresse'] : '';
-			$title .= $p['plz'] != '' || $p['ort'] != '' ? ' - '.$p['plz'].' '.$p['ort'] : '';
-			$title = trim(format_userinput($title, 'js'));
-			$label = trim(format_userinput($p['firm'].' '.$p['vorname'].' '.$p['nachname'], 'js'));
-			$family[$k] = array('id' => $p['id'], 'name' => $label, 'title' => $title);
-		}
-		$smarty->assign('family', $family);
-		$smarty->assign('label_spouse', getLL('form_leute_family_spouse'));
-		$smarty->assign('label_father', getLL('form_leute_family_father'));
-		$smarty->assign('label_mother', getLL('form_leute_family_mother'));
-
-		if(is_array($allowed_cols["edit"]) && !in_array("famid", $allowed_cols["edit"])) $smarty->assign("fam_readonly", 1);
-
-		$smarty->assign('leute_warning_family_fields_changed', getLL('leute_warning_family_fields_changed'));
-	}//if(in_array(famid, allowed_cols[view]))
-	else {
-		$smarty->assign("hide_fam", true);
+	// If this is a form to add persons during check-in, adapt the form accordingly
+	if (isset($ASYNC_FORM_TAG) && $ASYNC_FORM_TAG == 'checkin_add_person') {
+		require_once("{$ko_path}checkin/inc/checkin.inc");
+		ko_checkin_set_leute_form($_SESSION['checkin_tracking_id']);
 	}
 
+	// Handle family data
+	koFormLayoutEditor::unsetField($KOTA, 'ko_leute', 'famfunction');
+	$showFamilyData = TRUE;
+	if ($LEUTE_NO_FAMILY || (is_array($allowed_cols["view"]) && !in_array("famid", $allowed_cols["view"]))) {
+		$showFamilyData = FALSE;
+		koFormLayoutEditor::unsetField($KOTA, 'ko_leute', 'family_data');
+	}
+
+	// unset father and mother (the form definitions are for multi-edit
+	unset($KOTA['ko_leute']['father']['form'], $KOTA['ko_leute']['mother']['form']);
+
+	$smarty->assign("hide_fam", !$showFamilyData);
 
 
-	//Spalten-Namen
-	$leute_col_name = ko_get_leute_col_name(false, false, "all");
 
-	$row_counter = 0;
-	foreach($LEUTE_LAYOUT as $ll) {
-		$inputs = array();
-		$add_inputs = null; $add_counter = 0;
-		$col_counter = 0;
+	foreach ($KOTA['ko_leute'] as $l => $data) {
+		if (substr($l, 0, 1) == '_' || in_array($l, array('famid'))) continue;
 
-		foreach($ll as $l) {
+		if (preg_match('/MODULEgrp\d{6}/', $l)) {
+			unset($KOTA['ko_leute'][$l]);
+			continue;
+		}
 
-			if(substr($l, 0, 3) == '---') {  //Divider
-				if(strlen($l) > 3) {
-					$inputs[0]['desc'] = '  ';  //will be deleted
-					$inputs[0]['type'] = 'header';
-					$v = trim(substr($l, 3));
-					$inputs[0]['value'] = getLL($v) != '' ? getLL($v) : $v;
-				} else {
-					$inputs[0]['desc'] = '  ';  //will be deleted
-					$inputs[0]['type'] = '   ';
+		if((is_array($allowed_cols["view"]) && !in_array($l, $allowed_cols["view"])) && (!is_array($allowed_cols["edit"]) || is_array($allowed_cols["edit"]) && !in_array($l, $allowed_cols["edit"]))) {
+			if ($l == 'groups') {
+				if (!isset($access['groups'])) ko_get_access('groups');
+				if ($access['groups']['MAX'] < 1) {
+					koFormLayoutEditor::unsetField($KOTA, 'ko_leute', $l);
+					continue;
 				}
+			} else if (substr($l, 0, 6) != 'MODULE' && array_key_exists($l, $colNames)) {
+				koFormLayoutEditor::unsetField($KOTA, 'ko_leute', $l);
+				continue;
 			}
-
-			//Exclude MODULE::kg here, as this is handled by smallgroups below since R40
-			else if(substr($l, 0, 8) == "MODULE::" && $l != 'MODULE::kg') {
-				$module = substr($l, 8);
-				switch($module) {
-
-					/* KG-Seit-Modul */
-					case "kg_seit":
-						if(!ko_module_installed("kg") || $access['kg']['MAX'] < 2) continue;
-						//Dabei in Kleingruppen seit
-						$inputs[$col_counter]["desc"] = getLL("form_leute_kg_since");
-						$inputs[$col_counter]["type"] = "varchar";
-						$inputs[$col_counter]["name"] = "input_kg_seit";
-						$inputs[$col_counter]["value"] = $person["kg_seit"];
-						if($access['kg']['MAX'] > 2) {
-							$inputs[$col_counter]["params"] = '';
-						} else {
-							$inputs[$col_counter]["params"] = 'disabled="disabled"';
-						}
-
-						//Dabei als Kleingruppen-Leiter seit
-						$col_counter++;
-						$inputs[$col_counter]["desc"] = getLL("form_leute_kg_leader_since");
-						$inputs[$col_counter]["type"] = "varchar";
-						$inputs[$col_counter]["name"] = "input_kgleiter_seit";
-						$inputs[$col_counter]["value"] = $person["kgleiter_seit"];
-						if($access['kg']['MAX'] > 2) {
-							$inputs[$col_counter]["params"] = '';
-						} else {
-							$inputs[$col_counter]["params"] = 'disabled="disabled"';
-						}
-
-					break;
-
-
-					/* Groups-Modul */
-					case "groups":
-						if(!ko_module_installed("groups")) continue;
-						//Gruppen-Select der aktiven Gruppen
-						$inputs[$col_counter]["desc"] = getLL("groups");
-						$inputs[$col_counter]["type"] = "groupselect";
-						$inputs[$col_counter]["name"] = "input_groups";
-						$inputs[$col_counter]["colspan"] = 'colspan="2"';
-						$inputs[$col_counter]["onclick_2_add"] = 'do_update_df_form(\''.$id.'\',\''.session_id().'\');';
-						$inputs[$col_counter]["onclick_del_add"] = 'do_update_df_form(\''.$id.'\',\''.session_id().'\');';
-						//Nur gültige IDs auslesen, Rest wird durch js-groupmenu.inc erledigt
-						//Hier die alten Gruppen immer ausblenden
-						$orig_value = ko_get_userpref($_SESSION['ses_userid'], 'show_passed_groups');
-						ko_save_userpref($_SESSION['ses_userid'], 'show_passed_groups', 0);
-						ko_get_groups($groups, ko_get_groups_zwhere());
-						ko_save_userpref($_SESSION['ses_userid'], 'show_passed_groups', $orig_value);
-						$valid_ids = array();
-						$allow_assign = false;
-						foreach($groups as $group) {
-							if($access['groups']['ALL'] > 0 || $access['groups'][$group['id']] > 0) $valid_ids[] = $group['id'];
-							if(!$allow_assign && ($access['groups']['ALL'] > 1 || $access['groups'][$group['id']] > 1)) $allow_assign = true;
-						}
-						$smarty->assign("allow_assign", $allow_assign);
-						//Bestehende Werte einfüllen
-						$do_datafields = null;
-						foreach(explode(",", $person["groups"]) as $group) {
-							if($group) {
-								$group_id = ko_groups_decode($group, "group_id");
-								$group_desc = ko_groups_decode($group, "group_desc_full");
-								if(in_array($group_id, $valid_ids)) {
-									//Prepare for sorting
-									$assigned_groups[$group] = $group_desc;
-									$sort_assigned_groups[$group_desc] = $group;
-									//prepare datafields
-									if($group["datafields"]) $do_datafields[] = array_merge($groups[$group_id], array("desc_full" => $group_desc, "group_id" => $group_id));
-								}
-							}//if(group)
-						}//foreach(person[groups])
-
-						//Sort assigned groups alphabetically
-						ksort($sort_assigned_groups);
-						foreach($sort_assigned_groups as $group) {
-							$inputs[$col_counter]["avalues"][] = $group;
-							$inputs[$col_counter]["adescs"][] = $assigned_groups[$group];
-						}
-
-						$inputs[$col_counter]["avalue"] = implode(",", $inputs[$col_counter]["avalues"]);
-						if(sizeof($valid_ids) == 0) {
-							$inputs[$col_counter]["params"] = 'disabled="disabled"';
-						} else {
-							$inputs[$col_counter]["params"] = '';
-						}
-
-
-
-						//Group datafields for selected groups
-						$html = ko_groups_render_group_datafields($do_datafields, $id);
-
-						$add_inputs[$add_counter][0]["desc"] = getLL("leute_group_datafield");
-						$add_inputs[$add_counter][0]["type"] = "html";
-						$add_inputs[$add_counter][0]["colspan"] = 'colspan="2"';
-						$add_inputs[$add_counter][0]["value"] = $html;
-						$add_counter++;
-
-
-
-						//Groups-History
-						$col_counter = 0;
-						$add_inputs[$add_counter][$col_counter]["desc"] = getLL("leute_group_bisher");
-						$add_inputs[$add_counter][$col_counter]["type"] = "html";
-						$add_inputs[$add_counter][$col_counter+1]["desc"] = "";
-						$add_inputs[$add_counter][$col_counter+1]["type"] = "html";
-						foreach(explode(",", $person["groups"]) as $group) {
-							if(!$group) continue;
-							$g = ko_groups_decode($group, "group");
-							$g_id = ko_groups_decode($group, "group_id");
-							if($g["stop"] != "0000-00-00" && (int)str_replace("-", "", $g["stop"]) <= (int)strftime("%Y%m%d", time()) && ($access['groups']['ALL'] > 0 || $access['groups'][$g_id] > 0)) {
-								$desc_full = ko_groups_decode($g_id, 'group_desc_full');
-								$history_groups[$g_id] = $group;
-								$history_groups_sort[$g_id] = $desc_full;
-							}
-						}
-						asort($history_groups_sort);
-						$num = 0; $history = array();
-						foreach($history_groups_sort as $gid => $start) {
-							$group = db_select_data('ko_groups', "WHERE `id` = '$gid'", '*', '', '', true);
-							$tooltip = '<p class="title">'.getLL('groups_datafields_list_title').'</p>';
-							$found_df = FALSE;
-							foreach(explode(',', $group['datafields']) as $dfid) {
-								if(!$dfid) continue;
-								$df = ko_get_datafield_data($gid, $dfid, $id, '', $temp1, $temp2);
-								if(!$df['description']) continue;
-								$found_df = TRUE;
-								$dfvalue = $df['typ'] == 'checkbox' ? ($df['value'] == '1' ? getLL('yes') : getLL('no')) : ko_html($df['value']);
-								$tooltip .= $df['description'].': <b>'.$dfvalue.'</b><br />';
-							}
-
-							$history[$num] .= '<div style="font-size:x-small;color:#444;" title="'.ko_groups_decode($history_groups[$gid], "group_description").'" ';
-							if($found_df) $history[$num] .= 'onmouseover="tooltip.show(\''.ko_html($tooltip).'\');" onmouseout="tooltip.hide();"';
-							$history[$num] .= '>';
-							$history[$num] .= ko_groups_decode($history_groups[$gid], "group_desc_full");
-							$history[$num] .= "</div>";
-							$num++;
-						}
-
-						$col = 0;
-						foreach($history as $h) {
-							$add_inputs[$add_counter][$col]["value"] .= $h;
-							$col = $col ? 0 : 1;
-						}
-
-
-						// Assignment History
-						if ($mode == 'edit') {
-							$add_counter++;
-							$assignmentHtml = "<div id=\"groups-assignment-history\"></div>".ko_groups_get_assignment_timeline("person", 'groups-assignment-history', NULL, $person);
-							$add_inputs[$add_counter][$col] = array(
-								"desc" => getLL("form_groups_assgnment_history"),
-								"type" => "html",
-								"value" => $assignmentHtml,
-								"columnWidth" => 12,
-								"colspan" => 'colspan="2"',
-							);
-						}
-					break;
-
-					//Show a save button
-					case "save":
-						$inputs[$col_counter]["type"] = "_save";
-						$inputs[$col_counter]['colspan'] = 2;
-					break;
-
-				}//switch(module)
-			}//if(MODULE)
-
-			//Add backwards compatibility case for MODULE::kg (deprecated since R40)
-			else if($l == 'smallgroups' || $l == 'MODULE::kg') {
-				if(!ko_module_installed('kg') || $access['kg']['MAX'] < 2) continue;
-				//Small group select
-				$inputs[$col_counter]['desc'] = getLL('kota_ko_leute_smallgroups');
-				$inputs[$col_counter]['type'] = 'doubleselect';
-				$inputs[$col_counter]['show_moves'] = TRUE;
-				$inputs[$col_counter]['name'] = 'input_smallgroups';
-				$inputs[$col_counter]['colspan'] = 'colspan="2"';
-				$smallgroups = db_select_data('ko_kleingruppen', 'WHERE 1=1', '*', 'ORDER BY name ASC');
-				foreach($smallgroups as $sg) {
-					foreach($SMALLGROUPS_ROLES as $role) {
-						$inputs[$col_counter]['values'][] = $sg['id'].':'.$role;
-						$inputs[$col_counter]['descs'][] = ko_html($sg['name'].': '.getLL('kg_roles_'.$role));
-					}
+		} else if(is_array($allowed_cols["edit"]) && !in_array($l, $allowed_cols["edit"])) {
+			if ($l == 'groups') {
+				if (!isset($access['groups'])) ko_get_access('groups');
+				if ($access['groups']['MAX'] < 2) {
+					$KOTA['ko_leute'][$l]['form']["readonly"] = TRUE;
 				}
-				//Show currently selected values
-				foreach(explode(',', $person['smallgroups']) as $sg) {
-					if(!$sg) continue;
-					$inputs[$col_counter]['avalues'][] = $sg;
-					list($kgid, $role) = explode(':', $sg);
-					$inputs[$col_counter]['adescs'][] = $smallgroups[$kgid]['name'].': '.getLL('kg_roles_'.$role);
-				}
-				$inputs[$col_counter]['avalue'] = $person['smallgroups'];
-				//Marks as disabled if not enough access rights
-				if($access['kg']['MAX'] > 2) {
-					$inputs[$col_counter]['params'] = 'size="8"';
-				} else {
-					$inputs[$col_counter]['params'] = 'size="8" disabled="disabled"';
-				}
-				$col_counter++;
-			}//smallgroups
-
-			//Select for recipient type
-			else if($l == 'rectype') {
-				if(sizeof($RECTYPES) > 0) {
-					$inputs[$col_counter]['desc'] = $leute_col_name[$l];
-					$inputs[$col_counter]['type'] = 'enum';
-					$inputs[$col_counter]['name'] = 'input_'.$l;
-					$inputs[$col_counter]['value'] = $person[$l];
-					//Add default entry
-					$inputs[$col_counter]['values'][] = '';
-					$inputs[$col_counter]['descs'][] = getLL('kota_ko_leute_rectype_default');
-					foreach($RECTYPES as $k => $v) {
-						$inputs[$col_counter]['values'][] = $k;
-						$ll_value = getLL('kota_ko_leute_'.$l.'_'.$k);
-						$inputs[$col_counter]['descs'][] = $ll_value ? $ll_value : $k;
-					}
-					$col_counter++;
-				}
-			}//rectype
-
-			else {
-				if(is_array($allowed_cols) && sizeof($allowed_cols) > 0) {
-					if((is_array($allowed_cols["view"]) && !in_array($l, $allowed_cols["view"])) && (!is_array($allowed_cols["edit"]) || is_array($allowed_cols["edit"]) && !in_array($l, $allowed_cols["edit"]))) continue;
-					if(is_array($allowed_cols["edit"]) && !in_array($l, $allowed_cols["edit"])) $inputs[$col_counter]["params"] = ' disabled="disabled" ';
-				}
-
-				//Input-Type und -Namen speichern
-				$inputs[$col_counter]["desc"] = $leute_col_name[$l];
-				if(in_array($l, $COLS_LEUTE_UND_FAMILIE)) {
-					$inputs[$col_counter]["fam_feld"] = true;
-					if ($person['famid'] > 0) {
-						$inputs[$col_counter]["fam_feld_warn_changes"] = true;
-					}
-				}
-
-				$inputs[$col_counter]["type"] = $input_type[$l];
-				$inputs[$col_counter]["name"] = "input_".$l;
-
-				//Bei Edit: Bisherigen Wert einfüllen:
-				if($mode == "edit") {
-					if($input_type[$l] == "date") {
-						$inputs[$col_counter]["value"] = ko_html(sql2datum($person[$l]));
-					} else if($input_type[$l] == "enum") {  //Don't apply ko_html to enum values, as these must not get changed
-						$inputs[$col_counter]["value"] = $person[$l];
-					} else {
-						$inputs[$col_counter]["value"] = ko_html($person[$l]);
-					}
-				//Bei Neu: Die _POST-Werte wieder einfüllen
-				} else if($mode == "neu") {
-					if($_POST["action"] == "submit_neue_person") {
-						$inputs[$col_counter]["value"] = ko_html($_POST["input_".$l]);
-					}
-				}
-
-				//Spezial-Optionen zu einzelnen Typen verarbeiten
-				switch($input_type[$l]) {
-
-					case "varchar":  //Textfeld
-					case "mediumint":
-					case "smallint":
-						//Allow doubleselect fields
-						if($KOTA['ko_leute'][$l]['form']['type'] == 'doubleselect') {
-							$inputs[$col_counter]['type'] = 'doubleselect';
-							$inputs[$col_counter]['descs'] = $KOTA['ko_leute'][$l]['form']['descs'];
-							$inputs[$col_counter]['values'] = $KOTA['ko_leute'][$l]['form']['values'];
-
-							$inputs[$col_counter]['avalue'] = $person[$l];
-							foreach(explode(',', $person[$l]) as $ev) {
-								if(!$ev || !in_array($ev, $inputs[$col_counter]['values'])) continue;
-								$inputs[$col_counter]['avalues'][] = $ev;
-								$ll_value = getLL('kota_ko_leute_'.$l.'_'.$ev);
-								$inputs[$col_counter]['adescs'][] = $ll_value ? $ll_value : $ev;
-							}
-						}
-						else if($KOTA['ko_leute'][$l]['form']['type'] == 'peoplesearch') {
-							$inputs[$col_counter]['type'] = 'peoplesearch';
-							$inputs[$col_counter]['avalue'] = $person[$l];
-							foreach(explode(',', $person[$l]) as $ps_id) {
-								if(!$ps_id) continue;
-								ko_get_person_by_id($ps_id, $ps_person);
-								$inputs[$col_counter]['avalues'][] = $ps_id;
-								$inputs[$col_counter]['adescs'][] = trim($ps_person['firm'].' '.$ps_person['vorname'].' '.$ps_person['nachname']);
-							}
-						}
-						else {
-							//Textplus
-							if(in_array($l, $LEUTE_TEXTSELECT)) {
-								$inputs[$col_counter]["type"] = "textplus";
-
-								$c = db_select_distinct("ko_leute", $l, "", "WHERE `deleted` = '0'", true);
-								foreach($c as $cc) {
-									$inputs[$col_counter]["descs"][] = $cc;
-								}
-								//Allfällige doppelte Leereinträge rausholen
-								$inputs[$col_counter]["descs"] = array_unique($inputs[$col_counter]["descs"]);
-								$inputs[$col_counter]["values"] = $inputs[$col_counter]["descs"];
-
-								$inputs[$col_counter]["value"] = $person[$l];
-							}//if(in_array(l, LEUTE_TEXTSELECT))
-							$inputs[$col_counter]["params"] .= 'maxlength="'.$input_size[$l].'"';
-						}
-					break;
-
-					case "enum":  //Select
-						$enum_values = explode(',', str_replace("'", '', $input_size[$l]));
-						foreach($enum_values as $ev) {
-							$inputs[$col_counter]['values'][] = $ev;
-							$ll_value = getLL('kota_ko_leute_'.$l.'_'.$ev);
-							$inputs[$col_counter]['descs'][] = $ll_value ? $ll_value : $ev;
-						}
-						if(in_array($l, $LEUTE_ENUMPLUS)) {
-							$inputs[++$col_counter]["desc"] = getLL("form_textplus");
-							$inputs[$col_counter]["type"] = "varchar";
-							$inputs[$col_counter]["name"] = "input_".$l."_2";
-						}
-					break;
-
-					case "date":
-						if(false === strpos($inputs[$col_counter]["params"], 'disabled')) {
-							$inputs[$col_counter]["type"] = "datepicker";
-						}
-						else {
-							$inputs[$col_counter]["type"] = "html";
-						}
-					break;
-
-					case "tinyint":  //Checkbox
-						$inputs[$col_counter]["type"] = 'switch';
-						$inputs[$col_counter]["value"] = $person[$l] ? 1 : 0;
-					break;
-
-					//picture
-					case "tinytext":
-						$inputs[$col_counter]["type"] = 'file';
-						$inputs[$col_counter]['value'] = ko_pic_get_tooltip($person[$l], 40, 200, 't', 'c', TRUE);
-						$inputs[$col_counter]["name2"] = "input_".$l."_DELETE";
-						$inputs[$col_counter]["value2"] = getLL("delete");
-					break;
-
-					case "blob":
-					case "text":
-					break;
-
-				}
-
-				//Add checkboxes for email fields, if multiple are used and field may be edited
-				if(in_array($l, $LEUTE_EMAIL_FIELDS) && sizeof($LEUTE_EMAIL_FIELDS) > 1) {
-					$value = db_select_data('ko_leute_preferred_fields', "WHERE `type` = 'email' AND `lid` = '$id' AND `field` = '$l'", '*', '', '', true);
-					if(false === strpos($inputs[$col_counter]['params'], 'disabled')) {
-						$code = '<input type="checkbox" name="email_chk_'.$l.'"'.($value['id'] ? ' checked="checked"' : '').' title="'.sprintf(getLL('leute_preferred_fields_email_chk'), $leute_col_name[$LEUTE_EMAIL_FIELDS[0]]).'" />';
-						$inputs[$col_counter]['chk_preferred'] = $code;
-					} else {
-						$inputs[$col_counter]['chk_preferred'] = $value['id'] ? '<img src="'.$ko_path.'images/icon_checked.gif" />' : '';
-					}
-				}
-
-				//Add checkboxes for mobile fields, if multiple are used
-				if(in_array($l, $LEUTE_MOBILE_FIELDS) && sizeof($LEUTE_MOBILE_FIELDS) > 1) {
-					$value = db_select_data('ko_leute_preferred_fields', "WHERE `type` = 'mobile' AND `lid` = '$id' AND `field` = '$l'", '*', '', '', true);
-					if(false === strpos($inputs[$col_counter]['params'], 'disabled')) {
-						$code = '<input type="checkbox" name="mobile_chk_'.$l.'"'.($value['id'] ? ' checked="checked"' : '').' title="'.sprintf(getLL('leute_preferred_fields_mobile_chk'), $leute_col_name[$LEUTE_MOBILE_FIELDS[0]]).'" />';
-						$inputs[$col_counter]['chk_preferred'] = $code;
-					} else {
-						$inputs[$col_counter]['chk_preferred'] = $value['id'] ? '<img src="'.$ko_path.'images/icon_checked.gif" />' : '';
-					}
-				}
-
-				$col_counter++;
-			}//if..else(ll=="---")
-
-		}//foreach(ll)
-
-		$row[$row_counter++]["inputs"] = $inputs;
-		if($add_inputs) {
-			foreach($add_inputs as $add_input) {
-				$row[$row_counter++]["inputs"] = $add_input;
+			} else if (substr($l, 0, 6) != 'MODULE' && array_key_exists($l, $colNames)) {
+				$KOTA['ko_leute'][$l]['form']["readonly"] = TRUE;
 			}
 		}
-	}//foreach(LEUTE_LAYOUT)
 
+		//Add checkboxes for email and mobile fields, if multiple are used and field may be edited
+		if((in_array($l, $LEUTE_EMAIL_FIELDS) && sizeof($LEUTE_EMAIL_FIELDS) > 1) || (in_array($l, $LEUTE_MOBILE_FIELDS) && sizeof($LEUTE_MOBILE_FIELDS) > 1)) {
+			$KOTA['ko_leute'][$l]['form']['type'] = 'html';
+			$KOTA['ko_leute'][$l]['pre'] = 'FCN:kota_pre_leute_preferred_field';
+		}
+	}
+	koFormLayoutEditor::collapse($KOTA, 'ko_leute');
 
-	//Announce changes to kOOL users
+	//Add name to title
+	$titleAdd = '';
 	if($mode == 'edit') {
-		$announce_values = $announce_descs = array();
-		$logins = db_select_data('ko_admin', "WHERE (`disabled` = '' OR `disabled` = '0') AND (`leute_id` > 0 || `email` != '')", '*');
-		foreach($logins as $login) {
-			if(!$login['email']) {
-				ko_get_leute_email($login['leute_id'], $email);
-				if($email) {
-					$announce_values[] = $login['id'];
-					$announce_descs[] = $login['login'];
+		if($person['vorname'] || $person['nachname']) {
+			$titleAdd = $person['vorname'].' '.$person['nachname'];
+			if($person['firm']) $titleAdd .= ' ('.$person['firm'].')';
+		} else {
+			if($person['firm']) $titleAdd = $person['firm'];
+		}
+	}
+
+	$form_data["title"] = getLL("form_leute_title").($titleAdd ? ': '.$titleAdd : '');
+	$form_data["action"] = $mode == "neu" ? "submit_neue_person" : "submit_edit_person";
+	$form_data['label_as_new'] = ($mode == 'edit' && $access['leute']['MAX'] > 1 && $show_save_as_new) ? getLL("form_leute_as_new_person") : '';
+	$form_data['action_as_new'] = ($mode == 'edit' && $access['leute']['MAX'] > 1 && $show_save_as_new) ? 'submit_als_neue_person' : '';
+	$form_data["cancel"] = $_SESSION['show_back'] ? $_SESSION['show_back'] : 'show_all';
+
+	ko_multiedit_formular('ko_leute', '', $id, '', $form_data, FALSE, '', !$LEUTE_NO_FAMILY);
+
+	// Add warning in when editing family fields
+	print '<script>
+$(".family-field-header").children("label").append("&nbsp;&nbsp;<span class=\\"family_field_warning\\" style=\\"color:orangered;visibility:hidden\\">'.getLL('leute_warning_family_fields').'</span>");
+</script>';
+
+	print "<script>
+
+		$('h3').before(
+		 '<div class=\"input-group\" style=\"float:right; width: 100px;; margin-top:-5px;\">' +
+			'<span title=\"".getLL('form_addressblock_import_title')."\" class=\"input-group-addon\">". getLL('form_addressblock_import') ." <i class=\"glyphicon glyphicon-paste\"></i></span>' +
+			'<textarea title=\"".getLL('form_addressblock_import_title')."\" style=\"resize: none; overflow:hidden; height: 30px; width: 100px;\" class=\"form-control\" rows=\"1\" id=\"address_import\"></textarea>' +
+		 '</div>');
+
+		$('textarea#address_import').bind('input propertychange', function(e) {
+			var input = $(this).val();
+			var lines = input.split(\"\\n\");
+			var address = Array();
+
+			// extract phone and mail
+			for(var i=lines.length-1; i>=0; i--) {
+				lines[i] = lines[i].replace('(at)', '@');
+				regex_mail = /[A-Za-z0-9\._-]+[@][A-Za-z0-9\._-]+[\.].[A-Za-z0-9]+/img
+				var mails = lines[i].match(regex_mail);
+				if (mails !== null) {
+					address['email'] = mails[0];
+					lines.splice(i,1);
+					continue;
 				}
-			} else {
-				$announce_values[] = $login['id'];
-				$announce_descs[] = $login['login'];
+				regex_phone = /((\+\s?\d{2}|\(?00\s?\d{2}\)?|\d{3})\s?[\d ]{8,12})/img
+				var phone = lines[i].match(regex_phone);
+				if (phone !== null) {
+					address['telg'] = phone[0];
+					lines.splice(i,1);
+				}
+			}
+
+			for(var i=0; i<lines.length; i++) {
+				var line = lines[i];
+
+				var regex_plzort = /(?:ch-)?(\d{4}) +(.*)/mgi;
+				var match_plzort = regex_plzort.exec(line);
+
+				var regex_adresse = /(route|str|rue|weg|allee|gasse|weid)/i;
+				var match_adresse = regex_adresse.exec(line);
+
+				var regex_adresse2 = /^[im |auf |an ].*[0-9aZ]$/i;
+				var match_adresse2 = regex_adresse2.exec(line);
+
+				var regex_firm = /(Ref.|Kirche|Kirchgemeinde|Kath.|Pfarrei|AG|GmbH)/i;
+        var match_firm = regex_firm.exec(line);
+
+				if (match_plzort !== null) {
+					address['plz'] = match_plzort[1];
+					address['ort'] = match_plzort[2];
+				} else if (address['plz']) {
+					// pass
+				} else if (line.toLowerCase().substring(0, 8) === 'postfach') {
+				 	address['postfach'] = line;
+				} else if (match_adresse !== null) {
+				 	address['adresse'] = line;
+				} else if (match_adresse2 !== null) {
+					address['adresse'] = line;
+				} else if (match_firm !== null) {
+					address['firm'] = line;
+				} else if (i === 0) {
+					address['vorname'] = line.split(' ').slice(0, -1).join(' ');
+					address['nachname'] = line.split(' ').slice(-1).join(' ');
+				} else {
+					if (address['adresse'] === null) {
+						address['adresse'] = line;
+					} else {
+						address['adresse_zusatz'] = line;
+					}
+				}
+			}
+
+			for (var k in address){
+				if (address.hasOwnProperty(k)) {
+					$('input[name=\"koi[ko_leute]['+k+'][".$id."]\"]').val(address[k]);
+					$('input[name=\"koi[ko_leute]['+k+'][".$id."]\"]').addClass('address_import_modified');
+				}
+			}
+
+		    $(this).val('').blur();
+		});
+	</script>";
+}
+
+function ko_formular_leute_mailing() {
+	global $access, $smarty, $COLS_LEUTE_UND_FAMILIE, $ko_path, $LEUTE_EMAIL_FIELDS, $BASE_PATH, $BASE_URL;
+
+	$leuteColNames = ko_get_leute_col_name(TRUE, TRUE);
+
+	// header for xls file
+	$cols = array("anrede", "vorname", "nachname", "adresse", "adresse_zusatz", "plz", "ort", "telp", "telg");
+	$header = array();
+	foreach($cols as $c) {
+		$header[] = $leuteColNames[$c];
+	}
+
+	// fetch recipients
+	$xls_data = $array_empfaenger = array();
+	$ohne_email = "";
+	$row = 0;
+	$with_email_ids = array();
+	foreach($_SESSION['leute_mailing_people_data'] as $l => $p) {  //Loop über alle Leute
+		if(ko_get_leute_email($p, $email)) {
+			$with_email_ids[] = $p['id'];
+			$array_empfaenger = array_merge($array_empfaenger, $email);
+		} else {
+			$ohne_email .= $p["vorname"]." ".$p["nachname"].($p["ort"] ? (" ".getLL('from')." ".$p["ort"]) : "").", ";
+
+			$col = 0;
+			foreach($cols as $c) {
+				$xls_data[$row][$col++] = sql2datum($p[$c]);
+			}
+			$row++;
+		}
+	}//foreach(es)
+
+	$array_empfaenger = array_unique($array_empfaenger);
+	$txt_empfaenger = implode(",", $array_empfaenger);
+	$txt_empfaenger_semicolon = implode(';', $array_empfaenger);
+
+	$ohne_email = substr($ohne_email, 0, -2);
+	// create xls file showing all people without email address
+	if($ohne_email != "") {
+		$dateiname = $ko_path."download/excel/".getLL("export_filename").strftime("%d%m%Y_%H%M%S", time()).".xlsx";
+		$dateiname = ko_export_to_xlsx($header, $xls_data, $dateiname, "kOOL");
+		$smarty->assign("xls_filename", $dateiname);
+	}
+
+	$smarty->assign("txt_empfaenger", ko_html($txt_empfaenger));
+	$smarty->assign('txt_empfaenger_semicolon', ko_html($txt_empfaenger_semicolon));
+	$smarty->assign("tpl_ohne_email", ($ohne_email == "" ? getLL('form_leute_none') : $ohne_email));
+	$smarty->assign('crm_contact_tpl_groups', ko_get_crm_contact_form_group(array(), array('type' => 'email', 'leute_ids' => implode(',', array_unique($with_email_ids)))));
+
+
+	// prepare content panel of email
+	$familyCols = $COLS_LEUTE_UND_FAMILIE;
+
+	$mode = in_array($_SESSION['leute_mailing_sel_auswahl'], array('markierte', 'allep')) ? 'person' : 'family';
+
+	$cols = $mode == 'family' ? array_merge(array('vorname', 'nachname', 'email', 'MODULEsalutation_informal', 'MODULEsalutation_formal'), $familyCols) : $_SESSION['show_leute_cols'];
+	$placeholders = array('' => '');
+	foreach ($cols as $col) {
+		$placeholders[] = array('value' => '###'.strtoupper($col).'###', 'desc' => str_replace('&nbsp;', '', trim($leuteColNames[$col])));
+	}
+
+	// get reply to addresses
+	$replyToAddresses = array();
+	ko_get_login($_SESSION['ses_userid'], $login);
+	$person = null;
+	if ($login['leute_id']) {
+		ko_get_person_by_id($login['leute_id'], $p);
+		if ($p['id'] == $login['leute_id']) $person = $p;
+	}
+	if ($person) {
+		foreach($LEUTE_EMAIL_FIELDS as $emailField) {
+			if ($person[$emailField]) {
+				$replyToAddresses[$person[$emailField]] = array('value' => $person[$emailField], 'desc' => $person[$emailField]);
 			}
 		}
-		$smarty->assign('announce_values', $announce_values);
-		$smarty->assign('announce_descs', $announce_descs);
-		$smarty->assign('label_announce_title', getLL('form_leute_announce_changes_title'));
-		$smarty->assign('label_announce_description', getLL('form_leute_announce_changes_description'));
+	}
+	if ($login['email']) {
+		$replyToAddresses[$login['email']] = array('value' => $login['email'], 'desc' => $login['email']);
 	}
 
-	if ($LEUTE_NO_FAMILY) {
-		$smarty->assign("hide_fam", true);
+	// fill values from post (previous submission)
+	$initFiles = array();
+	if (isset($_POST['leute_mailing_files'])) {
+		foreach (explode('@|,|@', $_POST['leute_mailing_files']) as $uuid) {
+			if (!$uuid) continue;
+			$name = substr($uuid, 37);
+			$size = filesize($ko_path . 'my_images/temp/' . $uuid);
+			$thumbnailFile = $uuid . '.thumbnail';
+			$f = array('name' => $name, 'size' => $size, 'uuid' => $uuid);
+			if ($thumbnailFile) $f['thumbnailUrl'] = $BASE_URL . 'my_images/temp/' . $thumbnailFile;
+			$initFiles[] = $f;
+		}
+	}
+	$text = isset($_POST['leute_mailing_text']) ? $_POST['leute_mailing_text'] : '';
+	$subject = isset($_POST['leute_mailing_subject']) ? $_POST['leute_mailing_subject'] : '';
+	$replyTo = isset($_POST['leute_mailing_reply_to']) ? $_POST['leute_mailing_reply_to'] : '';
+	$files = isset($_POST['leute_mailing_files']) ? $_POST['leute_mailing_files'] : '';
+
+	array_walk_recursive($files, 'utf8_encode_array');
+
+	// show previously sent emails
+	$ups = db_select_data('ko_userprefs', "WHERE `user_id` = {$_SESSION['ses_userid']} AND `type` = 'leute_saved_email' ORDER BY `id` DESC");
+	$sentEmails = array();
+	$sentEmailsJSON = array();
+	$cnt = 0;
+	require_once($BASE_PATH . 'inc/class.html2text.php');
+	$html2text = new html2text('<body></body>');
+	foreach ($ups as $up) {
+		$sentEmail = json_decode($up['value'], true);
+		array_walk_recursive($sentEmail, 'utf8_decode_array');
+
+		$html2text->set_html($sentEmail['text']);
+		$plainText = $html2text->get_text();
+
+		$key = $sentEmail['date'] . zerofill($sentEmail['subject'], 100) . (++$cnt);
+		$sentEmails[$key] = array('value' => $cnt, 'desc' => date('d.m.Y H:i', strtotime($sentEmail['date'])).': ' . $sentEmail['subject'], 'title' => $plainText);
+		$sentEmailsJSON[$cnt] = array('subject' => $sentEmail['subject'], 'text' => $sentEmail['text']);
 	}
 
-	//LL-Values
-	$smarty->assign("label_family", getLL("form_leute_family"));
-	$smarty->assign("label_familyrole", getLL("form_leute_familyrole"));
-	$smarty->assign("label_family_new", getLL("form_leute_family_new"));
-	$smarty->assign("label_ok", getLL("OK"));
-	$smarty->assign("label_group", getLL("groups_group"));
-	$smarty->assign("label_grouprole", getLL("groups_role"));
-	$smarty->assign("label_group_assigned", getLL("groups_assigned"));
-	$smarty->assign("label_as_new_person", getLL("form_leute_as_new_person"));
+	krsort($sentEmails);
 
-	//Legend for family fields
-	if (!$LEUTE_NO_FAMILY) {
-		$smarty->assign("tpl_legend", getLL("leute_legend_family_fields"));
-		$smarty->assign("tpl_legend_icon", "group");
-	}
+	//Add empty entry at the beginning
+	array_unshift($sentEmails, array('value' => '', 'desc' => '', 'title' => ''));
 
-	$smarty->assign("tpl_titel", getLL("form_leute_title")); //Personendaten
-	$smarty->assign("tpl_id", $id);
-	$smarty->assign("tpl_rows", $row);
-	$smarty->assign("tpl_action", $mode == "neu" ? "submit_neue_person" : "submit_edit_person");
-	$smarty->assign('tpl_action_neu', ($mode == 'edit' && $access['leute']['MAX'] > 1 && $show_save_as_new) ? 'submit_als_neue_person' : '');
-
-	$smarty->display("ko_formular_leute.tpl");
-}//ko_formular_leute()
+	array_merge($sentEmails);
+	array_walk_recursive($sentEmailsJSON, 'utf8_encode_array');
 
 
+	$fineUploaderLabels = array('confirmMessage', 'deletingFailedText', 'deletingStatusText', 'tooManyFilesError', 'unsupportedBrowser', 'autoRetryNote', 'namePromptMessage', 'failureText', 'failUpload', 'formatProgress', 'paused', 'waitingForResponse');
+	$smarty->assign('tpl_text', $text);
+	$smarty->assign('tpl_fineuploader_labels', $fineUploaderLabels);
+	$smarty->assign('tpl_subject', $subject);
+	$smarty->assign('tpl_reply_to', $replyTo);
+	$smarty->assign('tpl_placeholders', $placeholders);
+	$smarty->assign('tpl_init_files', json_encode($initFiles));
+	$smarty->assign('tpl_files', $files);
+	$smarty->assign('tpl_reply_to_addresses', $replyToAddresses);
+	$smarty->assign('tpl_sent_emails', $sentEmails);
+	$smarty->assign('tpl_sent_emails_json', json_encode($sentEmailsJSON));
+
+	$smarty->display("ko_formular_email2.tpl");
+}
 
 
 
@@ -630,7 +372,7 @@ function ko_formular_leute($mode, $id=0, $show_save_as_new=true) {
  * mode definiert die Ausgabe: liste, my_list, adressliste
  * output: TRUE=Ausgabe erfolgt direkt, FALSE=HTML wird zurückgegeben (Ajax)
  */
-function ko_list_personen($mode="liste", $output=true) {
+function ko_list_personen($mode="liste") {
 	global $smarty, $ko_path;
 	global $LEUTE_EXCLUDE, $LEUTE_ADRESSLISTE_LAYOUT, $LEUTE_EMAIL_FIELDS, $LEUTE_MOBILE_FIELDS;
 	global $KOTA, $ko_menu_akt;
@@ -646,6 +388,23 @@ function ko_list_personen($mode="liste", $output=true) {
 	$all_datafields = db_select_data("ko_groups_datafields", "WHERE 1=1", "*");
 
 	$leute_col_name = ko_get_leute_col_name($groups_hierarchie=false, $add_group_datafields=true);
+
+	ko_get_access("taxonomy");
+	if($access['taxonomy']['ALL'] >= 1) {
+		$KOTA['ko_leute']['listview'][] = [
+			"name" => "terms",
+			"sort" => FALSE,
+			"multiedit" => FALSE
+		];
+	}
+	ko_get_access("daten");
+	if($access['daten']['ABSENCE'] >= 1) {
+		$KOTA['ko_leute']['listview'][] = [
+			"name" => "absence",
+			"sort" => FALSE,
+			"multiedit" => FALSE
+		];
+	}
 
 	if($mode == "my_list") {  //Daten aus _SESSION[my_list] holen
 		//Eigenes z_where gemäss den gespeicherten IDs aufbauen
@@ -793,14 +552,7 @@ function ko_list_personen($mode="liste", $output=true) {
 		}
 	}
 
-	//find number of columns for colspan for version td (as IE can not edit innerHTML of tr elements
-	$cols = 4;  //checkbox, edit, del, history button
-	if(ko_get_userpref($_SESSION['ses_userid'], 'leute_fam_checkbox') == 1 && in_array($mode, array('liste', 'my_list'))) $cols++;  //fam checkbox
 	if(!is_array($all_groups)) ko_get_groups($all_groups);
-	foreach($_SESSION["show_leute_cols"] as $col) {
-		$cols++;
-	}
-
 
 	//Statistik über Suchergebnisse und Anzeige
 	if($mode == 'birthdays') {
@@ -809,7 +561,7 @@ function ko_list_personen($mode="liste", $output=true) {
 	} else {
 		$stats_end = ($_SESSION["show_limit"]+$_SESSION["show_start"]-1 > $rows) ? $rows : ($_SESSION["show_limit"]+$_SESSION["show_start"]-1);
 	}
-	$smarty->assign('tpl_stats', $_SESSION["show_start"]." - ".$stats_end." ".getLL("list_oftotal")." ".$rows);
+	$smarty->assign('tpl_stats', $_SESSION["show_start"]." - ".$stats_end." ".getLL("list_oftotal")." ".number_format($rows, 0, '.', "'"));
 
 
 	//Links für Prev und Next-Page vorbereiten
@@ -856,17 +608,25 @@ function ko_list_personen($mode="liste", $output=true) {
 		//$smarty->assign('tpl_show_3cols', true);
 	}
 
+	//find number of columns for colspan for version td (as IE can not edit innerHTML of tr elements
+	$table_cols = 1;  //checkbox, edit, del, history button
+	if(ko_get_userpref($_SESSION['ses_userid'], 'leute_fam_checkbox') == 1 && in_array($mode, array('liste', 'my_list'))) $table_cols++;  //fam checkbox
+
+
 	if(in_array($mode, array('liste', 'my_list', 'birthdays'))) {
 		$smarty->assign("checkbox_code", "select_export_marked();");
 		$smarty->assign("checkbox_all_code", "select_export_marked();");
 		$h_counter = -1;
 		foreach($_SESSION["show_leute_cols"] as $c) {
 			if($c != "" && isset($leute_col_name[$c])) {
+				$table_cols++;
+
 				$h_counter++;
 				if(substr($c, 0, 9) == "MODULEgrp") {
 					$tpl_table_header[$h_counter]['sort'] = $mode != 'birthdays' ? $c : '';
 					$tpl_table_header[$h_counter]['name'] = $leute_col_name[$c];
 					$tpl_table_header[$h_counter]['id'] = 'col_'.$c;
+					$tpl_table_header[$h_counter]["db_name"] = "ko_leute:".$c;
 					if(false !== strpos($c, ':')) {
 						$tpl_table_header[$h_counter]['class'] = 'ko_list ko_list_datafields';
 						$tpl_table_header[$h_counter]['title'] = getLL('leute_listheader_df_group').': '.$leute_col_name[substr($c, 0, 15)];
@@ -880,6 +640,7 @@ function ko_list_personen($mode="liste", $output=true) {
 					}
 					$tpl_table_header[$h_counter]["name"] = $leute_col_name[$c];
 					$tpl_table_header[$h_counter]['id'] = 'col_'.$c;
+					$tpl_table_header[$h_counter]["db_name"] = "ko_leute:".$c;
 				}
 			}//if(c)
 		}
@@ -937,10 +698,11 @@ function ko_list_personen($mode="liste", $output=true) {
 		$edit_columns = array();
 		foreach($_SESSION["show_leute_cols"] as $col) {
 			if($col != '' && isset($leute_col_name[$col])) {
-				if(isset($KOTA['ko_leute'][$col])) {
+				if(isset($KOTA['ko_leute'][$col]) && !in_array($col, array('spouse','terms'))) {
 					if(!is_array($allowed_cols['edit'])
 						|| (is_array($allowed_cols['edit']) && in_array($col, $allowed_cols['edit']))
 						|| substr($col, 0, 6) == 'MODULE'
+
 					) {
 						$edit_columns[] = $col;
 					} else {
@@ -984,21 +746,18 @@ function ko_list_personen($mode="liste", $output=true) {
 	//Label for QRCode
 	$smarty->assign('label_qrcode', getLL('leute_list_qrcode'));
 	$show_overlay_cols['maps'] = 'maps';
-	//$smarty->assign('tpl_show_maps_link', true);
 	$smarty->assign('label_google_maps', getLL('leute_label_google_maps'));
-	$smarty->assign('label_word', getLL('leute_list_word'));
-	if(ko_word_get_template() !== FALSE) {
-		$show_overlay_cols['word'] = 'word';
-		//$smarty->assign('tpl_show_word', true);
-	}
 
-	if (ko_get_userpref($_SESSION['ses_userid'], 'enable_zero_clipboard')) {
-		$show_overlay_cols['clipboard'] = 'clipboard';
+	$smarty->assign('label_whatsappclicktochat', getLL('leute_label_whatsappclicktochat'));
+	$show_overlay_cols['whatsappclicktochat'] = 'whatsappclicktochat';
 
-		//Button for Hide/Show
-		$smarty->assign('tpl_show_clipboard', true);
-		$smarty->assign('label_clipboard', getLL('leute_list_clipboard'));
-	}
+	$smarty->assign('label_template', getLL('leute_list_template'));
+	$show_overlay_cols['template'] = 'template';
+
+	$show_overlay_cols['clipboard'] = 'clipboard';
+	//Button for Hide/Show
+	$smarty->assign('tpl_show_clipboard', true);
+	$smarty->assign('label_clipboard', getLL('leute_list_clipboard'));
 
 
 	$login_edit_person = ko_get_setting("login_edit_person");
@@ -1013,6 +772,8 @@ function ko_list_personen($mode="liste", $output=true) {
 
 		//Hidden row
 		$tpl_list_data[$e_i]["rowclass"] = $e["hidden"] ? "row-inactive" : "";
+
+		if($access['taxonomy']['ALL'] >= 1) $e['terms'] = "";
 
 		//Checkbox
 		$tpl_list_data[$e_i]["show_checkbox"] = true;
@@ -1105,6 +866,17 @@ function ko_list_personen($mode="liste", $output=true) {
 		}
 		$tpl_list_data[$e_i]['maps_link'] = $maps_link;
 
+		//Mobile number for WhatsApp chat
+		ko_get_leute_mobile($e, $mobile);
+		if($mobile[0]) {
+			$mnumber = $mobile[0];
+			check_natel($mnumber);
+			if($mnumber) $mnumber = '+'.$mnumber;
+		} else {
+			$mnumber = '';
+		}
+		if($mnumber) $tpl_list_data[$e_i]['mobilenumber'] = $mnumber;
+
 		//Clipboard content
 		$clipboard_content = '';
 		$clip_person = ko_apply_rectype($e);
@@ -1126,18 +898,28 @@ function ko_list_personen($mode="liste", $output=true) {
 
 					//Add links to single groups in groups column
 					if($c == "groups") {
+						$anniversaryFilter = db_select_data('ko_filter', "WHERE `name` = 'groupsanniversary'", 'id', '', '', TRUE);
+						$anniversaryFilterId = $anniversaryFilter['id'];
+
 						$assignmentFilter = db_select_data('ko_filter', "WHERE `name` = 'groupshistory'", 'id', '', '', TRUE);
 						$assignmentFilterId = $assignmentFilter['id'];
 						$filterGroupId = NULL;
+						$filterGroupIds = array();
 						foreach($_SESSION['filter'] as $f_i => $f) {
 							if (!is_numeric($f_i)) continue;
-							if ($f[0] == $assignmentFilterId) {
+							if ($f[0] == $assignmentFilterId || $f[0] == $anniversaryFilterId) {
 								$groupId = $f[1][1];
 								if ($groupId) {
 									if (strpos($groupId, ':') !== FALSE) {
 										list($groupId, $roleId) = explode(':', $groupId);
 									}
 									$filterGroupId = intval(substr($groupId, 1));
+									$filterGroupIds[] = $filterGroupId;
+									//Get all subgroups as well
+									$childrenGroups = ko_groups_get_recursive('', FALSE, $filterGroupId);
+									foreach($childrenGroups as $cg) {
+										if($cg['id'] && is_numeric($cg['id'])) $filterGroupIds[] = $cg['id'];
+									}
 								}
 							}
 						}
@@ -1153,8 +935,8 @@ function ko_list_personen($mode="liste", $output=true) {
 								$group_desc = ko_groups_decode($g, 'group_desc_full');
 								$class = ($all_groups[$gid]['stop'] != '0000-00-00' && (int)str_replace('-', '', $all_groups[$gid]['stop']) < (int)date('Ymd')) ? 'group-passed' : 'group-active';
 								$historyHtml = '';
-								if (intval($gid) == $filterGroupId) {
-									$history = db_select_data('ko_groups_assignment_history', "WHERE `person_id` = {$e['id']} AND `group_id` = {$filterGroupId}", '*', 'ORDER BY `stop` ASC');
+								if (in_array(intval($gid), $filterGroupIds)) {
+									$history = db_select_data('ko_groups_assignment_history', "WHERE `person_id` = {$e['id']} AND `group_id` = {$gid}", '*', 'ORDER BY `stop` ASC');
 									$historyHtml = array_map(function($el) {
 										$role = '';
 										if ($el['role_id']) {
@@ -1199,6 +981,12 @@ function ko_list_personen($mode="liste", $output=true) {
 						$value = map_leute_daten($e[$c], $c, $e, $all_datafields);
 						$value = '<a href="'.$ko_path.'leute/index.php?action=set_famfilter&famid='.intval($e[$c]).'" title="'.getLL('leute_labels_set_famid_filter').'">'.$value.'</a>';
 					}
+					else if($c == "terms") {
+						kota_listview_ko_leute_terms($value, $e);
+					}
+					else if($c == "absence") {
+						kota_listview_ko_leute_absence($value, $e);
+					}
 					//all other columns are handled in map_leute_daten()
 					else {
 						$value = map_leute_daten($e[$c], $c, $e, $all_datafields);
@@ -1209,6 +997,7 @@ function ko_list_personen($mode="liste", $output=true) {
 							&& substr($c, 0, 9) != 'MODULEcrm'
 							&& substr($c, 0, 12) != 'MODULEfamily'
 							&& substr($c, 0, 12) != 'MODULEplugin'
+							&& substr($c, 0, 18) != 'MODULEsubscription'
 							&& !$KOTA['ko_leute'][$c]['allow_html']
 						) $value = ko_html($value);
 					}
@@ -1275,15 +1064,6 @@ function ko_list_personen($mode="liste", $output=true) {
 
 		//Footer:
 		if($rows > 0 && (!$leute_show_deleted || $mode == "my_list") && $mode != 'birthdays') {
-			//Join in Family
-			if(!$LEUTE_NO_FAMILY && ($access['leute']['MAX'] > 1 && (!is_array($allowed_cols['edit']) || in_array('famid', $allowed_cols['edit'])))) {
-				$button_code = '<button class="btn btn-sm btn-default" type="submit" onclick="c=confirm(\''.getLL('leute_list_footer_join_in_family_confirm').'\'); if(!c) {return false;} else {set_action(\'join_in_family\', this); return true; }" value="'.getLL("leute_list_footer_join_in_family_button").'">'.getLL("leute_list_footer_join_in_family_button").'</button>';
-				$list_footer[] = array("label" => getLL("leute_list_footer_join_in_family"),
-					"button" => $button_code);
-				$smarty->assign("show_list_footer", true);
-			}
-
-
 			//Merge duplicates
 			$dup_filters = 0;
 			$candidateadults_filters = 0;
@@ -1316,7 +1096,6 @@ function ko_list_personen($mode="liste", $output=true) {
 				$button_code .= "<script>
 $('body').on('click', '.list-check input', function() {
 	var nChecked = $('.list-check input:checked').length;
-	console.log(nChecked);
 	if (nChecked == 2) $('#merge_duplicates_no_filter_button').removeClass('disabled');
 	else $('#merge_duplicates_no_filter_button').addClass('disabled');
 });
@@ -1329,6 +1108,14 @@ $('body').on('click', '.list-check input', function() {
 				$smarty->assign('show_list_footer', true);
 			}
 
+
+			// show button to delete persons
+			if($access['leute']['MAX'] >= 3 AND ko_get_setting('leute_multiple_delete')) {
+				$button_code = '<button class="btn btn-sm btn-default" type="submit" onclick="c=confirm(\'' . getLL('leute_list_footer_delete_confirm') . '\'); if(!c) {return false;} else {set_action(\'delete_persons\', this); return true; }" value="' . getLL("leute_list_footer_delete_button") . '">' . getLL("leute_list_footer_delete_button") . '</button>';
+				$list_footer[] = array("label" => getLL("leute_list_footer_delete"),
+					"button" => $button_code);
+				$smarty->assign("show_list_footer", true);
+			}
 
 			$smarty->assign('list_footer', $list_footer);
 		}//if(rows > 0)
@@ -1357,32 +1144,22 @@ $('body').on('click', '.list-check input', function() {
 			$show_overlay_cols = array();
 		}
 
-		$colspan_all = $cols;
+		$colspan_all = $table_cols;
+
 		if (sizeof($show_overlay_cols) > 0) {
 			$colspan_all ++;
 		}
-		$colspan_all += sizeof($show_control_cols);
-		$colspan_actions = $colspan_all - $cols;
 		$smarty->assign("colspan_all", $colspan_all);
-		$smarty->assign("colspan_actions", $colspan_actions);
 
 		$smarty->assign('show_overlay', (sizeof($show_overlay_cols) == 0) ? FALSE : TRUE);
 		$smarty->assign('show_control_cols', $show_control_cols);
 		$smarty->assign('show_overlay_cols', $show_overlay_cols);
 
-		if($output) {
-			if($mode == "my_list") $smarty->assign("tpl_list_title", getLL("leute_mylist_list_title"));
-			else if($mode == 'birthdays') $smarty->assign('tpl_list_title', getLL('leute_birthday_list_title'));
-			$smarty->display('ko_list.tpl');
-		} else  {
-			print $smarty->fetch('ko_list.tpl');
-		}
+		if($mode == "my_list") $smarty->assign("tpl_list_title", getLL("leute_mylist_list_title"));
+		else if($mode == 'birthdays') $smarty->assign('tpl_list_title', getLL('leute_birthday_list_title'));
+		$smarty->display('ko_list.tpl');
 	} else if($mode == "adressliste") {
-		if($output) {
-			$smarty->display('ko_adressliste.tpl');
-		} else {
-			print $smarty->fetch('ko_adressliste.tpl');
-		}
+		$smarty->display('ko_adressliste.tpl');
 	}
 }//ko_list_personen()
 
@@ -1390,7 +1167,7 @@ $('body').on('click', '.list-check input', function() {
 
 
 function ko_list_mod_leute() {
-	global $smarty, $ko_path;
+	global $smarty, $ko_path, $KOTA;
 	global $DATETIME, $access, $LEUTE_ADMIN_SPALTEN_CONDITION;
 	global $COLS_LEUTE_UND_FAMILIE;
 
@@ -1427,15 +1204,19 @@ function ko_list_mod_leute() {
 
 		foreach($cols as $c) {
 			if(substr($c['Field'], 0, 1) == '_') continue;
+			if($p[$c['Field']] == '0' && !$old_p[$c['Field']]) continue;
+			if(trim($p[$c['Field']]) == '' && trim($old_p[$c['Field']]) == '') continue;
+			if(in_array($c['Field'], array('telegram_id'))) continue;
 
 			if( ( ($p[$c['Field']] != '' && $p[$c['Field']] != '0000-00-00') || $old_p[$c['Field']]) && $p[$c['Field']] != $old_p[$c['Field']]) {
 				$mutationen[$counter]['fields'][$fields_counter]['name'] = $c['Field'];
-				$mutationen[$counter]['fields'][$fields_counter]['desc'] = $col_names[$c['Field']];
-				if(substr($c['Type'], 0, 4) == 'enum') {
+				$mutationen[$counter]['fields'][$fields_counter]['desc'] = $col_names[$c['Field']] ? $col_names[$c['Field']] : $c['Field'];
+				if(in_array($KOTA['ko_leute'][$c['Field']]['form']['type'], array('select'))) {
 					$mutationen[$counter]['fields'][$fields_counter]['type'] = 'select';
-					$mutationen[$counter]['fields'][$fields_counter]['values'] = array_merge(array(''), db_get_enums('ko_leute_mod', $c['Field']));
-					$mutationen[$counter]['fields'][$fields_counter]['descs'] = array_merge(array(''), db_get_enums_ll('ko_leute_mod', $c['Field']));
-					$mutationen[$counter]['fields'][$fields_counter]['oldvalue'] = getLL('kota_ko_leute_mod_'.$c['Field'].'_'.$old_p[$c['Field']]);
+					$mutationen[$counter]['fields'][$fields_counter]['values'] = array_merge(array(''), $KOTA['ko_leute'][$c['Field']]['form']['values']);
+					$mutationen[$counter]['fields'][$fields_counter]['descs'] = array_merge(array(''), $KOTA['ko_leute'][$c['Field']]['form']['descs']);
+					$translation_for_old_value = getLL('kota_ko_leute_mod_'.$c['Field'].'_'.strtolower($old_p[$c['Field']]));
+					$mutationen[$counter]['fields'][$fields_counter]['oldvalue'] = ($translation_for_old_value != '' ? $translation_for_old_value : $old_p[$c['Field']]);
 					$mutationen[$counter]['fields'][$fields_counter]['newvalue'] = $p[$c['Field']];
 				} else {
 					$mutationen[$counter]['fields'][$fields_counter]['type'] = 'input';
@@ -1479,6 +1260,7 @@ function ko_list_mod_leute() {
 
 	$smarty->assign('tpl_list_title', getLL('leute_mod_title'));
 	$smarty->assign('tpl_fm_title', getLL('leute_mod_title'));
+	$smarty->assign('help', ko_get_help('leute', 'mutationen'));
 
 	$smarty->assign('tpl_mutationen', $mutationen);
 	$smarty->display('ko_adressaenderung.tpl');
@@ -1512,7 +1294,7 @@ function ko_list_groupsubscriptions() {
 	$counter=0;
 	ko_get_groupsubscriptions($leute, '', $_SESSION['ses_userid'], $_gid);
 	foreach($leute as $p) {
-		if($counter > 25) continue;
+		if($counter > 50) continue;
 
 		//Group- and Role-ID
 		list($gid, $rid) = explode(":", $p["_group_id"]);
@@ -1558,6 +1340,7 @@ function ko_list_groupsubscriptions() {
 
 		$gs[$counter]["_id"] = $p["_id"];
 		$gs[$counter]["groupname"] = $group["name"].($rid ? ": ".$role["name"] : "");
+		$gs[$counter]["groupname_full"] = ko_groups_decode(ko_groups_decode($group['id'], 'full_gid'), 'group_desc_full');
 		$gs[$counter]["ezmlm"] = $group["ezmlm_list"] != "" ? getLL("ezmlm_ml") : "";
 		if($group['maxcount'] > 0) {
 			$gs[$counter]['group_limit'] = $group['count'].'/'.$group['maxcount'].($group['count_role'] ? ' '.$role['name'] : '');
@@ -1678,7 +1461,7 @@ function ko_list_groupsubscriptions() {
 
 
 
-function ko_list_leute_revisions($output=TRUE) {
+function ko_list_leute_revisions() {
 	global $smarty, $ko_path, $access, $DATETIME, $js_calendar;
 
 	$counter=0;
@@ -1686,15 +1469,26 @@ function ko_list_leute_revisions($output=TRUE) {
 	ko_get_leute_revisions($revisions, TRUE);
 	$mods = array();
 
-	$showFields = array('anrede', 'vorname', 'nachname', 'firma', 'adresse', 'plz', 'ort', 'email', 'telp');
+	$showFields = array('anrede', 'vorname', 'nachname', 'firm', 'adresse', 'plz', 'ort', 'email', 'telp', 'geburtsdatum');
 
 	foreach($revisions as $r) {
-		if ($counter > 50) break;
+		if($r['orig_leute_id'] === null) {
+			$where = "WHERE id = " . $r['id'];
+			db_delete_data("ko_leute_revisions", $where);
+
+			$msg = "Rev.Id: " . $r['id'] . ", Leute_id: " . $r['leute_id'] .", Rev-Info: " . $r['reason'];
+			ko_log('del_leute_rev', $msg);
+
+			continue;
+		}
+
+		if ($counter > 50) continue;
 		$fieldsCounter = 0;
 
 		$mods[$counter]['r'] = $r;
 		$mods[$counter]['id'] = $r['id'];
 
+		$reasonHtml = (getLL('leute_revisions_reason_' . $r['reason']) ? getLL('leute_revisions_reason_' . $r['reason']) : $r['reason']);
 
 		if ($r['reason'] == 'groupsubscription' && $r['group_id'] && $fullGroupId = ko_groups_decode($r['group_id'], 'full_gid')) {
 			$groupName = ko_groups_decode($fullGroupId, 'group_desc_full');
@@ -1724,10 +1518,9 @@ function ko_list_leute_revisions($output=TRUE) {
 			}
 
 			$groupHtml = '<div style="display:inline-block;margin-bottom:2px;" class="label label-primary" ' . ko_get_tooltip_code($datafields_text) . '>' . $groupName . '</div>';
-			$reasonHtml = getLL('leute_revisions_reason_' . $r['reason']) . '&nbsp;'.$groupHtml;
-		} else {
-			$reasonHtml = getLL('leute_revisions_reason_' . $r['reason']);
+			$reasonHtml = $reasonHtml . '&nbsp;'.$groupHtml;
 		}
+
 
 		$mods[$counter]['p_fields'][$fieldsCounter++] = array(
 			"type" => "html",
@@ -1774,11 +1567,15 @@ function ko_list_leute_revisions($output=TRUE) {
 			if ($dbp['id'] == $r['leute_id']) continue;
 			$rev = db_select_data('ko_leute_revisions', "WHERE `leute_id` = {$dbp['id']}", '*', '', '', TRUE);
 			if ($rev) continue;
-			$db[] = array("_id" => $r["id"], "lid" => $dbp["id"], "name" => $dbp["vorname"]." ".$dbp["nachname"],
-				'firm' => $dbp['firm'], 'department' => $dbp['department'],
-				"adressdaten" => $dbp["adresse"].", ".$dbp["plz"]." ".$dbp["ort"].
-					", ".$dbp["telp"].", ".$dbp["email"].", ".sql2datum($dbp["geburtsdatum"])
-			);
+			$db[] = [
+				"_id" => $r["id"],
+				"lid" => $dbp["id"],
+				"name" => $dbp["vorname"]." ".$dbp["nachname"],
+				'firm' => $dbp['firm'],
+				'department' => $dbp['department'],
+				"adressdaten" => $dbp["adresse"].", ".$dbp["plz"]." ".$dbp["ort"].", ".$dbp["telp"].", ".$dbp["email"].", ".sql2datum($dbp["geburtsdatum"]),
+				'hidden' => $dbp['hidden'],
+			];
 		}
 
 
@@ -1809,6 +1606,9 @@ function ko_list_leute_revisions($output=TRUE) {
 
 	$smarty->assign('tpl_list_title', getLL('leute_revisions_title'));
 	$smarty->assign('tpl_title', getLL('leute_revisions_title'));
+	$smarty->assign('help', ko_get_help('leute', 'revisions'));
+
+	$smarty->assign('showDeleteAddress', ko_get_setting('leute_delete_revision_address'));
 
 	$smarty->assign('tpl_mods', $mods);
 	$smarty->display('ko_leute_revisions.tpl');
@@ -1851,21 +1651,16 @@ function ko_update_kg_filter() {
 
 
 function ko_update_familie_filter() {
-	ko_get_familien($fams);
-	$new_code  = '<select name="var1" class="input-sm form-control">';
-	$new_code .= '<option value="0"></option>';
-	foreach($fams as $fam) {
-		$new_code .= '<option value="'.$fam["famid"].'" title="'.$fam['id'].'">'.$fam["id"].'</option>';
-	}
-	$new_code .= '</select>';
-
-	db_update_data("ko_filter", "WHERE `typ`='leute' AND `name`='family'", array("code1" => $new_code));
-}//ko_update_familie_filter()
-
+	// send mail if this function is called
+	ko_log('familie_filter', "Function ko_update_familie_filter called. should not be used anymore.");
+	return FALSE;
+}
 
 
 function ko_leute_import(&$context) {
 	global $smarty, $access, $BOOTSTRAP_COLS_PER_ROW, $ko_path;
+
+	if(!ko_get_setting('leute_allow_import')) return;
 
 	$state = &$context['state'];
 
@@ -1895,7 +1690,7 @@ function ko_leute_import(&$context) {
 				'type' => 'select',
 				'name' => 'parameters[file_encoding]',
 				'params' => 'size="0"',
-				'values' => array('utf-8', 'iso-8859-1', 'mac'),
+				'values' => array('utf-8', 'iso-8859-1', 'macintosh'),
 				'descs' => array('Unicode (UTF-8)', 'Latin1 (iso-8859-1)', 'Mac Roman'),
 				'value' => $context['parameters']['file_encoding'] ? $context['parameters']['file_encoding'] : 'utf-8',
 			);
@@ -1909,6 +1704,7 @@ function ko_leute_import(&$context) {
 			$smarty->assign("tpl_submit_value", getLL("next"));
 			$smarty->assign("tpl_action", "importtwo");
 			$smarty->assign("tpl_groups", $frmgroup);
+			$smarty->assign("help", ko_get_help('leute', 'import'));
 			$smarty->assign("tpl_hidden_inputs", array(array('name' => 'leute_import_manual_parameters', 'value' => isset($_POST['leute_import_manual_parameters']) ? $_POST['leute_import_manual_parameters'] : 0)));
 			$smarty->display('ko_formular.tpl');
 			print(
@@ -2022,12 +1818,19 @@ function ko_leute_import(&$context) {
 				$values[] = $key;
 				$descs[] = ko_groups_decode($fullGroupId, "group_desc_full") . " (".ko_get_group_count($key).")";
 			}
-			$frmgroup[$gc]['row'][$rowcounter++]['inputs'][1] = array('desc' => getLL('leute_import_label_add_to_group'),
+			$frmgroup[$gc]['row'][$rowcounter]['inputs'][0] = array('desc' => getLL('leute_import_label_add_to_group'),
 				'type' => 'select',
 				'name' => 'add_to_group',
 				'value' => $value,
 				'values' => $values,
 				'descs' => $descs,
+				'columnWidth' => $BOOTSTRAP_COLS_PER_ROW / 2,
+			);
+			$value = $context['createRevision'];
+			$frmgroup[$gc]['row'][$rowcounter++]['inputs'][1] = array('desc' => getLL('leute_import_label_create_revision'),
+				'type' => 'switch',
+				'name' => 'create_revision',
+				'value' => $value,
 				'columnWidth' => $BOOTSTRAP_COLS_PER_ROW / 2,
 			);
 
@@ -2050,7 +1853,7 @@ function ko_leute_import(&$context) {
 				'type' => 'select',
 				'name' => 'parameters[file_encoding]',
 				'params' => 'size="0"',
-				'values' => array('utf-8', 'iso-8859-1', 'mac'),
+				'values' => array('utf-8', 'iso-8859-1', 'macintosh'),
 				'descs' => array('Unicode (UTF-8)', 'Latin1 (iso-8859-1)', 'Mac Roman'),
 				'value' => $context['parameters']['file_encoding'] ? $context['parameters']['file_encoding'] : 'utf-8',
 			);
@@ -2075,6 +1878,7 @@ function ko_leute_import(&$context) {
 			$smarty->assign("tpl_submit_value", getLL("next"));
 			$smarty->assign("tpl_action", "importthree");
 			$smarty->assign("tpl_groups", $frmgroup);
+			$smarty->assign("help", ko_get_help('leute', 'import'));
 			$smarty->assign("tpl_hidden_inputs", array(array('name' => 'leute_import_manual_parameters', 'value' => isset($_POST['leute_import_manual_parameters']) ? $_POST['leute_import_manual_parameters'] : 0)));
 			$smarty->display('ko_formular.tpl');
 
@@ -2092,6 +1896,7 @@ function ko_leute_import(&$context) {
 			$data = $context['transformedData'];
 			$assign = $context['fieldAssignments'];
 			$addToGroup = $context['addToGroup'];
+			$createRevision = $context['createRevision'];
 
 			$rowcounter = 0;
 			$gc = 0;
@@ -2163,6 +1968,7 @@ function ko_leute_import(&$context) {
 			$smarty->assign("tpl_submit_value", getLL("next"));
 			$smarty->assign("tpl_action", "importfour");
 			$smarty->assign("tpl_groups", $frmgroup);
+			$smarty->assign("help", ko_get_help('leute', 'import'));
 			$smarty->display('ko_formular.tpl');
 		break;
 	}
@@ -2171,7 +1977,7 @@ function ko_leute_import(&$context) {
 
 
 function ko_leute_import_get_mapping_html(&$context, $nth, $field=NULL) {
-	global $LEUTE_TEXTSELECT, $smarty;
+	global $KOTA, $smarty;
 
 	$data = &$context['data'];
 	$assign = &$context['fieldAssignments'];
@@ -2217,7 +2023,7 @@ function ko_leute_import_get_mapping_html(&$context, $nth, $field=NULL) {
 	<label class="col-sm-4 col-md-2 control-label"><span '.ko_get_tooltip_code(getLL('leute_import_label_value_in_file')).'>'.$from.'</span>&nbsp;&nbsp;&nbsp;--></label>
 	<div class="col-sm-6 col-md-7 col-lg-5">';
 
-			if (in_array($active, $LEUTE_TEXTSELECT)) {
+			if ($KOTA['ko_leute'][$active]['form']['type'] == 'textplus') {
 				$smarty->assign('input', array('type' => 'textplus', 'name' => 'mappings['.$nth.']['.$from.']', 'value' => $to, 'values' => $mapping['possValues'], 'descs' => $mapping['possDescs']));
 				$iHtml .= $smarty->fetch('ko_formular_elements.tmpl');
 			} else {
@@ -2254,21 +2060,15 @@ function ko_leute_import_get_mapping_html(&$context, $nth, $field=NULL) {
 
 
 function ko_leute_col_is_mappable($col) {
-	global $LEUTE_TEXTSELECT;
+	global $KOTA;
 
 	if (substr($col, 0, strlen('MODULEgrp')) == 'MODULEgrp') {
 		return TRUE;
-	} else if (in_array($col, $LEUTE_TEXTSELECT)) {
+	} else if (in_array($KOTA['ko_leute'][$col]['type'], array('textplus', 'select'))) {
 		return TRUE;
 	} else {
-		$dbCols = db_get_columns('ko_leute');
-		foreach ($dbCols as $dbCol) {
-			if ($dbCol['Field'] == $col) {
-				return strpos($dbCol['Type'], 'enum') === FALSE ? FALSE : TRUE;
-			}
-		}
+		return FALSE;
 	}
-	return FALSE;
 }
 
 
@@ -2301,7 +2101,7 @@ function ko_leute_get_possible_values_for_col($col) {
 				$userDescs[] = array(strtolower($role['name']));
 			}
 		}
-	} else if (in_array($col, $LEUTE_TEXTSELECT) || $KOTA['ko_leute'][$col]['form']['type'] == 'textplus') {
+	} else if ($KOTA['ko_leute'][$col]['form']['type'] == 'textplus') {
 		$allValues = db_select_distinct('ko_leute', $col, "ORDER BY `{$col}` ASC");
 		foreach ($allValues as $value) {
 			if (!in_array($value, $values)) {
@@ -2310,27 +2110,20 @@ function ko_leute_get_possible_values_for_col($col) {
 				$userDescs[] = array(strtolower($value));
 			}
 		}
-	} else {
-		$dbCols = db_get_columns('ko_leute');
-		foreach ($dbCols as $dbCol) {
-			if ($dbCol['Field'] == $col) {
-				if (strpos($dbCol['Type'], 'enum') !== FALSE) {
-					foreach (explode(',', substr($dbCol['Type'], 5, -1)) as $value) {
-						$value = trim($value, "' ");
-						if (!in_array($value, $values)) {
-							$values[] = $value;
-							$desc = getLL('kota_ko_leute_'.$col.'_'.strtolower($value));
-							$descs[] = $desc ? $desc : $value;
-							$userDesc = array(strtolower($value));
-							if ($desc) $userDesc[] = strtolower($desc);
-							$userDescs[] = $userDesc;
-						}
-					}
-				} else {
-					return $default;
-				}
+	} else if ($KOTA['ko_leute'][$col]['form']['type'] == 'select') {
+		foreach ($KOTA['ko_leute'][$col]['form']['values'] as $value) {
+			$value = trim($value, "' ");
+			if (!in_array($value, $values)) {
+				$values[] = $value;
+				$desc = getLL('kota_ko_leute_' . $col . '_' . strtolower($value));
+				$descs[] = $desc ? $desc : $value;
+				$userDesc = array(strtolower($value));
+				if ($desc) $userDesc[] = strtolower($desc);
+				$userDescs[] = $userDesc;
 			}
 		}
+	} else {
+		return $default;
 	}
 	return array('values' => $values, 'descs' => $descs, 'userDescs' => $userDescs);
 }
@@ -2701,10 +2494,12 @@ function ko_export_leute_as_pdf_settings($layout_id) {
 /**
  * Exports address data as pdf file
  */
-function ko_export_leute_as_pdf($layout_id, $settings="", $force=false) {
+function ko_export_leute_as_pdf($layout_id, $settings="", $force=false, $fromSession=FALSE) {
 	global $ko_path;
 	global $all_groups;
 	global $access;
+	global $cols_no_map;
+	global $RECTYPES;
 
 	$z_where = "";
 	if(!$layout_id) return false;
@@ -2778,8 +2573,13 @@ function ko_export_leute_as_pdf($layout_id, $settings="", $force=false) {
 	}
 	$leute_col_name = array_merge($leute_col_name, (array)$leute_col_name_add);
 
-	foreach($do_cols as $c) {
-		$cols[$c] = $leute_col_name[$c];
+	foreach($do_cols as $k => $c) {
+		$colName = $leute_col_name[$c];
+		if(!$colName) {
+			unset($do_cols[$k]);
+			continue;
+		}
+		$cols[$c] = $colName;
 	}
 	$layout["columns"] = $cols;
 
@@ -2872,6 +2672,7 @@ function ko_export_leute_as_pdf($layout_id, $settings="", $force=false) {
 
 
 
+
 	//Get data from ko_leute
 	foreach($layout["sort"] as $i => $col) {
 		if(substr($col, 0, 6) != "MODULE") {
@@ -2883,32 +2684,215 @@ function ko_export_leute_as_pdf($layout_id, $settings="", $force=false) {
 	$sql_sort = "ORDER BY ".implode(", ", $sort_add);
 	//z_where can be set if called by T3 extension kool_leute through get.php
 	if(!$z_where) apply_leute_filter($do_filter, $z_where, $access['leute']['ALL'] < 1);
-	ko_get_leute($all, $z_where, "", "", $sql_sort);
-	if(true === ko_manual_sorting($layout["sort"])) {
-		$all = ko_leute_sort($all, $layout["sort"], $layout["sort_order"], true, $forceDatafields=true);
-	}
 
+	ko_get_leute($es, $z_where, "", "", $sql_sort);
 
-	//TODO: Apply rectype (add setting in preset or form)
+	if ($fromSession) {
+		$oldPost = $_POST;
+		$oldGet = $_GET;
+		$_POST = $_SESSION['post_data'];
+		$_GET = $_SESSION['get_data'];
 
-	//Loop all addresses
-	$data = array();
-	foreach($all as $id => $person) {
-		$row = array();
-		foreach($layout["columns"] as $col => $colName) {
-			//TODO: Set layouts for different columns (needs change in settings and in fpdf/mc_table.php)
-			$value = map_leute_daten($person[$col], $col, $person, $all_datafields, $force);
-			if(is_array($value)) {
-				$row[] = ko_unhtml(strip_tags($value[0]));
-			} else {
-				$row[] = ko_unhtml(strip_tags($value));
+		$fam = array();
+		$person = array();
+		$mapLeuteDatenOptions = array();
+
+		$leute_col_name = ko_get_leute_col_name(FALSE, TRUE);
+
+		// transfer information from $_GET to $_POST
+		foreach (array('sel_cols', 'sel_auswahl', 'ids', 'id') as $tf) {
+			if (isset($_GET[$tf]) && !isset($_POST[$tf])) $_POST[$tf] = $_GET[$tf];
+		}
+
+		// coolumns
+		$xls_cols = array_keys($layout['columns']);
+
+		// rows
+		if(substr($_POST["sel_auswahl"], 0, 4) == "alle" && $_SESSION["show"] == "show_all") {
+			$mode = substr($_POST["sel_auswahl"], 4);
+		} else if(($_POST['sel_auswahl'] == 'markierte' || substr($_POST['sel_auswahl'], 0, 4) == 'alle') && $_SESSION['show'] == 'geburtstagsliste') {
+			$mode = 'p';
+		} else if(substr($_POST["sel_auswahl"], 0, 4) == "alle") {
+			$mode = substr($_POST["sel_auswahl"], 4);
+		} else if($_POST["sel_auswahl"] == "markierte") {
+			$mode = "f";
+		} else if($_POST["sel_auswahl"] == "markiertef") {
+			$mode = "f";
+		} else if($_POST["sel_auswahl"] == "markierteFam2") {
+			$mode = "Fam2";
+		} else {
+			$mode = 'p';
+		}
+
+		if(true === ko_manual_sorting($layout["sort"])) {
+			$es = ko_leute_sort($es, $layout["sort"], $layout["sort_order"], true, $forceDatafields=true);
+		}
+		$allExportIds = array_keys($es);
+
+		//Keep list of addresses before removing not needed addresses because of family mergings
+		$orig_es = $es;
+
+		ko_get_familien($families);
+		$all_datafields = db_select_data("ko_groups_datafields", "WHERE 1=1", "*");
+
+		//Preprocess data if alleFam2
+		//Unset famid for people where only one member of their family has been found
+		//And unset all members of a family except for husband or wife or the first child
+		$fam = array();
+		foreach($es as $pid => $p) {
+			if(!$p["famid"]) continue;
+			$fam[$p["famid"]][] = $pid;  //Save all pids for each family
+		}
+		if($mode == "Fam2") {
+			//Find
+			foreach($fam as $famid => $pids) {
+				//Find families with only one member in filtered people
+				if(sizeof($pids) == 1) {
+					foreach($pids as $pid) $es[$pid]["famid"] = "";  //And unset this famid, so it will be exported as person
+				}
+				//Export as family if more than one member has been found
+				else if(sizeof($pids) > 1) {
+					$famroles = array(); $keep = "";
+					foreach($pids as $pid) {
+						$famroles[] = $es[$pid]["famfunction"];
+					}
+					if(in_array("husband", $famroles)) $keep = "husband";
+					else if(in_array("wife", $famroles)) $keep = "wife";
+					else $keep = "";
+					$done = FALSE;
+					foreach($pids as $pid) {
+						if( ($keep == "" && $done)
+							|| ($keep != "" && $es[$pid]["famfunction"] != $keep)
+						) {
+							unset($es[$pid]);
+							$done = TRUE;
+						}
+					}
+				}
+			}//foreach(fam as famid => pids)
+		}//if(alleFam2)
+
+		//Household export and use parents' firstnames in export
+		//  then get parents and include them in the export list
+		else if($mode == 'f' && ko_get_userpref($_SESSION['ses_userid'], 'leute_force_family_firstname') == 1) {
+			foreach($fam as $famid => $pids) {
+				$parents = (array)db_select_data('ko_leute', "WHERE `famid` = '$famid' AND `famfunction` IN ('husband', 'wife') AND `deleted` = '0'".ko_get_leute_hidden_sql());
+				foreach($parents as $parent) {
+					if(!in_array($parent['id'], $pids)) {
+						$es[$parent['id']] = $parent;
+						$orig_es[$parent['id']] = $parent;
+						$fam[$famid][] = $parent['id'];
+					}
+				}
 			}
-		}//foreach(columns as col)
+		}
 
-		$data[] = $row;
-	}//foreach(all as id => person)
-	unset($all);
+		//Force rectype
+		if($_POST['sel_rectype'] && (in_array($_POST['sel_rectype'], array_keys($RECTYPES)) || $_POST['sel_rectype'] == '_default')) $force_rectype = $_POST['sel_rectype'];
+		else $force_rectype = '';
 
+		//Apply rectype here to be able to add more addresses to $es if needed
+		foreach($es as $pid => $p) {
+			//Use address as given in rectype (only apply if not _default was selected, which keeps the default address)
+			if($force_rectype != '_default') {
+				$p = $es[$pid] = ko_apply_rectype($p, $force_rectype, $addp);
+				if(sizeof($addp) > 0) {
+					$new = array();
+					foreach($es as $k => $v) {
+						$new[$k] = $v;
+						if($k == $pid) {
+							foreach($addp as $addk => $add) {
+								$new[$addk] = $add;
+							}
+						}
+					}
+					$es = $new;
+					unset($new);
+				}
+			}
+		}
+
+		// create crm entries
+		$mapLeuteDatenOptions['crmContactId'] = ko_create_crm_contact_from_post(TRUE, array('leute_ids' => implode(',', $_POST['leute_ids'])));
+		if (in_array($_POST["id"], array('xls_settings', 'excel', 'csv'))) $mapLeuteDatenOptions['kota_process_modes'] = 'xls,list';
+		if (in_array($_POST["id"], array('mailmerge', 'etiketten', 'etiketten_settings'))) $mapLeuteDatenOptions['kota_process_modes'] = 'pdf,list';
+
+		$row = 0;
+		$data = array();
+		foreach($es as $pid => $p) {
+			if(($access['leute']['ALL'] < 1 && $access['leute'][$pid] < 1) || !$pid) continue;
+
+			list($addToExport, $isFam) = ko_leute_process_person_for_export($p, $orig_es, $done_fam, $fam, $families, $xls_cols, $mode);
+			if (!$addToExport) {
+				unset($es[$p['id']]);
+				continue;
+			}
+
+			if (!$isFam) {
+				unset($cols_no_map);
+			} else {
+        $cols_no_map = array('MODULEsalutation_formal', 'MODULEsalutation_informal');
+			}
+
+			$es[$pid] = $p;
+
+			$col = 0;
+			foreach($xls_cols as $c) {
+				if(!$leute_col_name[$c]) continue;
+
+				//Check for columns that don't need any more mapping (may be set in plugin above)
+				if(in_array($c, $cols_no_map)) {
+					$value = $p[$c];
+				} else {
+					$value = map_leute_daten($p[$c], $c, $p, $all_datafields, FALSE, $mapLeuteDatenOptions);
+				}
+				if(is_array($value)) {  //group with datafields, so more than one column has to be added
+					foreach($value as $v) $data[$row][$col++] = ko_unhtml(strip_tags($v));
+				} else {
+					$data[$row][$col++] = ko_unhtml(strip_tags($value));
+				}
+			}//foreach(xls_cols as col)
+			$row++;
+		}//foreach(es as pid => p)
+
+		$_POST = $oldPost;
+		$_GET = $oldGet;
+
+		/*$sessionData = $_SESSION['export_data'];
+		$data = array();
+		$cols = $_SESSION['export_cols'];
+		foreach ($sessionData as $sd) {
+			$row = array();
+			foreach ($cols as $col) {
+				$row[] = $sd[$col];
+			}
+			$data[] = $row;
+		}*/
+	} else {
+		if(true === ko_manual_sorting($layout["sort"])) {
+			$es = ko_leute_sort($es, $layout["sort"], $layout["sort_order"], true, $forceDatafields=true);
+		}
+
+		//TODO: Apply rectype (add setting in preset or form)
+
+		//Loop all addresses
+		$data = array();
+		foreach($es as $id => $person) {
+			$row = array();
+			foreach($layout["columns"] as $col => $colName) {
+				//TODO: Set layouts for different columns (needs change in settings and in fpdf/mc_table.php)
+				$value = map_leute_daten($person[$col], $col, $person, $all_datafields, $force);
+				if(is_array($value)) {
+					$row[] = ko_unhtml(strip_tags($value[0]));
+				} else {
+					$row[] = ko_unhtml(strip_tags($value));
+				}
+			}//foreach(columns as col)
+
+			$data[] = $row;
+		}//foreach(all as id => person)
+		unset($all);
+	}
 
 	$filename = $ko_path."download/pdf/".getLL("leute_filename_pdf").strftime("%d%m%Y_%H%M%S", time()).".pdf";
 	ko_export_to_pdf($layout, $data, $filename);
@@ -2916,88 +2900,6 @@ function ko_export_leute_as_pdf($layout_id, $settings="", $force=false) {
 	return $filename;
 }//ko_export_leute_as_pdf()
 
-
-
-
-
-
-function ko_leute_delete_person($del_id) {
-	ko_get_person_by_id($del_id, $del_person);
-
-	//Check for column which prevent address from being deleted
-	$ok = TRUE;
-	$del_cols = explode(',', ko_get_setting('leute_no_delete_columns'));
-	if(sizeof($del_cols) > 0) {
-		foreach($del_cols as $c) {
-			if(!$c) continue;
-			if($del_person[$c] != '' && $del_person[$c] != '0000-00-00') $ok = FALSE;
-		}
-	}
-	if(!$ok) return FALSE;
-
-	if($del_person['deleted'] == 1) {  //really delete already deleted entry
-		//Check for setting if this is allowed
-		if(ko_get_setting('leute_real_delete') != 1) return false;
-
-		db_delete_data('ko_leute', "WHERE `id` = '$del_id'");
-
-		//delete group datafields
-		db_delete_data('ko_groups_datafields_data', "WHERE `person_id` = '$del_id'");
-	}
-	else {
-		//add version entry
-		ko_save_leute_changes($del_id, $del_person);
-
-		//mark as deleted
-		db_update_data('ko_leute', "WHERE `id` = '$del_id'", array('deleted' => '1', 'famid' => '0'));
-
-		//unset assigned login
-		$login = db_select_data('ko_admin', "WHERE `leute_id` = '$del_id'", 'id,leute_id', '', '', true);
-		if(is_array($login) && $login['leute_id'] == $del_id) {
-			db_update_data('ko_admin', "WHERE `id` = '".$login['id']."'", array('leute_id' => '0'));
-		}
-
-		//unsubscribe from ezmlm
-		if(defined('EXPORT2EZMLM') && EXPORT2EZMLM) {
-			foreach(explode(',', $del_person['groups']) as $grp) {
-				$gid = ko_groups_decode($grp, 'group_id');
-				if($all_groups[$gid]['ezmlm_list']) ko_ezmlm_unsubscribe($all_groups[$gid]['ezmlm_list'], $all_groups[$gid]['ezmlm_moderator'], $del_person['email']);
-			}
-		}
-
-		//set group datafields to deleted
-		db_update_data('ko_groups_datafields_data', "WHERE `person_id` = '$del_id'", array('deleted' => '1'));
-
-		//Update group count
-		foreach(explode(',', $del_person['groups']) as $fullgid) {
-			$group = ko_groups_decode($fullgid, 'group');
-			if(!$group['maxcount']) continue;
-			ko_update_group_count($group['id'], $group['count_role']);
-		}
-	}//if(deleted == 0)
-
-
-	//LDAP
-	if(ko_do_ldap()) {
-		$ldap = ko_ldap_connect();
-		ko_ldap_del_person($ldap, $del_id);
-		ko_ldap_close($ldap);
-	}
-
-	//Create log entry
-	ko_log_diff('delete_person', $del_person);
-
-	//Delete family if the deleted person was the last member
-	if($del_person['famid'] > 0) {
-		$num = ko_get_personen_by_familie($del_person['famid'], $asdf);
-		if($num <= 0) {
-			db_update_data('ko_leute', "WHERE `famid` = '".$del_person['famid']."'", array('famid' => '0'));
-			db_delete_data('ko_familie', "WHERE `famid` = '".$del_person['famid']."'");
-		}
-	}
-
-	return TRUE;
-}//ko_leute_delete_person()
 
 
 
@@ -3018,7 +2920,9 @@ function ko_leute_chart($_type="") {
 	$html = array();
 	foreach($do_types as $type) {
 		if(!function_exists("ko_leute_chart_".$type) || !in_array($type, $LEUTE_CHART_TYPES)) continue;
-		$html[$type] = call_user_func("ko_leute_chart_".$type, $where_base);
+		$chart_data = call_user_func("ko_leute_chart_".$type, $where_base);
+		if($chart_data == FALSE) continue;
+		$html[$type] = $chart_data;
 	}
 
 	if($_type) {
@@ -3027,11 +2931,17 @@ function ko_leute_chart($_type="") {
 		//Generate HTML output
 		$out = '<h3>'.getLL("leute_chart_title").'</h3>';
 
-		// Css for rotated labels
 		$counter = 0;
 		foreach($html as $type => $code) {
 			if ($counter % 2 == 0) $out .= '<div class="row">';
-			$out .= '<div class="col-md-6">';
+
+			if ($type == "statistics") {
+				$counter++;
+				$out .= '<div class="col-md-12">';
+			} else {
+				$out .= '<div class="col-md-6">';
+			}
+
 			$out .= '<div class="panel panel-default"><div class="panel-heading"><h4 class="panel-title">'.getLL("leute_chart_title_".$type).'</h4></div><div class="panel-body" name="leute_chart_'.$type.'" id="leute_chart_'.$type.'">'.$code.'</div></div>';
 			$out .= '</div>';
 			$counter++;
@@ -3047,7 +2957,7 @@ function ko_leute_chart($_type="") {
 
 
 function ko_leute_chart_generic_pie_from_data($label, $value, $name) {
-	$data = array_map(function($e1, $e2){return array($e1, $e2);}, array_merge(array(getLL('label')), $label), array_merge(array(getLL('value')), $value));
+	$data = array_map(function($e1, $e2){return array($e1, $e2);}, array_merge(array(array('label' => getLL('label'), 'type' => 'string')), $label), array_merge(array(getLL('value')), $value));
 	array_walk_recursive($data, 'utf8_encode_array');
 	$dataJSON = json_encode($data, JSON_NUMERIC_CHECK);
 
@@ -3098,7 +3008,7 @@ function ko_leute_chart_generic_pie_from_data($label, $value, $name) {
 
 
 
-function ko_leute_chart_generic_bar_from_data($label, $value, $name, $barWidth=NULL, $multipleSeries=FALSE, $showLegend=FALSE) {
+function ko_leute_chart_generic_bar_from_data($label, $value, $name, $barWidth=NULL, $multipleSeries=FALSE, $showLegend=FALSE, $horizontal=FALSE, $seriesBarDistance=NULL) {
 	$value = $multipleSeries ? $value : array($value);
 
 	$data = array();
@@ -3106,8 +3016,9 @@ function ko_leute_chart_generic_bar_from_data($label, $value, $name, $barWidth=N
 		if ($i == -1) {
 			$row = array(getLL('key'));
 			for ($j = 0; $j < sizeof($value); $j++) {
-				if (end($value[$j])['meta']) {
-					$v = end($value[$j])['meta'] . ' ';
+				$t = end($value[$j]);
+				if ($t['meta']) {
+					$v = $t['meta'] . ' ';
 				} else {
 					$v = getLL('value');
 				}
@@ -3176,8 +3087,89 @@ function ko_leute_chart_generic_bar_from_data($label, $value, $name, $barWidth=N
 	});
 </script>
 ";
+
 	return $html;
 } //ko_leute_chart_generic_bar_from_data()
+
+
+
+function ko_leute_chart_generic_stackbar_from_data($labels, $values, $name, $barWidth=NULL, $multipleSeries=FALSE, $showLegend=TRUE, $horizontal=FALSE, $seriesBarDistance=NULL) {
+
+	foreach($labels AS $label) {
+		$data[0][] = $label;
+	}
+
+	$rows = count($values[0]);
+	for ($i=1;$i<=$rows;$i++) {
+		foreach ($values AS $key => $value) {
+			$data[$i][$key] = ($value[($i-1)] == "" ? 0 : $value[($i-1)]);
+			if($key == 0) {
+				$data[$i][$key] = "new Date(" . strtotime($data[$i][$key]) . " * 1000)";
+			}
+		}
+	}
+
+	array_walk_recursive($data, 'utf8_encode_array');
+	$dataJSON = json_encode($data, JSON_NUMERIC_CHECK);
+
+	$legend = $showLegend?'top':'none';
+
+	$html = "
+<div class=\"fullscreen-elem\" id=\"leute-stats-{$name}-bar\" style=\"height: 500px;\"></div>
+<script>
+	google.charts.load('current', {packages:['corechart']});
+	google.charts.setOnLoadCallback(function() {
+			var dataJSON = {$dataJSON};
+			
+			if(dataJSON[0][0] === \"Datum\" || dataJSON[0][0] === \"Date\") {
+				for(index = 1; (index + 1) < (dataJSON.length + 1); index++) {
+					dataJSON[index][0] = eval(dataJSON[index][0]);
+				}
+			}
+		
+		var data = google.visualization.arrayToDataTable(dataJSON);
+     
+		var options = {
+			legend: {position:'{$legend}'},
+			hAxis: {slantedText: true, format: 'MM.yyyy'},
+			title: '',
+	        isStacked: true
+		};
+
+		var chart = new google.visualization.ColumnChart(document.getElementById('leute-stats-{$name}-bar'));
+
+		var \$chart = $('#leute-stats-{$name}-bar');
+		google.visualization.events.addListener(chart, 'ready', function () {
+			\$chart.data('google.chart', chart);
+
+			if (\$chart.find('.fullscreen-btn').length == 0) {
+				\$chart.append('<a class=\"btn btn-default absolute-br-btn discrete-btn google-charts-download-btn\" data-target=\"#leute-stats-{$name}-line\"><i class=\"fa fa-download\"></i></a>');
+				\$chart.append('<a class=\"btn btn-default absolute-tr-btn discrete-btn fullscreen-btn\" data-target=\"#leute-stats-{$name}-bar\"><i class=\"fa fa-arrows\"></i></a>');
+
+				\$chart.on('fullscreen.entering', function() {
+					$(this).data('orig-width', $(this).width());
+					$(this).data('orig-height', $(this).height());
+					$(this).width(screen.width).height(screen.height);
+					chart.draw(data, options);
+				});
+				\$chart.on('fullscreen.exited', function() {
+					\$chart.find('.fullscreen-btn.is-fullscreen').removeClass('is-fullscreen');
+					$(this).width($(this).data('orig-width')).height($(this).data('orig-height'));
+					chart.draw(data, options);
+				});
+			}
+
+			initGoogleDownloadBtn(\$chart, \$chart.find('.google-charts-download-btn'));
+		});
+
+		chart.draw(data, options);
+	});
+</script>
+";
+
+	return $html;
+} //ko_leute_chart_generic_bar_from_data()
+
 
 
 function ko_leute_chart_generic_line_from_data($label, $value, $name, $multipleSeries=FALSE, $showLegend=FALSE) {
@@ -3188,8 +3180,9 @@ function ko_leute_chart_generic_line_from_data($label, $value, $name, $multipleS
 		if ($i == -1) {
 			$row = array(getLL('key'));
 			for ($j = 0; $j < sizeof($value); $j++) {
-				if (end($value[$j])['meta']) {
-					$v = end($value[$j])['meta'] . ' ';
+				$t = end($value[$j]);
+				if ($t['meta']) {
+					$v = $t['meta'] . ' ';
 				} else {
 					$v = getLL('value');
 				}
@@ -3262,6 +3255,89 @@ function ko_leute_chart_generic_line_from_data($label, $value, $name, $multipleS
 
 
 
+function ko_leute_chart_generic_timeline_from_data($days, $columns, $column_definitions, $name, $multipleSeries=FALSE, $showLegend=FALSE) {
+
+	$legend = $showLegend?'top':'none';
+
+	$html = "
+<div class=\"fullscreen-elem\" id=\"leute-stats-{$name}-line\" style=\"height: 500px;\"></div>
+<script>
+	google.charts.load('current', {packages:['corechart', 'timeline']});
+	google.charts.setOnLoadCallback(function() {
+        var data = new google.visualization.DataTable(); ";
+
+	foreach($column_definitions AS $column_definition) {
+		$html.= $column_definition ."\n";
+	}
+
+	$html.= "data.addRows([";
+
+	$rows = [];
+	foreach($days AS $key => $day) {
+		$rows[$key][0] = "new Date(".$day." * 1000)";
+		foreach($columns AS $column_key => $column) {
+			$rows[$key][$column_key+1] = $column[$key];
+		}
+	}
+
+	foreach($rows AS $row) {
+		$html.= "[" . implode(",", $row) . "],\n";
+	}
+
+	$html.="]);
+
+		var options = {
+			legend: {position:'{$legend}'},
+			hAxis: {
+				title: '',
+				slantedText: true,
+	            format: 'dd.MM.yyyy',
+		    },
+            vAxis: {
+				minValue: 0
+            },
+            explorer: {
+            	axis: 'horizontal',
+            	actions: ['dragToPan', 'scrollToZoom', 'rightClickToReset'], 
+            	keepInBounds: true,
+            	maxZoomIn: 4.0,
+            	maxZoomOut: 1
+            },
+		  	pointSize: 3,
+		};
+
+		var chart = new google.visualization.LineChart(document.getElementById('leute-stats-{$name}-line'));
+        
+		var \$chart = $('#leute-stats-{$name}-line');
+		google.visualization.events.addListener(chart, 'ready', function () {
+			\$chart.data('google.chart', chart);
+
+			if (\$chart.find('.fullscreen-btn').length == 0) {
+				\$chart.append('<a class=\"btn btn-default absolute-br-btn discrete-btn google-charts-download-btn\" data-target=\"#leute-stats-{$name}-line\"><i class=\"fa fa-download\"></i></a>');
+				\$chart.append('<a class=\"btn btn-default absolute-tr-btn discrete-btn fullscreen-btn\" data-target=\"#leute-stats-{$name}-line\"><i class=\"fa fa-arrows\"></i></a>');
+
+				\$chart.on('fullscreen.entering', function() {
+					$(this).data('orig-width', $(this).width());
+					$(this).data('orig-height', $(this).height());
+					$(this).width(screen.width).height(screen.height);
+					chart.draw(data, options);
+				});
+				\$chart.on('fullscreen.exited', function() {
+					\$chart.find('.fullscreen-btn.is-fullscreen').removeClass('is-fullscreen');
+					$(this).width($(this).data('orig-width')).height($(this).data('orig-height'));
+					chart.draw(data, options);
+				});
+			}
+
+			initGoogleDownloadBtn(\$chart, \$chart.find('.google-charts-download-btn'));
+		});
+
+		chart.draw(data, options);
+	});
+</script>
+";
+	return $html;
+}
 
 
 /**
@@ -3399,12 +3475,146 @@ function ko_leute_chart_roles($where_base) {
 		}
 
 		if(sizeof($value) > 0) {
-			$html = ko_leute_chart_generic_bar_from_data($label, $value, 'roles');
+			$html = ko_leute_chart_generic_bar_from_data($label, $value, 'roles', NULL, FALSE, FALSE, TRUE);
 		}
 	}//if(_SESSION[leute_chart_roles_gid])
 
 	return getLL("leute_chart_roles_select_group").$gsel.$html;
 }//ko_leute_chart_roles()
+
+
+
+/**
+ * Display data from ko_statistics
+ */
+function ko_leute_chart_statistics() {
+	global $ko_path;
+
+	$where = " WHERE user_id = -1 OR user_id = " . $_SESSION['ses_userid'] . " GROUP BY filter_id ASC";
+	$filter_presets = db_select_data('ko_statistics', $where, "title, filter_id, user_id");
+
+	$where = " WHERE filter_id = 0 GROUP BY title ASC";
+	$all_other_stats = db_select_data('ko_statistics', $where, "title");
+
+
+
+	$select = '<select class="input-sm form-control" name="sel_leute_chart_statistics" onchange="sendReq(\''.$ko_path.'leute/inc/ajax.php\', \'action,stats,sesid\', \'leutechartstatistics,\'+this.options[this.selectedIndex].value+\','.session_id().'\', do_element);">';
+	$select .= '<option value=""></option>';
+
+	if (count($filter_presets) > 0) {
+		$select .= '<option value="" disabled>-- ' . getLL('leute_chart_stats_select_filters') . ' --</option>';
+	}
+
+
+	foreach($filter_presets as $filter_preset) {
+		$sel = $filter_preset["filter_id"] == $_SESSION["leute_chart_statistics"] ? 'selected = "selected"' : '';
+		if (empty($userpref_filter)) {
+			$select .= '<option value="'.$filter_preset['filter_id'].'" ' . $sel . ' >('.$filter_preset['title'].')</option>';
+		} else {
+			$select .= '<option value="'.$filter_preset['filter_id'].'" ' . $sel . ' >'.$filter_preset['title'] . ($filter_preset['user_id'] == -1 ? " [G]" : "").'</option>';
+		}
+	}
+
+	if (count($all_other_stats) > 0) {
+		$select .= '<option value="" disabled>-- ' . getLL('leute_chart_stats_select_other') . ' --</option>';
+	}
+	
+	foreach($all_other_stats as $all_other_stat) {
+		$sel = $all_other_stat["title"] == $_SESSION["leute_chart_statistics"] ? 'selected = "selected"' : '';
+		$select .= '<option value="'.$all_other_stat['title'].'" ' . $sel . ' >'.getLL("leute_chart_stats_select_other_" . $all_other_stat['title']).'</option>';
+	}
+
+	$select .= '</select>';
+
+	$chart = '';
+
+	if ($_SESSION["leute_chart_statistics"]) {
+		if (is_numeric($_SESSION["leute_chart_statistics"])) {
+			$where = "WHERE filter_id = '" . format_userinput($_SESSION['leute_chart_statistics'], 'int') ."'";
+			$stats_data = db_select_data("ko_statistics", $where, '*', 'ORDER BY date ASC');
+		} else {
+			$where = "WHERE title = '" . format_userinput($_SESSION['leute_chart_statistics'], 'alphanum') ."'";
+			$stats_data = db_select_data("ko_statistics", $where, '*', 'ORDER BY date ASC');
+		}
+
+		$column_definitions = [
+			'0' => "data.addColumn('date', 'Datum');",
+		];
+
+		$lastfilter = 0;
+		$showLegend = FALSE;
+		foreach($stats_data AS $key => $stat_data) {
+			$days[] = strtotime($stat_data['date']);
+
+			if($_SESSION['leute_chart_statistics'] == "confessions") {
+				$results = json_decode($stat_data['result']);
+				foreach ($results AS $column_key => $result) {
+					if (empty($result->title)) {
+						$result->title = "unknown";
+						$label = getLL('unknown');
+					} else {
+						$label = (getLL('kota_ko_leute_confession_' . $result->title) ? getLL('kota_ko_leute_confession_' . $result->title) : $result->title);
+					}
+					$temp_columns[$result->title][strtotime($stat_data['date'])] = $result->total;
+					$temp_column_definitions[$result->title] = "data.addColumn('number', '" . $label . "');";
+				}
+			} else if ($_SESSION['leute_chart_statistics'] == "terms") {
+				$results = json_decode($stat_data['result']);
+				$allTerms = ko_taxonomy_get_terms();
+				foreach($results AS $term_id => $total) {
+					if (empty($allTerms[$term_id]['name'])) {
+						$label = getLL('unknown');
+					} else {
+						$label = $allTerms[$term_id]['name'];
+					}
+					$temp_columns[$term_id][strtotime($stat_data['date'])] = $total;
+					$temp_column_definitions[$term_id] = "data.addColumn('number', '" . $label . "');";
+				}
+			} else {
+				// just one line
+				$columns[0][] = $stat_data['result'];
+				$label = ($stat_data['filter_id'] != 0 ? getLL('people') : getLL('value'));
+				$column_definitions['1'] = "data.addColumn('number', '".$label."');";
+
+				if(is_numeric($_SESSION['leute_chart_statistics'])) {
+					$column_definitions['2'] = "data.addColumn({'type': 'string', 'role': 'style'});";
+					if(!empty($lastfilter) && $lastfilter != $stat_data['filter_hash']) {
+						$columns[1][] = '\'point {dent: 0.1; size: 8; shape-type: triangle; fill-color: #dc3545; }\'';
+						$showLegend = TRUE;
+					} else {
+						$columns[1][] = 'null';
+					}
+					$lastfilter = $stat_data['filter_hash'];
+				}
+
+			}
+		}
+
+		if(isset($temp_columns)) {
+			$column_id = 0;
+			foreach($temp_column_definitions AS $temp_name => $temp_column_definition) {
+				foreach($days AS $day) {
+					$columns[$column_id][] = (!isset($temp_columns[$temp_name][$day]) ? 0 : $temp_columns[$temp_name][$day]);
+					$column_definitions[$column_id+1] = $temp_column_definitions[$temp_name];
+				}
+				$column_id++;
+			}
+		}
+
+		$chart = ko_leute_chart_generic_timeline_from_data($days, $columns, $column_definitions, 'statistics');
+	}
+
+	if($showLegend) {
+		$icon = '<svg xmlns="http://www.w3.org/2000/svg" version="1.0" width="16" height="16">
+  <polygon points="1,15 15,15 8,1, 1,15" fill="#dc3545" stroke="none" />
+</svg>';
+		$legend = '<p>'.$icon.'&nbsp;'.getLL('leute_chart_stats_legend').'</p>';
+	} else {
+		$legend = '';
+	}
+
+	return $select.$chart.$legend;
+}
 
 
 
@@ -3461,7 +3671,7 @@ function ko_leute_chart_age_bar($where_base) {
 		$max = max($max, $row["age"]);
 	}
 	for($i = $min; $i<= $max; $i++) {
-		$value[] = $data[$i];
+		$value[] = (int)$data[$i];
 		$label[] = $i;
 	}
 
@@ -3520,13 +3730,114 @@ function ko_leute_chart_generic_pie_enum($table, $where_base, $col, $ll_prefix="
 
 
 function ko_leute_chart_sex($where_base) {
-	return ko_leute_chart_generic_pie_enum('ko_leute', $where_base, 'geschlecht', 'kota_ko_leute_geschlecht_');
+	return ko_leute_chart_generic_pie('ko_leute', $where_base, 'geschlecht');
 }
 
 
 function ko_leute_chart_famfunction($where_base) {
 	$where_base .= " AND `famid` != '' ";
-	return ko_leute_chart_generic_pie_enum('ko_leute', $where_base, 'famfunction', 'kota_ko_leute_famfunction_');
+	return ko_leute_chart_generic_pie('ko_leute', $where_base, 'famfunction');
+}
+
+function ko_leute_chart_civilstatus($where_base) {
+	return ko_leute_chart_generic_pie('ko_leute', $where_base, 'zivilstand');
+}
+
+/**
+ * wrapper for ko_leute_chart_pfarrbook
+ *
+ * @param string $where_base pass forward to ko_leute_chart_pfarrbook
+ * @return string html from ko_leute_chart_pfarrbook
+ */
+function ko_leute_chart_rodel($where_base) {
+	return ko_leute_chart_pfarrbook($where_base, "rodel");
+}
+
+
+/**
+ * wrapper for ko_leute_chart_pfarrbook
+ *
+ * @param string $where_base pass forward to ko_leute_chart_pfarrbook
+ * @return string html from ko_leute_chart_pfarrbook
+ */
+function ko_leute_chart_taufbuch($where_base) {
+	return ko_leute_chart_pfarrbook($where_base, "taufbuch");
+}
+
+
+/**
+ * Create charts for rodel or taufschein
+ *
+ * @param string $where_base pass currently unused
+ * @return string html
+ */
+function ko_leute_chart_pfarrbook($where_base, $pfarrbook_type) {
+	global $KOTA;
+	$main_table = "ko_" . $pfarrbook_type;
+	ko_include_kota([$main_table]);
+	if(array_search($pfarrbook_type, array_column($GLOBALS['PLUGINS'],"name")) == FALSE) {
+		return FALSE;
+	}
+
+	$pfarrbook_types = [
+		1 => "christening",
+		2 => "confirmation",
+		3 => "wedding",
+		4 => "abdication",
+		5 => "consecration",
+	];
+
+	if($pfarrbook_type == "taufbuch") {
+		$pfarrbook_types[2] = "firming";
+		$pfarrbook_types[5] = "communion";
+	}
+
+	$pfarrbooks = [];
+	foreach($pfarrbook_types AS $key => $name) {
+		if ($key == 5 && $pfarrbook_type != "taufbuch" && !ko_get_setting("rodel_activate_type_einsegnung")) {
+			continue;
+		}
+
+		$db_field = $name . "_date";
+		if($key == 3) $db_field = "church_wedding_date";
+
+		$pfarrbooks[$name] = db_select_data(
+			$main_table,
+			"WHERE type = " . $key,
+			"type, count(id) AS total, DATE_FORMAT(" . $db_field . ", '%Y-%m-01')  AS id",
+			"GROUP BY YEAR(" . $db_field . "), MONTH(" . $db_field . ") DESC;"
+		);
+	}
+
+	$date['year'] = date("Y", time()) - 1;
+	$date['month'] = date("m", time());
+	$row_template = [];
+	for($i=1; $i<=13;$i++) {
+		$row_template[] = ($date['year'] . "-" . zerofill($date['month'],2) . "-01");
+
+		if ($date['month'] == 12) {
+			$date['month'] = 1;
+			$date['year']++;
+		} else {
+			$date['month']++;
+		}
+	}
+
+	$label[] = "Datum";
+	$column = 0;
+
+	$values[$column] = $row_template;
+	$column = 1;
+	foreach($pfarrbooks AS $type =>  $pfarrbook) {
+		$label[] = getLL("kota_ko_" . $pfarrbook_type . "_type_" . array_search($type, $pfarrbook_types));
+		foreach($row_template AS $date) {
+			$values[$column][] = $pfarrbook[$date]['total'];
+		}
+		$column++;
+	}
+
+	$html = ko_leute_chart_generic_stackbar_from_data($label, $values, $pfarrbook_type, "3px");
+	return $html;
 }
 
 
@@ -3544,11 +3855,12 @@ function ko_leute_chart_generic_pie($table, $where_base, $col, $max=12) {
 	while($row = mysqli_fetch_assoc($result)) {
 		$num++;
 		if($num > $max) {
-			$div += $row["num"];
+			$div += $row['num'];
 			continue;
 		}
-		$value[] = $row["num"];
-		$label[] = $row[$col];
+		$value[] = $row['num'];
+		$ll = getLL('kota_'.$table.'_'.$col.'_'.$row[$col]);
+    $label[] = $ll ? $ll : $row[$col];
 	}
 	if($div) {
 		$value[] = $div;
@@ -3593,15 +3905,11 @@ function ko_leute_chart_lastchange($where_base) {
 
 
 function ko_leute_export_xls_settings() {
-	global $smarty, $ko_path, $xls_cols;
-	global $access, $MODULES;
+	global $smarty, $xls_cols, $es;
 
 	//build form
 	$gc = 0;
 	$rowcounter = 0;
-	//$frmgroup[$gc]['titel'] = getLL('leute_export_xls_settings');
-
-
 
 	if ($_POST['sel_auswahl'] == 'allef' || $_POST['sel_auswahl'] == 'alleFam2' || $_POST['sel_auswahl'] == 'markiertef' || $_POST['sel_auswahl'] == 'markierteFam2') {
 		//Family firstname
@@ -3615,14 +3923,9 @@ function ko_leute_export_xls_settings() {
 		);
 	}
 
-
-
 	$leute_col_name = ko_get_leute_col_name();
 	$cols = db_get_columns('ko_leute');
 	$exclude = array('id', 'famid', 'smallgroups', 'lastchange', 'kg_seit', 'kgleiter_seit', 'famfunction', 'picture', 'groups', 'deleted', 'hidden', 'crdate', 'cruserid');
-
-
-
 
 	if ($_POST['sel_cols'] == 'children') {
 		//Children columns
@@ -3680,6 +3983,7 @@ function ko_leute_export_xls_settings() {
 		$linebreak_values[] = $col;
 		$linebreak_descs[] = $leute_col_name[$col];
 	}
+
 	foreach(explode(',', $linebreak_value) as $v) {
 		if(in_array($v, $linebreak_values)) {
 			$linebreak_avalues[] = $v;
@@ -3691,6 +3995,7 @@ function ko_leute_export_xls_settings() {
 			}
 		}
 	}
+
 	$frmgroup[$gc]['row'][$rowcounter++]['inputs'][0] = array('desc' => getLL('leute_settings_linebreak_columns'),
 		'type' => 'doubleselect',
 		'js_func_add' => 'double_select_add',
@@ -3713,6 +4018,7 @@ function ko_leute_export_xls_settings() {
 		'value' => ko_get_userpref($_SESSION['ses_userid'], 'export_table_format'),
 	);
 
+	ko_leute_export_show_warning($smarty, $es);
 
 	//display the form
 	$smarty->assign('tpl_titel', getLL('leute_export_xls_settings_title'));
@@ -3726,6 +4032,79 @@ function ko_leute_export_xls_settings() {
 	$smarty->assign('tpl_groups', $frmgroup);
 	$smarty->display('ko_formular.tpl');
 }
+
+
+/**
+ * Check if a warning in addresses-export should be displayed to the user
+ *
+ * @param Smarty &$smarty template object
+ * @param array $es list of adresses to be exported
+ * @return bool
+ */
+function ko_leute_export_show_warning(&$smarty, $es) {
+	foreach($es AS $address) {
+		if ($address['hidden'] == 1 || $address['deleted'] == 1) {
+			$smarty->assign('tpl_export_warning', getLL('leute_export_warning_hiddendeleted'));
+			return TRUE;
+		}
+	}
+
+	return FALSE;
+}
+
+
+function ko_leute_export_details_settings() {
+	global $smarty, $ko_path, $es, $access;
+
+	ko_get_access('admin');
+
+	$exportIds = $_SESSION['export_ids'];
+
+	//build form
+	$gc = 0;
+	$rowcounter = 0;
+
+	$values = $descs = array();
+	$exports = ko_leute_get_detail_exports();
+	$allTypes = ko_array_ll(array_unique(ko_array_column($exports, 'type')), 'leute_export_details_type_');
+	sort($allTypes);
+	foreach ($allTypes as $type) {
+		$typeExports = array_filter($exports, function($e)use($type){return getLL("leute_export_details_type_{$e['type']}") == $type;});
+		usort($typeExports, function($a, $b){return strcmp($a["desc"], $b["desc"]);});
+		$values[] = '_DISABLED_';
+		$descs[] = $type;
+		foreach ($typeExports as $export) {
+			$values[] = $export['name'];
+			$descs[] = "&nbsp;&nbsp;{$export['desc']}";
+		}
+	}
+	$frmgroup[$gc]['row'][$rowcounter]['inputs'][0] = array('desc' => getLL('leute_export_details_settings_layout'),
+		'type' => 'select',
+		'name' => 'sel_detail_export',
+		'values' => $values,
+		'descs' => $descs,
+	);
+	if($access['admin']['MAX'] > 1) {
+		$frmgroup[$gc]['row'][$rowcounter++]['inputs'][1] = array('desc' => getLL('leute_settings_detailed_person_export'),
+			'type' => 'label',
+			'value' => '<a href="'.$ko_path.'admin/index.php?action=list_detailed_person_exports">'.getLL('leute_settings_detailed_person_export_text').'</a>',
+		);
+	}
+
+	ko_leute_export_show_warning($smarty, $es);
+
+	//display the form
+	$smarty->assign('tpl_titel', getLL('leute_export_details_settings_title'));
+	$smarty->assign('tpl_submit_value', getLL('leute_export_details_settings_export'));
+	$smarty->assign('tpl_action', 'export_details');
+	$cancel = ko_get_userpref($_SESSION['ses_userid'], 'default_view_leute');
+	if(!$cancel) $cancel = 'show_all';
+	$smarty->assign('tpl_cancel', $cancel);
+	$crmContactGroup = ko_get_crm_contact_form_group(array('leute_ids'));
+	$frmgroup[sizeof($frmgroup)] = $crmContactGroup[0];
+	$smarty->assign('tpl_groups', $frmgroup);
+	$smarty->display('ko_formular.tpl');
+}//ko_leute_export_details_settings()
 
 
 
@@ -3747,8 +4126,8 @@ function ko_leute_settings() {
 	$frmgroup[$gc]['row'][$rowcounter++]['inputs'][0] = array('desc' => getLL('leute_settings_default_view'),
 			'type' => 'select',
 			'name' => 'sel_leute',
-			'values' => array('show_all', 'show_adressliste', 'geburtstagsliste', 'list_kg'),
-			'descs' => array(getLL('submenu_leute_show_all'), getLL('submenu_leute_show_adressliste'), getLL('submenu_leute_geburtstagsliste'), getLL('submenu_leute_list_kg')),
+			'values' => array('show_all', 'geburtstagsliste', 'list_kg'),
+			'descs' => array(getLL('submenu_leute_show_all'), getLL('submenu_leute_geburtstagsliste'), getLL('submenu_leute_list_kg')),
 			'value' => ko_html(ko_get_userpref($_SESSION['ses_userid'], 'default_view_leute'))
 			);
 	$frmgroup[$gc]['row'][$rowcounter]['inputs'][0] = array('desc' => getLL('admin_settings_limits_numberof_people'),
@@ -3970,7 +4349,7 @@ function ko_leute_settings() {
 
 	$value = ko_get_userpref($_SESSION['ses_userid'], 'leute_list_persons_not_overlay');
 	$avalues = explode(',', $value);
-	$values = array('version', 'word', 'maps', 'clipboard', 'delete', 'qrcode', 'togglehidden', 'donations');
+	$values = array('version', 'template', 'maps', 'whatsappclicktochat', 'clipboard', 'delete', 'qrcode', 'togglehidden', 'donations');
 	if (ko_module_installed('crm')) $values[] = 'crm';
 	$descs = array();
 	foreach ($values as $v) {
@@ -3996,13 +4375,6 @@ function ko_leute_settings() {
 		'adescs' => $adescs,
 		'descs' => $descs,
 		'size' => '7',
-	);
-
-	$value = ko_get_userpref($_SESSION['ses_userid'], 'enable_zero_clipboard');
-	$frmgroup[$gc]['row'][$rowcounter++]['inputs'][0] = array('desc' => getLL('leute_settings_enable_zero_clipboard'),
-		'type' => 'switch',
-		'name' => 'chk_enable_zero_clipboard',
-		'value' => $value,
 	);
 
 
@@ -4049,14 +4421,17 @@ function ko_leute_settings() {
 		$frmgroup[$gc]['tab'] = true;
 
 		if($access['leute']['ALL'] > 2) {
-			//Hidden mode
-			$frmgroup[$gc]['row'][$rowcounter]['inputs'][0] = array('desc' => getLL('admin_settings_options_leute_hidden_mode'),
-					'type' => 'select',
-					'name' => 'sel_leute_hidden_mode',
-					'values' => array(0, 1, 2),
-					'descs' => array(getLL('admin_settings_options_leute_hidden_mode_0'), getLL('admin_settings_options_leute_hidden_mode_1'), getLL('admin_settings_options_leute_hidden_mode_2')),
-					'value' => ko_get_setting('leute_hidden_mode'),
-					);
+
+			//Allow deletion of multiple persons
+			$value = ko_get_setting('leute_multiple_delete');
+			$frmgroup[$gc]['row'][$rowcounter]['inputs'][0] = array('desc' => getLL('leute_settings_multiple_delete'),
+				'type' => 'switch',
+				'name' => 'chk_multi_delete',
+				'label_0' => getLL('no'),
+				'label_1' => getLL('yes'),
+				'value' => $value == '' ? 0 : $value,
+			);
+
 			//Allow permanent deletion
 			$value = ko_get_setting('leute_real_delete');
 			$frmgroup[$gc]['row'][$rowcounter++]['inputs'][1] = array('desc' => getLL('leute_settings_real_delete'),
@@ -4067,8 +4442,17 @@ function ko_leute_settings() {
 					'value' => $value == '' ? 0 : $value,
 					);
 
+			$value = ko_get_setting('leute_delete_revision_address');
+			$frmgroup[$gc]['row'][$rowcounter++]['inputs'][0] = array('desc' => getLL('leute_settings_delete_revision_address'),
+					'type' => 'switch',
+					'name' => 'chk_delete_revision_address',
+					'label_0' => getLL('no'),
+					'label_1' => getLL('yes'),
+					'value' => $value == '' ? 0 : $value,
+					);
+
 			$value = ko_get_setting('leute_assign_global_notification');
-			$frmgroup[$gc]['row'][$rowcounter]['inputs'][0] = array('desc' => getLL('leute_settings_assign_global_notification'),
+			$frmgroup[$gc]['row'][$rowcounter++]['inputs'][0] = array('desc' => getLL('leute_settings_assign_global_notification'),
 					'type' => 'text',
 					'params' => 'size="40"',
 					'name' => 'txt_assign_global_notification',
@@ -4099,7 +4483,7 @@ function ko_leute_settings() {
 					}
 				}
 			}
-			$frmgroup[$gc]['row'][$rowcounter++]['inputs'][1] = array('desc' => getLL('leute_settings_no_delete_columns'),
+			$frmgroup[$gc]['row'][$rowcounter]['inputs'][0] = array('desc' => getLL('leute_settings_no_delete_columns'),
 				'type' => 'doubleselect',
 				'js_func_add' => 'double_select_add',
 				'name' => 'sel_no_delete_columns',
@@ -4112,25 +4496,47 @@ function ko_leute_settings() {
 			);
 
 			$value = ko_get_setting('candidate_adults_min_age');
-			$frmgroup[$gc]['row'][$rowcounter++]['inputs'][0] = array('desc' => getLL('leute_settings_candidate_adults_min_age'),
+			$frmgroup[$gc]['row'][$rowcounter++]['inputs'][1] = array('desc' => getLL('leute_settings_candidate_adults_min_age'),
 				'type' => 'text',
 				'html_type' => 'number',
 				'name' => 'txt_candidate_adults_min_age',
 				'value' => $value ? $value : 18,
 			);
-		}
+
+			$frmgroup[$gc]['row'][$rowcounter]['inputs'][0] = array_merge(array(
+				// something missing?
+			), kota_get_mandatory_fields_choices_for_sel('ko_leute'));
 
 
-		if($access['leute']['ALL'] > 2) {
 			//Allow moderation for all users with access > 1
 			$value = ko_get_setting('leute_allow_moderation');
-			$frmgroup[$gc]['row'][$rowcounter++]['inputs'][0] = array('desc' => getLL('leute_settings_allow_moderation'),
+			$frmgroup[$gc]['row'][$rowcounter++]['inputs'][1] = array('desc' => getLL('leute_settings_allow_moderation'),
 					'type' => 'switch',
 					'name' => 'chk_allow_moderation',
 					'label_0' => getLL('no'),
 					'label_1' => getLL('yes'),
 					'value' => $value == '' ? 0 : $value,
 					);
+
+			//Allow import
+			$value = ko_get_setting('leute_allow_import');
+			$frmgroup[$gc]['row'][$rowcounter]['inputs'][0] = array('desc' => getLL('leute_settings_allow_import'),
+				'type' => 'switch',
+				'name' => 'chk_allow_import',
+				'label_0' => getLL('no'),
+				'label_1' => getLL('yes'),
+				'value' => $value == '' ? 0 : $value,
+			);
+
+			//Mutation front module
+			$value = ko_get_setting('leute_disable_aa_fm');
+			$frmgroup[$gc]['row'][$rowcounter++]['inputs'][1] = array('desc' => getLL('leute_settings_disable_aa_fm'),
+				'type' => 'switch',
+				'name' => 'chk_disable_aa_fm',
+				'label_0' => getLL('no'),
+				'label_1' => getLL('yes'),
+				'value' => $value == '' ? 0 : $value,
+			);
 		}
 
 
@@ -4144,6 +4550,10 @@ function ko_leute_settings() {
 					'type' => 'label',
 					'value' => '<a href="'.$ko_path.'admin/index.php?action=set_leute_pdf">'.getLL('leute_settings_leute_pdf_text').'</a>',
 					);
+			$frmgroup[$gc]['row'][$rowcounter++]['inputs'][0] = array('desc' => getLL('leute_settings_detailed_person_export'),
+				'type' => 'label',
+				'value' => '<a href="'.$ko_path.'admin/index.php?action=list_detailed_person_exports">'.getLL('leute_settings_detailed_person_export_text').'</a>',
+			);
 		}
 
 	}
@@ -4164,51 +4574,6 @@ function ko_leute_settings() {
 
 	$smarty->display('ko_formular.tpl');
 }//ko_leute_settings()
-
-
-
-
-function ko_word_get_template() {
-	global $BASE_PATH;
-
-	$files = array();
-	$files[] = $BASE_PATH.'config/address_'.intval($_SESSION['ses_userid']).'.docx';
-	$files[] = $BASE_PATH.'config/address.docx';
-	$files[] = $BASE_PATH.'config/address.rtf';
-
-	foreach($files as $file) {
-		if(file_exists($file)) return $file;
-	}
-	return FALSE;
-}//ko_word_get_template()
-
-
-
-
-/**
- * Create a word document addressed to the given person
- * @param int/array $pid: ID of an address or whole address as array
- */
-function ko_word_address($pid) {
-	global $BASE_PATH;
-
-	//Check for present address template
-	if(ko_word_get_template() === FALSE) return;
-
-	if(is_array($pid)) {
-		$person = $pid;
-		$pid = $person['id'];
-	} else {
-		ko_get_person_by_id($pid, $person);
-	}
-
-	//Rectype
-	$person = ko_apply_rectype($person);
-
-	$file = ko_word_get_template();
-	if(substr($file, -4) == 'docx') return ko_word_docx($file, $person);
-	else return ko_word_rtf($person);
-}//ko_word_address()
 
 
 
@@ -4269,83 +4634,6 @@ function ko_word_docx($file, $person) {
 	return $filename;
 }//ko_word_docx()
 
-
-
-
-function ko_word_person_array($person) {
-	global $DATETIME, $LEUTE_WORD_ADDRESSBLOCK;
-
-	$map = array();
-
-	//Address fields of recipient (${address_...})
-	foreach($person as $k => $v) {
-		$map['${address_'.strtolower($k).'}'] = $v;
-	}
-
-	// Addressblock. expressed in lines because PHPWord can't insert line breaks into templates,
-	// LINES START WITH 0!!
-	$maxLines = sizeof($LEUTE_WORD_ADDRESSBLOCK);
-	$lineCounter = 0;
-	foreach ($LEUTE_WORD_ADDRESSBLOCK as $line) {
-		$lineString = '';
-		$cellCounter = 0;
-		foreach ($line as $infoArray) {
-			if (trim($person[$infoArray['field']]) != '') {
-				$cellContent = trim($person[$infoArray['field']]);
-			}
-			else if (isset($infoArray['ifEmpty']) && trim($person[$infoArray['ifEmpty']]) != '') {
-				$cellContent = trim($person[$infoArray['ifEmpty']]);
-			}
-			else {
-				continue;
-			}
-
-			if ($cellCounter == 0) {
-				$lineString .= $cellContent;
-			}
-			else {
-				$lineString .= ' ' . $cellContent;
-			}
-
-			$cellCounter ++;
-		}
-		if (trim($lineString != '')) $map['${line' . $lineCounter++ . '}'] = $lineString;
-	}
-	for ($i = $lineCounter; $i < $maxLines; $i ++) {
-		$map['${line' . $i . '}'] = '';
-	}
-
-	// Salutations
-	$geschlechtMap = array('Herr' => 'm', 'Frau' => 'w');
-	$vorname = trim($person['vorname']);
-	$nachname = trim($person['nachname']);
-	$geschlecht = $person['geschlecht'] != '' ? $person['geschlecht'] : $geschlechtMap[$person['anrede']];
-	$map['${address__salutation_formal_name}'] = getLL('mailing_salutation_formal_' . ($nachname != '' ? $geschlecht : '')) . ($nachname == '' ? '' : ' ' . $nachname);
-	$map['${address__salutation_name}'] = getLL('mailing_salutation_' . ($vorname != '' ? $geschlecht : '')) . ($vorname == '' ? '' : ' ' . $vorname);
-
-	//Salutation
-	$map['${address__salutation}'] = getLL('mailing_salutation_'.$person['geschlecht']);
-	$map['${address__salutation_formal}'] = getLL('mailing_salutation_formal_'.$person['geschlecht']);
-
-
-	//Add current date
-	$map['${date}'] = strftime($DATETIME['dMY'], time());
-	$map['${date_dmY}'] = strftime($DATETIME['dmY'], time());
-
-	//Add contact fields (from general settings)
-	$contact_fields = array('name', 'address', 'zip', 'city', 'phone', 'url', 'email');
-	foreach($contact_fields as $field) {
-		$map['${contact_'.strtolower($field).'}'] = ko_get_setting('info_'.$field);
-	}
-
-	//Add sender fields of current user
-	$sender = ko_get_logged_in_person();
-	foreach($sender as $k => $v) {
-		$map['${user_'.strtolower($k).'}'] = $v;
-	}
-
-	return $map;
-}//ko_word_person_array()
 
 
 function leute_get_crm_entries_html($id, $rows_only=FALSE) {
@@ -4430,7 +4718,7 @@ function leute_mailmerge_pdf_layout_default($general, $data, $filename) {
 	global $ko_path;
 
 	define('FPDF_FONTPATH',$ko_path.'fpdf/schriften/');
-	require($ko_path.'fpdf/PDF_HTML.php');
+	require_once($ko_path.'fpdf/PDF_HTML.php');
 
 
 	$pdf = new PDF_HTML('P', 'mm', array(210, 297));
@@ -4641,6 +4929,462 @@ function leute_mailmerge_pdf_layout_default_add_address_to_pdf(PDF_HTML &$pdf, $
 	$pdf->Text($left + $weirdOffset, $top, $general['signature']);
 
 }//add_address_to_pdf()
+
+
+
+
+function ko_leute_export_details_user_template($export, $personIds) {
+	global $BASE_PATH;
+
+	$file = $export['user_template'];
+	if ($file && file_exists($file) && is_readable($file)) {
+		$doZip = sizeof($personIds) > 1;
+		if ($doZip) {
+			// prepare zip archive
+			$filename = "{$BASE_PATH}download/people_".strtolower(str_replace(array('/', '\\'), array('_', '_'), $export['name']))."_".date('Ymd_His').".zip";
+			$zip = new ZipArchive();
+			$zip->open($filename, ZIPARCHIVE::CREATE);
+		}
+		foreach ($personIds as $personId) {
+			ko_get_person_by_id($personId, $person, TRUE);
+
+			//Rectype
+			$person = ko_apply_rectype($person);
+			$fn = ko_word_docx($file, $person);
+			if ($doZip) {
+				$zip->addFile($BASE_PATH.'download/word/'.$fn, basename($fn));
+			} else {
+				$filename = $BASE_PATH.'download/word/'.$fn;
+			}
+		}
+		if ($doZip) {
+			$zip->close();
+		}
+
+		return $filename;
+	} else {
+		return FALSE;
+	}
+}
+
+function ko_leute_export_details_personal_form_extended($export, $personIds) {
+	return ko_leute_export_details_personal_form($export, $personIds, TRUE);
+}
+
+function ko_leute_export_details_personal_form($export, $personIds, $extend = FALSE) {
+	global $ko_path, $BASE_PATH, $PLUGINS, $KOTA, $LEUTE_EMAIL_FIELDS, $LEUTE_MOBILE_FIELDS;
+
+	require_once($ko_path.'inc/tcpdf/tcpdf.php');
+
+	$mainLayout = array(
+		array('nachname' => 'B'),
+		array('vorname' => 'B'),
+		array('_hline' => ''),
+		array('adresse' => ''),
+		array('ort' => '', 'plz' => ''),
+		array('_hline' => ''),
+		array('vornamen' => ''),
+		array('geschlecht' => '', 'id' => ''),
+		array('zivilstand' => '', 'geburtsdatum' => ''),
+		array('hometown' => '', 'zuzug' => ''),
+		array('confession' => '', 'wegzug' => ''),
+		array('death_date' => ''),
+		array('father' => '', 'famfunction' => ''),
+		array('mother' => ''),
+	);
+	$othersLayout = array(
+		'nachname' => '20%',
+		'vorname' => '20%',
+		'famfunction' => '15%',
+		'geschlecht' => '10%',
+		'geburtsdatum' => '15%',
+		'confession' => '20%',
+	);
+
+	if ($extend === TRUE) {
+		$additional_fields = array_unique(array_merge(array('telp','telg','natel','email',), $LEUTE_EMAIL_FIELDS, $LEUTE_MOBILE_FIELDS));
+		$newline = 0;
+		foreach ($additional_fields as $field) {
+			$last_id = end(array_keys($mainLayout));
+			$newline = ($newline == 0 ? 1 : 0);
+			$mainLayout[$last_id+$newline][$field] = '';
+		}
+	}
+
+	foreach($PLUGINS as $plugin) {
+		if(function_exists('my_leute_export_details_personal_form_layout_'.$plugin['name'])) {
+			call_user_func_array('my_leute_export_details_personal_form_layout_' . $plugin['name'], array(&$mainLayout, &$othersLayout, $extend));
+		}
+	}
+
+	// unset fields in layout that are not present in this kOOL installation
+	if (!is_array($KOTA['ko_leute']['vorname'])) {
+		ko_include_kota(array('ko_leute'));
+	}
+
+	//Get allowed columns
+	$allowed_cols = ko_get_leute_admin_spalten($_SESSION['ses_userid'], 'all');
+
+	$fieldsPresent = array_keys($KOTA['ko_leute']);
+	foreach ($mainLayout as $rowKey => $row) {
+		//Check access for each column
+		$newRow = array();
+		foreach ($row as $colKey => $col) {
+			$noAccess = FALSE;
+			if((is_array($allowed_cols["view"]) && !in_array($colKey, $allowed_cols["view"])) && (!is_array($allowed_cols["edit"]) || is_array($allowed_cols["edit"]) && !in_array($colKey, $allowed_cols["edit"]))) {
+				$noAccess = TRUE;
+			}
+
+			if ( (!in_array($colKey, $fieldsPresent) || $noAccess) && substr($colKey, 0, 1) != '_') $newRow['_empty'] = '';
+			else $newRow[$colKey] = $col;
+		}
+		$mainLayout[$rowKey] = $newRow;
+	}
+	foreach ($othersLayout as $colKey => $col) {
+		$noAccess = FALSE;
+		if((is_array($allowed_cols["view"]) && !in_array($colKey, $allowed_cols["view"])) && (!is_array($allowed_cols["edit"]) || is_array($allowed_cols["edit"]) && !in_array($colKey, $allowed_cols["edit"]))) {
+			$noAccess = TRUE;
+		}
+		if (!in_array($colKey, $fieldsPresent) || $noAccess) unset($othersLayout[$colKey]);
+	}
+
+	class kOOLPeoplePersonalFormTCPDF extends TCPDF {
+		public $mainLayout;
+		public $othersLayout;
+		public $fontSizeLabel = 7;
+		public $fontSize = 8;
+		public $lineHeightLabel = 3;
+		public $lineHeight = 4;
+
+		public function Header() {
+			global $BASE_PATH;
+			$logoFile = ko_get_pdf_logo();
+			if ($logoFile) {
+				$logoPath = $BASE_PATH.'my_images/'.$logoFile;
+				$this->Image($logoPath, $this->lMargin, $this->tMargin, 0, 12, '', '', 'L');
+			}
+		}
+		public function Footer() {
+			global $DATETIME;
+
+			$this->SetFont('', '', $this->fontSize);
+
+			$this->SetXY($this->lMargin, $this->h - 15);
+			$this->MultiCell(60, '', ko_get_setting('info_name'), 0, 'L');
+
+			$this->SetXY($this->w - $this->rMargin - 60, $this->h - 15);
+			$this->MultiCell(60, '', strftime($DATETIME['dmY']) . ' ' . date('H:i'), 0, 'R');
+		}
+
+		public function SetMainLayout($mainLayout) {
+			$this->mainLayout = $mainLayout;
+		}
+		public function SetOthersLayout($othersLayout) {
+			$this->othersLayout = $othersLayout;
+		}
+
+		public function MultiRow($row, $widths, $borders=NULL, $lns=NULL, $fills=NULL, $aligns=NULL, $autoPaddings=NULL) {
+			$page_start = $this->getPage();
+			$yStart = $this->GetY();
+
+			foreach ($widths as $k => $w) {
+				if (substr($w, -1) == '%') $widths[$k] = floatval(substr($w, 0, -1)) / 100 * ($this->w - $this->lMargin - $this->GetX());
+			}
+
+			$maxPage = 0;
+			$maxByPage = array();
+			foreach ($row as $k => $value) {
+				$left = $li = 0;
+				while ($li < $k) {
+					$left += $widths[$li];
+					$li++;
+				}
+				$this->writeHTMLCell($widths[$k], 0, $this->GetX() + $left, $yStart, $value, $borders[$k]?$borders[$k]:0, $lns[$k]?$lns[$k]:1, $fills[$k]?$fills[$k]:false, true, $aligns[$k]?$aligns[$k]:'', $autoPaddings[$k]?$autoPaddings[$k]:true);
+				$maxPage = max($maxPage, $this->getPage());
+				if (!$maxByPage[$this->getPage()]) $maxByPage[$this->getPage()] = $this->GetY();
+				else $maxByPage[$this->getPage()] = max($maxByPage[$this->getPage()], $this->GetY());
+				$this->setPage($page_start);
+			}
+
+			$this->setPage($maxPage);
+			$this->SetXY($this->GetX(),$maxByPage[$maxPage]);
+		}
+
+		public function AddPerson($person) {
+			global $access;
+
+			$this->AddPage();
+
+			$this->SetFont('', '', 14);
+			$this->SetTextColor(0);
+			$this->SetXY($this->w - $this->rMargin - 160, 13.5);
+			$this->Cell(160, 0, trim("{$person['vorname']} {$person['nachname']}"), 0, 0, 'R');
+
+			if ($person['famid']) {
+				$members = db_select_data('ko_leute', "WHERE `famid` = {$person['famid']} AND `id` <> {$person['id']}", '*', "ORDER BY `famfunction` DESC");
+			} else {
+				$members = array();
+			}
+
+			$mains = array();
+			$twoColumnLayout = FALSE;
+			if ($members && sizeof($members) > 0) {
+				if (in_array($person['famfunction'], array('wife', 'husband'))) {
+					$spouseFound = FALSE;
+					$spouse = NULL;
+					$others = array();
+					foreach ($members as $member) {
+						if (in_array($member['famfunction'], array('wife', 'husband'))) {
+							$spouseFound = TRUE;
+							$spouse = $member;
+						} else {
+							$others[] = $member;
+						}
+					}
+					if ($spouseFound) {
+						$mains[] = $person;
+						$mains[] = $spouse;
+						$twoColumnLayout = TRUE;
+					} else {
+						$mains[] = $person;
+					}
+				} else {
+					$mains[] = $person;
+					$others = $members;
+				}
+			} else {
+				$mains[] = $person;
+			}
+
+			$labelWidth1 = 30;
+			$labelWidth2 = 20;
+			if ($twoColumnLayout) {
+				$lefts = array($this->lMargin + $labelWidth1, ($this->w - $labelWidth1) / 2 + $labelWidth1);
+				$rights = array(($this->w - $labelWidth1) / 2 + $labelWidth1, $this->w - $this->rMargin);
+			} else {
+				$lefts = array($this->lMargin + $labelWidth1);
+				$rights = array($this->w - $this->rMargin);
+			}
+
+			$this->SetXY($this->lMargin, 23);
+			$yInitial = $this->GetY();
+			$this->SetFont('', '', $this->fontSize);
+			$this->SetTextColor(0);
+			$this->setLastH($this->lineHeight);
+			$this->SetCellPaddings(1, 0, 1, 0);
+
+			foreach ($this->mainLayout as $line) {
+				$yBefore = $this->GetY();
+				$yMax = $yBefore;
+
+				$fieldName = array_keys($line)[0];
+				if ($fieldName == '_hline') {
+					$this->SetY($yBefore);
+					$this->SetLineWidth(0.2);
+					$this->Line($this->lMargin, $this->GetY(), $this->w - $this->rMargin, $this->GetY());
+				} else if (!in_array($fieldName, array('_empty'))) {
+					$ll = getLL('kota_ko_leute_'.$fieldName);
+					$ll = $ll?$ll:$fieldName;
+					$this->SetXY($this->lMargin, $yBefore);
+					$this->SetFont('', 'I', $this->fontSizeLabel);
+					$this->MultiCell($labelWidth1, $this->lineHeightLabel, $ll, 0, 'L');
+					$yMax = max($yMax, $this->GetY());
+				}
+
+				$nFields = sizeof($line);
+				foreach ($mains as $mainIdx => $main) {
+					$totalWidth = $rights[$mainIdx] - $lefts[$mainIdx];
+					$fieldsLeft = $lefts[$mainIdx];
+					$fieldsRight = $rights[$mainIdx];
+
+					$fieldIdx = 0;
+					foreach ($line as $fieldName => $fieldInfo) {
+						if ($fieldIdx > 0) {
+							if (!in_array($fieldName, array('_empty', '_line'))) {
+								$this->SetXY($fieldsLeft + $totalWidth / 2, $yBefore);
+								$ll = getLL('kota_ko_leute_'.$fieldName);
+								$ll = $ll?$ll:$fieldName;
+								$this->SetFont('', 'I', $this->fontSizeLabel);
+								$this->MultiCell($labelWidth2, $this->lineHeightLabel, $ll, 0, 'L');
+								$yMax = max($yMax, $this->GetY());
+							}
+
+							$left = $fieldsLeft + $totalWidth / 2 + $labelWidth2;
+							$right = $fieldsRight;
+						} else {
+							if ($nFields == 1) {
+								$left = $fieldsLeft;
+								$right = $fieldsRight;
+							} else {
+								$left = $fieldsLeft;
+								$right = $fieldsLeft + $totalWidth / 2;
+							}
+						}
+						$fieldWidth = $right - $left;
+
+						if ($fieldName == '_hline') {
+							// pass
+						} else if ($fieldName == '_empty') {
+							// pass
+						} else {
+							$this->SetXY($left, $yBefore);
+							$this->SetFont('', $fieldInfo, $this->fontSize);
+							$entry = strip_tags(map_leute_daten($mains[$mainIdx][$fieldName], $fieldName, $mains[$mainIdx], $datafields, FALSE, array('kota_process_modes' => 'pdf,list')));
+							$this->MultiCell($fieldWidth, $this->lineHeight, $entry, 0, 'L');
+							$yMax = max($yMax, $this->GetY());
+						}
+						$fieldIdx++;
+					}
+				}
+				$this->SetXY($this->lMargin, $yMax + 0.5);
+			}
+			if ($twoColumnLayout && isset($yMax)) {
+				$this->SetLineWidth(0.2);
+				$this->Line(($this->w - $labelWidth1) / 2 + $labelWidth1, $yInitial, ($this->w - $labelWidth1) / 2 + $labelWidth1, $yMax);
+				$this->Line($this->lMargin + $labelWidth1, $yInitial, $this->lMargin + $labelWidth1, $yMax);
+			}
+			$this->Ln(4);
+
+			// add other family members
+			if (isset($others) && sizeof($others) > 0) {
+				$this->SetLineWidth(0.2);
+				$this->Line($this->lMargin, $this->GetY(), $this->w - $this->rMargin, $this->GetY());
+				$this->Ln(4);
+
+				$this->SetFont('', 'B', $this->fontSize);
+				$this->Write($this->lineHeight, getLL('leute_export_details_personal_form_other_family_members'));
+				$this->Ln(4);
+
+				$this->SetCellPaddings(1, 0.5, 1, 0.5);
+				$this->SetFont('', 'I', $this->fontSize);
+				$this->MultiRow(ko_array_ll(array_keys($this->othersLayout), 'kota_ko_leute_'), array_values($this->othersLayout));
+
+				$this->SetLineWidth(0.1);
+				$this->Line($this->lMargin, $this->GetY(), $this->w - $this->rMargin, $this->GetY());
+
+				$this->SetFont('', '');
+				$layout = $this->othersLayout;
+				foreach ($others as $other) {
+					$otherProcessed = array_map(function($e)use($other){return map_leute_daten($other[$e], $e, $other, $datafields, FALSE, array('kota_process_modes' => 'pdf,list'));}, array_keys($layout));
+					$this->MultiRow($otherProcessed, array_values($this->othersLayout));
+				}
+				$this->Ln(4);
+			}
+
+			// add children that are not in same household
+			$otherChildren = db_select_data('ko_leute', "WHERE (`father` = {$person['id']} OR `mother` = {$person['id']}) AND (`famid` = 0 OR `famid` <> {$person['famid']})");
+			// add other family members
+			if (isset($otherChildren) && sizeof($otherChildren) > 0) {
+				$this->SetLineWidth(0.2);
+				$this->Line($this->lMargin, $this->GetY(), $this->w - $this->rMargin, $this->GetY());
+				$this->Ln(4);
+
+				$this->SetFont('', 'B', $this->fontSize);
+				$this->Write($this->lineHeight, getLL('leute_export_details_personal_form_other_children'));
+				$this->Ln(4);
+
+				$this->SetCellPaddings(1, 0.5, 1, 0.5);
+				$this->SetFont('', 'I', $this->fontSize);
+				$this->MultiRow(ko_array_ll(array_keys($this->othersLayout), 'kota_ko_leute_'), array_values($this->othersLayout));
+
+				$this->SetLineWidth(0.1);
+				$this->Line($this->lMargin, $this->GetY(), $this->w - $this->rMargin, $this->GetY());
+
+				$this->SetFont('', '');
+				$layout = $this->othersLayout;
+				foreach ($otherChildren as $other) {
+					$otherProcessed = array_map(function($e)use($other){return map_leute_daten($other[$e], $e, $other, $datafields, FALSE, array('kota_process_modes' => 'pdf,list'));}, array_keys($layout));
+					$this->MultiRow($otherProcessed, array_values($this->othersLayout));
+				}
+				$this->Ln(4);
+			}
+
+			// add groups
+			$ahesFormer = db_select_data('ko_groups_assignment_history', "WHERE `person_id` = {$person['id']} AND `stop` <> '0000-00-00 00:00:00'", '*', "ORDER BY `stop` DESC, `start` DESC");
+			$ahesCurrent = db_select_data('ko_groups_assignment_history', "WHERE `person_id` = {$person['id']} AND `stop` = '0000-00-00 00:00:00'", '*', "ORDER BY `start` DESC");
+
+			$ahes = array_merge($ahesCurrent?$ahesCurrent:array(), $ahesFormer?$ahesFormer:array());
+			if (sizeof($ahes) > 0) {
+				$widths = array('80%', '10%', '10%');
+
+				$this->SetLineWidth(0.2);
+				$this->Line($this->lMargin, $this->GetY(), $this->w - $this->rMargin, $this->GetY());
+				$this->Ln(4);
+
+				$this->SetFont('', 'B', $this->fontSize);
+				$this->Write($this->lineHeight, getLL('leute_export_details_personal_form_groups'));
+				$this->Ln(4);
+
+				$this->SetCellPaddings(1, 0.5, 1, 0.5);
+				$this->SetFont('', 'I', $this->fontSize);
+				$this->MultiRow(ko_array_ll(array('group_id', 'start', 'stop'), 'kota_listview_ko_groups_assignment_history_'), $widths);
+
+				$this->SetLineWidth(0.1);
+				$this->Line($this->lMargin, $this->GetY(), $this->w - $this->rMargin, $this->GetY());
+
+				$this->SetFont('', '');
+				$aheIndex = 0;
+				foreach ($ahes as $ahe) {
+					if($access['groups']['ALL'] < 1 && $access['groups'][zerofill($ahe['group_id'], 6)] < 1) continue;
+
+					// skip deleted groups for display in pdf
+					if (db_get_count("ko_groups", "id", "AND id = '". zerofill($ahe['group_id'], 6) ."'") == 0) continue;
+
+					if ($this->GetY() > $this->h - 30) {
+						$this->MultiRow(array('...', '', ''), $widths);
+						break;
+					}
+					if ($ahe['stop'] != '0000-00-00 00:00:00') $this->SetTextColor(120);
+					if ($ahe['role_id']) {
+						$roleString = 'r'.zerofill($ahe['role_id'], 6);
+					} else {
+						$roleString = '';
+					}
+					$fullGid = ko_groups_decode(zerofill($ahe['group_id'], 6), 'full_gid');
+					if ($roleString) $fullGid .= ":{$roleString}";
+					$groupString = ko_groups_decode($fullGid, 'group_desc_full');;
+
+					$row = array($groupString, sql2datum(substr($ahe['start'], 0, 10)), sql2datum(substr($ahe['stop'], 0, 10)));
+					$this->MultiRow($row, $widths);
+					$aheIndex++;
+				}
+				$this->Ln(4);
+			}
+		}
+	}
+
+	$pdf = new kOOLPeoplePersonalFormTCPDF('P', 'mm', 'A4', false, 'ISO-8859-1', false);
+	$pdf->SetMainLayout($mainLayout);
+	$pdf->SetOthersLayout($othersLayout);
+	$pdf->resetLastH();
+
+	// set document information
+	$pdf->SetCreator(PDF_CREATOR);
+	$pdf->SetAuthor(ko_get_setting('info_name'));
+
+	$pdf->SetDefaultMonospacedFont(PDF_FONT_MONOSPACED);
+
+	$pdf->SetMargins(9, 7, 9);
+	$pdf->SetHeaderMargin(0);
+	$pdf->SetFooterMargin(0);
+
+	$pdf->SetAutoPageBreak(TRUE, 10);
+
+	$pdf->setImageScale(PDF_IMAGE_SCALE_RATIO);
+	foreach ($personIds as $personId) {
+		ko_get_person_by_id($personId, $person, TRUE);
+		$pdf->AddPerson($person);
+	}
+
+	$filename = $BASE_PATH.'download/pdf/personalblatt_'.strftime('%d%m%Y_%H%M%S', time()).'.pdf';
+	$pdf->Output($filename, 'F');
+
+	return $filename;
+}
+
+
+
+
 
 
 

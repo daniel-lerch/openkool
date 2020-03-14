@@ -45,6 +45,7 @@ main {
 
 div.btn-field {
     text-align:center;
+    margin-bottom: 5px;
 
     button {
         margin: 3px;
@@ -67,4 +68,44 @@ span.badge {
     &.badge-warning {
         .contextual-badge(@brand-warning);
     }
+}
+
+.groups-assignment-history-edit-btn {
+    display: none;
+}
+
+
+div.form_ft_row {
+    margin-bottom: 5px;
+}
+div.form_ft_header {
+    padding: 7px 0 7px 12px;
+
+    h4.panel-title {
+        display: inline-block;
+    }
+}
+
+.ft-header-btn {
+    margin-top: -7px;
+    border-collapse: collapse;
+    float: right;
+    padding: 9px 9px 9px 9px;
+    background-color: transparent;
+    height: 29px;
+
+    i.fa {
+        color: white;
+    }
+
+    &.ft-header-btn-clickable:hover {
+        cursor: pointer;
+        background-color: rgba(0, 0, 0, 0.3);
+    }
+}
+
+.form_ft_delete {
+	color: #fff;
+	background-color: #d9534f;
+	border-color: #d43f3a;
 }

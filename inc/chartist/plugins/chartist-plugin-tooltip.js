@@ -58,7 +58,6 @@
           var tooltipText = '';
 
           if (options.tooltipFnc) {
-            console.log('asdasd');
             tooltipText = options.tooltipFnc($point.attr('ct:meta') || '', $point.attr('ct:value'));
           } else {
             console.log($point.parent());

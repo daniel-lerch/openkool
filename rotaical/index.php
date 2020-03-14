@@ -2,7 +2,7 @@
 /***************************************************************
  *  Copyright notice
  *
- *  (c) 2003-2015 Renzo Lauper (renzo@churchtool.org)
+ *  (c) 2003-2017 Renzo Lauper (renzo@churchtool.org)
  *  All rights reserved
  *
  *  This script is part of the kOOL project. The kOOL project is
@@ -68,6 +68,7 @@ if(isset($_GET['user'])) { //User hash given in URL
 	if(!$pId || !ko_module_installed("rota")) {
 		header("HTTP/1.0 404 Not Found");
 	}
+	$ical_deadline = ko_get_userpref($_SESSION['ses_userid'], 'rota_ical_deadline');
 }
 else if ($_GET['person']) {
 	// check if checksum is correct for given userId
@@ -79,25 +80,14 @@ else if ($_GET['person']) {
 	$mode = 'person';
 
 	$test = strtolower(substr(md5($pId . KOOL_ENCRYPTION_KEY . 'rotaIcal' . KOOL_ENCRYPTION_KEY . 'rotaIcal' . KOOL_ENCRYPTION_KEY . $pId), 0, 10));
-	if ($test != $pHash) {
+	ko_get_person_by_id($pId, $person);
+	if ($test != $pHash || !$person) {
 		header("HTTP/1.0 401 Unauthorized");
 		print "No access";
 		exit;
 	}
 
-	$login = db_select_data('ko_admin', "WHERE `leute_id` = '{$pId}'", '*', '', '', TRUE);
-	if ($login && $login['leute_id'] == $pId) {
-		$auth = TRUE;
-		$_SESSION['ses_username'] = $login['login'];
-		$_SESSION['ses_userid']   = $login['id'];
-		ko_init();
-
-		$mode = 'user';
-
-		if(!ko_module_installed("rota")) {
-			header("HTTP/1.0 404 Not Found");
-		}
-	}
+	$ical_deadline = -9999; // equals "ohne limit"
 }
 else {
 	header("HTTP/1.0 401 Unauthorized");
@@ -106,7 +96,6 @@ else {
 }
 
 //Get setting of how far back to export events
-$ical_deadline = ko_get_userpref($_SESSION['ses_userid'], 'rota_ical_deadline');
 if($ical_deadline >= 0) $ical_deadline = date('Y-m-d H:i:s');
 else $ical_deadline = date('Y-m-d H:i:s', strtotime("{$ical_deadline} months", time()));
 

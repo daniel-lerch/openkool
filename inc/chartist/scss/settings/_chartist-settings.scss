@@ -65,21 +65,69 @@ $ct-include-colored-series: $ct-include-classes !default;
 $ct-include-alternative-responsive-containers: $ct-include-classes !default;
 
 // Series names and colors. This can be extended or customized as desired. Just add more series and colors.
-$ct-series-names: (a, b, c, d, e, f, g, h, i, j, k, l, m, n, o) !default;
+$ct-series-names: (a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s, t, u, v, w, x, y, z) !default;
+
+/*$ct-series-delta-hue-angle: 360 / 26 + 180;
+$ct-series-base-color: #d70206;
 $ct-series-colors: (
-  #d70206,
-  #f05b4f,
-  #f4c63d,
-  #d17905,
-  #453d3f,
+  adjust_hue($ct-series-base-color, 0 * $ct-series-delta-hue-angle * 1deg),
+  adjust_hue($ct-series-base-color, 1 * $ct-series-delta-hue-angle * 1deg),
+  adjust_hue($ct-series-base-color, 2 * $ct-series-delta-hue-angle * 1deg),
+  adjust_hue($ct-series-base-color, 3 * $ct-series-delta-hue-angle * 1deg),
+  adjust_hue($ct-series-base-color, 4 * $ct-series-delta-hue-angle * 1deg),
+  adjust_hue($ct-series-base-color, 5 * $ct-series-delta-hue-angle * 1deg),
+  adjust_hue($ct-series-base-color, 6 * $ct-series-delta-hue-angle * 1deg),
+  adjust_hue($ct-series-base-color, 7 * $ct-series-delta-hue-angle * 1deg),
+  adjust_hue($ct-series-base-color, 8 * $ct-series-delta-hue-angle * 1deg),
+  adjust_hue($ct-series-base-color, 9 * $ct-series-delta-hue-angle * 1deg),
+  adjust_hue($ct-series-base-color, 10 * $ct-series-delta-hue-angle * 1deg),
+  adjust_hue($ct-series-base-color, 11 * $ct-series-delta-hue-angle * 1deg),
+  adjust_hue($ct-series-base-color, 12 * $ct-series-delta-hue-angle * 1deg),
+  adjust_hue($ct-series-base-color, 13 * $ct-series-delta-hue-angle * 1deg),
+  adjust_hue($ct-series-base-color, 14 * $ct-series-delta-hue-angle * 1deg),
+  adjust_hue($ct-series-base-color, 15 * $ct-series-delta-hue-angle * 1deg),
+  adjust_hue($ct-series-base-color, 16 * $ct-series-delta-hue-angle * 1deg),
+  adjust_hue($ct-series-base-color, 17 * $ct-series-delta-hue-angle * 1deg),
+  adjust_hue($ct-series-base-color, 18 * $ct-series-delta-hue-angle * 1deg),
+  adjust_hue($ct-series-base-color, 19 * $ct-series-delta-hue-angle * 1deg),
+  adjust_hue($ct-series-base-color, 20 * $ct-series-delta-hue-angle * 1deg),
+  adjust_hue($ct-series-base-color, 21 * $ct-series-delta-hue-angle * 1deg),
+  adjust_hue($ct-series-base-color, 22 * $ct-series-delta-hue-angle * 1deg),
+  adjust_hue($ct-series-base-color, 23 * $ct-series-delta-hue-angle * 1deg),
+  adjust_hue($ct-series-base-color, 24 * $ct-series-delta-hue-angle * 1deg),
+  adjust_hue($ct-series-base-color, 25 * $ct-series-delta-hue-angle * 1deg),
+) !default;*/
+$ct-series-colors: (
+  #c0392b,
   #59922b,
-  #0544d3,
   #6b0392,
+  #3498db,
+  #d70206,
+  #eacf7d,
+  #0544d3,
+  #b2c326,
+  #d35400,
+  #9b59b6,
+  #f39c12,
+  #34495e,
+  #f1c40f,
+  #2c3e50,
+  #16a085,
+  #95a5a6,
+  #1abc9c,
+  #7f8c8d,
+  #2ecc71,
+  #bdc3c7,
+  #e74c3c,
+  #2980b9,
+  #e67e22,
+  #8e44ad,
+  #27ae60,
+  #ecf0f1,
+
   #f05b4f,
   #dda458,
-  #eacf7d,
   #86797d,
-  #b2c326,
   #6188e2,
   #a748ca
 ) !default;

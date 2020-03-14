@@ -2,6 +2,10 @@
 	<h3>{$label_title}{if $help.show} {$help.link}{/if}</h3>
 {/if}
 
+{if $tpl_export_warning}
+	<div class="alert alert-danger" role="alert" id="leute-warning-export">{$tpl_export_warning}</div>
+{/if}
+
 {if $show_invalid}
 <div class="panel panel-default">
 	<div class="panel-heading">

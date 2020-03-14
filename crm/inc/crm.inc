@@ -2,13 +2,11 @@
 
 require_once($BASE_PATH.'inc/class.kOOL_listview.php');
 
-function ko_list_crm_projects($output=TRUE) {
-	global $access;
+function ko_list_crm_projects() {
+	global $access, $MAILING_PARAMETER;
 
-	//Set filters from KOTA
-	$z_where = '';
-	$kota_where = kota_apply_filter('ko_crm_projects');
-	if($kota_where != '') $z_where .= " AND ($kota_where) ";
+	//Set filters
+	apply_crm_filter($z_where);
 
 	if (!$_SESSION['sort_crm_projects']) $_SESSION['sort_crm_projects'] = '`title`';
 	if (!$_SESSION['sort_crm_projects_order']) $_SESSION['sort_crm_projects_order'] = 'ASC';
@@ -41,7 +39,7 @@ function ko_list_crm_projects($output=TRUE) {
 
 	$list = new kOOL_listview();
 
-	$list->init('crm', 'ko_crm_projects', array('chk', 'edit', 'delete'), $_SESSION['show_start'], $_SESSION['show_limit']);
+	$list->init('crm', 'ko_crm_projects', array('chk', 'edit', 'delete', 'mailing'), $_SESSION['show_start'], $_SESSION['show_limit']);
 	$list->setTitle(getLL('crm_projects_list_title'));
 	$list->setAccessRights(array('edit' => 5, 'delete' => 5), $access['crm']);
 	$list->setActions(array('edit' => array('action' => 'edit_project'),
@@ -53,23 +51,28 @@ function ko_list_crm_projects($output=TRUE) {
 	$list->setWarning(kota_filter_get_warntext('ko_crm_projects'));
 
 
-	//Output the list
-	if($output) {
-		$list->render($es);
-	} else {
-		print $list->render($es);
+	//Add mailing links for all projects
+	foreach($es as $k => $v) {
+		$rowData = array();
+
+		if($MAILING_PARAMETER['domain']) $rowData['mailing_link'] = 'crm-'.$v['id'].'@'.$MAILING_PARAMETER['domain'];
+		else continue;
+
+		$list->setRowData($rowData, $k);
 	}
+
+
+	//Output the list
+	$list->render($es);
 }//ko_list_crm_projects()
 
 
 
-function ko_list_crm_status($output=TRUE) {
+function ko_list_crm_status() {
 	global $access;
 
 	//Set filters from KOTA
-	$z_where = '';
-	$kota_where = kota_apply_filter('ko_crm_status');
-	if($kota_where != '') $z_where .= " AND ($kota_where) ";
+	apply_crm_filter($z_where);
 
 	if (!$_SESSION['sort_crm_status']) $_SESSION['sort_crm_status'] = '`title`';
 	if (!$_SESSION['sort_crm_status_order']) $_SESSION['sort_crm_status_order'] = 'ASC';
@@ -115,22 +118,16 @@ function ko_list_crm_status($output=TRUE) {
 
 
 	//Output the list
-	if($output) {
-		$list->render($es);
-	} else {
-		print $list->render($es);
-	}
+	$list->render($es);
 }//ko_list_crm_status()
 
 
 
-function ko_list_crm_contacts($output=TRUE) {
-	global $access;
+function ko_list_crm_contacts() {
+	global $access, $smarty;
 
 	//Set filters from KOTA
-	apply_crm_projects_filter($z_where);
-	$kota_where = kota_apply_filter('ko_crm_contacts');
-	if($kota_where != '') $z_where .= " AND ($kota_where) ";
+	apply_crm_filter($z_where);
 
 	if (!$_SESSION['sort_crm_contacts']) $_SESSION['sort_crm_contacts'] = '`date`';
 	if (!$_SESSION['sort_crm_contacts_order']) $_SESSION['sort_crm_contacts_order'] = 'ASC';
@@ -164,7 +161,16 @@ function ko_list_crm_contacts($output=TRUE) {
 	$list = new kOOL_listview();
 
 	$list->init('crm', 'ko_crm_contacts', array('chk', 'edit', 'delete'), $_SESSION['show_start'], $_SESSION['show_limit']);
-	$list->setTitle(getLL('crm_contacts_list_title'));
+
+	$listTitle = getLL('crm_contacts_list_title');
+	if(sizeof($_SESSION['show_crm_projects']) == 1) {
+		$crmProjectID = array_shift(array_values($_SESSION['show_crm_projects']));
+		$crmProject = db_select_data('ko_crm_projects', "WHERE `id` = '$crmProjectID'", '*', '', '', TRUE);
+		if($crmProject['title']) $listTitle .= ': '.$crmProject['title'];
+		if($crmProject['number']) $listTitle .= ' ('.$crmProject['number'].')';
+	}
+
+	$list->setTitle($listTitle);
 	$list->setAccessRights(array('edit' => 1, 'delete' => 1), $access['crm']);
 	$list->setActions(array('edit' => array('action' => 'edit_contact'),
 			'delete' => array('action' => 'delete_contact', 'confirm' => TRUE))
@@ -176,13 +182,18 @@ function ko_list_crm_contacts($output=TRUE) {
 	$list->setStats($rows);
 	$list->setWarning(kota_filter_get_warntext('ko_crm_contacts'));
 
+	//Mark rows with colors depending on deadline
+	$list->setRowClass('row-danger', 'return DEADLINE != "0000-00-00" && strtotime("DEADLINE") < mktime(23,59,59, date("m"), date("d"), date("Y"));');
+	$list->setRowClass('row-warning', 'return DEADLINE != "0000-00-00" && strtotime("DEADLINE") < mktime(23,59,59, date("m"), date("d")+3, date("Y")) && strtotime("DEADLINE") > time();');
+
+
+	//Footer
+	$list_footer = $smarty->get_template_vars('list_footer');
+	$list->setFooter($list_footer);
+
 
 	//Output the list
-	if($output) {
-		$list->render($es);
-	} else {
-		print $list->render($es);
-	}
+	$list->render($es);
 }//ko_list_crm_contacts()
 
 
@@ -248,6 +259,14 @@ function ko_formular_crm_contact($mode='new', $id=0) {
 		if($access['crm']['MAX'] < 2) return FALSE;
 		$id = 0;
 		unset($KOTA['ko_crm_contacts']['cruser']['form']);
+
+		//Set project if filter contains only one
+		if(sizeof($_SESSION['show_crm_projects']) == 1) {
+			kota_assign_values('ko_crm_contacts', array('project_id' => $_SESSION['show_crm_projects'][0]));
+		}
+
+		//Set date to current timestamp
+		kota_assign_values('ko_crm_contacts', array('date' => date('Y-m-d H:i')));
 	} else if($mode == 'edit') {
 		if(!$id) return FALSE;
 
@@ -318,6 +337,24 @@ function ko_crm_settings() {
 			'values' => $x['values'],
 			'descs' => $x['descs'],
 		);
+		$rowcounter++;
+
+		if(ko_module_installed('donations')) {
+			$status = db_select_data('ko_crm_status', "WHERE 1", '*', 'ORDER BY `title` ASC');
+			$values = $descs = array('');
+			foreach($status as $k => $v) {
+				$values[] = $k;
+				$descs[] = $v['title'];
+			}
+			$value = ko_get_setting('crm_status_donation');
+			$frmgroup[$gc]['row'][$rowcounter]['inputs'][0] = array('desc' => getLL('crm_settings_status_donation'),
+				'type' => 'select',
+				'name' => 'sel_crm_status_donation',
+				'value' => $value,
+				'values' => $values,
+				'descs' => $descs,
+			);
+		}
 	}
 
 	hook_form('crm_settings', $frmgroup, '', '');
@@ -339,23 +376,46 @@ function ko_crm_settings() {
 
 
 
-function apply_crm_projects_filter(&$z_where) {
+function apply_crm_filter(&$z_where) {
 	$z_where = '';
-	$projectIds = $_SESSION['show_crm_projects'];
-	$newProjectIds = array();
-	foreach ($projectIds as $projectId) {
-		if (trim($projectId) === '') continue;
-		if ($projectId === 0) {
-			$newProjectIds[] = "";
-		}
-		else {
-			$newProjectIds[] = $projectId;
-		}
-	}
-	if (sizeof($newProjectIds) > 0) {
-		$z_where = " AND `project_id` in ('" . implode("','", $newProjectIds) . "') ";
-	}
-	else {
-		$z_where = " AND 1=2 ";
+	switch ($_SESSION['show']) {
+		case 'list_crm_projects':
+			$status = $_SESSION['crm_filter']['project_status'];
+			if (is_array($status) && sizeof($status) > 0) {
+				$z_where .= " AND `project_status` IN ('".implode("','", $status)."')";
+			} else {
+				$z_where .= " AND 1=2";
+			}
+			$kota_where = kota_apply_filter('ko_crm_projects');
+			if($kota_where != '') $z_where .= " AND ($kota_where) ";
+		break;
+
+		case 'list_crm_status':
+			$kota_where = kota_apply_filter('ko_crm_status');
+			if($kota_where != '') $z_where .= " AND ($kota_where) ";
+		break;
+
+		case 'list_crm_contacts':
+			$projectIds = $_SESSION['show_crm_projects'];
+			$newProjectIds = array();
+			foreach ($projectIds as $projectId) {
+				if (trim($projectId) === '') continue;
+				if ($projectId === 0) {
+					$newProjectIds[] = "";
+				}
+				else {
+					$newProjectIds[] = $projectId;
+				}
+			}
+			if (sizeof($newProjectIds) > 0) {
+				$z_where = " AND `project_id` in ('" . implode("','", $newProjectIds) . "') ";
+			}
+			else {
+				$z_where = " AND 1=2 ";
+			}
+
+			$kota_where = kota_apply_filter('ko_crm_contacts');
+			if($kota_where != '') $z_where .= " AND ($kota_where) ";
+		break;
 	}
 }

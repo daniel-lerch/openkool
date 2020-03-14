@@ -2,7 +2,7 @@
 /***************************************************************
 *  Copyright notice
 *
-*  (c) 2003-2015 Renzo Lauper (renzo@churchtool.org)
+*  (c) 2003-2017 Renzo Lauper (renzo@churchtool.org)
 *  All rights reserved
 *
 *  This script is part of the kOOL project. The kOOL project is
@@ -41,6 +41,8 @@ if(sizeof($hooks) > 0) {
 function ko_front_module($uid, $module, $pos = 0, $news_id = 0, $state='open') {
 	global $smarty;
 
+	if($uid == ko_get_checkin_user_id()) return FALSE;
+
 	// Auf genügend Rechte überprüfen, ob das gewünschte Modul angezeigt werden darf
 	// TODO...
 
@@ -68,13 +70,20 @@ function ko_front_module($uid, $module, $pos = 0, $news_id = 0, $state='open') {
 		case "today":
 			$result = ko_fm_today($uid, $pos);
 		break;
-		case "fileshare":
-			if(!ENABLE_FILESHARE) continue;
-			$result = ko_fm_fileshare($uid, $pos);
-		break;
 		case 'fastfilter':
 			$result = ko_fm_fastfilter($uid);
 		break;
+		case 'absence':
+			try {
+				$result = ko_fm_absence($uid, $pos);
+			} catch(exception $e) {
+				$smarty->assign('tpl_fm_title', getLL('fm_absence_title'));
+				$result = $smarty->fetch('ko_fm_header.tpl');
+				$result.= $e->getMessage();
+				$result.= $smarty->fetch('ko_fm_footer.tpl');
+			}
+		break;
+
 
 		//Frontmodule from a plugin
 		default:
@@ -96,6 +105,8 @@ function ko_front_module($uid, $module, $pos = 0, $news_id = 0, $state='open') {
 function ko_fm_fastfilter($uid) {
 	global $smarty;
 
+	if(!ko_module_installed('leute')) return FALSE;
+
 	$result = '';
 
 	$content = '<div class="input-group">';
@@ -116,6 +127,264 @@ function ko_fm_fastfilter($uid) {
 
 
 
+
+
+/**
+ * Display form for absence moderation on homepage
+ *
+ * @param $uid
+ * @param $pos
+ * @return string
+ * @throws Exception
+ */
+function ko_fm_absence($uid, $pos) {
+	global $smarty, $mysql_pass, $BASE_PATH, $BASE_URL, $access;
+
+	require_once($BASE_PATH.'daten/inc/daten.inc');
+	ko_include_kota(["ko_event_absence"]);
+
+	ko_get_access('daten');
+	$absence_rights = $access['daten']['ABSENCE'];
+
+	if ($_SESSION['ses_userid'] != ko_get_guest_id()) {
+		if($absence_rights < 1 || $absence_rights == 1 && !ko_get_logged_in_id()) return '';
+
+		if ($_POST['action'] == "edit_absence") {
+			$id = format_userinput($_POST['id'], "uint");
+			echo "<script type='text/javascript'>
+				window.location = '" . $BASE_URL . "daten/index.php?action=edit_absence&id=". $id ."';
+			</script>";
+		}
+
+		$absences = ko_daten_get_absence_by_leute_id(ko_get_logged_in_id(), NULL, TRUE);
+		if(count($absences) > 0) {
+			$_SESSION['kota_show_cols_ko_event_absence'] = ['type', 'from_date', 'to_date',];
+
+			$list = new kOOL_listview();
+			$list->init('daten', 'ko_event_absence', ['edit'], 1, 5);
+			$list->setAccessRights(FALSE);
+			$list->setActions(['edit' => ['action' => 'edit_absence']]);
+			$list->setTitle('');
+			$list->disableMultiedit();
+			$list->disableHeader();
+
+			$content_absence_list = '<form action="index.php" method="post" name="formular" enctype="multipart/form-data">
+					<input type="hidden" name="action" id="action" value="">
+					<input type="hidden" name="id" id="id" value="">';
+
+			$content_absence_list .= $list->render($absences, 'html_fetch');
+			$content_absence_list .= "</form>";
+		} else {
+			$content_absence_list = "<div class=\"alert alert-warning\">" . getLL('ko_event_absence_no_entries') . "</div>";
+		}
+
+		$smarty->assign('tpl_fm_title', getLL('fm_absence_title'));
+		$result = $smarty->fetch('ko_fm_header.tpl');
+		$result .= $content_absence_list;
+		$result .= '<a href="' . $BASE_URL . 'daten/?action=list_absence">' . getLL('placeholder_absence_link') . '</a>';
+		$result .= $smarty->fetch('ko_fm_footer.tpl');
+		return $result;
+	}
+
+	$absence_cookie = json_decode($_COOKIE['fm_absence_persons'], TRUE);
+	if(empty($absence_cookie)) $absence_cookie = [];
+
+	// update cookie, so user can stay logged in longer
+	setcookie("fm_absence_persons", json_encode($absence_cookie), time()+(86400*365), "/", $_SERVER['HTTP_HOST']);
+
+	foreach ($absence_cookie AS $token => $person_id) {
+		if (ko_fm_absence_check_hash($token)) {
+			ko_get_person_by_id($person_id, $person);
+			$absence_persons[$person_id] = $person;
+		}
+	}
+
+	if($_GET['action'] == "select_absence_person" && $_GET['id'] > 0) {
+		if(!$absence_persons[format_userinput($_GET['id'], 'uint')]) {
+			throw new Exception(getLL("ko_event_absence_error_wrong_person"));
+		}
+
+		$_SESSION['fm_absence_selected_person'] = format_userinput($_GET['id'], 'uint');
+	}
+
+	if($_SESSION['fm_absence_selected_person'] > 0) {
+		$leute_id = $_SESSION['fm_absence_selected_person'];
+		$hash = array_search($leute_id, json_decode($_COOKIE['fm_absence_persons'], TRUE));
+		if (ko_fm_absence_check_hash($hash)) {
+			if ($_POST['action'] == "edit_absence") {
+				$id = format_userinput($_POST['id'], "uint");
+				$absence = ko_daten_get_absence_by_id($id);
+				if($absence['leute_id'] != $leute_id) {
+					throw new Exception(getLL("ko_event_absence_error_wrong_id"));
+				}
+			} else if ($_POST['action'] == "submit_absence") {
+				list($_table, $_columns, $id) = explode("@", $_POST["id"]);
+
+				if ($id > 0) {
+					$absence = ko_daten_get_absence_by_id($id);
+					if($absence['leute_id'] != $leute_id) {
+						throw new Exception(getLL("ko_event_absence_error_wrong_id"));
+					}
+
+					$_POST['koi']['ko_event_absence']['leute_id'][$id] = $leute_id;
+					kota_submit_multiedit(0, "edit_absence");
+					$id = 0;
+				} else {
+					if (isset($absence_persons[$leute_id])) {
+						$_POST['koi']['ko_event_absence']['leute_id'][0] = $leute_id;
+						kota_submit_multiedit('', "new_absence");
+					}
+				}
+			} else {
+				$id = 0;
+			}
+
+			$formgroup = ko_multiedit_formular("ko_event_absence", "", $id, '', '', TRUE, '', TRUE, 'inline');
+
+			$inputs = FALSE;
+			foreach ($formgroup as $i) {
+				foreach ($i['row'] as $row) {
+					foreach ($row['inputs'] as $in) {
+						$inputs[] = $in;
+					}
+				}
+			}
+
+			if (is_array($inputs)) {
+				$code = '<br />
+
+				<div class="container-fluid absence_actions">
+				  <div class="row">
+					<div class="col-md-6 text-left">
+						<button type="button" class="btn btn-primary" data-toggle="collapse" data-target="#new_absence_form">' . getLL("ko_event_absence_form_title_new") . '</button>
+					</div>
+					<div class="col-md-6 text-right absence_actions__delete">
+						<a href="/index.php?action=delete_absence_cookie">' . getLL('ko_event_absence_form_delete_cookie') . '</a>&nbsp;<a href="javascript: return false;" '.ko_get_tooltip_code(getLL('ko_event_absence_form_delete_cookie_help')).'><span class="glyphicon glyphicon-info-sign"></span></a>
+					</div>
+				  </div>
+				</div>
+
+				<form name="new_absence_form" id="new_absence_form" action="/index.php" method="POST" class="' . ($id==0 ? 'collapse' : '') . '">
+				<input type="hidden" name="action" value="submit_absence" />';
+
+				foreach ($inputs as $input) {
+					$columns[] = $input['colname'];
+					if ($input['colname'] == "leute_id") continue;
+
+					$input['add_class'] .= " form-element-inline";
+					$smarty->assign('input', $input);
+
+					$code .= '<br /><label>' . getLL('kota_ko_event_absence_' . $input['colname']) . '</label>';
+					$code .= $smarty->fetch('ko_formular_elements.tmpl');
+				}
+
+				sort($columns);
+				$formhash = md5(md5($mysql_pass."ko_event_absence".implode(":", $columns).$id));
+				$code.= '<input type="hidden" name="id" value="ko_event_absence@'.implode(",",$columns).'@' . $id . '@'.$formhash.'" />';
+
+
+				$code .= '<br />
+						<button type="submit" onclick="disable_onunloadcheck();" class="btn btn-primary">' . getLL("save") . '</button>
+					</form>
+				';
+			}
+
+			$absences = ko_daten_get_absence_by_leute_id($leute_id, NULL, TRUE);
+			if(count($absences) > 0) {
+				$_SESSION['kota_show_cols_ko_event_absence'] = ['type', 'from_date', 'to_date',];
+
+				$list = new kOOL_listview();
+				$list->init('daten', 'ko_event_absence', ['edit', 'delete'], 1, 1000);
+				$list->setAccessRights(FALSE);
+				$list->setActions(['edit' => ['action' => 'edit_absence'],
+						'delete' => ['action' => 'delete_absence', 'confirm' => TRUE]]
+				);
+				$list->setTitle('');
+				$list->disableMultiedit();
+				$list->disableHeader();
+
+				$content_absence_list = '<form action="index.php" method="post" name="formular" enctype="multipart/form-data">
+				<input type="hidden" name="action" id="action" value="">
+				<input type="hidden" name="id" id="id" value="">';
+
+				$content_absence_list .= $list->render($absences, 'html_fetch');
+				$content_absence_list .= "</form>";
+			} else {
+				$content_absence_list = "<div class=\"alert alert-warning\">" . getLL('ko_event_absence_no_entries') . "</div>";
+			}
+		}
+	}
+
+	$result = '';
+
+
+	$absence_infotext = ko_get_userpref(ko_get_guest_id(),'fm_absence_infotext');
+	if(!empty($absence_infotext)) {
+		$content = nl2br($absence_infotext) . "<br><br>";
+	}
+
+	$content.= '
+		<form action="/index.php" method="POST">
+		<input type="hidden" name="action" value="send_absence_token" />
+		<label for="fm_absence_personadd">'. getLL("fm_absence_add_person") .'</label>
+		<div class="input-group input-group-sm">
+			<input type="text" class="input-sm form-control" id="fm_absence_personadd" name="fm_absence_personadd" placeholder="E-Mail" aria-label="E-Mail" />
+			<div class="input-group-btn">
+				<button type="submit" onclick="disable_onunloadcheck();" class="btn btn-primary">'.getLL("fm_absence_add_person_button").'</button>
+			</div>
+		</div></form><br />';
+
+	if (count($absence_persons) > 0) {
+		$content .= '<label for="fm_absence_personselect">' . getLL("fm_absence_select_person") . '</label>';
+		$content .= '<select class="form-control" id="fm_absence_personselect" name="fm_absence_personselect">
+				<option value="0"></option>';
+		foreach ($absence_persons AS $absence_person) {
+			$content .= '<option value="' . $absence_person['id'] . '" ' . ($_SESSION['fm_absence_selected_person'] == $absence_person['id'] ? "selected" : "") . '>' . $absence_person['vorname'] . ' ' . $absence_person['nachname'] . '</option>';
+		}
+		$content .= '</select>';
+		$content .= '<div id="fm_absence_list">' . $content_absence_list . '</div>';
+	}
+
+	if(!empty($code)) $content.= $code;
+
+	$smarty->assign('tpl_fm_title', getLL('fm_absence_title'));
+	$result.= $smarty->fetch('ko_fm_header.tpl');
+	$result.= $content;
+	$result.= $smarty->fetch('ko_fm_footer.tpl');
+	return $result;
+}
+
+
+/**
+ * Creates a hash from userdata for authentication in frontend absence
+ * @param $person
+ * @return string
+ */
+function ko_fm_absence_create_hash($person) {
+	$hash = strrev(md5($person['nachname'].KOOL_ENCRYPTION_KEY.$person['id']));
+	$hash = substr($hash,0,10) . $person['id'];
+	return $hash;
+}
+
+function ko_fm_absence_check_hash($hash) {
+	if(empty($hash)) return FALSE;
+	$person_id = substr($hash, 10);
+	$hash = substr($hash, 0 ,10);
+
+	$laf = unserialize(ko_get_userpref(ko_get_guest_id(), "fm_absence_restriction"));
+	if(!isset($laf["filter"])) $filter_where = " AND `deleted` = '0' AND `hidden` = '0' ";
+	else apply_leute_filter($laf["filter"], $filter_where, FALSE, '', ko_get_guest_id());
+
+	$filter_where.= " AND id = " . $person_id;
+	$person= db_select_data("ko_leute", "WHERE 1=1 ".$filter_where, '*', '', 'LIMIT 1', TRUE);
+
+	if(empty($person)) return FALSE;
+	if(substr(strrev(md5($person['nachname'].KOOL_ENCRYPTION_KEY.$person['id'])),0,10) != $hash) return FALSE;
+
+	return TRUE;
+}
+
+
 /*
  * Gibt einen Kalender mit allen sichtbaren Events aus
  */
@@ -123,16 +392,25 @@ function ko_fm_daten_cal($uid, $pos) {
 	global $ko_path, $smarty, $access;
 	
 	ko_get_access('daten');
-	include($ko_path . "daten/inc/daten.inc");
+	include_once($ko_path . "daten/inc/daten.inc");
 
-	$egs = array();
-	if($access['daten']['ALL'] > 0) {
-		$z_where = '';
-	} else {
-		//Get all eventgroups, access check will be done in apply_daten_filter()
-		ko_get_eventgruppen($egs, '', "AND `type` = '0'");
-		apply_daten_filter($z_where, $z_limit, 'immer', 'immer', array_keys($egs));
+	// apply filter from userpref
+	$filterPresetName = ko_get_userpref($_SESSION['ses_userid'], 'daten_fm_filter');
+	$zWhere = '';
+	if ($filterPresetName) {
+		if (substr($filterPresetName, 0, 4) == '[G] ') {
+			$n = substr($filterPresetName, 4);
+			$user = -1;
+		} else {
+			$n = $filterPresetName;
+			$user = $_SESSION['ses_userid'];
+		}
+		$filterPreset = ko_get_userpref($user, $n, 'daten_itemset');
+
+		$allowedGroups = ko_array_filter_empty(explode(',', end($filterPreset)['value']));
 	}
+
+	apply_daten_filter($z_where, $z_limit, 'immer', 'immer', $allowedGroups);
 	
 	$startstamp = mktime(1,1,1, date('m'), 1, date('Y'));
 	$endstamp = mktime(1,1,1, (date('m') == 12 ? 1 : date('m')+1), 0, (date('m') == 12 ? date('Y')+1 : date('Y')));
@@ -376,6 +654,22 @@ function ko_fm_mod($uid) {
 	$num_event_mod = db_get_count('ko_event_mod', 'id', $where);
 
 
+	//Donations
+	$all_rights_donations = ko_get_access_all('donations_admin', '', $max_rights_donations);
+	if($max_rights_donations > 1 && $access['leute']['MAX'] > 1) {
+		$show_donations_mod = TRUE;
+		ko_get_donations_mod($modDonations);
+		//For logins with edit access to only some accounts exclude those they don't have access to
+		if($all_rights_donations < 2) {
+			if(!is_array($access['donations'])) ko_get_access('donations');
+			foreach($modDonations as $aid => $a) {
+				if($access['donations'][$a['_account_id']] < 2 || $a['_account_id'] < 1) unset($modDonations[$aid]);
+			}
+		}
+		$num_donations_mod = sizeof($modDonations);
+	}
+
+
 
 	$smarty->assign("tpl_fm_title", getLL("fm_mod_title"));
 
@@ -402,6 +696,12 @@ function ko_fm_mod($uid) {
 	$smarty->assign("tpl_num_event", $num_event_mod);
 	$smarty->assign("tpl_text_event", getLL("fm_mod_open_events"));
   $smarty->assign("tpl_open_mod_event", $num_event_mod > 0 ? TRUE : FALSE);
+
+	//Text and link for donations
+	$smarty->assign("tpl_show_donations", $show_donations_mod);
+	$smarty->assign("tpl_num_donations", $num_donations_mod);
+	$smarty->assign("tpl_text_donations", getLL("fm_mod_open_donations"));
+  $smarty->assign("tpl_open_mod_donations", $num_donations_mod > 0 ? TRUE : FALSE);
 
 	return $smarty->fetch("ko_fm_mod.tpl");
 }//ko_fm_mod_res()
@@ -459,10 +759,29 @@ function ko_fm_today($uid, $pos) {
 		$heute = date("d.m.Y");
 		$events_woche = array();
 
+		// apply filter from userpref
+		$filterPresetName = ko_get_userpref($_SESSION['ses_userid'], 'daten_fm_filter');
+		$zWhere = '';
+		if ($filterPresetName) {
+			if (substr($filterPresetName, 0, 4) == '[G] ') {
+				$n = substr($filterPresetName, 4);
+				$user = -1;
+			} else {
+				$n = $filterPresetName;
+				$user = $_SESSION['ses_userid'];
+			}
+			$filterPreset = ko_get_userpref($user, $n, 'daten_itemset');
+
+			$allowedGroups = ko_array_filter_empty(explode(',', end($filterPreset)['value']));
+			if (sizeof($allowedGroups) > 0) {
+				$zWhere = " AND `eventgruppen_id` IN (".implode(',', $allowedGroups).")";
+			}
+		}
+
 		for($i = 1; $i <= 7; $i++) {
 			$tag = add2date($heute, "tag", $i);
 			unset($temp);
-			ko_get_events_by_date($tag[0], $tag[1], $tag[2], $temp);
+			ko_get_events_by_date($tag[0], $tag[1], $tag[2], $temp, $zWhere);
 			if(sizeof($temp) > 0) $events_woche = array_merge($events_woche, $temp);
 		}
 
@@ -516,58 +835,7 @@ function ko_fm_today($uid, $pos) {
 	if($access['reservation']['MAX'] > 1 && $_SESSION["ses_userid"] != ko_get_guest_id()) {
 		//Reservationen diese Woche
 		$smarty->assign("title_res_week", getLL("fm_today_res_week"));
-		$heute = date("d.m.Y");
-		$res_woche = array();
-		$res_woche_mod = array();
-
-		for($i = 0; $i <= 7; $i++) {
-			$tag = add2date($heute, "tag", $i);
-			unset($temp);
-			ko_get_res_by_date($tag[0], $tag[1], $tag[2], $temp);
-			if(sizeof($temp) > 0) $res_woche = array_merge($res_woche, $temp);
-		}
-
-		$done = array();
-		ko_get_resitems($resitems);
-		foreach($res_woche as $w_i => $w) {
-			$item = $resitems[$w["item_id"]];
-			if(($access['reservation']['ALL'] < 1 && $access['reservation'][$w['item_id']] < 1)
-					|| $w["user_id"] != $_SESSION["ses_userid"]  //Nur eigene anzeigen
-					|| in_array($w["id"], $done)  //mehrtägige Reservationen nicht mehrfach anzeigen
-					) {
-				unset($res_woche[$w_i]);
-				continue;
-			}
-			$done[] = $w["id"];
-
-			$res_woche[$w_i]["item"] = ko_html($item["name"]);
-			$res_woche[$w_i]["zweck"] = ko_html($w["zweck"]);
-			$res_woche[$w_i]["name"] = ko_html($w["name"]);
-			$res_woche[$w_i]["email"] = ko_html($w["email"]);
-			$res_woche[$w_i]["telefon"] = ko_html($w["telefon"]);
-
-			$tag = explode("-", $w["startdatum"]);
-			$res_woche[$w_i]["wochentag"] = strftime("%A", mktime(1, 1, 1, $tag[1], $tag[2], $tag[0]));
-
-			if($w["startdatum"] == $w["enddatum"]) $res_woche[$w_i]["enddatum"] = "";
-			else $res_woche[$w_i]["enddatum"] = sql2datum($w["enddatum"]);
-			$res_woche[$w_i]["startdatum"] = sql2datum($w["startdatum"]);
-
-			if($w["startzeit"] == "00:00:00" && $w["endzeit"] == "00:00:00") {
-				$res_woche[$w_i]["startzeit"] = getLL("time_all_day");
-				$res_woche[$w_i]["endzeit"] = "";
-			} else {
-				$res_woche[$w_i]["startzeit"] = sql_zeit($w["startzeit"]);
-				$res_woche[$w_i]["endzeit"] = sql_zeit($w["endzeit"]);
-			}
-		}//foreach(res_woche)
-
-		if(sizeof($res_woche) > 0) {
-			$smarty->assign("show_res", TRUE);
-			$smarty->assign("today_res_woche", $res_woche);
-		} else {
-			$smarty->assign("show_res", FALSE);
-		}
+		$smarty->assign("show_res", TRUE);
 	}//if(sizeof(res))
 
 
@@ -620,9 +888,7 @@ function ko_fm_today($uid, $pos) {
 	$smarty->assign("title_people_new", getLL("fm_today_people_new"));
 	ko_get_access('leute');
 	if($access['leute']['MAX'] >= 1) {
-		//Don't show changes done by root to other users
-		$where_add = ($_SESSION["ses_userid"] != ko_get_root_id()) ? " AND user_id != '".ko_get_root_id()."' " : "";
-		$logs = db_select_data('ko_log', "WHERE `type` = 'edit_person' AND `date` >= '".$_SESSION['last_login']."' ".$where_add, '*', 'ORDER BY date DESC', 'LIMIT 0,30');
+		$logs = db_select_data('ko_log', "WHERE `type` = 'edit_person' AND `date` >= '".$_SESSION['last_login']."' ".$where_add, '*', 'ORDER BY `date` DESC', 'LIMIT 0,30');
 		if(sizeof($logs) > 0) {
 			$p_counter = 0;
 			$found = TRUE;
@@ -632,11 +898,41 @@ function ko_fm_today($uid, $pos) {
 				$logs[$logid]['_leute_id'] = $lids[] = (int)substr($log['comment'], 0, strpos($log['comment'], ' '));
 			}
 			ko_get_leute($people, " AND `id` IN ('".implode("','", $lids)."')");
+
+			$allowed_columns = ko_get_leute_admin_spalten($_SESSION['ses_userid'], "login");
+			for($i=0;$i<count($allowed_columns['view']);$i++) {
+				$allowed_columns['view'][$i] = strtolower(getLL("kota_ko_leute_" . $allowed_columns['view'][$i]));
+			}
+
 			foreach($logs as $log) {
 				// Do access check
 				if ($access['leute']['ALL'] == 0 && $access['leute'][$log['_leute_id']] == 0) continue;
+
+				if(is_array($allowed_columns['view'])) {  //Only check for individual columns if column restriction is set
+					preg_match_all(
+						"/\s?([\w\s.\-@,:\/]+):\s\\\\\'([\w\s.\-@,:\/]*)\\\\\'\s-->\s\\\\\'([\w\s.\-@,:\/]*)\\\\\'[,]?/im",
+						substr($log['comment'], strpos($log['comment'], '): ') + 3),
+						$comments,
+						PREG_SET_ORDER,
+						0
+					);
+
+					$foundChanges = FALSE;
+					foreach($comments AS $key => $comment) {
+						if ($allowed_columns['view'] === null ||
+							in_array(strtolower($comment[1]), $allowed_columns['view'])
+						) {
+							$tpl_person[$p_counter]['log'].= "<br />" . $comment[1].": \"". $comment[2] ."\" => \"" . $comment[3] ."\"";
+							$foundChanges = TRUE;
+						}
+					}
+					if(!$foundChanges) continue;
+				} else {  //..else show all changes
+					$tpl_person[$p_counter]['log'] = '<br />'.ko_html(substr($log['comment'], strpos($log['comment'], ':')+2));
+				}
+
 				$tpl_person[$p_counter]['user'] = $logins[$log['user_id']]['login'];
-				$tpl_person[$p_counter]['log'] = ko_html(substr($log['comment'], strpos($log['comment'], ':')+2));
+
 				//Name of the edited person
 				$person = $people[$log['_leute_id']];
 				if(isset($person['firm']) && $person['firm']) {
@@ -726,9 +1022,15 @@ function ko_fm_news($uid, $pos, $id) {
 function ko_fm_adresse($uid) {
 	global $ko_path, $smarty, $access;
 
+	if(!ko_module_installed('leute')) return FALSE;
+	if(ko_get_setting('leute_disable_aa_fm')) return FALSE;
+
 	//Don't show mutation form for users with global access 2 or more for the address module (as they can make changes to the addresses directly)
 	$rights_all = ko_get_access_all('leute_admin', $uid);
-	if($rights_all >= 2) return FALSE;
+	if($rights_all >= 2) {
+		$allowed_cols = ko_get_leute_admin_spalten($_SESSION['ses_userid'], 'all');
+		if(!is_array($allowed_cols['edit'])) return FALSE;
+	}
 
 	$smarty->assign("label_name", getLL("fm_aa_name"));
 	$smarty->assign("label_firstname", getLL("fm_aa_firstname"));
@@ -743,65 +1045,3 @@ function ko_fm_adresse($uid) {
 	return $smarty->fetch("ko_fm_adressaenderung.tpl");
 }//ko_fm_adresse()
 
-
-
-/*
- * Fileshare
- */
-function ko_fm_fileshare($uid, $pos) {
-	global $ko_path, $smarty, $FILESHARE_FOLDER;
-
-	//Berechtigungen checken
-	if(!ko_module_installed("fileshare")) return FALSE;
-
-	$result = '';
-	//FM-Titel
-	$smarty->assign("tpl_fm_title", getLL("fm_fileshare_title"));
-	$result .= $smarty->fetch("ko_fm_header.tpl");
-
-	//Durch alle Ordner gehen
-	$found = FALSE;
-	$code = "";
-	$folders = ko_fileshare_get_folders($_SESSION["ses_userid"]);
-	foreach($folders as $folder) {
-		$shares = ko_get_shares(" AND `parent` = '".$folder["id"]."' AND `c_date` >= '".$_SESSION["last_login"]."'", "c_date DESC");
-		if(sizeof($shares) > 0) {
-			$found = TRUE;
-			if($folder["user"] != $_SESSION["ses_userid"]) {
-				$code .= '&nbsp;&nbsp;<img src="images/tv_inbox_shared.gif" border="0" alt="'.getLL("fileshare_folder").'" title="'.$folder["name"].'" />&nbsp;';
-			} else {
-				$code .= '&nbsp;&nbsp;<img src="images/tv_inbox.gif" border="0" alt="'.getLL("fileshare_folder").'" title="'.$folder["name"].'" />&nbsp;';
-			}
-			$code .= '<a href="fileshare/index.php?action=show_folder&id='.$folder["id"].'">'.$folder["name"].'</a><br />';
-
-		  //Mitte: Liste der einzelnen Dateien anzeigen
-			if(in_array($pos, array(2, 3))) {
-				$code .= '<ul type="square">';
-				foreach($shares as $share) {
-					if(file_exists($FILESHARE_FOLDER.$share["id"])) $file_ok = TRUE;
-					else $file_ok = FALSE;
-
-					$code .= "<li>";
-					if($file_ok) $code .= '<a href="fileshare/file.php?di='.$share["id"].'&amp;ei='.$share["id"].'" target="_blank">';
-					$code .= $share["filename"]." (".ko_nice_size($share["filesize"]).")";
-					if($file_ok) $code .= '</a>';
-					$code .= "</li>";
-				}
-				$code .= "</ul>";
-			}
-		}//if(sizeof(shares) > 0)
-	}//foreach(folders as folder)
-
-	if($found) {
-		$result .= '<p style="font-weight:600;padding:1px;margin:2px;">'.getLL("fm_fileshare_new").'</p>';
-		$result .= $code;
-	} else {
-		$result .= getLL("fm_fileshare_none");
-	}
-	
-	$result .= $smarty->fetch("ko_fm_footer.tpl");
-
-	return $result;
-}//ko_fm_fileshare()
-
-?>

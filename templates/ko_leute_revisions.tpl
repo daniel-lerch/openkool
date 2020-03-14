@@ -1,4 +1,6 @@
-<h3>{$tpl_title}</h3>
+<h3>{$tpl_title}
+		{if $help.show}<span>{$help.link}</span>{/if}
+</h3>
 
 <input type="hidden" name="leute_revision_id" id="leute_revision_id" value="">
 <input type="hidden" name="leute_revision_person_id" id="leute_revision_person_id" value="">
@@ -44,7 +46,7 @@
 									<label>{ll key="leute_revisions_list_add_to_suggested_person"}</label>
 								</div>
 								{foreach item=dbp from=$revision.db}
-									<div class="input-group">
+									<div class="input-group{if $dbp.hidden} inactive{/if}">
 										<div class="input-group-addon" style="width:auto;" data-toggle="tooltip" data-html="true" data-container="body" title="{$dbp.adressdaten}" >{if $dbp.firm}{$dbp.firm}{/if} {if $dbp.department}({$dbp.department}){/if} {$dbp.name}</div>
 										<div class="input-group-btn">
 											<button class="btn btn-sm btn-primary" type="submit" name="submit" value="{$label_submit}" onclick="set_action('submit_leute_revision', this);set_hidden_value('leute_revision_id', '{$revision.id}', this);set_hidden_value('leute_revision_person_id', '{$dbp.lid}', this);this.submit">{$label_submit}</button>
@@ -70,6 +72,9 @@
 							</div>
 							<div class="list-group-item">
 								<button class="btn btn-sm btn-warning" type="submit" name="submit" value="{$label_delete}" onclick="c=confirm('{$label_confirm_delete}'); if(!c) return false;set_action('submit_del_leute_revision', this);set_hidden_value('leute_revision_id', '{$revision.id}', this);this.submit">{$label_delete}</button>
+								{if $showDeleteAddress}
+									<button class="btn btn-sm btn-danger" style="margin-left: 20px;" type="submit" name="submitDel" value="{ll key="leute_revisions_list_delete_address"}" onclick="c=confirm('{ll key="leute_confirm_del_pers"}'); if(!c) return false;set_action('submit_del_leute_revision_address', this);set_hidden_value('leute_revision_id', '{$revision.id}', this);this.submit">{ll key="leute_revisions_list_delete_address"}</button>
+								{/if}
 							</div>
 						</div>
 					</div>

@@ -65,6 +65,7 @@
         height: @double-select-item-height;
         word-break: break-all;
         overflow: hidden;
+        display: block;
 
         -webkit-touch-callout: none;
         -webkit-user-select: none;
@@ -76,6 +77,24 @@
         &.active {
             background-color: #222;
             color: white;
+        }
+    }
+
+    &[disabled] {
+        cursor: @cursor-disabled;
+        background-color: @input-bg-disabled;
+        opacity: 1; // iOS fix for unreadable disabled content; see https://github.com/twbs/bootstrap/issues/11655
+
+        .select-item {
+            background-color: @input-bg-disabled;
+            cursor: @cursor-disabled;
+            color: #222;
+
+            &.active {
+                background-color: @input-bg-disabled;
+                cursor: @cursor-disabled;
+                color: #222;
+            }
         }
     }
 }

@@ -2,7 +2,7 @@
 /***************************************************************
 *  Copyright notice
 *
-*  (c) 2003-2015 Renzo Lauper (renzo@churchtool.org)
+*  (c) 2003-2017 Renzo Lauper (renzo@churchtool.org)
 *  All rights reserved
 *
 *  This script is part of the kOOL project. The kOOL project is
@@ -361,17 +361,42 @@ function hook_leute_add_column(&$r) {
 
 /**
  * Allow plugins to add logic after two addresses have been merged
+ * @param $id id of ko_leute row that gets deleted
+ * @param $merged_id id of new combined ko_leute row
+ * @param $merged_person original data of target ko_leute row before merging.
+ * NOTE: the ko_leute row that gets deleted can be fetched from db using $id
  */
-function hook_leute_merge($id, $merged_id) {
+function hook_leute_merge($id, $merged_id, $merged_person) {
 	global $PLUGINS;
 
 	foreach($PLUGINS as $plugin) {
 		$fcn = 'my_leute_merge_'.$plugin['name'];
 		if(function_exists($fcn)) {
-			call_user_func_array($fcn, array($id, $merged_id));
+			call_user_func_array($fcn, array($id, $merged_id, $merged_person));
 		}
 	}
 }//hook_leute_merge()
+
+
+
+
+/**
+ * Allow plugins to deny the deletion of a person
+ */
+function hook_leute_allow_delete($id, $person) {
+	global $PLUGINS;
+
+	$allow = TRUE;
+
+	foreach($PLUGINS as $plugin) {
+		$fcn = 'my_leute_allow_delete_'.$plugin['name'];
+		if(function_exists($fcn)) {
+			$allow = $allow && call_user_func_array($fcn, array($id, $person));
+		}
+	}
+
+	return $allow;
+}//hook_leute_allow_delete()
 
 
 
@@ -385,7 +410,7 @@ function hook_kota_post($table, $data) {
 	foreach($PLUGINS as $plugin) {
 		$action_ = $plugin['name'].'_'.$table;
 		if(function_exists('my_kota_post_'.$action_)) {
-			call_user_func('my_kota_post_'.$action_, $data);
+			call_user_func_array('my_kota_post_'.$action_, $data);
 		}
 	}
 }//hook_kota_post()
@@ -410,6 +435,25 @@ function hook_access_get_groups($module) {
 	return $groups;
 }//hook_access_get_groups()
 
+
+
+
+
+/**
+ * Hook for access system: Allow plugins to add/modify/delete access entries in a general way
+ */
+/*function hook_access_add(&$_access, $module, $uid, $force, $apply_admingroups, $mode, $store_globally) {
+	global $PLUGINS;
+
+	foreach($PLUGINS as $plugin) {
+		$action_ = $plugin['name'].'_'.$module;
+		if(function_exists('my_access_add_'.$action_)) {
+			call_user_func('my_access_add_'.$action_, array(&$_access, $uid, $force, $apply_admingroups, $mode, $store_globally));
+		}
+	}
+}
+
+*/
 
 
 /**
@@ -470,6 +514,28 @@ function hook_post_action($action, $request, &$response) {
 		$action_ = $plugin['name'] . '_' . $action;
 		if(function_exists('my_post_action_handler_'.$action_)) {
 			call_user_func_array('my_post_action_handler_'.$action_, array($request, &$response));
+			return TRUE; // TODO: allow more than one plugin to react on action -> finish loop before returning
+		}
+	}
+	return FALSE;
+}//hook_post_action()
+
+
+
+/**
+ * Hook for get_json.php: allows plugins to react on post requests to kOOL
+ *
+ * @param string $action name of action
+ * @param array $request the request array
+*  @param array $response the response array
+ */
+function hook_get_action($action, $request, &$response) {
+	global $PLUGINS;
+
+	foreach($PLUGINS as $plugin) {
+		$action_ = $plugin['name'] . '_' . $action;
+		if(function_exists('my_get_action_handler_'.$action_)) {
+			call_user_func_array('my_get_action_handler_'.$action_, array($request, &$response));
 			return TRUE; // TODO: allow more than one plugin to react on action -> finish loop before returning
 		}
 	}

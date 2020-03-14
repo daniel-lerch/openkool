@@ -2,7 +2,7 @@
 /***************************************************************
  *  Copyright notice
  *
- *  (c) 2003-2015 Renzo Lauper (renzo@churchtool.org)
+ *  (c) 2003-2017 Renzo Lauper (renzo@churchtool.org)
  *  All rights reserved
  *
  *  This script is part of the kOOL project. The kOOL project is
@@ -23,6 +23,12 @@
  *
  *  This copyright notice MUST APPEAR in all copies of the script!
  ***************************************************************/
+
+for($i=0; $i<count($USER_MENU); $i++) {
+	if($_SESSION['disable_password_change'] == 1 && $USER_MENU[$i]['action'] == "change_password") {
+		unset($USER_MENU[$i]);
+	}
+}
 
 if (sizeof($USER_MENU) > 0) {
 	$USER_MENU[] = ko_get_menuitem_seperator();
@@ -54,22 +60,13 @@ foreach($user_menu as $m) {
 	if(in_array($m, array('sms', 'kg', 'mailing', 'vesr')) || trim($m) == '') continue;
 	if(substr($m, 0, 3) == 'my_') continue;  //Don't show menus from plugins in main navigation (yet)
 	if($m == 'tools' && $_SESSION['ses_userid'] != ko_get_root_id()) continue;
+	if($_SESSION['ses_userid'] == ko_get_checkin_user_id()) continue;
 	if(ko_module_installed($m)) {
 		$menu[$menu_counter]["id"] = $m;
 		$menu[$menu_counter]["name"] = getLL("module_".$m);
 		$action = ko_get_userpref($_SESSION["ses_userid"], "default_view_".$m);
 		if(!$action) $action = ko_get_setting("default_view_".$m);
-		//Handle special links (e.g. webfolders)
-		if(substr($action, 0, 8) == "SPECIAL_") {
-			switch(substr($action, 8)) {
-				case "webfolder":
-					$menu[$menu_counter]["link"] = "";
-					$menu[$menu_counter]["link_param"] = 'FOLDER="'.$BASE_URL.str_replace($BASE_PATH, "", $WEBFOLDERS_BASE).'" style="behavior: url(#default#AnchorClick);"';
-					break;
-			}
-		} else {
-			$menu[$menu_counter]["link"] = $ko_path.$m."/index.php?action=$action";
-		}
+		$menu[$menu_counter]["link"] = $ko_path.$m."/index.php?action=$action";
 
 		//Dropdown-Menu
 		$sm = NULL;
@@ -100,34 +97,37 @@ foreach($user_menu as $m) {
 }//foreach(MODULES as m)
 
 // Settings page
-$settingsPage = $MODULE_SETTINGS_ACTION[$ko_menu_akt];
-if (!$settingsPage) {
-	$settingsLL = getLL($ko_menu_akt . '_settings');
-	if ($settingsLL) $settingsPage = $ko_menu_akt . '_settings';
+
+if($_SESSION['ses_userid'] != ko_get_guest_id()) {
+	$settingsPage = $MODULE_SETTINGS_ACTION[$ko_menu_akt];
+	if (!$settingsPage) {
+		$settingsLL = getLL($ko_menu_akt . '_settings');
+		if ($settingsLL) $settingsPage = $ko_menu_akt . '_settings';
+	}
+	$smarty->assign('settings_page', $settingsPage);
 }
-$smarty->assign('settings_page', $settingsPage);
 
 $module_settings_action = array();
 foreach ($MODULE_SETTINGS_ACTION as $k => $v) {
 	switch ($k) {
 		case 'donations':
 			$all_rights = ko_get_access_all('donations_admin', '', $max_rights);
-			if ($max_rights < 1) continue;
+			if ($max_rights < 1 || $_SESSION['ses_userid'] == ko_get_guest_id()) continue 2;
 			break;
 		case 'daten':
 			$all_rights = ko_get_access_all('event_admin', '', $max_rights);
-			if ($max_rights < 1 || $_SESSION['ses_userid'] == ko_get_guest_id()) continue;
+			if ($max_rights < 1 || $_SESSION['ses_userid'] == ko_get_guest_id()) continue 2;
 			break;
 		case 'reservation':
 			$all_rights = ko_get_access_all('res_admin', '', $max_rights);
-			if ($max_rights < 1 || $_SESSION['ses_userid'] == ko_get_guest_id()) continue;
+			if ($max_rights < 1 || $_SESSION['ses_userid'] == ko_get_guest_id()) continue 2;
 			break;
 		case 'tracking':
 			$all_rights = ko_get_access_all('tracking_admin', '', $max_rights);
-			if ($max_rights < 1 || $_SESSION['ses_userid'] == ko_get_guest_id()) continue;
+			if ($max_rights < 1 || $_SESSION['ses_userid'] == ko_get_guest_id()) continue 2;
 			break;
 		case 'rota':
-			if($_SESSION['ses_userid'] == ko_get_guest_id()) continue;
+			if($_SESSION['ses_userid'] == ko_get_guest_id()) continue 2;
 			break;
 	}
 	$module_settings_action[$k] = $v;
@@ -135,6 +135,15 @@ foreach ($MODULE_SETTINGS_ACTION as $k => $v) {
 $smarty->assign('module_settings_action', $module_settings_action);
 
 $searchbox = ko_get_searchbox($ko_menu_akt);
+
+ko_get_access("taxonomy");
+
+if(ko_module_installed("taxonomy") && $access['taxonomy']['MAX'] >= 1 &&
+$ko_menu_akt == "groups" && $_SESSION['show'] == "list_groups") {
+	$searchbox_taxonomy = ko_get_searchbox_for_taxonomy_terms();
+	$searchbox['taxonomy_select'] = $searchbox_taxonomy;
+}
+
 $smarty->assign('searchbox', $searchbox);
 
 $menubarLinks = ko_get_secmenu_links($ko_menu_akt, $do_action);

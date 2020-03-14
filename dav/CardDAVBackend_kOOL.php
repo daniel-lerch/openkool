@@ -215,6 +215,7 @@ class kOOL extends AbstractBackend {
 
 		//Apply filter and admin filter
 		apply_leute_filter($filter, $where, ($access['leute']['ALL'] < 1), '', $loginID);
+		$where .= " AND `hidden` = '0' ";
 
 		//Apply filter for single address
 		if($id) $where = "AND (`id`='".intval($id)."') $where";

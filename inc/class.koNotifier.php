@@ -66,7 +66,7 @@ class koNotifier {
 
 		$this->moduleToLLLabel = array(
 			'reservation' => 'res',
-			'home' => '',
+			'home' => 'home',
 		);
 	}
 	private function updateThresholdLevel () {
@@ -221,7 +221,41 @@ class koNotifier {
 		);
 	}
 
-	public function display () {
+	public function jsDisplay ($doPrint=TRUE, $container='#notifications') {
+		$prints = array();
+		foreach ($this->notifications as $notLevel => $nots) {
+			if (($notLevel & $this->displayLevel) != 0) {
+				foreach ($nots as $not) {
+					if ($not['notText'] === null) {
+						if (array_key_exists($not['activeModule'], $this->moduleToLLLabel)) {
+							$moduleLabel = $this->moduleToLLLabel[$not['activeModule']];
+						}
+						else {
+							$moduleLabel = $not['activeModule'];
+						}
+						$LLLabel = vsprintf(getLL(strtolower($this->levelCodesToNames[$notLevel]) . '_' . $moduleLabel . $not['underline'] . $not['notNumber']), $not['parameters']);
+					}
+					else {
+						$LLLabel = $not['notText'];
+					}
+					$type = $this->levelNamesToAlertNames[strtolower($this->levelCodesToNames[$notLevel])];
+					$prints[] =
+						'<div class="alert alert-' . $type . ' alert-dismissible" role="alert">
+	<button type="button" class="close" data-dismiss="alert"><span>&times;</span></button>
+	' . $LLLabel . '
+</div>';
+				}
+			}
+		}
+		$print = implode('', $prints);
+		$print = '<script>$("'.$container.'").html("'.str_replace(array("\n", '"'), array('', '\"'), $print).'");</script>';
+		if ($doPrint) print $print;
+		else return $print;
+
+		return TRUE;
+	}
+
+	public function display ($doPrint=TRUE) {
 		foreach ($this->notifications as $notLevel => $nots) {
 			if (($notLevel & $this->displayLevel) != 0) {
 				foreach ($nots as $not) {
@@ -243,7 +277,8 @@ class koNotifier {
 	<button type="button" class="close" data-dismiss="alert"><span>&times;</span></button>
 	' . $LLLabel . '
 </div>';
-					print $print;
+					if ($doPrint) print $print;
+					else return $print;
 				}
 			}
 		}
@@ -302,9 +337,10 @@ class koNotifier {
 		fclose($logFile);
 	}
 
-	public function notify ($notifyMask = self::NOTIFYALL) {
+	public function notify ($notifyMask=self::NOTIFYALL, $print=TRUE) {
+		$result = TRUE;
 		if ($notifyMask & self::DISPLAY != 0) {
-			$this->display();
+			$result = $this->display($print);
 		}
 		if ($notifyMask & self::LOGTODB != 0) {
 			$this->logToDB();
@@ -312,6 +348,7 @@ class koNotifier {
 		if ($notifyMask & self::LOGTOFILE != 0) {
 			$this->logToFile();
 		}
+		return $result;
 	}
 
 	public function hasNotifications ($notLevelIn) {
@@ -325,7 +362,7 @@ class koNotifier {
 		return false;
 	}
 
-	public function hasNotification ($notNumberIn, $notLevelIn = ALL) {
+	public function hasNotification ($notNumberIn, $notLevelIn=self::ALL) {
 		foreach ($this->notifications as $notLevel => $nots) {
 			if (($notLevelIn & $notLevel) != 0) {
 				foreach ($nots as $not) {

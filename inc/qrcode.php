@@ -2,7 +2,7 @@
 /***************************************************************
 *  Copyright notice
 *
-*  (c) 2003-2015 Renzo Lauper (renzo@churchtool.org)
+*  (c) 2003-2017 Renzo Lauper (renzo@churchtool.org)
 *  All rights reserved
 *
 *  This script is part of the kOOL project. The kOOL project is
@@ -24,6 +24,7 @@
 *  This copyright notice MUST APPEAR in all copies of the script!
 ***************************************************************/
 
+error_reporting(0);
 $ko_path = '../';
 include($ko_path.'inc/ko.inc');
 include($ko_path.'inc/qrcode/qrlib.php');
@@ -56,7 +57,7 @@ if(file_exists($cache_path.$filename)) {
 			require_once($ko_path.'leute/inc/vcard.php');
 			$vcard = new vCard(TRUE);
 			$vcard->addPerson($pid);
-			$string = $vcard->getVCard();
+			$string = $vcard->getVCard($pid);
 			if(!$string) exit;
 			$dontcache = TRUE;
 		} else exit;

@@ -2,7 +2,7 @@
 /***************************************************************
 *  Copyright notice
 *
-*  (c) 2003-2015 Renzo Lauper (renzo@churchtool.org)
+*  (c) 2003-2017 Renzo Lauper (renzo@churchtool.org)
 *  All rights reserved
 *
 *  This script is part of the kOOL project. The kOOL project is
@@ -39,14 +39,11 @@ $ko_path = '../';
 
 array_walk_recursive($_GET,'utf8_decode_array');
 
-ko_include_kota(array('ko_scheduler_tasks'));
+ko_include_kota(array('ko_scheduler_tasks','ko_mailing_mails'));
 
 // Plugins einlesen:
 $hooks = hook_include_main('tools');
 if(sizeof($hooks) > 0) foreach($hooks as $hook) include_once($hook);
- 
-//Smarty-Templates-Engine laden
-require($BASE_PATH.'inc/smarty.inc');
  
 require($BASE_PATH.'tools/inc/tools.inc');
 
@@ -63,13 +60,19 @@ if(isset($_GET) && isset($_GET['action'])) {
 	hook_ajax_pre($ko_menu_akt, $action);
 
  	switch($action) {
- 
+		case 'setstart':
+			if(isset($_GET['set_start'])) {
+				$_SESSION['show_start'] = max(1, format_userinput($_GET['set_start'], 'uint'));
+			}
+			print 'main_content@@@';
+			ko_tools_mailing_mails();
+			break;
 		case 'setsort':
 			$_SESSION['sort_tasks'] = format_userinput($_GET['sort'], 'alphanum+', TRUE, 30);
 			$_SESSION['sort_tasks_order'] = format_userinput($_GET['sort_order'], 'alpha', TRUE, 4);
 
 			print 'main_content@@@';
-			print ko_list_tasks(FALSE);
+			ko_list_tasks();
 		break;
 
 
@@ -78,15 +81,115 @@ if(isset($_GET) && isset($_GET['action'])) {
 			$group = format_userinput($_GET['group'], 'alpha');
 			if($id > 0 && getLL('filter_group_'.$group) != '') {
 				db_update_data('ko_filter', "WHERE `id` = '$id'", array('group' => $group));
-				print 'INFO@@@Filter group has been updated.';
 			} else {
 				print 'ERROR@@@Update not possible.';
 			}
 		break;
 
+
+		case "addleutefilter":
+		case "reloadleutefilter":
+			$delete_filter = FALSE;
+			$old_filter = [];
+			if(FALSE === $id = format_userinput($_GET["id"], "alphanum+", TRUE)) {
+				trigger_error("Ungültige id für add_leute_filter: ".$_GET["id"], E_USER_ERROR);
+			}
+			if($action == "reloadleutefilter") {
+				if(FALSE === $fid = format_userinput($_GET["fid"], "uint", TRUE)) {
+					trigger_error("Ungültige fid für reload_leute_filter: ".$_GET["fid"], E_USER_ERROR);
+				}
+
+				$old_filter = db_select_data("ko_filter", "WHERE id = '" . $fid ."'", "*", "", "LIMIT 1", TRUE);
+				$delete_filter = TRUE;
+			} else $fid = "";
+
+			// include KOTA (for filters)
+			ko_include_kota(array('ko_leute'));
+
+			$table_cols = db_get_columns("ko_leute");
+			$col = NULL;
+			foreach($table_cols as $c) {
+				if($c["Field"] == $id) $col = $c;
+			}
+			if (!$col) continue;
+
+			$special_filters = array("age", "year", "role"); // this array is also defined in tools/inc/tools.inc
+			if (in_array($col['Field'], $special_filters)) continue;
+
+			if ($delete_filter) db_delete_data("ko_filter", "WHERE id = '" . $fid ."'");
+
+			$col_names = ko_get_leute_col_name();
+			$col_name = $col_names[$id];
+
+			$newFilter = array(
+				'id' => $fid,
+				'typ' => 'leute',
+				'dbcol' => $col['Field'],
+				'name' => $col_name,
+				'allow_neg' => '1',
+				'sql1' => 'kota_filter',
+				'numvars' => '1',
+				'var1' => $col_name,
+				'code1' => 'FCN:ko_specialfilter_kota:ko_leute:'.$col['Field'],
+				'allow_fastfilter' => 1,
+				'group' => $old_filter['group']
+			);
+			$newFilterId = db_insert_data('ko_filter', $newFilter);
+
+			print "leute-filter-settings-dbcol-{$col['Field']}@@@";
+			print ko_tools_get_leute_filter_settings_code($col['Field'], $old_filter);
+		break;
+
+
+		case "deleteleutefilter":
+			if(FALSE === $fid = format_userinput($_GET["fid"], "uint", TRUE)) {
+				trigger_error("Ungültige id für delete_leute_filter: ".$_GET["fid"], E_USER_ERROR);
+			}
+
+			$id = '';
+			if ($_GET['id']) $id = format_userinput($_GET['id'], 'alphanum+');
+
+			db_delete_data('ko_filter', "WHERE `typ` = 'leute' AND `id` = '$fid'");
+
+			if ($id) {
+				print "leute-filter-settings-dbcol-{$id}@@@";
+				print ko_tools_get_leute_filter_settings_code($id);
+			} else {
+				print "leute-filter-settings-filter-{$fid}@@@";
+				print "<script>$('#leute-filter-settings-filter-{$fid}').closest('tr').remove();</script>";
+			}
+		break;
+
+
+
+		case "ableFastfilter":
+			if(FALSE === $fid = format_userinput($_GET["fid"], "uint", TRUE)) {
+				trigger_error("Invalid filterID for ableFastfilter: ".$_GET["fid"], E_USER_ERROR);
+			}
+
+			$filter = db_select_data('ko_filter', "WHERE `id` = '$fid'", '*', '', '', TRUE);
+			if(!$filter['id'] || $filter['id'] != $fid) continue;
+
+			$able = $filter['allow_fastfilter'] ? 0 : 1;
+			db_update_data('ko_filter', "WHERE `id` = '$fid'", array('allow_fastfilter' => $able));
+
+			print "leute-filter-settings-dbcol-{$filter['dbcol']}@@@";
+			print ko_tools_get_leute_filter_settings_code($filter['dbcol']);
+		break;
+
+
+		case "selkotatable":
+			$table = format_userinput($_GET['table'], 'alphanum+');
+			$_SESSION['tools_kota_fields_table'] = $table;
+
+			print "main_content@@@";
+			ko_tools_kota_fields();
+		break;
+
 	}//switch(action);
 
 	hook_ajax_post($ko_menu_akt, $action);
+
 
 }//if(GET[action])
 ?>

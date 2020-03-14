@@ -2,7 +2,7 @@
 /***************************************************************
 *  Copyright notice
 *
-*  (c) 2003-2015 Renzo Lauper (renzo@churchtool.org)
+*  (c) 2003-2017 Renzo Lauper (renzo@churchtool.org)
 *  All rights reserved
 *
 *  This script is part of the kOOL project. The kOOL project is
@@ -48,8 +48,13 @@ if($no_enc) {
 }
 //Use encryption
 else {
-	require($ko_path."inc/class.mcrypt.php");
-	$crypt = new mcrypt("aes");
+	if((isset($_POST['ssl']) && $_POST['ssl']) || (isset($_GET['ssl']) && $_GET['ssl'])) {
+		require($ko_path."inc/class.openssl.php");
+		$crypt = new openssl('AES-256-CBC');
+	} else {
+		require($ko_path."inc/class.mcrypt.php");
+		$crypt = new mcrypt("aes");
+	}
 	$crypt->setKey(KOOL_ENCRYPTION_KEY);
 	$request_xml = $crypt->decrypt(base64_decode($q));
 	//Don't allow direct db access to these tables
@@ -85,6 +90,47 @@ switch($action) {
 		foreach($req["value"] as $key) {
 			$r["getLL"][] = array("key" => $key, "content" => getLL($key));
 		}
+	break;
+
+
+	case 'isModuleInstalled':
+		$m = $req['module'][0];
+		if (isset($req['user']) && isset($req['user'][0])) {
+			$userId = format_userinput($req['user'][0], 'uint');
+			$r['isModuleInstalled'][] = ko_module_installed($m, $userId)?TRUE:FALSE;
+		} else {
+			$r['isModuleInstalled'][] = in_array($m, $MODULES);
+		}
+	break;
+
+
+	case 'getKOTALabels':
+		$table = $req['table'][0];
+		$mode = $req['mode'][0];
+		if($mode != 'listview') $mode = '';
+		if($mode != '') $mode .= '_';
+
+		$r = array();
+		ko_include_kota(array($table));
+		foreach($KOTA[$table] as $k => $v) {
+			if(substr($k, 0, 1) == '_') continue;
+			$ll = getLL('kota_'.$mode.$table.'_'.$k);
+			if(!$ll && $mode != '') {
+				$ll = getLL('kota_'.$table.'_'.$k);
+			}
+			$r['getKOTALabels'][] = array('key' => $k, 'content' => $ll);
+		}
+	break;
+
+
+	case 'getKOTA':
+		$table = $req['table'][0];
+		$field = isset($req['field']) ? $req['field'][0] : false;
+
+		ko_include_kota(array($table));
+		$kota = $field ? array($field => $KOTA[$table][$field]) : $KOTA[$table];
+		array_walk_recursive($kota,function(&$v,$k) {$v = utf8_encode($v);});
+		$r['getKOTA'][] = array('key' => $table,'content' => json_encode($kota));
 	break;
 
 
@@ -232,6 +278,14 @@ switch($action) {
 	break;
 
 
+	case 'getFamilies':
+		ko_get_familien($fams);
+		foreach($fams as $fam) {
+			$r['getFamilies'][] = array('content' => $fam);
+		}
+	break;
+
+
 	//Call a function
 	case "FCN":
 		$fcn = $req["function"][0];
@@ -309,9 +363,9 @@ switch($action) {
 
 			//Get the given columns
 			if(sizeof($columns) > 0) {
-				if(!in_array("id", $columns)) array_unshift($columns, "id");
+				if($action == 'getPerson' && !in_array("id", $columns)) array_unshift($columns, "id");
 				foreach($columns as $col) {
-					if($col == 'groups') $person[$col.'_raw'] = $_person[$col];
+					if(in_array($col, array('groups', 'smallgroups'))) $person[$col.'_raw'] = $_person[$col];
 					$value = map_leute_daten($_person[$col], $col, $_person, $all_datafields, $forceDatafields=TRUE, array('MODULEkg_firstOnly' => TRUE));
 					if(is_array($value)) {  //Group with datafields is returned as array
 						$gid = substr($col, 9);

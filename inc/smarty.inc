@@ -3,7 +3,7 @@
 /***************************************************************
 *  Copyright notice
 *
-*  (c) 2003-2015 Renzo Lauper (renzo@churchtool.org)
+*  (c) 2003-2017 Renzo Lauper (renzo@churchtool.org)
 *  All rights reserved
 *
 *  This script is part of the kOOL project. The kOOL project is
@@ -29,6 +29,7 @@
 if(FALSE === include_once("Smarty.class.php")) ko_die("Could not find Smarty. Please install. For more information see http://www.smarty.net");
 
 //Load smarty template engine
+if(!$smarty_dir) $smarty_dir = $BASE_PATH;
 if(substr($smarty_dir, -1) != "/") $smarty_dir .= "/";
 $smarty = new Smarty();
 $smarty->template_dir = $smarty_dir.'templates/';
@@ -92,6 +93,62 @@ if(!function_exists('smarty_function_utf8_encode_array')) {
 }
 $smarty->register_function('utf8_encode_array', 'smarty_function_utf8_encode_array');
 
+if (!function_exists('smarty_function_preprocess_form')) {
+	function smarty_function_preprocess_form($params, &$smarty) {
+		global $BOOTSTRAP_COLS_PER_ROW;
+
+		$form = &$params['form'];
+		$activeTabFound = FALSE;
+		foreach ($form as $tk => &$tab) {
+			$tab['name'] = $tab['name'] ? $tab['name'] : $tk;
+			$isEmpty = TRUE;
+			foreach ($tab['groups'] as $gk => &$group) {
+				$group['name'] = $group['name'] ? $group['name'] : $gk;
+				$group['appearance'] = $group['appearance'] ? $group['appearance'] : 'primary';
+
+				foreach ($group['rows'] as $rk => &$row) {
+					if (sizeof($row['inputs']) == 0) unset($group['rows'][$rk]);
+					else {
+						$colspansSet = TRUE;
+						foreach ($row['inputs'] as $ik => &$input) {
+							if (!$input['columnWidth']) $colspansSet = FALSE;
+						}
+
+						if (!$colspansSet) {
+							foreach ($row['inputs'] as $ik => &$input) {
+								$input['columnWidth'] = min($BOOTSTRAP_COLS_PER_ROW / 2, round($BOOTSTRAP_COLS_PER_ROW / sizeof($row['inputs'])));
+							}
+						}
+					}
+				}
+
+				if (sizeof($group['rows']) > 0) $isEmpty = FALSE;
+				else {
+					unset($tab['groups'][$gk]);
+				}
+			}
+			if ($isEmpty) unset($form[$tk]);
+			else if ($tab['active']) {
+				if (!$activeTabFound) $activeTabFound = TRUE;
+				else $tab['active'] = FALSE;
+			}
+		}
+
+		if (sizeof($form) > 1) {
+			$ti = 0;
+			foreach ($form as $tk => &$tab) {
+				if (!$activeTabFound && $ti == 0) $tab['active'] = TRUE;
+				$tab['group'] = TRUE;
+				if (!$tab['titel']) $tab['titel'] = getLL('kota_group_title__default');
+				$ti++;
+			}
+		}
+
+		$smarty->assign('tpl_groups', $form);
+	}
+}
+$smarty->register_function('preprocessForm', 'smarty_function_preprocess_form');
+
 if(!function_exists('smarty_function_preset_for_logins')) {
 	function smarty_function_preset_for_logins($params, &$smarty) {
 		ko_get_logins($logins);
@@ -133,6 +190,18 @@ if(!function_exists('smarty_function_ko_path')) {
 	}
 }
 $smarty->register_function('koPath', 'smarty_function_ko_path');
+
+
+if(!function_exists('smarty_function_tooltip')) {
+	function smarty_function_tooltip($params, &$smarty) {
+		$text = $params['text'];
+		$position = $params['position'] ? $params['position'] : 'auto';
+		$container = $params['container'] ? $params['container'] : 'body';
+		return ko_get_tooltip_code($text, $position, $container);
+	}
+}
+$smarty->register_function('tooltip', 'smarty_function_tooltip');
+
 
 
 // Assign bootstrap variables

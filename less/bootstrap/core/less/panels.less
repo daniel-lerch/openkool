@@ -20,12 +20,29 @@
 
 // Optional heading
 .panel-heading {
-  padding: @panel-heading-padding;
+  padding: 10px 0 10px 15px;
   border-bottom: 1px solid transparent;
   .border-top-radius((@panel-border-radius - 1));
 
   > .dropdown .dropdown-toggle {
     color: inherit;
+  }
+
+  .header-btn__big {
+    margin-top: -10px;
+    font-size: 16px;
+    padding: 10px;
+    height: 35px;
+    color: #fff;
+    background-color: #d9534f;
+    border-color: #d43f3a;
+    border-collapse: collapse;
+    border: none;
+    float: right;
+    &:hover {
+      cursor: pointer;
+      background-color: rgba(0, 0, 0, 0.3);
+    }
   }
 }
 

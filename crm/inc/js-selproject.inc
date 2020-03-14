@@ -13,6 +13,7 @@ function selProject(pid) {
 
 	//Build code for event groups with their data
 	$code = "";
+
 	$code .= sprintf("projects['%s'] = new Project('%s');\n",
 										 '',
 										 '[]'
@@ -23,7 +24,7 @@ function selProject(pid) {
 		$status = array(array('id' => '', 'title' => ''));
 		if($project["status_ids"]) {
 			foreach(explode(",", $project["status_ids"]) as $sid) {
-				$status[] = array('id' => $sid, 'title' => $allStatus[$sid]["title"]);
+				$status[] = array('id' => $sid, 'title' => $allStatus[$sid]["title"], 'deadline' => $allStatus[$sid]['default_deadline']);
 			}
 		}
 		$code .= sprintf("projects['%s'] = new Project('%s');\n",
@@ -55,6 +56,44 @@ function selProject(pid) {
 			koi_status_id.val(old_val);
 		}
 
+	}
+}
+
+
+function selStatus(pid) {
+	<?php
+
+	$allStatus = db_select_data("ko_crm_status", "WHERE 1=1", "*");
+
+	//Build code for event groups with their data
+	$code = "var defaultDeadlines = [];";
+
+	foreach($allStatus as $status) {
+		$code .= "defaultDeadlines['".$status['id']."'] = '".$status['default_deadline']."';\n";
+	}
+	print $code;
+	?>
+
+
+	deadlineDays = defaultDeadlines[pid];
+
+	var koi_deadline = $("[name*='deadline']");
+	if(deadlineDays > 0) {
+		var today = new Date();
+		deadlineDate = new Date(
+			today.getFullYear(),
+			today.getMonth(),
+			today.getDate() + parseInt(deadlineDays)
+		);
+
+		var day = deadlineDate.getDate();
+		var monthIndex = deadlineDate.getMonth();
+	  var year = deadlineDate.getFullYear();
+		deadline = day+"."+(monthIndex+1)+"."+year;
+
+		koi_deadline.val(deadline);
+	} else {
+		koi_deadline.val('');
 	}
 }
 

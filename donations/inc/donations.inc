@@ -2,7 +2,7 @@
 /***************************************************************
 *  Copyright notice
 *
-*  (c) 2003-2015 Renzo Lauper (renzo@churchtool.org)
+*  (c) 2003-2017 Renzo Lauper (renzo@churchtool.org)
 *  All rights reserved
 *
 *  This script is part of the kOOL project. The kOOL project is
@@ -27,7 +27,7 @@
 require_once($BASE_PATH."inc/class.kOOL_listview.php");
 
 
-function ko_list_donations($output=TRUE, $mode="html", $dontApplyLimit=FALSE) {
+function ko_list_donations($mode="html", $dontApplyLimit=FALSE) {
 	global $smarty, $KOTA;
 	global $access;
 
@@ -99,18 +99,24 @@ function ko_list_donations($output=TRUE, $mode="html", $dontApplyLimit=FALSE) {
 	//Averages
 	$avg = $rows ? $total_amount/$rows : 0;
 	$avg_person = $num_person ? $total_amount/$num_person : 0;
-	
+
 	$list_footer = $smarty->get_template_vars('list_footer');
-	$list_footer[] = array("label" => "", "button" => sprintf(getLL("donations_list_footer_stats_totals"),
-																														number_format($total_amount, 2, '.', "'"),
-																														number_format($rows, 0, '.', "'"),
-																														number_format($num_person, 0, '.', "'"))
-	);
-	$list_footer[] = array("label" => "", "button" => sprintf(getLL("donations_list_footer_stats_averages"),
-																														number_format($avg, 2, '.', "'"),
-																														number_format($avg_person, 2, '.', "'"))
-	);
-	$list_footer[] = array("label" => getLL("donations_list_footer_mark_thanked"), 'button' => '<button class="btn btn-default btn-sm" onclick="c=confirm(\''.getLL('donations_thanks_confirm_mark_thanked').'\'); if (c) {set_action(\'mark_thanked\')} else {return false}">OK</button>');
+	$list_footer[] = [
+		"label" => "",
+		"button" => sprintf(getLL("donations_list_footer_stats_totals"),
+		number_format($total_amount, 2, '.', "'"),
+		number_format($rows, 0, '.', "'"),
+		number_format($num_person, 0, '.', "'")),
+	];
+	$list_footer[] = [
+		"label" => "",
+		"button" => sprintf(getLL("donations_list_footer_stats_averages"),
+		number_format($avg, 2, '.', "'"),
+		number_format($avg_person, 2, '.', "'")),
+	];
+	$list_footer[] = [
+		"label" => getLL("donations_list_footer_mark_thanked"),
+		'button' => '<button class="btn btn-default btn-sm" onclick="c=confirm(\'' . getLL('donations_thanks_confirm_mark_thanked') . '\'); if (c) {set_action(\'mark_thanked\')} else {return false}">OK</button>'];
 
 	$smarty->assign('show_list_footer', TRUE);
 	$smarty->assign('list_footer', $list_footer);
@@ -119,16 +125,12 @@ function ko_list_donations($output=TRUE, $mode="html", $dontApplyLimit=FALSE) {
 
 
 	//Output the list
-	if($output) {
-		$list->render($es, $mode, getLL("donations_export_filename"));
-		if($mode == "xls") return $list->xls_file;
-	} else {
-		print $list->render($es);
-	}
+	$list->render($es, $mode, getLL("donations_export_filename"));
+	if($mode == "xls") return $list->xls_file;
 }//ko_list_donations()
 
 
-function ko_list_donations_mod($output=TRUE) {
+function ko_list_donations_mod() {
 	global $smarty, $ko_path, $access, $DATETIME, $js_calendar;
 
 	$counter=0;
@@ -145,6 +147,7 @@ function ko_list_donations_mod($output=TRUE) {
 
 		$mods[$counter]['id'] = $d['id'];
 
+		// Create Spenden fields
 		$mods[$counter]['d_fields'][$fields_counter++] = array(
 			"type" => "html",
 			'desc' => getLL('kota_ko_donations_date'),
@@ -160,13 +163,15 @@ function ko_list_donations_mod($output=TRUE) {
 			"name" => $name
 		);
 		$mods[$counter]['d_fields'][$fields_counter++] = array(
-			"type" => "select",
+			"type" => "textplus",
 			'desc' => getLL('kota_ko_donations_source'),
 			'name' => 'source_' . $d['id'],
 			'value' => $d['source'],
 			'values' => db_select_distinct('ko_donations', 'source'),
 			'descs' => db_select_distinct('ko_donations', 'source'),
 		);
+
+		$donation_account_field_id = $fields_counter;
 		$mods[$counter]['d_fields'][$fields_counter++] = array_merge(array(
 			"type" => "select",
 			'desc' => getLL('kota_ko_donations_account'),
@@ -181,35 +186,94 @@ function ko_list_donations_mod($output=TRUE) {
 			'name' => 'amount_' . $d['id'],
 			'value' => $d['amount'],
 		);
-		/*$mods[$counter]['d_fields'][$fields_counter++] = array(
-			"type" => "peoplesearch",
-			'desc' => getLL('kota_ko_donations_person'),
-			'name' => 'person_' . $d['id'],
-			'value' => $d['person'],
-		);*/
+		if($d['_account_number']) {
+			$mods[$counter]['d_fields'][$fields_counter++] = array(
+				'type' => 'html',
+				'desc' => getLL('kota_ko_donations_accounts_number'),
+				'name' => '_account_number_'.$d['id'],
+				'value' => $d['_account_number'],
+			);
+		}
+		if($d['_account_name']) {
+			$mods[$counter]['d_fields'][$fields_counter++] = array(
+				'type' => 'html',
+				'desc' => getLL('kota_ko_donations_accounts_name'),
+				'name' => '_account_name_'.$d['id'],
+				'value' => $d['_account_name'],
+			);
+		}
 		$mods[$counter]['d_fields'][$fields_counter++] = array(
 			"type" => "textarea",
 			'desc' => getLL('kota_ko_donations_comment'),
 			'name' => 'comment_' . $d['id'],
+			"params" => 'style="height:90px;"',
 			'value' => $d['comment'],
 		);
 
+		// get Donations Accounts and find best matching for Comment
+		if(!$d['account']) {
+			$donation_accounts = db_select_data('ko_donations_accounts', 'WHERE archived = 0');
+			$best_donation_account_id = ko_fuzzy_search_in_string($d['comment'], $donation_accounts);
+			if ($best_donation_account_id !== FALSE) {
+				$mods[$counter]['d_fields'][$donation_account_field_id]['value'] = $best_donation_account_id;
+			}
+		}
+
+		// create Spender form
 		$fieldsCounter = 0;
 		$dbFields = db_get_columns('ko_donations_mod');
+		$fields_for_suggest = ['_p_anrede', '_p_firm', '_p_vorname', '_p_nachname', '_p_adresse', '_p_plz', '_p_ort'];
 		foreach ($dbFields as $dbCol) {
 			$dbField = $dbCol['Field'];
-			if (substr($dbField, 0, 3) == '_p_') {
-				$fieldName = substr($dbField, 3);
-				$fieldValue = map_leute_daten($d[$dbField], $fieldName);
-				if (trim($fieldValue) == '') continue;
+			if(substr($dbField, 0, 3) != '_p_') continue;
+
+			$fieldName = substr($dbField, 3);
+			$fieldValue = trim(map_leute_daten($d[$dbField], $fieldName));
+
+			//Check for all uppercase --> show in better formating
+			//  But ignore country codes like "CH"
+			if(strtoupper($fieldValue) == $fieldValue
+				&& !($fieldName == 'land' && strlen($fieldValue <= 3))
+				) {
+
+				$parts = array();
+				foreach(explode(' ', $fieldValue) as $part) {
+					if(!$part) continue;
+					$parts[] = ucfirst(strtolower($part)).' ';
+				}
+				$fieldValue = implode(' ', $parts);
+			}
+
+
+			if(in_array($dbField, $fields_for_suggest) || $fieldValue != '') {
+				if($fieldName == 'anrede') {
+					$mods[$counter]['p_fields'][$fieldsCounter++] = array_merge(
+						array(
+							"type" => "textplus",
+							"params" => 'size="0"',
+							'desc' => getLL('kota_ko_leute_anrede'),
+							'name' => '_p_anrede_' . $d['id'],
+							'value' => $fieldValue,
+						), kota_get_form('ko_leute', 'anrede')
+					);
+				} else {
+					$mods[$counter]['p_fields'][$fieldsCounter++] = array(
+						"type" => "text",
+						'desc' => getLL('kota_ko_leute_' . $fieldName),
+						'name' => $dbField . '_' . $d['id'],
+						'value' => $fieldValue,
+					);
+				}
+			} else {
+				if($fieldValue == '') continue;
 				$mods[$counter]['p_fields'][$fieldsCounter++] = array(
-					"type" => "html",
+					'type' => 'html',
 					'desc' => getLL('kota_ko_leute_' . $fieldName),
 					'name' => $dbField . '_' . $d['id'],
 					'value' => $fieldValue,
-				);
+					);
 			}
-		}
+		}//foreach(dbFields ad dbCol)
 
 		//Try to find person in DB
 		if($d['_p_vorname'] && $d['_p_nachname']) {
@@ -281,7 +345,7 @@ function ko_list_donations_mod($output=TRUE) {
 
 
 
-function ko_list_accounts($output=TRUE) {
+function ko_list_accounts() {
 	global $smarty;
 	global $access;
 
@@ -290,7 +354,7 @@ function ko_list_accounts($output=TRUE) {
 	$rows = db_get_count('ko_donations_accounts', 'id');
 	if($_SESSION['show_start'] > $rows) $_SESSION['show_start'] = 1;
   $z_limit = 'LIMIT '.($_SESSION['show_start']-1).', '.$_SESSION['show_limit'];
-	$es = db_select_data('ko_donations_accounts', '', '*', 'ORDER BY number ASC', $z_limit);
+	$es = db_select_data('ko_donations_accounts', '', '*', 'ORDER BY number ASC, name ASC', $z_limit);
 
 	$list = new kOOL_listview();
 
@@ -305,17 +369,13 @@ function ko_list_accounts($output=TRUE) {
 	$list->setSort(FALSE);
 
 	//Output the list
-	if($output) {
-		$list->render($es);
-	} else {
-		print $list->render($es);
-	}
+	$list->render($es);
 }//ko_list_accounts()
 
 
 
 
-function ko_list_reoccuring_donations($output=TRUE) {
+function ko_list_reoccuring_donations() {
 	global $KOTA, $access, $DATETIME;
 
 	if($access['donations']['MAX'] < 1) return;
@@ -331,7 +391,14 @@ function ko_list_reoccuring_donations($output=TRUE) {
 	//Add new column deadline
 	$KOTA["ko_donations"]["due"] = array("list" => "none");
 	$KOTA["ko_donations"]["_listview"][5] = array("name" => "due", 'sort' => 'MODULEdue');
+
+	if(is_array($_SESSION['kota_show_cols_ko_donations'])) {
+		array_unshift($_SESSION['kota_show_cols_ko_donations'], 'due');
+	} else {
+		array_unshift($KOTA["ko_donations"]["_listview_default"], 'due');
+	}
 	unset($KOTA["ko_donations"]["_listview"][10]);  //Don't show date of last donation
+	unset($KOTA["ko_donations"]["_listview"][20]);  //Don't show valuta date of last donation
 
 	//Prepare due date as new column
 	foreach($es as $i => $e) {
@@ -386,11 +453,7 @@ function ko_list_reoccuring_donations($output=TRUE) {
 	$list->setFooter($list_footer);
 
 	//Output the list
-	if($output) {
-		$list->render($es);
-	} else {
-		print $list->render($es);
-	}
+	$list->render($es);
 }//ko_list_reoccuring_donations()
 
 
@@ -453,44 +516,15 @@ function ko_formular_account($mode, $id="") {
 
 
 
-function ko_donations_thanks_preview($output=TRUE) {
-	global $DATETIME;
-
-	ko_donation_thanks_get_data($all);
-
-	$accounts = db_select_data('ko_donations_accounts', 'WHERE 1');
-
-	$c = '';
-	$c .= '<h2>'.sizeof($all).' '.getLL('donations_thanks_unthanked_donations').'</h2>';
-	$c .= '<ul>';
-	foreach($all as $k => $entry) {
-		$c .= '<li><b>'.$entry['email'].'</b> ('.$entry['person']['vorname'].' '.$entry['person']['nachname'].'): ';
-		$c .= 'Spende vom '.strftime($DATETIME['dmY'], strtotime($entry['donation']['date'])).' &uuml;ber CHF '.$entry['donation']['amount'].' auf Konto '.$accounts[$entry['donation']['account']]['name'].'</li>';
-	}
-	$c .= '</ul>';
-
-	if(sizeof($all) > 0) {
-		$c .= '<p><a href="/donations/index.php?action=thanks_download_excel_all">&raquo; '.getLL('donations_thanks_download_excel').'</a></p>';
-		$c .= '<p><a href="/donations/index.php?action=thanks_mark_thanked">&raquo; '.getLL('donations_thanks_sent').'</a></p>';
-	}
-
-	if ($output) {
-		print $c;
-	} else {
-		return $c;
-	}
-}
-
-
-
-
-function ko_donations_stats($output=TRUE, $mode="html", $_year='') {
+function ko_donations_stats($mode="html", $_year='') {
 	global $access, $smarty, $ko_path;
 
 	if($access['donations']['MAX'] < 1) return FALSE;
 
 	$date_field = ko_get_userpref($_SESSION['ses_userid'], 'donations_date_field');
 	if(!$date_field || !in_array($date_field, array('date', 'valutadate'))) $date_field = 'date';
+
+	$combine_accounts = ko_get_userpref($_SESSION['ses_userid'], 'donations_export_combine_accounts');
 
 	switch($_SESSION["stats_mode"]) {
 		case "year":
@@ -500,12 +534,12 @@ function ko_donations_stats($output=TRUE, $mode="html", $_year='') {
 			$data = ko_donations_get_stats_year($use_year);
 
 			//Row title (account)
-			$a_where = sizeof($_SESSION['show_accounts']) > 0 ? "WHERE `id` IN ('".implode("','", $_SESSION["show_accounts"])."')" : "WHERE 1=2";
+			$a_where = sizeof($_SESSION['show_donations_accounts']) > 0 ? "WHERE `id` IN ('".implode("','", $_SESSION["show_donations_accounts"])."')" : "WHERE 1=2";
 
-			$years = db_select_distinct("ko_donations", "YEAR(`$date_field`)", '', sizeof($_SESSION['show_accounts']) > 0 ? "WHERE `account` IN ('".implode("','", $_SESSION["show_accounts"])."')" : "WHERE 1=2"." AND `promise` = '0'");
+			$years = db_select_distinct("ko_donations", "YEAR(`$date_field`)", '', sizeof($_SESSION['show_donations_accounts']) > 0 ? "WHERE `account` IN ('".implode("','", $_SESSION["show_donations_accounts"])."')" : "WHERE 1=2"." AND `promise` = '0'");
 			foreach($years as $key => $value) if(!$value) unset($years[$key]);
 
-			$all_accounts = db_select_data("ko_donations_accounts", $a_where, "*", "ORDER BY number ASC");
+			$all_accounts = db_select_data("ko_donations_accounts", $a_where, "*", "ORDER BY number ASC, name ASC");
 			foreach($all_accounts as $a) {
 				if($access['donations']['ALL'] < 1 && $access['donations'][$a['id']] < 1) continue;
 				$data["accounts"][$a["id"]]["name"] = $a["number"]." ".$a["name"];
@@ -520,16 +554,18 @@ function ko_donations_stats($output=TRUE, $mode="html", $_year='') {
 
 			//Export to Excel
 			if($mode == "xls") {
-				//Data for each account
 				$xls_data = array();
 				$row = 0;
-				foreach($data["accounts"] as $id => $a) {
-					$xls_data[$row][] = $a["name"];
-					for($m=1; $m<=12; $m++) {
-						$xls_data[$row][] = $a[$m]["amount"];
+				//Data for each account
+				if (!$combine_accounts) {
+					foreach($data["accounts"] as $id => $a) {
+						$xls_data[$row][] = $a["name"];
+						for($m=1; $m<=12; $m++) {
+							$xls_data[$row][] = $a[$m]["amount"];
+						}
+						$xls_data[$row][] = $a["total"]["amount"];
+						$row++;
 					}
-					$xls_data[$row][] = $a["total"]["amount"];
-					$row++;
 				}
 				//Add row with totals
 				$xls_data[$row][] = getLL("total");
@@ -598,11 +634,7 @@ function ko_donations_stats($output=TRUE, $mode="html", $_year='') {
 	}//switch(stats_mode)
 
 	//Output the list
-	if($output) {
-		$smarty->display($tpl_file);
-	} else {
-		print $smarty->fetch($tpl_file);
-	}
+	$smarty->display($tpl_file);
 }//ko_donations_stats()
 
 
@@ -612,8 +644,8 @@ function ko_donations_get_stats_year($year) {
 	$date_field = ko_get_userpref($_SESSION['ses_userid'], 'donations_date_field');
 	if(!$date_field || !in_array($date_field, array('date', 'valutadate'))) $date_field = 'date';
 
-	$a_where = "WHERE `id` IN ('".implode("','", $_SESSION["show_accounts"])."')";
-	$all_accounts = db_select_data("ko_donations_accounts", $a_where, "*", "ORDER BY number ASC");
+	$a_where = "WHERE `id` IN ('".implode("','", $_SESSION["show_donations_accounts"])."')";
+	$all_accounts = db_select_data("ko_donations_accounts", $a_where, "*", "ORDER BY number ASC, name ASC");
 	$data = array();
 
 	//promise filter
@@ -681,8 +713,8 @@ function ko_donations_get_stats_accounts($yearStart=NULL, $yearEnd=NULL) {
 	$date_field = ko_get_userpref($_SESSION['ses_userid'], 'donations_date_field');
 	if(!$date_field || !in_array($date_field, array('date', 'valutadate'))) $date_field = 'date';
 
-	$a_where = "WHERE `id` IN ('".implode("','", $_SESSION["show_accounts"])."')";
-	$all_accounts = db_select_data("ko_donations_accounts", $a_where, "*", "ORDER BY number ASC");
+	$a_where = "WHERE `id` IN ('".implode("','", $_SESSION["show_donations_accounts"])."')";
+	$all_accounts = db_select_data("ko_donations_accounts", $a_where, "*", "ORDER BY number ASC, name ASC");
 
 	$account_data = array();
 	foreach ($all_accounts as $account) {
@@ -726,33 +758,30 @@ function ko_donations_merge() {
 	global $smarty;
 
 	//Get donators
+	$includeIds = array();
 	$donators = db_select_data("ko_donations", "WHERE 1", "person, COUNT(*) as num", "GROUP by `person`");
 	foreach($donators as $person) {
-		ko_get_person_by_id($person["person"], $p);
-		$sort_key = $p["nachname"].$p["vorname"].$person["person"];
-		$d_values[$sort_key] = $person["person"];
-		$d_descs[$sort_key] = $p["nachname"]." ".$p["vorname"].($p["ort"] ? (" ".getLL("from")." ".$p["ort"]) : "")." (".$person["num"].")";
+		$includeIds[] = $person['person'];
 	}
-	ksort($d_values);
-	ksort($d_descs);
+	$excludeSql = '';
+	if (sizeof($includeIds) > 0) {
+		$excludeSql = "`id` IN (".implode(',', $includeIds).")";
+	}
 
 	$gc = $rowcounter = 0;
 	$group[$gc] = array("titel" => '', "state" => "open");
-	$group[$gc]["row"][$rowcounter++]["inputs"][0] = array("desc" => getLL("donations_merge_person1"),
-																												 "type" => "select",
-																												 "name" => "merge_person1",
-																												 "values" => $d_values,
-																												 "descs" => $d_descs,
-																												 "params" => 'size="0"'
-																												 );
+
 	$group[$gc]["row"][$rowcounter++]["inputs"][0] = array("desc" => getLL("donations_merge_person2"),
-																												 "type" => "doubleselect",
-		  													 												 "js_func_add" => "double_select_add",
-																												 "name" => "merge_person2",
-																												 "values" => $d_values,
-																												 "descs" => $d_descs,
-																												 "params" => 'size="7"'
-																												 );
+		"type" => "peoplesearch",
+		"name" => "merge_person2",
+		"exclude_sql" => $excludeSql,
+	);
+	$group[$gc]["row"][$rowcounter++]["inputs"][0] = array("desc" => getLL("donations_merge_person1"),
+		"type" => "peoplesearch",
+		"name" => "merge_person1",
+		"exclude_sql" => $excludeSql,
+		"single" => TRUE,
+	);
 
 	$smarty->assign("tpl_titel", getLL("donations_merge_title"));
 	$smarty->assign("tpl_submit_value", getLL("donations_merge_submit"));
@@ -771,14 +800,20 @@ function ko_donations_export_person($mode) {
 	global $access, $ko_path;
 
 	apply_donations_filter($z_where, $z_limit);
-	$address_columns = array('firm', 'department', 'anrede', 'vorname', 'nachname', 'adresse', 'adresse_zusatz', 'plz', 'ort', 'land');
+	$address_columns = array('firm', 'department', 'anrede', 'MODULEsalutation_formal', 'MODULEsalutation_informal', 'vorname', 'nachname', 'adresse', 'adresse_zusatz', 'plz', 'ort', 'land');
+	if ($mode == 'person') {
+		$address_columns[] = 'id';
+		$address_columns[] = 'deleted';
+	}
+
+	$combine_accounts = ko_get_userpref($_SESSION['ses_userid'], 'donations_export_combine_accounts');
 
 	//Get donators
 	$donators = db_select_distinct('ko_donations', 'person', '', 'WHERE 1 '.$z_where);
 
 	//Get accounts
 	$ids = array();
-	foreach($_SESSION['show_accounts'] as $d) {
+	foreach($_SESSION['show_donations_accounts'] as $d) {
 		if($access['donations']['ALL'] > 0 || $access['donations'][$d] > 0) $ids[] = $d;
 	}
 	if(sizeof($ids) > 0) {
@@ -786,8 +821,11 @@ function ko_donations_export_person($mode) {
 	} else {
 		$a_where = ' 1=2 ';
 	}
-	$accounts = db_select_data('ko_donations_accounts', 'WHERE '.$a_where, '*', 'ORDER BY number ASC');
-	$sum_only = sizeof($accounts) > 50;
+	$accounts = db_select_data('ko_donations_accounts', 'WHERE '.$a_where, '*', 'ORDER BY number ASC, name ASC');
+	$sum_only = sizeof($accounts) > 50 || $combine_accounts;
+
+	$newDonationsAccount = $_POST['donation_account'];
+	$sortKey2MainPerson = array();
 
 	//Handle every single donator
 	$rowcounter = 0;
@@ -795,6 +833,10 @@ function ko_donations_export_person($mode) {
 	foreach($donators as $pid) {
 		//Address data
 		ko_get_person_by_id($pid, $person, TRUE);  //Include deleted addresses
+
+		//Add salutations
+		kota_listview_salutation_informal($person['MODULEsalutation_informal'], array('dataset' => $person));
+		kota_listview_salutation_formal($person['MODULEsalutation_formal'], array('dataset' => $person));
 
 		//Merge couples
 		if( ($mode == 'couple' && $person['famid'] > 0 && in_array($person['famfunction'], array('husband', 'wife')))
@@ -804,6 +846,17 @@ function ko_donations_export_person($mode) {
 
 			$famfunctions = $mode == 'couple' ? array('husband', 'wife') : '';
 			ko_get_personen_by_familie($person['famid'], $members, $famfunctions);
+
+			$mainPerson = NULL;
+			foreach ($members as $member) {
+				if ($member['famfunction'] == 'husband') $husband = $member;
+				else if ($member['famfunction'] == 'wife') $wife = $member;
+				$other = $member;
+			}
+			if (isset($husband)) $mainPerson = $husband;
+			else if (isset($wife)) $mainPerson = $wife;
+			else $mainPerson = $other;
+
 			$pids = array_keys($members);
 
 			$family = ko_get_familie($person['famid']);
@@ -817,7 +870,7 @@ function ko_donations_export_person($mode) {
 					$person['vorname'] = $family['famfirstname'];
 				} else {
 					//use first names of parents for firstname-col
-					$parents = db_select_data('ko_leute', "WHERE `famid` = '".$person['famid']."' AND `famfunction` IN ('husband', 'wife')", 'famfunction,vorname', 'ORDER BY famfunction ASC');
+					$parents = db_select_data('ko_leute', "WHERE `famid` = '".$person['famid']."' AND `famfunction` IN ('husband', 'wife') AND `deleted` = '0'".ko_get_leute_hidden_sql(), 'famfunction,vorname', 'ORDER BY famfunction ASC');
 					$parent_values = array();
 					foreach($parents as $parent) $parent_values[] = $parent['vorname'];
 					$person['vorname'] = implode((' '.getLL('family_link').' '), $parent_values);
@@ -826,13 +879,21 @@ function ko_donations_export_person($mode) {
 		}
 		//Export as single person
 		else {
+			$mainPerson = $person;
 			$pids = array($pid);
 		}
+
+		// If persons in household are all hidden/deleted, we dont get list of pids, so skip the donation
+		if(!is_array($pids) || sizeof($pids) == 0) continue;
 
 		//Sort key
 		$sort_key = $person['nachname'].$person['vorname'].'_'.$rowcounter;
 		foreach($address_columns as $col) {
-			$data[$sort_key][] = $person[$col];
+			if($col == 'deleted') {
+				$data[$sort_key][] = $person[$col] == 1 ? getLL('yes') : getLL('no');
+			} else {
+				$data[$sort_key][] = $person[$col];
+			}
 		}
 
 		$total_amount = $total_num = 0;
@@ -857,10 +918,31 @@ function ko_donations_export_person($mode) {
 
 		$data[$sort_key][] = $total_num;
 		$data[$sort_key][] = $total_amount;
+
+		$sortKey2MainPerson[$sort_key] = $mainPerson;
+
 		$rowcounter++;
 	}//foreach(donators as pid)
 
 	ksort($data);
+
+	$contactPids = array();
+	foreach ($sortKey2MainPerson as $sortKey => $person) {
+		$contactPids[] = $person['id'];
+	}
+
+	// create crm contact and
+	$contactId = ko_create_crm_contact_from_post(TRUE, array('leute_ids' => implode(',', $contactPids)));
+
+	// compute reference number for new donations
+	if ($newDonationsAccount && ko_module_installed('vesr')) {
+		$doCrm = $contactId ? TRUE : FALSE;
+		foreach ($sortKey2MainPerson as $sortKey => $person) {
+			$refnumber = ko_donations_get_refnumber($newDonationsAccount, $person['id'], $doCrm, $contactId);
+
+			$data[$sortKey][] = $refnumber;
+		}
+	}
 
 	//prepare header
 	foreach($address_columns as $col) {
@@ -874,6 +956,10 @@ function ko_donations_export_person($mode) {
 	}
 	$header[] = getLL('total').' ('.getLL('donations_export_num').')';
 	$header[] = getLL('total').' ('.getLL('donations_export_amount').')';
+
+	if ($newDonationsAccount && ko_module_installed('vesr')) {
+		$header[] = getLL('donations_export_refnumber');
+	}
 
 	//Export to Excel
 	$filename = $ko_path.'download/excel/'.getLL('donations_export_filename').strftime('%d%m%Y_%H%M%S', time()).'.xlsx';
@@ -891,18 +977,18 @@ function ko_donations_export_monthly() {
 	
 	$date_field = ko_get_userpref($_SESSION['ses_userid'], 'donations_date_field');
 	if(!$date_field || !in_array($date_field, array('date', 'valutadate'))) $date_field = 'date';
-  
+
 	if($_SESSION["donations_filter"]["date1"] == '') {
-  	$resetStart = 1;
-  	$_SESSION["donations_filter"]["date1"] = date('Y').'-01-01';
-  }
-  $startDate = $_SESSION["donations_filter"]["date1"];
+		$resetStart = 1;
+		$_SESSION["donations_filter"]["date1"] = date('Y').'-01-01';
+	}
+	$startDate = $_SESSION["donations_filter"]["date1"];
 	if ($_SESSION["donations_filter"]["date2"] == '') {
-  	$resetEnd = 1;
-  	$_SESSION["donations_filter"]["date2"] = date('Y').'-12-31';
-  }
-  $endDate = $_SESSION["donations_filter"]["date2"];
-	
+		$resetEnd = 1;
+		$_SESSION["donations_filter"]["date2"] = date('Y').'-12-31';
+	}
+	$endDate = $_SESSION["donations_filter"]["date2"];
+
 	apply_donations_filter($z_where, $z_limit);
 		
 	$start = substr( $startDate , 0 , 4 ).substr( $startDate , 5 , 2 );
@@ -922,7 +1008,7 @@ function ko_donations_export_monthly() {
 
 	//Get accounts
 	$ids = array();
-	foreach($_SESSION['show_accounts'] as $d) {
+	foreach($_SESSION['show_donations_accounts'] as $d) {
 		if($access['donations']['ALL'] > 0) {
 			$ids[] = $d;
 		} else if ($access['donations'][$d] > 0) {
@@ -935,7 +1021,7 @@ function ko_donations_export_monthly() {
 		$a_where = ' 1=2 ';
 	}
 	
-	$accounts = db_select_data('ko_donations_accounts', 'WHERE '.$a_where, '*', 'ORDER BY number ASC');
+	$accounts = db_select_data('ko_donations_accounts', 'WHERE '.$a_where, '*', 'ORDER BY number ASC, name ASC');
 
 	//Promise filter
 	$where = " `promise` = '0' ";
@@ -965,7 +1051,7 @@ function ko_donations_export_monthly() {
 				//Sum up the amounts
 				//$accountSum[$account['id']] += (float)$row['total'];
 				$sum += (float)$row['total'];
-				$data[$sort_key][] = sprintf("%.2f", (float)$row['total']);
+				$data[$sort_key][] = number_format((float)$row['total'], 2, '.', '');
 			} else {
 				//Get donations for this user for each account
 				foreach($accounts as $account) {
@@ -976,7 +1062,7 @@ function ko_donations_export_monthly() {
 					//Sum up the amounts
 					$accountSum[$account['id']] += (float)$row['total'];
 					$sum += (float)$row['total'];
-					$data[$sort_key][] = sprintf("%.2f", (float)$row['total']);
+					$data[$sort_key][] = number_format((float)$row['total'], 2, '.', '');
 				}
 			}
 			$monthcounter++;
@@ -1060,36 +1146,37 @@ function ko_donations_export_monthly() {
 			$cols[] = $letter1.$letter2;
 		}
 	}
-	$sum_row = array();
-	foreach($address_columns as $col) {
-		$sum_row[] = '';
-	}
-	$colc = sizeof($address_columns);
-	$limit = $combine_accounts ? 13 : (13*sizeof($accounts)+1);
-	for($i = 0; $i < $limit; $i++) {  //12 for all months plus one for the totals column
-		$sum_row[] = '=SUM('.$cols[$colc].($combine_accounts ? 2 : 3).':'.$cols[$colc].(sizeof($data)+($combine_accounts ? 1 : 2)).')';
-		$colc++;
-	}
-	$data['_sums'] = $sum_row;
 
-	//Add formating for sum rows and columns
-	$formatting = array('formats' => array('colsum' => array('bold' => 1, 'top' => 1), 'rowsum' => array('bold' => 1, 'left' => 1)));
-	$formatting['rows'][sizeof($data)+($combine_accounts ? 0 : 1)] = 'colsum';
+	if (sizeof($data) > 0) {
+		$sum_row = array();
+		foreach($address_columns as $col) {
+			$sum_row[] = '';
+		}
+		$colc = sizeof($address_columns);
+		$limit = $combine_accounts ? 13 : (13*sizeof($accounts)+1);
+		for($i = 0; $i < $limit; $i++) {  //12 for all months plus one for the totals column
+			$sum_row[] = '=SUM('.$cols[$colc].($combine_accounts ? 2 : 3).':'.$cols[$colc].(sizeof($data)+($combine_accounts ? 1 : 2)).')';
+			$colc++;
+		}
+		$data['_sums'] = $sum_row;
 
-	$col = sizeof($address_columns) + ($combine_accounts ? 12 : 12*sizeof($accounts));
-	for($row = 0; $row < sizeof($data)+($combine_accounts ? 1 : 2); $row++) {
-		if($combine_accounts) {
-			$formatting['cells'][$row.':'.$col] = 'rowsum';
-		} else {
-			$c = $col;
-			for($i=0; $i < sizeof($accounts)+1; $i++) {
-				$formatting['cells'][$row.':'.$c] = 'rowsum';
-				$c++;
+		//Add formating for sum rows and columns
+		$formatting = array('formats' => array('colsum' => array('bold' => 1, 'top' => 1), 'rowsum' => array('bold' => 1, 'left' => 1)));
+		$formatting['rows'][sizeof($data)+($combine_accounts ? 0 : 1)] = 'colsum';
+
+		$col = sizeof($address_columns) + ($combine_accounts ? 12 : 12*sizeof($accounts));
+		for($row = 0; $row < sizeof($data)+($combine_accounts ? 1 : 2); $row++) {
+			if($combine_accounts) {
+				$formatting['cells'][$row.':'.$col] = 'rowsum';
+			} else {
+				$c = $col;
+				for($i=0; $i < sizeof($accounts)+1; $i++) {
+					$formatting['cells'][$row.':'.$c] = 'rowsum';
+					$c++;
+				}
 			}
 		}
 	}
-
-
 		
 	//Export to Excel
 	if($combine_accounts) {
@@ -1117,7 +1204,7 @@ function apply_donations_filter(&$z_where, &$z_limit) {
 
 	//Accounts from itemlist
 	$z_where = "";
-	foreach($_SESSION["show_accounts"] as $d) {
+	foreach($_SESSION['show_donations_accounts'] as $d) {
 		if($access['donations']['ALL'] > 0 || $access['donations'][$d] > 0) $z_where .= " `account` = '$d' OR ";
 	}
 	if($z_where) $z_where = " AND (".substr($z_where, 0, -3).") ";
@@ -1150,7 +1237,8 @@ function apply_donations_filter(&$z_where, &$z_limit) {
 				if(substr($_SESSION['donations_filter'][$key], 0, 3) == '@G@') $filterset = ko_get_userpref('-1', substr($_SESSION['donations_filter'][$key], 3), 'filterset');
 				else $filterset = ko_get_userpref($_SESSION["ses_userid"], $_SESSION["donations_filter"][$key], "filterset");
 				$filter = unserialize($filterset[0]["value"]);
-				if(TRUE === apply_leute_filter($filter, $leute_where)) {
+				//Include deleted addresses here (last TRUE) as we are searching for donations
+				if(TRUE === apply_leute_filter($filter, $leute_where, TRUE, '', '', TRUE)) {
 					$leute = db_select_data("ko_leute", "WHERE 1 ".$leute_where, "id");
 					if(sizeof($leute) == 0) {
 						$z_where .= " AND 1=2 ";
@@ -1168,8 +1256,6 @@ function apply_donations_filter(&$z_where, &$z_limit) {
 					$personStringWhere .= "OR `nachname` LIKE '%$part%' OR `vorname` LIKE '%$part%' OR `firm` LIKE '%$part%' ";
 				}
 				$personStringWhere = substr_replace( $personStringWhere , 'WHERE (' , 0 , 2 ).")";
-				$personStringWhere .= ko_get_leute_hidden_sql();
-				$personStringWhere .= " AND `deleted` = 0 ";
 				$personString = db_select_data("ko_leute",$personStringWhere, "id");
 				if(sizeof($personString) == 0) {
 					$z_where .= " AND 1=2 ";
@@ -1281,43 +1367,7 @@ function ko_donations_settings() {
 		'descs' => array(getLL('kota_ko_donations_date'), getLL('kota_ko_donations_valutadate')),
 		'value' => ko_html($value),
 	);
-	// Links in menubar
-	$value = ko_get_userpref($_SESSION['ses_userid'], 'donations_menubar_links');
-	$avalues1 = explode(',', $value);
-	$subMenus = ko_get_submenu_links('donations');
-	$avalues = $adescs = $values = $descs = array();
-	foreach ($avalues1 as $avalue1) {
-		if (trim($avalue1) == '') continue;
-		foreach ($subMenus as $subMenu) {
-			foreach ($subMenu['links'] as $subMenuLink) {
-				if ($subMenuLink['action'] == $avalue1) {
-					$avalues[] = $subMenuLink['action'];
-					$adescs[] = $subMenuLink['title'];
-				}
-			}
-		}
-	}
-	foreach ($subMenus as $subMenu) {
-		foreach ($subMenu['links'] as $subMenuLink) {
-			$values[] = $subMenuLink['action'];
-			$descs[] = $subMenuLink['title'];
-		}
-	}
-	$avalue = implode(',', $avalues);
-	$frmgroup[$gc]['row'][$rowcounter]['inputs'][0] = array('desc' => getLL('donations_settings_menubar_links'),
-		'type' => 'doubleselect',
-		"js_func_add" => "double_select_add",
-		'name' => 'dsel_donations_menubar_links',
-		'avalue' => $avalue,
-		'values' => $values,
-		'descs' => $descs,
-		'avalues' => $avalues,
-		'adescs' => $adescs,
-		'params' => 'size="6"',
-	);
 
-
-	
 	if($access['donations']['MAX'] > 3) {
 		$gc++;
 		$rowcounter = 0;
@@ -1361,6 +1411,15 @@ function ko_donations_settings() {
 			'name' => 'chk_use_promise',
 			'value' => $value == '' ? 0 : $value,
 		);
+
+		$value = ko_get_setting('donations_show_export_page');
+		$frmgroup[$gc]['row'][$rowcounter]['inputs'][0] = array('desc' => getLL('donations_settings_show_intermediate_export_page'),
+			'type' => 'switch',
+			'label_0' => getLL('no'),
+			'label_1' => getLL('yes'),
+			'name' => 'chk_show_export_page',
+			'value' => $value == '' ? 0 : $value,
+		);
 	}
 
 	//Allow plugins to add further settings
@@ -1380,5 +1439,49 @@ function ko_donations_settings() {
 	$smarty->display('ko_formular.tpl');
 
 }//ko_donation_settings()
+
+
+function ko_donations_export_settings() {
+	global $smarty, $access;
+
+	$mode = $_SESSION['export_donations']['export_mode'];
+
+	//build form
+	$gc = 0;
+	$rowcounter = 0;
+	//$frmgroup[$gc]['titel'] = getLL('leute_export_xls_settings');
+
+	$values = $descs = array('');
+	$allAccounts = db_select_data('ko_donations_accounts', "WHERE 1=1");
+	foreach ($allAccounts as $account) {
+		if ($access['donations'][$account['id']] > 1 || $access['donations']['ALL'] > 1) {
+			$values[] = $account['id'];
+			$descs[] = "{$account['name']} ({$account['number']})";
+		}
+	}
+
+	$value = $_POST['donation_account'];
+	if (!$value) $value = '';
+	$frmgroup[$gc]['row'][$rowcounter++]['inputs'][0] = array('desc' => getLL('donations_export_settings_account'),
+		'type' => 'select',
+		'name' => 'donation_account',
+		'values' => $values,
+		'descs' => $descs,
+		'value' => $values,
+	);
+
+	//display the form
+	$smarty->assign('tpl_titel', getLL('donations_export_settings_title'));
+	$smarty->assign('tpl_hidden_inputs', array(array('name' => 'export_mode', 'value' => $mode)));
+	$smarty->assign('tpl_submit_value', getLL('ok'));
+	$smarty->assign('tpl_action', 'export_donations');
+	$cancel = ko_get_userpref($_SESSION['ses_userid'], 'default_view_donations');
+	if(!$cancel) $cancel = 'list_donations';
+	$smarty->assign('tpl_cancel', $cancel);
+	$crmContactGroup = ko_get_crm_contact_form_group(array('leute_ids'), array('type' => 'letter'));
+	$frmgroup[sizeof($frmgroup)] = $crmContactGroup[0];
+	$smarty->assign('tpl_groups', $frmgroup);
+	$smarty->display('ko_formular.tpl');
+}
 
 ?>

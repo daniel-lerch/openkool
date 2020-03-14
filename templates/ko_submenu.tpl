@@ -53,7 +53,9 @@
 									{assign var="tpl_itemlist_select" value=$i.tpl_itemlist_select}
 									{assign var="tpl_itemlist_values" value=$i.tpl_itemlist_values}
 									{assign var="tpl_itemlist_output" value=$i.tpl_itemlist_output}
+									{assign var="tpl_itemlist_title" value=$i.tpl_itemlist_title}
 									{assign var="tpl_itemlist_selected" value=$i.tpl_itemlist_selected}
+									{assign var="taxonomy_filter" value=$i.taxonomy_filter}
 									{assign var="show_sort_cols" value=$i.show_sort_cols}
 									{assign var="sort_cols_checked" value=$i.sort_cols_checked}
 									{assign var="allow_global" value=$i.allow_global}

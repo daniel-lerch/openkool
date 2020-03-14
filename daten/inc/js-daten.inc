@@ -107,22 +107,21 @@ var lastView = '<?php print $_SESSION['cal_view']; ?>';
 			height: calcCalendarHeight,
 
 			//Header layout
-			/*titleFormat: {
-				month: '<?php print str_replace("'", "\'", getLL('fullcalendar_title_month')); ?>',
-				week: "<?php print str_replace("'", "\'", getLL('fullcalendar_title_week')); ?>",
-				day: '<?php print str_replace("'", "\'", getLL('fullcalendar_title_day')); ?>'
-			},
-			columnFormat: {
-				month: '<?php print str_replace("'", "\'", getLL('fullcalendar_column_month')); ?>',
-				week: '<?php print str_replace("'", "\'", getLL('fullcalendar_column_week')); ?>',
-				day: '<?php print str_replace("'", "\'", getLL('fullcalendar_column_day')); ?>'
-			},
-			timeFormat: {
-				agenda: '<?php print str_replace("'", "\'", getLL('fullcalendar_time_agenda')); ?>',
-				month: '<?php print str_replace("'", "\'", getLL('fullcalendar_time_default')); ?>',
-				timeline: '<?php print str_replace("'", "\'", getLL('fullcalendar_time_default')); ?>'
-				timeline: '<?php print str_replace("'", "\'", getLL('fullcalendar_time_default')); ?>'
-			},*/
+			//titleFormat: {
+			//	month: '<?php //print str_replace("'", "\'", getLL('fullcalendar_title_month')); ?>//',
+			//	week: "<?php //print str_replace("'", "\'", getLL('fullcalendar_title_week')); ?>//",
+			//	day: '<?php //print str_replace("'", "\'", getLL('fullcalendar_title_day')); ?>//'
+			//},
+			//columnFormat: {
+			//	month: '<?php //print str_replace("'", "\'", getLL('fullcalendar_column_month')); ?>//',
+			//	week: '<?php //print str_replace("'", "\'", getLL('fullcalendar_column_week')); ?>//',
+			//	day: '<?php //print str_replace("'", "\'", getLL('fullcalendar_column_day')); ?>//'
+			//},
+			//timeFormat: {
+			//	agenda: '<?php //print str_replace("'", "\'", getLL('fullcalendar_time_agenda')); ?>//',
+			//	month: '<?php //print str_replace("'", "\'", getLL('fullcalendar_time_default')); ?>//',
+			//	timeline: '<?php //print str_replace("'", "\'", getLL('fullcalendar_time_default')); ?>//'
+			//},
 
 			views: {
 				month: {
@@ -180,9 +179,9 @@ var lastView = '<?php print $_SESSION['cal_view']; ?>';
 			//Some general layout settings
 			aspectRatio: 1.5,
 			allDayText: '<?php print str_replace("'", "\'", getLL('time_all_day')); ?>',
-			minTime: '<?php $fH = ko_get_userpref($_SESSION['ses_userid'], 'cal_woche_start'); print ($fH ? (strlen($fH) == 1 ? '0'.$fH : $fH).':00:00' : '06:00:00'); ?>',
-			maxTime: '<?php $fH = ko_get_userpref($_SESSION['ses_userid'], 'cal_woche_end'); print ($fH ? (strlen($fH) == 1 ? '0'.$fH : $fH).':00:00' : '24:00:00'); ?>',
-			nextDayThreshold: '<?php $fH = ko_get_userpref($_SESSION['ses_userid'], 'cal_woche_start'); print ($fH ? (strlen($fH) == 1 ? '0'.$fH : $fH).':00:00' : '06:00:00'); ?>',
+			minTime: '<?php $fH = ko_get_userpref($_SESSION['ses_userid'], 'cal_woche_start'); print ($fH != '' ? (strlen($fH) == 1 ? '0'.$fH : $fH).':00:00' : '06:00:00'); ?>',
+			maxTime: '<?php $fH = ko_get_userpref($_SESSION['ses_userid'], 'cal_woche_end'); print ($fH != '' ? (strlen($fH) == 1 ? '0'.$fH : $fH).':00:00' : '24:00:00'); ?>',
+			nextDayThreshold: '<?php $fH = ko_get_userpref($_SESSION['ses_userid'], 'cal_woche_start'); print ($fH != '' ? (strlen($fH) == 1 ? '0'.$fH : $fH).':00:00' : '06:00:00'); ?>',
 			editable: false,
 			firstDay: 1,  //Start week on monday
 			selectable: true,
@@ -333,12 +332,26 @@ var lastView = '<?php print $_SESSION['cal_view']; ?>';
 				sendReq('inc/ajax.php', 'action,id,mode,secondDelta', 'fceditevent,'+event.id+',editEnd,'+delta.asSeconds(), fc_check_redraw);
 			},
 
+			windowResize: function(view) {
+				if($(window).width() < 514){
+					$('#ko_calendar').fullCalendar( 'changeView', 'basicDay' );
+				} else {
+					$('#ko_calendar').fullCalendar( 'changeView', 'month' );
+				}
+			},
+
 			//Click to edit
 			eventClick: function(calEvent, jsEvent, view) {
 				//Dont edit event if deleteIcon has been clicked (with id item[0-9]*[ms])
 				if($(this).data('actionIcon') !== true) {
 					if(calEvent.editable) {
 						document.location = "index.php?action=edit_termin&id="+calEvent.id;
+					}
+					//Add link to absence item
+					else if($(this).hasClass('fc-absence')) {
+						if($(this).hasClass('fc-absence-readonly') === false) {
+							document.location = "/daten/index.php?action=edit_absence&id="+calEvent.id;
+						}
 					}
 					//Add link to birthday entries: Set filter for people module
 					else if($(this).hasClass('fc-birthday')) {
@@ -388,7 +401,6 @@ var lastView = '<?php print $_SESSION['cal_view']; ?>';
 					element.css('background', 'repeating-linear-gradient(45deg,#'+color+',#'+color+' 10px,#'+highlightColor+' 4px,#'+highlightColor+' 14px)');
 				}
 
-				console.log(calEvent.title);
 				element.find('.fc-title').html(calEvent.title);
 			},
 		});
@@ -438,6 +450,10 @@ function calcCalendarHeight() {
 
 
 $(document).ready(function() {
+	$('input[name="sel_repeat_dates"]').parent().on('dp.change', function(e) {
+		$('input[name="rd_wiederholung"][value="dates"]').prop('checked',true);
+	});
+
 	$('body').on("click", "#chk_perm_filter", function(e) {
 		if(this.checked == true) {
 			jumpToUrl("index.php?action=set_perm_filter");

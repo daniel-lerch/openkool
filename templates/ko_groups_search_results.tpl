@@ -1,5 +1,5 @@
 <h3>
-	{ll key="groups_list_search_results_title"}
+	{$resulttitle}
 </h3>
 <ul class="list-group">
 	{assign var="first" value=1}

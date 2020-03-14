@@ -9,7 +9,7 @@
 		<div class="row">
 			<div class="hidden-xs hidden-sm col-md-3" id="kool-text">
 				<a href="{$ko_path}index.php">
-					<img src="{$ko_path}{$file_logo_small}" border="0" alt="kOOL" title="kOOL" />
+					<img src="{$ko_path}{$file_logo_small}" border="0" height="50" width="142" alt="kOOL" title="kOOL" />
 				</a>
 			</div>
 			<div class="hidden-xs col-sm-8 col-md-6 text-center-md text-left-xs" id="logo-header">
@@ -33,7 +33,7 @@
 
 				{if !$ses_username || $ses_username == "ko_guest"}
 					<div class="btn-group login">
-						<button type="button" class="btn btn-primary navbar-btn dropdown-toggle" data-toggle="dropdown" aria-expanded="false">
+						<button type="button" class="btn btn-primary navbar-btn dropdown-toggle" id="btn__login" data-toggle="dropdown" aria-expanded="false">
 							{ll key="login"} <span class="caret"></span>
 						</button>
 						<ul id="login-menu" class="dropdown-menu dropdown-menu-right dropdown-form" role="menu">
@@ -54,7 +54,7 @@
 					</div>
 				{else}
 					<div class="btn-group">
-						<button type="button" class="btn btn-success navbar-btn dropdown-toggle" data-toggle="dropdown" aria-expanded="false">
+						<button type="button" class="btn btn-success navbar-btn dropdown-toggle" id="btn__logout" data-toggle="dropdown" aria-expanded="false">
 							{$ses_username} <span class="caret"></span>
 							<span class="sr-only">Toggle Dropdown</span>
 						</button>

@@ -41,13 +41,7 @@
 		<div class="list-group-item list-group-item-info">
 			{$title_res_week}:
 		</div>
-	{foreach from=$today_res_woche item=h}
-		<div class="list-group-item">
-			<h5 class="list-group-item-heading">{$h.wochentag}, {$h.startdatum|truncate:6:""}{if $h.enddatum != ""} - {$h.enddatum|truncate:6:""}{/if}: {$h.item}</h5>
-			<i class="fa fa-clock-o"></i> {$h.startzeit}{if $h.endzeit != ""} - {$h.endzeit}{/if}
-			{if $h.zweck != ""}"{$h.zweck}"{/if}
-		</div>
-	{/foreach}
+		<div class="list-group-item" id="ko_res_calendar"></div>
 	</div>
 {/if}
 

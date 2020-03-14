@@ -2,7 +2,7 @@
 /***************************************************************
 *  Copyright notice
 *
-*  (c) 2003-2015 Renzo Lauper (renzo@churchtool.org)
+*  (c) 2003-2017 Renzo Lauper (renzo@churchtool.org)
 *  All rights reserved
 *
 *  This script is part of the kOOL project. The kOOL project is
@@ -49,9 +49,6 @@ ko_include_kota(array('ko_tracking', 'ko_tracking_entries'));
 $hooks = hook_include_main('tracking');
 if(sizeof($hooks) > 0) foreach($hooks as $hook) include_once($hook);
  
-//Smarty-Templates-Engine laden
-require($BASE_PATH.'inc/smarty.inc');
- 
 require($BASE_PATH.'tracking/inc/tracking.inc');
 
 //HOOK: Submenus einlesen
@@ -80,7 +77,7 @@ if(isset($_GET) && isset($_GET['action'])) {
 	    }
 
 			print 'main_content@@@';
-			print ko_list_trackings(FALSE);
+			ko_list_trackings();
 		break;
 
 
@@ -91,7 +88,7 @@ if(isset($_GET) && isset($_GET['action'])) {
 	    }
 
 			print 'main_content@@@';
-			print ko_tracking_enter_form(FALSE);
+			ko_tracking_enter_form();
 		break;
 
 
@@ -100,7 +97,7 @@ if(isset($_GET) && isset($_GET['action'])) {
 			$_SESSION['sort_trackings_order'] = format_userinput($_GET['sort_order'], 'alpha', TRUE, 4);
 
 			print 'main_content@@@';
-			print ko_list_trackings(FALSE);
+			ko_list_trackings();
 		break;
 
 
@@ -109,16 +106,16 @@ if(isset($_GET) && isset($_GET['action'])) {
 			$_SESSION['sort_modtrackings_order'] = format_userinput($_GET['sort_order'], 'alpha', TRUE, 4);
 
 			print 'main_content@@@';
-			print ko_list_tracking_mod_entries(FALSE);
+			ko_list_tracking_mod_entries();
 		break;
 
 
  		case 'settrackingall':
  		case 'deltrackingall':
- 			if($access['tracking']['MAX'] < 2) continue;
+ 			if($access['tracking']['MAX'] < 2) break;
 
 			$tid = format_userinput($_GET['tid'], 'uint');
-			if($access['tracking']['ALL'] < 2 && $access['tracking'][$tid] < 2) continue;
+			if($access['tracking']['ALL'] < 2 && $access['tracking'][$tid] < 2) break;
 			$tracking = db_select_data('ko_tracking', "WHERE `id` = '$tid'", '*', '', '', TRUE);
 			$date = format_userinput($_GET['date'], 'date');
 			if($action == 'deltrackingall') {
@@ -171,33 +168,33 @@ if(isset($_GET) && isset($_GET['action'])) {
 
 			//Update whole table
 			print 'main_content@@@';
-			print ko_tracking_enter_form(FALSE);
+			ko_tracking_enter_form();
 		break;
 
 
 
 		case 'setdefault':
- 			if($access['tracking']['MAX'] < 2) continue;
+ 			if($access['tracking']['MAX'] < 2) break;
 
 			$lid = format_userinput($_GET['lid'], 'uint');
 			$tid = format_userinput($_GET['tid'], 'uint');
-			if($access['tracking']['ALL'] < 2 && $access['tracking'][$tid] < 2) continue;
+			if($access['tracking']['ALL'] < 2 && $access['tracking'][$tid] < 2) break;
 
 			ko_tracking_set_default($tid, $lid);
 
 			//Update whole table and show infobox
 			print 'main_content@@@';
-			print ko_tracking_enter_form(FALSE);
+			ko_tracking_enter_form();
 		break;
  
 
  		case 'settrackingsimple':
  		case 'settrackingvalue':
- 			if($access['tracking']['MAX'] < 2) continue;
+ 			if($access['tracking']['MAX'] < 2) break;
 
 			$data = array();
 			$data['tid'] = format_userinput($_GET['tid'], 'uint');
-			if($access['tracking']['ALL'] < 2 && $access['tracking'][$data['tid']] < 2) continue;
+			if($access['tracking']['ALL'] < 2 && $access['tracking'][$data['tid']] < 2) break;
 			$data['lid'] = format_userinput($_GET['lid'], 'int');
 			$data['date'] = format_userinput($_GET['date'], 'date');
 			if($action == 'settrackingsimple') {
@@ -225,11 +222,11 @@ if(isset($_GET) && isset($_GET['action'])) {
 
  		case 'settrackingtype':
  		case 'settrackingtypecheck':
- 			if($access['tracking']['MAX'] < 2) continue;
+ 			if($access['tracking']['MAX'] < 2) break;
 
 			$data = array();
 			$data['tid'] = format_userinput($_GET['tid'], 'uint');
-			if($access['tracking']['ALL'] < 2 && $access['tracking'][$data['tid']] < 2) continue;
+			if($access['tracking']['ALL'] < 2 && $access['tracking'][$data['tid']] < 2) break;
 			$data['lid'] = format_userinput($_GET['lid'], 'int');
 			$data['date'] = format_userinput($_GET['date'], 'date');
 			$data['value'] = format_userinput($_GET['value'], 'float');
@@ -268,16 +265,16 @@ if(isset($_GET) && isset($_GET['action'])) {
 
 			//Redraw content for tracking list
 			print 'main_content@@@';
-			ko_tracking_enter_form(FALSE);
+			ko_tracking_enter_form();
 		break;
 
 
  		case 'settrackingbitmask':
- 			if($access['tracking']['MAX'] < 2) continue;
+ 			if($access['tracking']['MAX'] < 2) break;
 
 			$data = array();
 			$data['tid'] = format_userinput($_GET['tid'], 'uint');
-			if($access['tracking']['ALL'] < 2 && $access['tracking'][$data['tid']] < 2) continue;
+			if($access['tracking']['ALL'] < 2 && $access['tracking'][$data['tid']] < 2) break;
 			$data['lid'] = format_userinput($_GET['lid'], 'uint');
 			$data['date'] = format_userinput($_GET['date'], 'date');
 			$data['value'] = format_userinput($_GET['value'], 'uint');
@@ -299,35 +296,35 @@ if(isset($_GET) && isset($_GET['action'])) {
 
 			//Redraw content for tracking list
 			print 'main_content@@@';
-			ko_tracking_enter_form(FALSE);
+			ko_tracking_enter_form();
 		break;
 
 
 		case 'deltrackingtype':
- 			if($access['tracking']['MAX'] < 2) continue;
+ 			if($access['tracking']['MAX'] < 2) break;
 
 			$id = format_userinput($_GET['id'], 'uint');
-			if(!$id) continue;
+			if(!$id) break;
 
 			$data = db_select_data('ko_tracking_entries', "WHERE `id` = '$id'", '*', '', '', TRUE);
-			if($data['id'] != $id || ($access['tracking']['ALL'] < 2 && $access['tracking'][$data['tid']] < 2)) continue;
+			if($data['id'] != $id || ($access['tracking']['ALL'] < 2 && $access['tracking'][$data['tid']] < 2)) break;
 
 			db_delete_data('ko_tracking_entries', "WHERE `id` = '$id'");
 			ko_log_diff('del_entered_tracking', $data);
 
 			//Redraw content for tracking list
 			print 'main_content@@@';
-			ko_tracking_enter_form(FALSE);
+			ko_tracking_enter_form();
 		break;
 
 
 
 		case 'confirmtrackingtype':
- 			if($access['tracking']['MAX'] < 2) continue;
+ 			if($access['tracking']['MAX'] < 2) break;
 
 			$data = array();
 			$data['tid'] = format_userinput($_GET['tid'], 'uint');
-			if($access['tracking']['ALL'] < 2 && $access['tracking'][$data['tid']] < 2) continue;
+			if($access['tracking']['ALL'] < 2 && $access['tracking'][$data['tid']] < 2) break;
 			$data['lid'] = format_userinput($_GET['lid'], 'uint');
 			$data['date'] = format_userinput($_GET['date'], 'date');
 			$data['type'] = $_GET['type'];
@@ -337,16 +334,16 @@ if(isset($_GET) && isset($_GET['action'])) {
 
 			//Redraw content for tracking list
 			print 'main_content@@@';
-			ko_tracking_enter_form(FALSE);
+			ko_tracking_enter_form();
 		break;
 
 
 		case 'deltrackingbitmask':
- 			if($access['tracking']['MAX'] < 2) continue;
+ 			if($access['tracking']['MAX'] < 2) break;
 
 			$data = array();
 			$data['tid'] = format_userinput($_GET['tid'], 'uint');
-			if($access['tracking']['ALL'] < 2 && $access['tracking'][$data['tid']] < 2) continue;
+			if($access['tracking']['ALL'] < 2 && $access['tracking'][$data['tid']] < 2) break;
 			$data['lid'] = format_userinput($_GET['lid'], 'uint');
 			$data['date'] = format_userinput($_GET['date'], 'date');
 			$data['value'] = format_userinput($_GET['value'], 'uint');
@@ -355,25 +352,25 @@ if(isset($_GET) && isset($_GET['action'])) {
 			if((int)$data['value'] & (int)$current['value']) {
 				$data['value'] = (int)$current['value'] - (int)$data['value'];
 				db_update_data('ko_tracking_entries', "WHERE `tid` = '".$data['tid']."' AND `lid` = '".$data['lid']."' AND `date` = '".$data['date']."'", array('value' => $data['value'], 'last_change' => date('Y-m-d H:i:s')));
-				ko_log_diff('del_entered_tracking', $data, $current);
+				ko_log_diff('del_entered_tracking', $data, $current, TRUE);
 			}
 
 			//Redraw content for tracking list
 			print 'main_content@@@';
-			ko_tracking_enter_form(FALSE);
+			ko_tracking_enter_form();
 		break;
 
 
 
 		case 'comment':
- 			if($access['tracking']['MAX'] < 2) continue;
+ 			if($access['tracking']['MAX'] < 2) break;
 
 			$tid = format_userinput($_GET['tid'], 'uint');
-			if($access['tracking']['ALL'] < 2 && $access['tracking'][$data['tid']] < 2) continue;
+			if($access['tracking']['ALL'] < 2 && $access['tracking'][$data['tid']] < 2) break;
 
 			if(isset($_GET['eid'])) {
 				$eid = format_userinput($_GET['eid'], 'uint');
-				if(!$eid) continue;
+				if(!$eid) break;
 				$entry = db_select_data('ko_tracking_entries', "WHERE `id` = '$eid'", '*', '', '', TRUE);
 			} else {
 				$lid = format_userinput($_GET['lid'], 'uint');
@@ -382,7 +379,7 @@ if(isset($_GET) && isset($_GET['action'])) {
 				$entry = db_select_data('ko_tracking_entries', "WHERE `tid` = '$tid' AND `lid` = '$lid' AND `date` = '$date'", '*', '', '', TRUE);
 				$eid = $entry['id'];
 			}
-			if(!$entry['id']) continue;
+			if(!$entry['id']) break;
 
 			$content = '<textarea name="comment" id="comment_'.$tid.'_'.$eid.'" cols="40" rows="5">'.$entry['comment'].'</textarea><br />';
 			$content .= '<input type="button" name="submit_tracking_comment" value="'.getLL('save').'" onclick="$.get(\'../tracking/inc/ajax.php\', {action: \'savecomment\', eid: \''.$eid.'\', tid: \''.$tid.'\', comment: $(\'#comment_'.$tid.'_'.$eid.'\').val(), sesid: \''.session_id().'\'}, tracking_entered_value_type); TINY.box.hide();" />';
@@ -393,10 +390,10 @@ if(isset($_GET) && isset($_GET['action'])) {
 
 
 		case 'delcomment':
- 			if($access['tracking']['MAX'] < 2) continue;
+ 			if($access['tracking']['MAX'] < 2) break;
 
 			$tid = format_userinput($_GET['tid'], 'uint');
-			if($access['tracking']['ALL'] < 2 && $access['tracking'][$data['tid']] < 2) continue;
+			if($access['tracking']['ALL'] < 2 && $access['tracking'][$data['tid']] < 2) break;
 			$lid = format_userinput($_GET['lid'], 'uint');
 			$date = format_userinput($_GET['date'], 'date');
 
@@ -404,16 +401,16 @@ if(isset($_GET) && isset($_GET['action'])) {
 
 			//Redraw content for tracking list
 			print 'main_content@@@';
-			ko_tracking_enter_form(FALSE);
+			ko_tracking_enter_form();
 		break;
 
 
 
 		case 'savecomment':
- 			if($access['tracking']['MAX'] < 2) continue;
+ 			if($access['tracking']['MAX'] < 2) break;
 
 			$tid = format_userinput($_GET['tid'], 'uint');
-			if($access['tracking']['ALL'] < 2 && $access['tracking'][$data['tid']] < 2) continue;
+			if($access['tracking']['ALL'] < 2 && $access['tracking'][$data['tid']] < 2) break;
 			$eid = format_userinput($_GET['eid'], 'uint');
 			$comment = format_userinput($_GET['comment'], 'text');
 
@@ -421,7 +418,7 @@ if(isset($_GET) && isset($_GET['action'])) {
 
 			//Redraw content for tracking list
 			print 'main_content@@@';
-			ko_tracking_enter_form(FALSE);
+			ko_tracking_enter_form();
 		break;
 
 
@@ -449,16 +446,16 @@ if(isset($_GET) && isset($_GET['action'])) {
 			//Redraw content for tracking list
 			print 'main_content@@@';
 			if($_SESSION['show'] == 'mod_entries') {
-				ko_list_tracking_mod_entries(FALSE);
+				ko_list_tracking_mod_entries();
 			} else {
-				ko_list_trackings(FALSE);
+				ko_list_trackings();
 			}
 		break;
 
 
 		case 'itemlistsave':
 			//save new value
-			if($_GET['name'] == '') continue;
+			if($_GET['name'] == '') break;
 			$new_value = implode(',', $_SESSION['show_tracking_groups']);
 			$user_id = $access['tracking']['MAX'] > 3 && $_GET['global'] == 'true' ? '-1' : $_SESSION['ses_userid'];
 			$name = format_userinput($_GET['name'], 'js', FALSE, 0, array('allquotes'));
@@ -492,7 +489,7 @@ if(isset($_GET) && isset($_GET['action'])) {
 		case 'itemlistopen':
 			//save new value
 			$name = format_userinput($_GET['name'], 'js', FALSE, 0, array(), '@');
-			if($name == '') continue;
+			if($name == '') break;
 
 			if($name == '_all_') {
 				$groups = db_select_data('ko_tracking_groups', '', '*');
@@ -508,14 +505,14 @@ if(isset($_GET) && isset($_GET['action'])) {
 
 			print submenu_tracking('itemlist_trackinggroups', 'open', 2);
 			print '@@@main_content@@@';
-			ko_list_trackings(FALSE);
+			ko_list_trackings();
 		break;
 
 
 		case 'itemlistdelete':
 			//Get name
 			$name = format_userinput($_GET['name'], 'js', FALSE, 0, array(), '@');
-			if($name == '') continue;
+			if($name == '') break;
 
 			if(substr($name, 0, 3) == '@G@') {
 				if($access['tracking']['MAX'] > 3) ko_delete_userpref('-1', substr($name, 3), 'tracking_itemset');
@@ -529,8 +526,8 @@ if(isset($_GET) && isset($_GET['action'])) {
 
 		case 'filterpresetsave':
 			//save new value
-			if($_GET['name'] == '') continue;
-			if ($_SESSION['tracking_filter']['date1'] == '' OR $_SESSION['tracking_filter']['date2'] == '') continue;
+			if($_GET['name'] == '') break;
+			if ($_SESSION['tracking_filter']['date1'] == '' OR $_SESSION['tracking_filter']['date2'] == '') break;
 			$new_value = $_SESSION['tracking_filter']['date1'] . ',' . $_SESSION['tracking_filter']['date2'];
 			$user_id = $access['tracking']['MAX'] > 3 && $_GET['global'] == 'true' ? '-1' : $_SESSION['ses_userid'];
 			ko_save_userpref($user_id, format_userinput($_GET['name'], 'js', FALSE, 0, array('allquotes')), $new_value, 'tracking_filterpreset');
@@ -541,7 +538,7 @@ if(isset($_GET) && isset($_GET['action'])) {
 		case 'filterpresetopen':
 			//save new value
 			$name = format_userinput($_GET['name'], 'js', FALSE, 0, array(), '@');
-			if($name == '') continue;
+			if($name == '') break;
 
 			/*if($name == '_all_') {
 				$groups = db_select_data('ko_tracking_groups', '', '*');
@@ -567,16 +564,16 @@ if(isset($_GET) && isset($_GET['action'])) {
 			print submenu_tracking('filter', 'open', 2);
 			print '@@@main_content@@@';
 			if($_SESSION['show'] == 'enter_tracking') {
-				ko_tracking_enter_form(FALSE);
+				ko_tracking_enter_form();
 			} else {
-				ko_list_trackings(FALSE);
+				ko_list_trackings();
 			}
 		break;
 
 		case 'filterpresetdelete':
 			//Get name
 			$name = format_userinput($_GET['name'], 'js', FALSE, 0, array(), '@');
-			if($name == '') continue;
+			if($name == '') break;
 
 			if(substr($name, 0, 3) == '@G@') {
 				if($access['tracking']['MAX'] > 3) ko_delete_userpref('-1', substr($name, 3), 'tracking_filterpreset');
@@ -597,7 +594,7 @@ if(isset($_GET) && isset($_GET['action'])) {
 
 			print submenu_tracking('trackings', 'open', 2);
 			print '@@@main_content@@@';
-			ko_list_trackings(FALSE);
+			ko_list_trackings();
 		break;
 
 	}//switch(action);

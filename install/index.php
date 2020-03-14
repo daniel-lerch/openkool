@@ -2,7 +2,7 @@
 /***************************************************************
 *  Copyright notice
 *
-*  (c) 2003-2015 Renzo Lauper (renzo@churchtool.org)
+*  (c) 2003-2017 Renzo Lauper (renzo@churchtool.org)
 *  All rights reserved
 *
 *  This script is part of the kOOL project. The kOOL project is
@@ -198,11 +198,6 @@ switch($do_action) {
 		$data = sprintf("@define('FORCE_SSL', %s);", $force_ssl)."\n";
 		ko_update_ko_config("force_ssl", $data);
 
-		//webfolders
-		$use_webfolders = $_POST["chk_webfolders"] ? "TRUE" : "FALSE";
-		$data = sprintf("@define('WEBFOLDERS', %s);", $use_webfolders)."\n";
-		ko_update_ko_config("webfolders", $data);
-
 
 		//root user
 		if($_POST["txt_root_pass1"] != "" && $_POST["txt_root_pass1"] == $_POST["txt_root_pass2"]) {
@@ -223,6 +218,7 @@ switch($do_action) {
 					else $key = $mod."_admin";
 
 					if(in_array($mod, array('admin', 'reservation', 'rota'))) $value = 5;
+					else if(in_array($mod, array('vesr', 'subscription', 'taxonomy'))) $value = 2;
 					else $value = 4;
 
 					$data[$key] = $value;
@@ -269,13 +265,6 @@ switch($do_action) {
     include($ko_path."inc/abuse.inc");
   break;
 }//switch(do_action)
-
-
-//Smarty-Templates-Engine laden
-$smarty_dir = $ko_path;
-require("$ko_path/inc/smarty.inc");
-
-
 ?>
 <!DOCTYPE html>
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="<?php print $_SESSION["lang"]; ?>" lang="<?php print $_SESSION["lang"]; ?>">
@@ -302,8 +291,8 @@ include($ko_path.'inc/js-sessiontimeout.inc');
 <div style="visibility:hidden;display:none;padding:10px;margin:5px 170px 10px 10px;background-color:#ddd;border:2px solid #3586bd;position:fixed;_position:absolute;right:0;top:0;_top:expression(eval(document.body.scrollTop));z-index:900;width:125px;text-align:center;" name="wait_message" id="wait_message"><img src="<?php print $ko_path; ?>images/load_anim.gif" /></div>
 
 <div id="kool-text">
-	<a href="http://www.churchtool.org" style="display:inline-block;">
-		<img src="<?php print $ko_path.$FILE_LOGO_SMALL; ?>" border="0" alt="kOOL" title="kOOL" />
+	<a href="http://www.churchtool.org" style="display:inline-block; margin: 10px 0 0 20px;">
+		<img src="<?php print $ko_path.$FILE_LOGO_SMALL; ?>" border="0" width="150" alt="kOOL" title="kOOL" />
 	</a>
 </div>
 
@@ -362,11 +351,10 @@ switch($_SESSION["show"]) {
 		} else print '<div style="color: green;">'.getLL("OK")."</div>";
 
 		//Check for filesystem permissions
-		$check_files = array("config/ko-config.php", "config/leute_formular.inc",
+		$check_files = array("config/ko-config.php",
 												 "download/excel", "download/pdf",
 												 "my_images",
 												 "templates_c",
-												 "webfolders", ".webfolders"
 												 );
 		foreach($check_files as $file) {
 			print '<div>'.getLL("install_checks_files_writable").": <b>".$file.'</b></div>';
@@ -402,7 +390,7 @@ switch($_SESSION["show"]) {
 		if($mysql_user && $mysql_pass && $mysql_server) {
 			$d = mysqli_connect($mysql_server, $mysql_user, $mysql_pass);
 			if(!$d) {
-				$error_txt_add .= mysqli_error($d);
+				$error_txt_add .= mysqli_connect_error();
 				$notifier->addError(1, $do_action, array($error_txt_add));
 			} else {
 				$result = mysqli_query($d, "SHOW DATABASES");
@@ -603,13 +591,6 @@ switch($_SESSION["show"]) {
 																 "name" => "txt_sms_pass",
 																 "value" => $SMS_PARAMETER["pass"],
 																 "params" => 'size="40"',
-																 );
-		//webfolders
-		$frmgroup[$gc]["row"][$rowcounter++]["inputs"][0] = array("type" => "   ");
-		$frmgroup[$gc]["row"][$rowcounter++]["inputs"][0] = array("desc" => getLL("install_settings_use_webfolders"),
-																 "type" => "switch",
-																 "name" => "chk_webfolders",
-																 "value" => WEBFOLDERS ? 1 : 0,
 																 );
 
 		// force ssl

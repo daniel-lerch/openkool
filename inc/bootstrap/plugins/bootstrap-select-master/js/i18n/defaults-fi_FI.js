@@ -12,8 +12,8 @@
     },
     maxOptionsText: function (numAll, numGroup) {
       return [
-        (numAll == 1) ? 'Valintojen maksimim√§√§r√§ ({n} saavutettu)' : 'Valintojen maksimim√§√§r√§ ({n} saavutettu)',
-        (numGroup == 1) ? 'Ryhm√§n maksimim√§√§r√§ ({n} saavutettu)' : 'Ryhm√§n maksimim√§√§r√§ ({n} saavutettu)'
+        (numAll == 1) ? 'Valintojen maksimim‰‰r‰ ({n} saavutettu)' : 'Valintojen maksimim‰‰r‰ ({n} saavutettu)',
+        (numGroup == 1) ? 'Ryhm‰n maksimim‰‰r‰ ({n} saavutettu)' : 'Ryhm‰n maksimim‰‰r‰ ({n} saavutettu)'
       ];
     },
     selectAllText: 'Valitse kaikki',

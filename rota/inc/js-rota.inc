@@ -34,7 +34,7 @@ $(document).ready(function() {
 		t = this.id.split("_");
 		event_id = t[2];
 		team_id = t[3];
-		schedule = t[4];
+		schedule = t.slice(4).join('_');
 		sendReq("../rota/inc/ajax.php", "action,eventid,teamid,schedule,module,sesid", "delschedule,"+event_id+","+team_id+","+schedule+","+kOOL.module+",<?php print session_id(); ?>", do_element);
 	});
 
@@ -43,7 +43,7 @@ $(document).ready(function() {
 		t = this.id.split("_");
 		event_id = t[3];
 		team_id = t[4];
-		schedule = t[5];
+		schedule = t.slice(5).join('_');
 		sendReq("../rota/inc/ajax.php", "action,eventid,teamid,schedule,module,sesid", "schedule,"+event_id+","+team_id+","+schedule+","+kOOL.module+",<?php print session_id(); ?>", do_element);
 	});
 
@@ -77,6 +77,17 @@ $(document).ready(function() {
 		sendReq("../rota/inc/ajax.php", ["action", "text", "global", "name", "sesid"], ["savepreset", text, global, name, "<?php print session_id(); ?>"], do_element);
 	});
 
+	$('body').on("click", "#btn_rota_xls_download", function() {
+		np_ids = $("#recipient_nok_ids").val();
+		sendReq("../rota/inc/ajax.php", ["action", "text", "sesid"], ["nomails_xls_download", np_ids, "<?php print session_id(); ?>"], show_box);
+	});
+
+	$('body').on("click", "#btn_rota_add_to_mylist", function() {
+		np_ids = $("#recipient_nok_ids").val();
+		sendReq("../rota/inc/ajax.php", ["action", "text", "sesid"], ["rota_add_to_mylist", np_ids, "<?php print session_id(); ?>"], do_element);
+	});
+
+
 	if(kOOL.module == 'rota') {
 		$('.richtexteditor').ckeditor({customConfig : '/rota/inc/ckeditor_custom_config.js' });
 	}
@@ -98,7 +109,103 @@ $(document).ready(function() {
 	}
 
 	rota_filesend_update_recipients();
+
+	$(document).tooltip({
+		selector:'.rota-tooltip',
+		html:true,
+		container:'body',
+		title:function() {
+			var code = $(this).data('tooltip-code');
+			if(code && !$(this).data('tooltip-show-minigraph')) {
+				return code;
+			} else if($(this).data('tooltip-url')) {
+				var minigraph = new Image();
+				minigraph.src = "/images/spinner.svg";
+				minigraph.width = $(this).data('tooltip-width');
+				minigraph.height = $(this).data('tooltip-height');
+				var loadImage = new Image();
+				loadImage.onload = function() {
+					minigraph.replaceWith(loadImage);
+				};
+				loadImage.src = $(this).data('tooltip-url');
+				var image = "<img src='" + loadImage.src + "' style='width:"+ minigraph.width +"px; height:"+ minigraph.height +"px'>";
+
+				if($(this).data('tooltip-combine-text') && code) {
+					var content = image + code;
+				} else {
+					var content = image;
+				}
+
+				return "<div class='rota-tooltip-inner " + (minigraph.width===438 ? "-full" : "-half") + "'>" + content + "</div>";
+			}
+		},
+	});
+	$(document).on('show.bs.tooltip','.rota-consensus-entry.rota-tooltip',function() {
+		$(this).on('remove',function() {
+			$(this).tooltip('destroy');
+		});
+	});
+
+
+	$('body').on('click', '#planning_list .team_name', function() {
+		var team_id = $(this).parent().data('team');
+		$('#itemlist_teams_' + team_id).click();
+	});
+
+	$('body').on('dblclick', '#planning_list .member_event_info', function() {
+		if($(this).hasClass("consensus-disabled")) return false;
+
+		var eventid = $(this).data("event");
+		var teamid = $(this).data("team");
+		var personid = $(this).data("member");
+		var scheduled = $(this).data("consensus-scheduled");
+
+		if(scheduled == 1) {
+			sendReq("/rota/inc/ajax.php", "action,eventid,teamid,schedule,type,module,sesid", "delschedule,"+eventid+","+teamid+","+personid+",planning,"+kOOL.module+","+kOOL.sid, do_element);
+			$(this).data("consensus-scheduled", "0");
+		} else {
+			sendReq("/rota/inc/ajax.php", "action,eventid,teamid,schedule,type,module,sesid", "schedule,"+eventid+","+teamid+","+personid+",planning,"+kOOL.module+","+kOOL.sid, do_element);
+			$(this).data("consensus-scheduled", "1");
+		}
+	});
+
+	$('body').on('mouseover', '#planning_list .col', function(e) {
+		$('.col.col-'+$(this).data('event')).addClass('highlight');
+		$(".team_member[data-team='" + $(this).data('team') +"'] .member_name[data-member='" + $(this).data('member') +"'] ").addClass('highlight');
+	});
+	$('body').on('mouseout', '#planning_list .col', function(e) {
+		$('.col.col-'+$(this).data('event')).removeClass('highlight');
+		$(".team_member[data-team='" + $(this).data('team') +"'] .member_name[data-member='" + $(this).data('member') +"'] ").removeClass('highlight');
+	});
 });
+
+
+function update_team_status(event_id, team_id, status) {
+	fields = $('.team_member').find('[data-event="'+event_id+'"][data-team="'+team_id+'"]')
+	$(fields).each(function(id,field) {
+		$(field).toggleClass("consensus-disabled");
+	});
+
+}
+
+function rota_planning_list_init() {
+
+	$('#planning_list').find('.member_event_info').each(function() {
+		var status = $(this).data("consensus-status");
+		var scheduled = $(this).data("consensus-scheduled");
+
+		if(scheduled === 1) {
+			$(this).find("i.fa").addClass("fa-circle");
+		} else {
+			$(this).find("i.fa").addClass("fa-circle-thin");
+		}
+	});
+
+	$('#planning_list').find('.closed').each(function() {
+		var team_id = $(this).data('team');
+		$('#planning_list .team_member[data-team="'+team_id+'"]').hide();
+	});
+}
 
 
 function rota_filesend_update_recipients() {

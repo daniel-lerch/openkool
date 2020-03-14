@@ -1,7 +1,7 @@
 /***************************************************************
  *  Copyright notice
  *
- *  (c) 2003-2015 Renzo Lauper (renzo@churchtool.org)
+ *  (c) 2003-2017 Renzo Lauper (renzo@churchtool.org)
  *  All rights reserved
  *
  *  This script is part of the kOOL project. The kOOL project is
@@ -66,3 +66,47 @@ function do_element_content(data) {
         $(ids[i]).html(contents[i]);
     }
 }//do_element_content()
+
+
+$(document).ready(function(){
+    $("button[data-action='comment_dialog']").on("click", function() {
+        var team_id = $(this).attr("data-team_id");
+        var comment = $(this).attr('data-comment_text');
+        var modal = $("#comment_modal");
+        $(modal).find('#comment_team_id').val(team_id);
+        $(modal).find('#comment_text').val(comment);
+        $(modal).modal("show");
+    });
+
+    $("button[data-action='comment_save']").on("click", function() {
+        var modal = $("#comment_modal");
+        var comment = $(modal).find("#comment_text").val();
+        var team_id = $(modal).find('#comment_team_id').val();
+
+        var urlparams = new RegExp('[\?&]x=([^&#]*)').exec(window.location.href);
+
+        var params = {
+            "action": "savecomment",
+            "comment": comment,
+            "team_id": team_id,
+            "x": urlparams[1]
+        };
+
+        $.ajax({
+            method: "POST",
+            url: "/consensus/ajax.php",
+            data: params
+        })
+        .done(function() {
+            var button = $("button[data-action='comment_dialog'][data-team_id="+team_id+"]");
+            button.attr("data-comment_text", comment);
+
+            if(comment !== '') {
+                button.find("i.fa-comment-o").addClass('fa-comment').removeClass('fa-comment-o');
+            } else {
+                button.find("i.fa-comment").addClass('fa-comment-o').removeClass('fa-comment');
+            }
+            $(modal).modal("hide");
+        });
+    });
+});

@@ -5,15 +5,15 @@
  */
 (function ($) {
   $.fn.selectpicker.defaults = {
-    noneSelectedText: 'V√°lasszon!',
-    noneResultsText: 'Nincs tal√°lat {0}',
+    noneSelectedText: 'V·lasszon!',
+    noneResultsText: 'Nincs tal·lat {0}',
     countSelectedText: function (numSelected, numTotal) {
-      return '{0} elem kiv√°lasztva';
+      return '{0} elem kiv·lasztva';
     },
     maxOptionsText: function (numAll, numGroup) {
       return [
-        'Legfeljebb {n} elem v√°laszthat√≥',
-        'A csoportban legfeljebb {n} elem v√°laszthat√≥'
+        'Legfeljebb {n} elem v·laszthatÛ',
+        'A csoportban legfeljebb {n} elem v·laszthatÛ'
       ];
     },
     selectAllText: 'Mind',

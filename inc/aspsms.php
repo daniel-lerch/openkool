@@ -52,6 +52,8 @@ class SMS {
 
 		//Add ip addresses as well in case there is a DNS problem
 		$this->servers = array(
+			'194.230.72.111:80',
+			'194.230.72.104:80',
 			'xml1.aspsms.com:5061',
 			'194.230.72.111:5061',
 			'xml1.aspsms.com:5098',

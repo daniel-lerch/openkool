@@ -2,7 +2,7 @@
 /***************************************************************
 *  Copyright notice
 *
-*  (c) 2003-2015 Renzo Lauper (renzo@churchtool.org)
+*  (c) 2003-2017 Renzo Lauper (renzo@churchtool.org)
 *  All rights reserved
 *
 *  This script is part of the kOOL project. The kOOL project is
@@ -27,7 +27,7 @@
 include_once($BASE_PATH."inc/class.kOOL_listview.php");
 
 
-function ko_groups_list($output=TRUE, $highlight=NULL) {
+function ko_groups_list($highlight=NULL) {
 	global $smarty, $ko_path;
 	global $all_groups, $access, $MAILING_PARAMETER, $RECTYPES;
 
@@ -71,6 +71,18 @@ function ko_groups_list($output=TRUE, $highlight=NULL) {
 	} else {
 		$z_where = "AND `pid` = '".$_SESSION["show_gid"]."'";
 	}
+
+	//Apply access restrictions
+  if($access['groups']['ALL'] < 1) {
+    $notAllowed = array();
+    $allGroups = db_select_data('ko_groups', "WHERE 1 ".$z_where);
+    foreach($allGroups as $gid => $group) {
+      if($access['groups'][$gid] < 1) $notAllowed[] = $gid;
+    }
+
+    if(sizeof($notAllowed) > 0) $z_where .= " AND `id` NOT IN (".implode(',', $notAllowed).") ";
+  }
+
 	$rows = db_get_count('ko_groups', 'id', $z_where);
 
 	if($_SESSION['show_start'] > $rows) $_SESSION['show_start'] = 1;
@@ -120,7 +132,6 @@ function ko_groups_list($output=TRUE, $highlight=NULL) {
 		$list->setRowClass('row-warning', "return ('ID' == ".$highlight.");");
 	}
 
-
 	$manual_access = array();
 	foreach($es as $k => $v) {
 		//Exclude groups this user has no access to
@@ -133,6 +144,8 @@ function ko_groups_list($output=TRUE, $highlight=NULL) {
 
 		//Set columns nump, numug so kota_process_data processes them
 		$es[$k]['nump'] = $es[$k]['numug'] = '';
+
+		if($access['taxonomy']['ALL'] >= 1) $es[$k]['terms'] = "";
 
 		//Manual access for deletion
 		if(($access['groups']['ALL'] > 3 || $access['groups'][$k] > 3) && db_get_count('ko_groups', "id", "AND `pid` = '$k'") == 0) {
@@ -190,6 +203,7 @@ function ko_groups_list($output=TRUE, $highlight=NULL) {
 				if (sizeof($RECTYPES) > 0) {
 					foreach($RECTYPES as $name => $x) {
 						if(!is_array($x)) continue;
+						if($name == '_default') continue;
 						$link = $receiver . '+' . $name .'@'.$MAILING_PARAMETER['domain'];
 						$mail_addresses[] = array('title' => $title . ' -> ' . getLL('kota_ko_leute_rectype_' . $name), 'link' => $link);
 					}
@@ -197,13 +211,14 @@ function ko_groups_list($output=TRUE, $highlight=NULL) {
 				if(sizeof($roles_avalues) > 0) {
 					foreach($roles_avalues as $kk => $rid) {
 						if(!$rid) continue;
-						$receiver = $prefix.'.'.$rid;
+						$receiver = 'gr'.$v['id'].'.'.$rid;
 						$link = $receiver . '@'.$MAILING_PARAMETER['domain'];
 						$title = $roles_aoutput[$kk];
 						$mail_addresses[] = array('title' => $title, 'link' => $link);
 						if (sizeof($RECTYPES) > 0) {
 							foreach($RECTYPES as $name => $x) {
 								if(!is_array($x)) continue;
+								if($name == '_default') continue;
 								$link = $receiver . '+' . $name .'@'.$MAILING_PARAMETER['domain'];
 								$mail_addresses[] = array('title' => $title . ' -> ' . getLL('kota_ko_leute_rectype_' . $name), 'link' => $link);
 							}
@@ -234,40 +249,60 @@ function ko_groups_list($output=TRUE, $highlight=NULL) {
 
 	$list_footer = $smarty->get_template_vars('list_footer');
 	if ($access['groups']['MAX'] > 2) {
-		$list_footer[] = array(
-			'label' => getLL('groups_list_footer_copy_group'),
-			'button' => '<button class="btn btn-sm btn-primary" onclick="set_ids_from_chk(\'form[name=&quot;formular&quot;]\');set_action(\'copy_group\', \'form[name=&quot;formular&quot;]\');$(\'form[name=&quot;formular&quot;]\').submit();">'.getLL('groups_list_footer_copy_group_short').'</button>'
-		);
+		$list_footer[] = [
+			'button' => '
+				 <div class="form-group">
+				 	<label for="copy_group_type">' . getLL('groups_list_footer_copy_group')  . '</label>
+				 	<div class="input-group col-xs-3">
+						<select name="copy_group_type" class="form-control input-group-sm">
+							<option value="1">' . getLL('groups_list_footer_copy_group_type_1') . '</option>
+							<option value="2">' . getLL('groups_list_footer_copy_group_type_2') . '</option>
+						</select>
+						<div class="input-group-btn">
+							<button class="btn btn-sm btn-primary form-control" onclick="c=confirm(\''.getLL('groups_list_footer_copy_group_confirm').'\'); if (!c) return false; set_action(\'copy_group\', \'form[name=&quot;formular&quot;]\');$(\'form[name=&quot;formular&quot;]\').submit();">'.getLL('groups_list_footer_copy_group_short').'</button>
+						</div>
+					</div>
+				</div>
+				',
+			];
 	}
 	$list->setFooter($list_footer);
 
 
-	if($output) {
-		$list->render($es);
-	} else {
-		print $list->render($es);
-	}
+	$list->render($es);
 }//ko_groups_list()
 
 
 
 
-function ko_groups_list_search_results($output=TRUE) {
+function ko_groups_list_search_results() {
 	global $smarty;
 
 	$search = $_SESSION['groups_search'];
 
 	$z_where = '';
-	if ($_SESSION['ses_userid'] == ko_get_root_id() && is_numeric($search)) {
-		$z_where .= " AND `id` = '".$search."' ";
+	if(is_numeric($search) && strlen($search) == 6) {
+		$z_where .= " AND `id` = '".mysqli_real_escape_string(db_get_link(), $search)."' ";
 	} else {
-		$z_where .= " AND (`name` like '%{$search}%' OR `description` like '%{$search}%') ";
+		$z_where .= " AND (`name` like '%".mysqli_real_escape_string(db_get_link(), $search)."%' OR `description` like '%".mysqli_real_escape_string(db_get_link(), $search)."%') ";
 	}
 
 	$es = db_select_data('ko_groups', "WHERE 1=1".$z_where, 'id');
+	if(!is_array($es)) $es = [];
+
+	if(ko_module_installed("taxonomy")) {
+		$groupids = [];
+		$terms = ko_taxonomy_get_terms($search, ["ko_groups"]);
+		foreach($terms AS $term) {
+			$groupids = array_merge(ko_taxonomy_get_nodes_by_termid($term['id'], "ko_groups"), $groupids);
+		}
+
+		$es = array_merge($groupids, $es);
+	}
 
 	$results = array();
 	foreach ($es as $g) {
+		$g['id'] = zerofill($g['id'], 6);
 		$ids_ = ko_groups_decode($g['id'], 'full_gid');
 		$names_ = ko_groups_decode($ids_, 'group_desc_full');
 		if ($ids_) {
@@ -303,13 +338,75 @@ function ko_groups_list_search_results($output=TRUE) {
 
 	ksort($results, SORT_NATURAL);
 
+	$smarty->assign('resulttitle', getLL('groups_list_search_results_title'));
 	$smarty->assign('results', $results);
 
-	if($output) {
-		$smarty->render('ko_groups_search_results.tpl');
-	} else {
-		return $smarty->fetch('ko_groups_search_results.tpl');
+	$smarty->display('ko_groups_search_results.tpl');
+}
+
+
+function ko_groups_list_taxonomy_search_results() {
+	global $smarty;
+
+	$search = $_SESSION['taxonomy_search'];
+
+	if(!is_numeric($search)) return FALSE;
+
+	$groupids = [];
+
+	//Get all children terms
+	$childTerms = ko_taxonomy_get_terms_by_parent($search);
+
+	//Add term itself
+	$term = ko_taxonomy_get_term_by_id($search);
+	$childTerms[$term['id']] = $term;
+
+	foreach ($childTerms AS $childTerm) {
+		$groupids = array_merge(ko_taxonomy_get_nodes_by_termid($childTerm['id'], "ko_groups"), $groupids);
 	}
+
+	$results = array();
+	foreach ($groupids as $g) {
+		$g['id'] = zerofill($g['id'],6);
+		$ids_ = ko_groups_decode($g['id'], 'full_gid');
+		$names_ = ko_groups_decode($ids_, 'group_desc_full');
+		if ($ids_) {
+			$ids = explode(':', $ids_);
+			$names = explode(':', $names_);
+		}
+
+		$groups = array();
+		if ($ids_) {
+			for ($i = 0; $i < sizeof($ids); $i++) {
+				$g_ = array();
+				$g_['name'] = $names[$i];
+				$g_['id'] = substr($ids[$i], 1);
+				$link_to_parent = ($i == sizeof($ids) - 1);
+				$first = $i <= 0;
+				$link_postfix = 'NULL';
+				if ($link_to_parent) {
+					if ($first) {
+						$link_postfix = 'NULL&highlight='.substr($ids[$i], 1);
+					} else {
+						$link_postfix = substr($ids[$i - 1], 1).'&highlight='.substr($ids[$i], 1);
+					}
+				} else {
+					$link_postfix = substr($ids[$i], 1);
+				}
+				$g_['link'] = '?action=list_groups&gid='.$link_postfix;
+				$groups[] = $g_;
+			}
+		}
+
+		$results[$names_] = array('groups' => $groups);
+	}
+
+	ksort($results, SORT_NATURAL);
+
+	$smarty->assign('resulttitle', getLL('groups_list_search_taxonomy_results_title') . " " . $term['name']);
+	$smarty->assign('results', $results);
+
+	$smarty->display('ko_groups_search_results.tpl');
 }
 
 
@@ -376,18 +473,14 @@ function ko_groups_list_datafields() {
 	$list->setWarning(kota_filter_get_warntext('ko_groups_datafields'));
 
 
-	if($output) {
-		$list->render($datafields);
-	} else {
-		print $list->render($datafields);
-	}
+	$list->render($datafields);
 }//ko_groups_list_datafields()
 
 
 
 
 
-function ko_groups_list_roles($output=TRUE) {
+function ko_groups_list_roles() {
 	global $smarty, $access;
 
 	if($access['groups']['MAX'] < 1) return;
@@ -437,11 +530,7 @@ function ko_groups_list_roles($output=TRUE) {
 	$list->setSort(FALSE);
 	$list->setStats($rows);
 
-	if($output) {
-		$list->render($roles);
-	} else {
-		print $list->render($roles);
-	}
+	$list->render($roles);
 }//ko_groups_list_roles()
 
 
@@ -464,7 +553,6 @@ function ko_groups_formular_group($mode, $id = "") {
 		$groups_selected = $group["pid"];
 		$linkedGroup = $group['linked_group'];
 		$chk_type = ko_html($group["type"]);
-		$start = $group["start"] == "0000-00-00" ? "" : sql2datum($group["start"]);
 		$stop = $group["stop"] == "0000-00-00" ? "" : sql2datum($group["stop"]);
 		$deadline = $group['deadline'] == '0000-00-00' ? '' : sql2datum($group['deadline']);
 		$txt_mailing_alias = ko_html($group['mailing_alias']);
@@ -476,6 +564,7 @@ function ko_groups_formular_group($mode, $id = "") {
 		$mailing_modify_rcpts = format_userinput($group['mailing_modify_rcpts'], 'uint');
 		$mailing_prefix = format_userinput($group["mailing_prefix"], "text");
 		$mailing_rectype = format_userinput($group['mailing_rectype'], "alpha");
+		$mailing_crm_project_id = $group['mailing_crm_project_id'];
 		$maxcount = format_userinput($group['maxcount'], 'uint');
 		$count_role = format_userinput($group['count_role'], 'uint');
 
@@ -534,8 +623,13 @@ function ko_groups_formular_group($mode, $id = "") {
 	} else if($mode == "new") {
 		if($access['groups']['MAX'] < 3) return;
 
-		//select displayed group as mothergroup
-		$groups_selected = $_SESSION["show_gid"];
+		//select displayed group as mothergroup, or allow GET parameter to set pid
+		if($_GET['pid']) {
+			$newPID = format_userinput($_GET['pid'], 'uint');
+			$groups_selected = $newPID;
+		} else {
+			$groups_selected = $_SESSION["show_gid"];
+		}
 
 		$mailing_modify_rcpts = 1;
 
@@ -567,19 +661,14 @@ function ko_groups_formular_group($mode, $id = "") {
 		$groups_values[] = '';
 		$groups_output[] = '';
 	}
+	$excludeParents = array();
 	$groups = ko_groups_get_recursive(ko_get_groups_zwhere());
 	foreach($groups as $grp) {
-		if($grp['id'] == $id) continue;
-		if($access['groups']['ALL'] < 3 && $access['groups'][$grp['id']] < 3) continue;
-	  //Kein Kreis-Vererbungen erlauben
+		if($grp['id'] == $id) $excludeParents[] = $grp['id'];
+		if($access['groups']['ALL'] < 3 && $access['groups'][$grp['id']] < 3) $excludeParents[] = $grp['id'];
+		//Kein Kreis-Vererbungen erlauben
 		$mother_line = ko_groups_get_motherline($grp["id"], $all_groups);
-		if(in_array($id, $mother_line)) continue;
-		//Hierarchie darstellen
-		$pre = "";
-		$depth = sizeof($mother_line);
-		for($i=0; $i<$depth; $i++) $pre .= "&nbsp;&nbsp;";
-		$groups_values[] = $grp["id"];
-		$groups_output[] = $pre.ko_html($grp["name"]);
+		if(in_array($id, $mother_line)) $excludeParents[] = $grp['id'];
 	}
 
 	//Rollen
@@ -679,37 +768,42 @@ function ko_groups_formular_group($mode, $id = "") {
 															 "value" => (isset($_POST["txt_description"]) ? ko_html($_POST["txt_description"]) : $txt_description),
 															 "params" => 'cols="40" rows="4"',
 															 );
+
+	if(ko_module_installed("taxonomy") && $access['taxonomy']['MAX']>=1) {
+		$frmgroup[$gc]["row"][$rowcounter++]["inputs"][0] = ko_taxonomy_form_field($id, "ko_groups");
+	}
+
+	$kota_field_help = ko_get_help('groups', 'kota.ko_groups.pid', array('linkClass' => 'pull-left'));
 	$frmgroup[$gc]["row"][$rowcounter]["inputs"][0] = array("desc" => getLL("form_groups_parentgroup"),
-															 "type" => "select",
+															 "type" => "groupsearch",
 															 "name" => "sel_parentgroup",
-															 "values" => $groups_values,
-															 "descs" => $groups_output,
-															 "value" => $groups_selected,
-															 "params" => 'size="0"',
+															 "single" => TRUE,
+															 "avalues" => ($groups_selected&&$groups_selected!='NULL')?array($groups_selected):NULL,
+															 "adescs" => array(),
+															 "exclude" => implode(',', $excludeParents),
+															 'help' => $kota_field_help['show'] ? $kota_field_help['link'] : '',
 															 );
+	$kota_field_help = ko_get_help('groups', 'kota.ko_groups.type', array('linkClass' => 'pull-left'));
 	$frmgroup[$gc]["row"][$rowcounter++]["inputs"][1] = array("desc" => getLL("form_groups_type"),
 															 "type" => "switch",
 															 "name" => "chk_type",
 															 "value" => $chk_type==1 ? '1' : '0',
+															 'help' => $kota_field_help['show'] ? $kota_field_help['link'] : '',
 															 );
-	$frmgroup[$gc]["row"][$rowcounter]["inputs"][0] = array("desc" => getLL("form_groups_cal1"),
-															 "type" => "datepicker",
-															 "name" => "txt_datum",
-															 "html_id" => "txt_datum",
-															 "value" => $start,
-															 );
-	$frmgroup[$gc]["row"][$rowcounter++]["inputs"][1] = array("desc" => getLL("form_groups_cal2"),
+	$kota_field_help = ko_get_help('groups', 'kota.ko_groups.stop');
+	$frmgroup[$gc]["row"][$rowcounter]["inputs"][0] = array("desc" => getLL("form_groups_cal2"),
 															 "type" => "datepicker",
 															 "name" => "txt_datum2",
 															 "html_id" => "txt_datum2",
 															 "value" => $stop,
+															 'help' => $kota_field_help['show'] ? $kota_field_help['link'] : '',
 															 );
-	$frmgroup[$gc]['row'][$rowcounter++]['inputs'][0] = array('desc' => getLL('kota_ko_groups_deadline'),
+	$frmgroup[$gc]['row'][$rowcounter++]['inputs'][1] = array('desc' => getLL('kota_ko_groups_deadline'),
 															 'type' => 'datepicker',
 															 'name' => 'txt_deadline',
 															 'value' => $deadline,
 															 );
-	$frmgroup[$gc]["row"][$rowcounter]["inputs"][0] = array("desc" => getLL("form_groups_roles"),
+	$frmgroup[$gc]["row"][$rowcounter]["inputs"][0] = array("desc" => getLL("kota_ko_groups_roles").':',
 															 "type" => "doubleselect",
 															 "js_func_add" => "double_select_add",
 															 "name" => "sel_roles",
@@ -730,6 +824,7 @@ function ko_groups_formular_group($mode, $id = "") {
 		'exclude' => $id ? $id : '',
 		'data' => json_encode($val),
 		'single' => TRUE,
+		'disallowPlaceholder' => TRUE,
 		'help' => $kota_field_help['show'] ? $kota_field_help['link'] : '',
 	);
 
@@ -754,11 +849,13 @@ function ko_groups_formular_group($mode, $id = "") {
 	if(ko_module_installed('mailing') && is_array($MAILING_PARAMETER) && $MAILING_PARAMETER['domain'] != '') {
 		$frmgroup[++$gc] = array('titel' => getLL('form_groups_mailing'), 'state' => 'open', 'colspan' => 'colspan="2"');
 
+		$kota_field_help = ko_get_help('groups', 'kota.ko_groups.mailing_alias');
 		$frmgroup[$gc]['row'][$rowcounter]['inputs'][0] = array('desc' => getLL('form_groups_mailing_alias'),
 																 'type' => 'text',
 																 'name' => 'txt_mailing_alias',
 																 'value' => (isset($_POST['txt_mailing_alias']) ? ko_html($_POST['txt_mailing_alias']) : $txt_mailing_alias),
 																 'params' => 'size="40"',
+															 	 'help' => $kota_field_help['show'] ? $kota_field_help['link'] : '',
 																 );
 		if($mode == 'edit') {
 			$receiver = 'gr'.$group['id'];
@@ -769,6 +866,7 @@ function ko_groups_formular_group($mode, $id = "") {
 			if (sizeof($RECTYPES) > 0) {
 				foreach($RECTYPES as $name => $x) {
 					if(!is_array($x)) continue;
+					if($name == '_default') continue;
 					$link = $receiver . '+' . $name .'@'.$MAILING_PARAMETER['domain'];
 					$address .= '<div>' . $title . ' -> ' . getLL('kota_ko_leute_rectype_' . $name) . '</b>: <a href="mailto:'.$link.'">' . $link . '</a></div>';
 				}
@@ -783,6 +881,7 @@ function ko_groups_formular_group($mode, $id = "") {
 					if (sizeof($RECTYPES) > 0) {
 						foreach($RECTYPES as $name => $x) {
 							if(!is_array($x)) continue;
+							if($name == '_default') continue;
 							$link = $receiver . '+' . $name .'@'.$MAILING_PARAMETER['domain'];
 							$address .= '<div>' . $title . ' -> ' . getLL('kota_ko_leute_rectype_' . $name) . '</b>: <a href="mailto:'.$link.'">' . $link . '</a></div>';
 						}
@@ -860,6 +959,7 @@ function ko_groups_formular_group($mode, $id = "") {
 			$descs[] = '';
 			foreach ($RECTYPES as $recType => $x) {
 				if (!is_array($x)) continue;
+				if($recType == '_default') continue;
 				$values[] = $recType;
 				$descs[] = getLL('kota_ko_leute_rectype_' . $recType);
 			}
@@ -872,12 +972,38 @@ function ko_groups_formular_group($mode, $id = "") {
 				'descs' => $descs,
 			);
 		}
+		if(ko_module_installed('crm')) {
+			ko_get_access('crm');
+			$x = kota_get_form('ko_crm_contacts', 'project_id');
+			$values = $descs = array();
+			foreach($x['values'] as $i => $project_id) {
+				if(max($access['crm'][$project_id],$access['crm']['ALL']) >= 2 || $value == $mailing_crm_project_id) {
+					$values[] = $project_id;
+					$descs[] = $x['descs'][$i];
+				}
+			}
+			if(isset($frmgroups[$gc]['row'][$rowcounter]['inputs'][1])) {
+				$rowcounter++;
+				$col = 0;
+			} else {
+				$col = 1;
+			}
+			$frmgroup[$gc]['row'][$rowcounter]['inputs'][$col] = array(
+				'desc' => getLL('form_groups_mailing_crm_project_id'),
+				'type' => 'select',
+				'name' => 'sel_mailing_crm_project_id',
+				'value' => (isset($_POST['sel_mailing_crm_project_id']) ? ko_html($_POST['sel_mailing_crm_project_id']) : $mailing_crm_project_id),
+				'values' => $values,
+				'descs' => $descs,
+			);
+		}
 	}
 
 
 
 
 	//data fields
+	$kota_field_help = ko_get_help('groups', 'kota.ko_groups.datafields');
 	$frmgroup[++$gc] = array("titel" => getLL("form_groups_datafields"), "state" => ($chk_type==1 ? "closed" : "open"), "colspan" => 'colspan="2"', 'name' => 'datafields');
 	$frmgroup[$gc]["row"][$rowcounter]["inputs"][0] = array("desc" => getLL("form_groups_datafields_select"),
 															 "type" => "doubleselect",
@@ -891,6 +1017,7 @@ function ko_groups_formular_group($mode, $id = "") {
 															 "adescs" => $datafields_aoutput,
 															 "params" => 'size="7"',
 															 "show_moves" => TRUE,
+															 'help' => $kota_field_help['show'] ? $kota_field_help['link'] : '',
 															 );
 	$html  = '<div class="row"><div class="col-xs-12 col-lg-6">';
 	$html .= '<label for="txt_new_datafield">'.getLL("form_groups_datafields_new_description").'</label>';
@@ -993,7 +1120,7 @@ function ko_groups_formular_group($mode, $id = "") {
 	if ($mode == 'edit') {
 		$frmgroup[++$gc] = array("titel" => getLL("form_groups_tab_assignment_history"), "tab" => TRUE);
 		$callback = "var groupsHistoryDrawn = false; $(\"a[href='#tab_{$gc}']\").on('shown.bs.tab', function() {if (!groupsHistoryDrawn) {%s();} groupsHistoryDrawn = true;});";
-		$assignmentHtml = "<div id=\"groups-assignment-history\"></div>".ko_groups_get_assignment_timeline($mode="group", 'groups-assignment-history', $id, NULL, $callback);
+		$assignmentHtml = "<div id=\"groups-assignment-history\"></div>".ko_groups_get_assignment_timeline('group', 'groups-assignment-history', $id, NULL, $callback);
 		$frmgroup[$gc]["row"][$rowcounter]["inputs"][0] = array("desc" => '',
 			"type" => "html",
 			"value" => $assignmentHtml,
@@ -1060,6 +1187,35 @@ function ko_groups_formular_datafield($mode, $id = "") {
 
 	ko_multiedit_formular('ko_groups_datafields', '', $id, '', $form_data);
 }//ko_groups_formular_datafield()
+
+
+
+
+function ko_groups_formular_assignment_history_entry($mode, $id) {
+	global $access;
+
+	$group = db_select_data("ko_groups_assignment_history","WHERE id = " . $id, "*", "", "LIMIT 1", TRUE );
+	$groupId = zerofill($group['group_id'], 6);
+
+	if (!$access['leute']) ko_get_access('leute');
+	$accessGroups = max($access['groups']['ALL'], $access['groups'][$groupId]);
+	$accessLeute = max($access['leute']['ALL'], $access['leute'][$group['person_id']]);
+	if($accessGroups < 2 || $accessLeute < 2) {
+		print('<div class="alert alert-danger">' . getLL('kota_async_form_group_access_error') . '</div>');
+		return;
+	}
+
+	$form_data['title'] = getLL('groups_edit_assignment_history_entry');
+	$form_data['submit_value'] = getLL('save');
+	$form_data['action'] = 'submit_edit_assignment_history_entry';
+	$form_data['cancel'] = 'list_groups';
+
+	if($group['stop'] != "0000-00-00 00:00:00" && $group['stop'] <= date("Y-m-d H:i:s", time())) {
+		$form_data['options']['delete_action'] = 'submit_delete_assignment_history_entry';
+	}
+
+	ko_multiedit_formular('ko_groups_assignment_history', '', $id, '', $form_data);
+}
 
 
 
@@ -1254,13 +1410,23 @@ function ko_groups_settings() {
 
 	//Show passed groups
 	$value = ko_get_userpref($_SESSION['ses_userid'], 'show_passed_groups');
-	$frmgroup[$gc]['row'][$rowcounter++]['inputs'][0] = array('desc' => getLL('admin_settings_options_show_passed_groups'),
+	$frmgroup[$gc]['row'][$rowcounter]['inputs'][0] = array('desc' => getLL('admin_settings_options_show_passed_groups'),
 			'type' => 'switch',
 			'name' => 'chk_show_passed_groups',
 			'label_0' => getLL('no'),
 			'label_1' => getLL('yes'),
 			'value' => $value == '' ? 0 : $value,
 			);
+
+	$value = ko_get_userpref($_SESSION['ses_userid'], 'groups_people_include_start');
+	$frmgroup[$gc]['row'][$rowcounter++]['inputs'][1] = array('desc' => getLL('groups_settings_groups_people_include_start'),
+			'type' => 'switch',
+			'name' => 'chk_groups_people_include_start',
+			'label_0' => getLL('no'),
+			'label_1' => getLL('yes'),
+			'value' => $value == '' ? 0 : $value,
+			);
+
 	//Add column with filter when switch to people module
 	$value = ko_get_userpref($_SESSION['ses_userid'], 'groups_filterlink_add_column');
 	$frmgroup[$gc]['row'][$rowcounter]['inputs'][0] = array('desc' => getLL('groups_settings_filterlink_add_column'),
@@ -1279,27 +1445,6 @@ function ko_groups_settings() {
 			'label_1' => getLL('yes'),
 			'value' => $value == '' ? 0 : $value,
 			);
-
-
-	//Global settings
-	if($access['groups']['ALL'] > 3 && ko_module_installed('mailing')) {
-		$gc++;
-		$rowcounter = 0;
-		$frmgroup[$gc] = array(
-				'titel' => getLL('settings_title_global'),
-				'tab' => TRUE,
-				);
-
-		//Show top level
-		$value = ko_get_setting('group_mailing_from_email');
-		$frmgroup[$gc]['row'][$rowcounter++]['inputs'][0] = array(
-			'desc' => getLL('groups_settings_mailing_from_email'),
-			'type' => 'text',
-			'name' => 'txt_group_mailing_from_email',
-			'value' => $value,
-		);
-	}
-
 
 
 	//Allow plugins to add further settings
@@ -1328,7 +1473,7 @@ function ko_export_group_to_ezmlm($gid) {
 	if(!check_email($group["ezmlm_list"]) || !check_email($group["ezmlm_moderator"])) return FALSE;
 
 	$emails = array();
-	$persons = db_select_data("ko_leute", "WHERE `groups` REGEXP 'g$gid'", "id,email");
+	$persons = db_select_data("ko_leute", "WHERE `groups` REGEXP 'g$gid' AND `deleted` = '0'".ko_get_leute_hidden_sql(), "id,email");
 	foreach($persons as $person) {
 		if(check_email($person["email"])) $emails[] = strtolower($person["email"]);
 	}
@@ -1421,13 +1566,13 @@ function ko_groups_rec_members($groups, &$data, &$counter, &$roles, &$level) {
 
 
 function ko_groups_export_xls_with_people($ids, $cols) {
-	global $access, $onload_code, $ko_path;
+	global $access, $onload_code, $ko_path, $DATETIME;
+
+	ko_include_kota(array('ko_leute'));
 
 	//init phpExcel
 	include_once $ko_path.'inc/phpexcel/PHPExcel.php';
 	include_once $ko_path.'inc/phpexcel/PHPExcel/Writer/Excel2007.php';
-
-	$barChartColors = array('40699C','9E413E','7F9A48','695185','3C8DA3','CC7B38','4F81BD','C0504D','9BBB59','8064A2','4BACC6','F79646','AABAD7','AABAD7');
 
 	//Define cell styles
 	//TODO: remove unused styles
@@ -1444,56 +1589,64 @@ function ko_groups_export_xls_with_people($ids, $cols) {
 			1 => array(
 				'fill' => array(
 					'type' => PHPExcel_Style_Fill::FILL_SOLID,
-					'color' => array('rgb' => '808080')
+					'color' => array('rgb' => '03437b')
 				),
 				'font' => array(
-					'size' => '22',
+					'size' => '10',
 					'bold' => TRUE,
+					'color' => array('rgb' => 'ffffff'),
 				),
 			),
 			2 => array(
 				'fill' => array(
 					'type' => PHPExcel_Style_Fill::FILL_SOLID,
-					'color' => array('rgb' => '808080')
+					'color' => array('rgb' => '2b6ea2')
 				),
 				'font' => array(
-					'size' => '18',
+					'size' => '10',
 					'bold' => TRUE,
+					'color' => array('rgb' => 'ffffff'),
 				),
 			),
 			3 => array(
 				'fill' => array(
 					'type' => PHPExcel_Style_Fill::FILL_SOLID,
-					'color' => array('rgb' => '808080')
+					'color' => array('rgb' => '5ca9d0')
 				),
 				'font' => array(
-					'size' => '16',
+					'size' => '10',
 					'bold' => TRUE,
 				),
+			),
+		),
+		'groupDescription' => array(
+			'fill' => array(
+				'type' => PHPExcel_Style_Fill::FILL_NONE,
+			),
+			'font' => array(
+				'size' => '8',
+				'bold' => FALSE,
+				'color' => array('rgb' => '000000'),
 			),
 		),
 		'role' =>  array(
 			'fill' => array(
 				'type' => PHPExcel_Style_Fill::FILL_SOLID,
-				'color' => array('rgb' => 'cccdfd')
+				'color' => array('rgb' => 'DDDDDD')
 			),
 			'font' => array(
-				'size' => '14',
+				'size' => '10',
 				'bold' => TRUE,
 			),
 		),
 		'cols' =>  array(
-			'fill' => array(
-				'type' => PHPExcel_Style_Fill::FILL_SOLID,
-				'color' => array('rgb' => 'fccf80')
-			),
 			'font' => array(
-				'size' => '10',
+				'size' => '8',
 			),
 		),
 		'text' =>  array(
 			'font' => array(
-				'size' => '10',
+				'size' => '8',
 			),
 		),
 		'bold' =>  array(
@@ -1509,36 +1662,66 @@ function ko_groups_export_xls_with_people($ids, $cols) {
 			3 => 1.25 * intval($cellstyle['groups'][3]['font']['size']),
 		),
 		'role' => 1.25 * intval($cellstyle['role']['font']['size']),
+		'groupDescription' => 1.25 * intval($cellstyle['groupDescription']['font']['size']),
 	);
 
 	$objPHPExcel = new PHPExcel();
 	$objPHPExcel->setActiveSheetIndex(0);
 	$worksheet = $objPHPExcel->getActiveSheet();
-	$worksheet->getPageSetup()->setOrientation(PHPExcel_Worksheet_PageSetup::ORIENTATION_LANDSCAPE);
+	$worksheet->getPageSetup()->setOrientation(PHPExcel_Worksheet_PageSetup::ORIENTATION_PORTRAIT);
 	$worksheet->getPageSetup()->setPaperSize(PHPExcel_Worksheet_PageSetup::PAPERSIZE_A4);
+	$worksheet->getPageSetup()->setFitToWidth(1);
+	$worksheet->getPageSetup()->setFitToHeight(0);
+	$worksheet->getPageMargins()->setTop(0.3);
+	$worksheet->getPageMargins()->setRight(0.3);
+	$worksheet->getPageMargins()->setBottom(0.3);
+	$worksheet->getPageMargins()->setLeft(0.3);
 
-	$colnames = ko_get_leute_col_name();
+	$colnames = ko_get_leute_col_name(FALSE, TRUE);
+
+	$showStart = ko_get_userpref($_SESSION['ses_userid'], 'groups_people_include_start');
+	if($showStart) {
+		$cols[] = '_entryDate_';
+		$colnames['_entryDate_'] = 'Eintritt';
+	}
 
 	$maxLevels = 3;
 	$row = 1;
 	$col = 0;
 	$pagebreaks = array();
 
-	array_walk_recursive($data, 'utf8_encode_array');
+	$all_datafields = db_select_data('ko_groups_datafields', 'WHERE 1', '*');
 
+	$headerWritten = FALSE;
 	foreach ($ids as $startgid) {
-		$data = ko_groups_get_recursive_with_members($startgid);
+		if ($startgid != 'NULL') {
+			$startGroup = db_select_data('ko_groups', "WHERE `id` = {$startgid}");
+		} else {
+			$startGroup = 'NULL';
+		}
+		$data = ko_groups_get_recursive_with_members($startGroup);
+		//array_walk_recursive($data, 'utf8_encode_array');
 		foreach($data as $d) {
 			if($row-1 > 0) {
 				$pagebreaks[] = $row;
 				$row++;
 			}
+			// group name
 			$worksheet->getRowDimension($row)->setRowHeight($rowHeights['groups'][min($d['level'],$maxLevels)]);
 			for ($c = 0; $c < sizeof($cols); $c++) $worksheet->getStyleByColumnAndRow($c, $row)->applyFromArray($cellstyle['groups'][min($d['level'],$maxLevels)]);
-			$worksheet->setCellValueByColumnAndRow(0, $row, $d['group']['name']);
+			$worksheet->setCellValueByColumnAndRow(0, $row, utf8_encode($d['group']['name']));
 			$row++;
 			$col = 0;
-			$headerWritten = FALSE;
+
+			// group description
+			if (trim($d['group']['description'])) {
+				$worksheet->getRowDimension($row)->setRowHeight($rowHeights['groupDescription']);
+				for ($c = 0; $c < sizeof($cols); $c++) $worksheet->getStyleByColumnAndRow($c, $row)->applyFromArray($cellstyle['groupDescription']);
+				$worksheet->setCellValueByColumnAndRow(0, $row, utf8_encode(implode('; ', array_map(function($e){return trim($e);}, explode("\n", $d['group']['description'])))));
+				$row++;
+				$col = 0;
+			}
+
 			if(is_array($d['roles'])) {
 				foreach($d['roles'] as $r) {
 					if (!$headerWritten) {
@@ -1546,6 +1729,9 @@ function ko_groups_export_xls_with_people($ids, $cols) {
 						foreach ($cols as $colName) {
 							$worksheet->getStyleByColumnAndRow($col, $row)->applyFromArray($cellstyle['cols']);
 							$worksheet->setCellValueByColumnAndRow($col, $row, utf8_encode($colnames[$colName]));
+
+							if($col > 0) $worksheet->getColumnDimension(PHPExcel_Cell::stringFromColumnIndex($col))->setAutoSize(true);
+
 							$col++;
 						}
 						$headerWritten = TRUE;
@@ -1554,18 +1740,31 @@ function ko_groups_export_xls_with_people($ids, $cols) {
 					}
 					$worksheet->getRowDimension($row)->setRowHeight($rowHeights['role']);
 					for ($c = 0; $c < sizeof($cols); $c++) $worksheet->getStyleByColumnAndRow($c, $row)->applyFromArray($cellstyle['role']);
-					$worksheet->setCellValueByColumnAndRow($col, $row, $r['role']['name']);
+					$worksheet->setCellValueByColumnAndRow($col, $row, utf8_encode($r['role']['name']));
 					$row++;
 					$col = 0;
-					foreach($r['people'] as $p => $fields) {
+					foreach($r['people'] as $fields) {
+						$fields = ko_apply_rectype($fields, '', $addp);
 						foreach ($cols as $colName) {
-							$worksheet->getStyleByColumnAndRow($c, $row)->applyFromArray($cellstyle['text']);
-							$worksheet->setCellValueByColumnAndRow($col, $row, map_leute_daten($fields[$colName], $colName, $fields));
+							$worksheet->getStyleByColumnAndRow($col, $row)->applyFromArray($cellstyle['text']);
+
+							//Add entry date
+							if($colName == '_entryDate_') {
+								$lastHistoryEntry = db_select_data('ko_groups_assignment_history', "WHERE `group_id` = '".$d['group']['id']."' AND `person_id` = '".$fields['id']."'", '*', 'ORDER BY `start` DESC', 'LIMIT 0,1', TRUE);
+								if($lastHistoryEntry['id'] && strtotime($lastHistoryEntry['start']) > 0) {
+									$worksheet->setCellValueByColumnAndRow($col, $row, utf8_encode(strftime($DATETIME['dmY'], strtotime($lastHistoryEntry['start']))));
+								}
+							} else {
+								$value = map_leute_daten($fields[$colName], $colName, $fields, $all_datafields);
+								$value = strip_tags($value);
+								$value = trim($value);
+								$worksheet->setCellValueByColumnAndRow($col, $row, utf8_encode(trim(strip_tags(map_leute_daten($fields[$colName], $colName, $fields, $all_datafields)))));
+							}
 							$col++;
 						}
 						$col = 0;
+						$row++;
 					}
-					$row++;
 				}
 			}
 			if(is_array($d['people'])) {
@@ -1580,26 +1779,39 @@ function ko_groups_export_xls_with_people($ids, $cols) {
 					$col = 0;
 					$row++;
 				}
-				$worksheet->getRowDimension($row)->setRowHeight($rowHeights['role']);
-				for ($c = 0; $c < sizeof($cols); $c++) $worksheet->getStyleByColumnAndRow($c, $row)->applyFromArray($cellstyle['role']);
-				$worksheet->setCellValueByColumnAndRow($col, $row, 'Ohne Rollenzuweisung');
-				$row++;
+				// only add role header if the group has roles
+				if (is_array($d['roles']) && sizeof($d['roles']) > 0) {
+					$worksheet->getRowDimension($row)->setRowHeight($rowHeights['role']);
+					for ($c = 0; $c < sizeof($cols); $c++) $worksheet->getStyleByColumnAndRow($c, $row)->applyFromArray($cellstyle['role']);
+					$worksheet->setCellValueByColumnAndRow($col, $row, utf8_encode(getLL('groups_no_role')));
+					$row++;
+				}
 				$col = 0;
-				foreach($d['people'] as $p => $fields) {
+				foreach($d['people'] as $fields) {
+					$fields = ko_apply_rectype($fields, '', $addp);
 					foreach ($cols as $colName) {
-						$worksheet->getStyleByColumnAndRow($c, $row)->applyFromArray($cellstyle['text']);
-						$worksheet->setCellValueByColumnAndRow($col, $row, map_leute_daten($fields[$colName], $colName, $fields));
+						$worksheet->getStyleByColumnAndRow($col, $row)->applyFromArray($cellstyle['text']);
+
+						//Add entry date
+						if($colName == '_entryDate_') {
+							$lastHistoryEntry = db_select_data('ko_groups_assignment_history', "WHERE `group_id` = '".$d['group']['id']."' AND `person_id` = '".$fields['id']."'", '*', 'ORDER BY `start` DESC', 'LIMIT 0,1', TRUE);
+							if($lastHistoryEntry['id'] && strtotime($lastHistoryEntry['start']) > 0) {
+								$worksheet->setCellValueByColumnAndRow($col, $row, utf8_encode(strftime($DATETIME['dmY'], strtotime($lastHistoryEntry['start']))));
+							}
+						} else {
+							$worksheet->setCellValueByColumnAndRow($col, $row, utf8_encode(trim(strip_tags(map_leute_daten($fields[$colName], $colName, $fields, $all_datafields)))));
+						}
 						$col++;
 					}
 					$col = 0;
+					$row++;
 				}
-				$row++;
 			}
 		}
 	}
 
 	foreach ($pagebreaks as $pb) {
-		$worksheet->setBreakByColumnAndRow(0, $pb, PHPExcel_Worksheet::BREAK_ROW);
+		//$worksheet->setBreakByColumnAndRow(0, $pb, PHPExcel_Worksheet::BREAK_ROW);
 	}
 
 	$filename = $ko_path.'download/excel/groups_people_'.strftime("%d%m%Y_%H%M%S", time()).".xlsx";

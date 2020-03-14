@@ -3,7 +3,7 @@
 ##################################################################################
 #  Copyright notice
 #
-#  (c) 2003-2015 Renzo Lauper (renzo@churchtool.org)
+#  (c) 2003-2017 Renzo Lauper (renzo@churchtool.org)
 #  All rights reserved
 #
 #  This script is part of the kOOL project. The kOOL project is
@@ -89,15 +89,15 @@ if [ ! -L ./menu.php ]; then rm -f menu.php && ln -s ./kOOL_lib/menu.php ./menu.
 if [ ! -L ./download.php ]; then rm -f download.php && ln -s ./kOOL_lib/download.php ./download.php ; fi
 if [ ! -L ./kOOL.css ]; then rm -f kOOL.css && ln -s ./kOOL_lib/kOOL.css ./kOOL.css ; fi
 if [ ! -L ./kool-base.css ]; then rm -f kool-base.css && ln -s ./kOOL_lib/kool-base.css ./kool-base.css ; fi
-if [ ! -L ./kool-mobile.css ]; then rm -f kool-mobile.css && ln -s ./kOOL_lib/kool-mobile.css ./kool-mobile.css ; fi
-if [ ! -L ./print.css ]; then rm -f print.css && ln -s ./kOOL_lib/print.css ./print.css ; fi
 if [ ! -L ./ie6.css ]; then rm -f ie6.css && ln -s ./kOOL_lib/ie6.css ./ie6.css ; fi
 if [ ! -L ./ie7.css ]; then rm -f ie7.css && ln -s ./kOOL_lib/ie7.css ./ie7.css ; fi
 if [ ! -L ./get.php ]; then rm -f get.php && ln -s ./kOOL_lib/get.php ./get.php ; fi
+if [ ! -L ./get_json.php ]; then rm -f get_json.php && ln -s ./kOOL_lib/get_json.php ./get_json.php ; fi
 if [ ! -L ./post.php ]; then rm -f post.php && ln -s ./kOOL_lib/post.php ./post.php ; fi
 if [ ! -L ./mailing.php ]; then rm -f mailing.php && ln -s ./kOOL_lib/mailing.php ./mailing.php ; fi
 if [ ! -L ./scheduler.php ]; then rm -f scheduler.php && ln -s ./kOOL_lib/scheduler.php ./scheduler.php ; fi
-
+if [ ! -L ./googleCloudPrintRedirect.php ]; then rm -f googleCloudPrintRedirect.php && ln -s ./kOOL_lib/googleCloudPrintRedirect.php ./googleCloudPrintRedirect.php ; fi
+if [ ! -L ./.htaccess ]; then rm -f .htaccess && ln -s ./kOOL_lib/_.htaccess ./.htaccess ; fi
 
 # Images
 echo -n "images, ";
@@ -110,6 +110,9 @@ if [ ! -d ./cache ]; then mkdir cache ; fi
 # v11 folder (used for vesr)
 if [ ! -d ./v11 ]; then mkdir v11 ; fi
 chmod g+w cache
+# temp folder
+if [ ! -d ./temp ]; then mkdir temp ; fi
+chmod g+w temp
 # Don't override any files in my_images
 for datei in `ls ../kOOL_lib/install/default/my_images/*.gif` ; do
 	if [ ! -e `basename $datei` ]; then
@@ -125,10 +128,14 @@ echo -n "inc, "
 cd ..
 if [ ! -d ./inc ]; then mkdir inc ; fi
 cd inc
-files='ajax.php ColorPicker2.js error_handling.inc front_modules.inc kOOL.js tooltip.js selectmenu.js ko.inc kota.inc kotafcn.php session.inc js-sessiontimeout.inc smarty.inc submenu_actions.inc submenu.inc Clickatell.php abuse.inc hooks.inc lang.inc class.kOOL_listview.php class.mcrypt.php graph_bar.php class.html2text.php graph_piechart.php fullcalendar.css js-fullcalendar.min.js class.excelwriter.php aspsms.php cron.php qrcode.php class.iCalReader.php ZeroClipboard.swf ZeroClipboard.min.js ZeroClipboard.min.map class.dbStructUpdater.php class.koNotifier.php class.rawSmtpMailer.php'
+files='ajax.php ColorPicker2.js error_handling.inc front_modules.inc kOOL.js tooltip.js selectmenu.js ko.inc kota.inc kotafcn.php upload.php session.inc js-sessiontimeout.inc smarty.inc submenu.inc Clickatell.php abuse.inc hooks.inc lang.inc class.kOOL_listview.php class.mcrypt.php class.openssl.php graph_bar.php class.html2text.php graph_piechart.php fullcalendar.css js-fullcalendar.min.js class.excelwriter.php aspsms.php cron.php qrcode.php class.iCalReader.php class.dbStructUpdater.php class.koNotifier.php class.koFormLayoutEditor.php class.rawSmtpMailer.php form.php'
 for datei in $files ; do
 	if [ ! -L ./$datei ]; then rm -f $datei && ln -s ../kOOL_lib/inc/$datei ./$datei ; fi
 done
+if [ ! -L ./mt940 ]; then rm -rf mt940 && ln -s ../kOOL_lib/inc/mt940 ./mt940 ; fi
+if [ ! -L ./googleCloudPrint ]; then rm -rf googleCloudPrint && ln -s ../kOOL_lib/inc/googleCloudPrint ./googleCloudPrint ; fi
+if [ ! -L ./CashManagement ]; then rm -rf CashManagement && ln -s ../kOOL_lib/inc/CashManagement ./CashManagement ; fi
+if [ ! -L ./tcpdf ]; then rm -rf tcpdf && ln -s ../kOOL_lib/inc/tcpdf ./tcpdf ; fi
 if [ ! -L ./fullcalendar ]; then rm -rf fullcalendar && ln -s ../kOOL_lib/inc/fullcalendar ./fullcalendar ; fi
 if [ ! -L ./calendar ]; then rm -rf calendar && ln -s ../kOOL_lib/inc/calendar ./calendar ; fi
 if [ ! -L ./jquery ]; then rm -rf jquery && ln -s ../kOOL_lib/inc/jquery ./jquery ; fi
@@ -141,6 +148,14 @@ if [ ! -L ./SabreDAV ]; then rm -rf SabreDAV && ln -s ../kOOL_lib/inc/SabreDAV .
 if [ ! -L ./ckeditor ]; then rm -rf ckeditor && ln -s ../kOOL_lib/inc/ckeditor ./ckeditor ; fi
 if [ ! -L ./moment ]; then rm -rf moment && ln -s ../kOOL_lib/inc/moment ./moment ; fi
 if [ ! -L ./chartist ]; then rm -rf chartist && ln -s ../kOOL_lib/inc/chartist ./chartist ; fi
+if [ ! -L ./fine-uploader ]; then rm -rf fine-uploader && ln -s ../kOOL_lib/inc/fine-uploader ./fine-uploader ; fi
+if [ ! -L ./MimeMailParser ]; then rm -rf MimeMailParser && ln -s ../kOOL_lib/inc/MimeMailParser ./MimeMailParser ; fi
+if [ ! -L ./ICalReader ]; then rm -rf ICalReader && ln -s ../kOOL_lib/inc/ICalReader ./ICalReader ; fi
+if [ ! -L ./qz-tray ]; then rm -rf qz-tray && ln -s ../kOOL_lib/inc/qz-tray ./qz-tray ; fi
+if [ ! -L ./tablesaw ]; then rm -rf tablesaw && ln -s ../kOOL_lib/inc/tablesaw ./tablesaw ; fi
+if [ ! -L ./jquery-dragtable ]; then rm -rf jquery-dragtable && ln -s ../kOOL_lib/inc/jquery-dragtable ./jquery-dragtable ; fi
+if [ ! -L ./CalendarHeatmap ]; then rm -rf CalendarHeatmap && ln -s ../kOOL_lib/inc/CalendarHeatmap ./CalendarHeatmap ; fi
+
 # Delete old links
 if [ -L ./js-kOOL.inc ]; then rm -f js-kOOL.inc ; fi
 if [ -L ./js-ajax.inc ]; then rm -f js-ajax.inc ; fi
@@ -150,11 +165,19 @@ if [ -L ./popup.js ]; then rm -f popup.js ; fi
 if [ -L ./ajax.js ]; then rm -f ajax.js ; fi
 if [ -L ./auth.inc ]; then rm -f auth.inc ; fi
 if [ -L ./mime_mail.inc ]; then rm -f mime_mail.inc ; fi
+if [ -L ./ZeroClipboard.swf ]; then rm -f ZeroClipboard.swf ; fi
+if [ -L ./ZeroClipboard.min.js ]; then rm -f ZeroClipboard.min.js ; fi
+if [ -L ./ZeroClipboard.min.map ]; then rm -f ZeroClipboard.min.map ; fi
+if [ -L ./submenu_actions.inc ]; then rm -f ./submenu_actions.inc ; fi
+if [ -L ./class.iCalReader.php ]; then rm -f class.iCalReader.php ; fi
+cd ..
 
+# vendor
+echo -n "vendor, "
+if [ ! -L ./vendor ]; then rm -rf vendor && ln -s ./kOOL_lib/vendor ./vendor ; fi
 
 # The files for FreePDF
 echo -n "FreePDF, "
-cd ..
 if [ ! -d ./fpdf ]; then mkdir fpdf ; fi
 cd fpdf
 if [ ! -L ./fpdf.php ]; then rm -f fpdf.php && ln -s ../kOOL_lib/fpdf/fpdf.php ./fpdf.php ; fi
@@ -170,9 +193,6 @@ for datei in `ls ../../kOOL_lib/install/default/fpdf/schriften/*` ; do
 	fi
 done
 cd ..
-if [ ! -d ./images ]; then mkdir images ; fi
-if [ ! -e ./images/logo.png ]; then cp ../kOOL_lib/install/default/fpdf/images/logo.png ./images ; fi
-if [ ! -e ./images/pdf-point.png ]; then cp ../kOOL_lib/install/default/fpdf/images/pdf-point.png ./images ; fi
 
 
 # Default files
@@ -182,13 +202,13 @@ if [ ! -e ./footer.php ]; then cp ./kOOL_lib/install/default/footer.php . ; fi
 if [ ! -e ./header.php ]; then cp ./kOOL_lib/install/default/header.php . ; fi
 if [ ! -e ./ko.css ]; then cp ./kOOL_lib/install/default/ko.css . ; fi
 if [ ! -d ./config ]; then mkdir config ; fi
-cd config
+cd my_images
+if [ ! -e ./kota_ko_detailed_person_exports_template_1.docx ]; then cp ../kOOL_lib/install/default/kota_ko_detailed_person_exports_template_1.docx . ; fi
+cd ../config
 if [ ! -e ./ko-config.php ]; then cp ../kOOL_lib/install/default/config/ko-config.php . ; fi
-if [ ! -e ./leute_formular.inc ]; then cp ../kOOL_lib/install/default/config/leute_formular.inc . ; fi
-if [ ! -e ./address.rtf ]; then cp ../kOOL_lib/install/default/config/address.rtf . ; fi
+if [ ! -e ./.htaccess ]; then cp ../kOOL_lib/install/default/config/.htaccess . ; fi
 chmod o-rx ./ko-config.php
 chmod g+w ./ko-config.php
-chmod g+w ./leute_formular.inc
 cd ..
 
 
@@ -244,6 +264,7 @@ if [ ! -L ./inc/leute.inc ]; then rm -f inc/leute.inc && ln -s ../../kOOL_lib/le
 if [ ! -L ./inc/kg.inc ]; then rm -f inc/kg.inc && ln -s ../../kOOL_lib/leute/inc/kg.inc ./inc/kg.inc ; fi
 if [ ! -L ./inc/ajax.php ]; then rm -f inc/ajax.php && ln -s ../../kOOL_lib/leute/inc/ajax.php ./inc/ajax.php ; fi
 if [ ! -L ./inc/vcard.php ]; then rm -f inc/vcard.php && ln -s ../../kOOL_lib/leute/inc/vcard.php ./inc/vcard.php ; fi
+if [ ! -L ./inc/ckeditor_custom_config.js ]; then rm -f inc/ckeditor_custom_config.js && ln -s ../../kOOL_lib/leute/inc/ckeditor_custom_config.js ./inc/ckeditor_custom_config.js ; fi
 
 
 # Module: reservations
@@ -268,6 +289,7 @@ if [ ! -L ./index.php ]; then rm -f index.php && ln -s ../kOOL_lib/rota/index.ph
 if [ ! -d ./inc ]; then mkdir inc ; fi
 if [ ! -L ./inc/rota.inc ]; then rm -f inc/rota.inc && ln -s ../../kOOL_lib/rota/inc/rota.inc ./inc/rota.inc ; fi
 if [ ! -L ./inc/ajax.php ]; then rm -f inc/ajax.php && ln -s ../../kOOL_lib/rota/inc/ajax.php ./inc/ajax.php ; fi
+if [ ! -L ./inc/consensus_chart.php ]; then rm -f inc/consensus_chart.php && ln -s ../../kOOL_lib/rota/inc/consensus_chart.php ./inc/consensus_chart.php ; fi
 if [ ! -L ./inc/ckeditor_custom_config.js ]; then rm -f inc/ckeditor_custom_config.js && ln -s ../../kOOL_lib/rota/inc/ckeditor_custom_config.js ./inc/ckeditor_custom_config.js ; fi
 if [ ! -L ./inc/js-rota.inc ]; then rm -f inc/js-rota.inc && ln -s ../../kOOL_lib/rota/inc/js-rota.inc ./inc/js-rota.inc ; fi
 
@@ -285,16 +307,16 @@ if [ ! -L ./consensus.js ]; then rm -f consensus.js && ln -s ../kOOL_lib/consens
 if [ ! -L ./js-consensus.inc ]; then rm -f js-consensus.inc && ln -s ../kOOL_lib/consensus/js-consensus.inc ./js-consensus.inc ; fi
 
 
-# Module: fileshare
-echo -n "fileshare, "
+# checkin
+echo -n "checkin, "
 cd ..
-if [ ! -d ./fileshare ]; then mkdir fileshare ; fi
-cd fileshare
-if [ ! -L ./index.php ]; then rm -f index.php && ln -s ../kOOL_lib/fileshare/index.php ./index.php ; fi
+if [ ! -d ./checkin ]; then mkdir checkin ; fi
+cd checkin
+if [ ! -L ./index.php ]; then rm -f index.php && ln -s ../kOOL_lib/checkin/index.php ./index.php ; fi
 if [ ! -d ./inc ]; then mkdir inc ; fi
-if [ ! -L ./inc/fileshare.inc ]; then rm -f inc/fileshare.inc && ln -s ../../kOOL_lib/fileshare/inc/fileshare.inc ./inc/fileshare.inc ; fi
-if [ ! -L ./inc/js-fileshare.inc ]; then rm -f inc/js-fileshare.inc && ln -s ../../kOOL_lib/fileshare/inc/js-fileshare.inc ./inc/js-fileshare.inc ; fi
-if [ ! -L ./inc/ajax.php ]; then rm -f inc/ajax.php && ln -s ../../kOOL_lib/fileshare/inc/ajax.php ./inc/ajax.php ; fi
+if [ ! -L ./inc/ajax.php ]; then rm -f inc/ajax.php && ln -s ../../kOOL_lib/checkin/inc/ajax.php ./inc/ajax.php ; fi
+if [ ! -L ./inc/checkin.inc ]; then rm -f inc/checkin.inc && ln -s ../../kOOL_lib/checkin/inc/checkin.inc ./inc/checkin.inc ; fi
+if [ ! -L ./inc/js-checkin.inc ]; then rm -f inc/js-checkin.inc && ln -s ../../kOOL_lib/checkin/inc/js-checkin.inc ./inc/js-checkin.inc ; fi
 
 
 # Module: tools
@@ -306,19 +328,7 @@ if [ ! -L ./index.php ]; then rm -f index.php && ln -s ../kOOL_lib/tools/index.p
 if [ ! -d ./inc ]; then mkdir inc ; fi
 if [ ! -L ./inc/tools.inc ]; then rm -f inc/tools.inc && ln -s ../../kOOL_lib/tools/inc/tools.inc ./inc/tools.inc ; fi
 if [ ! -L ./inc/ajax.php ]; then rm -f inc/ajax.php && ln -s ../../kOOL_lib/tools/inc/ajax.php ./inc/ajax.php ; fi
-
-
-# Module: tapes
-echo -n "tapes, "
-cd ..
-if [ ! -d ./tapes ]; then mkdir tapes ; fi
-cd tapes
-if [ ! -L ./index.php ]; then rm -f index.php && ln -s ../kOOL_lib/tapes/index.php ./index.php ; fi
-if [ ! -d ./inc ]; then mkdir inc ; fi
-if [ ! -L ./inc/tapes.inc ]; then rm -f inc/tapes.inc && ln -s ../../kOOL_lib/tapes/inc/tapes.inc ./inc/tapes.inc ; fi
-if [ ! -L ./inc/js-tapes.inc ]; then rm -f inc/js-tapes.inc && ln -s ../../kOOL_lib/tapes/inc/js-tapes.inc ./inc/js-tapes.inc ; fi
-if [ ! -L ./inc/ajax.php ]; then rm -f inc/ajax.php && ln -s ../../kOOL_lib/tapes/inc/ajax.php ./inc/ajax.php ; fi
-
+if [ ! -L ./inc/cleanup.inc ]; then rm -f inc/cleanup.inc && ln -s ../../kOOL_lib/tools/inc/cleanup.inc ./inc/cleanup.inc ; fi
 
 
 # Module: groups
@@ -332,6 +342,17 @@ if [ ! -L ./inc/groups.inc ]; then rm -f inc/groups.inc && ln -s ../../kOOL_lib/
 if [ ! -L ./inc/js-groups.inc ]; then rm -f inc/js-groups.inc && ln -s ../../kOOL_lib/groups/inc/js-groups.inc ./inc/js-groups.inc ; fi
 if [ ! -L ./inc/ajax.php ]; then rm -f inc/ajax.php && ln -s ../../kOOL_lib/groups/inc/ajax.php ./inc/ajax.php ; fi
 
+
+# Module: taxonomy
+echo -n "taxonomy, "
+cd ..
+if [ ! -d ./taxonomy ]; then mkdir taxonomy ; fi
+cd taxonomy
+if [ ! -L ./index.php ]; then rm -f index.php && ln -s ../kOOL_lib/taxonomy/index.php ./index.php ; fi
+if [ ! -d ./inc ]; then mkdir inc ; fi
+if [ ! -L ./inc/taxonomy.inc ]; then rm -f inc/taxonomy.inc && ln -s ../../kOOL_lib/taxonomy/inc/taxonomy.inc ./inc/taxonomy.inc ; fi
+if [ ! -L ./inc/js-taxonomy.inc ]; then rm -f inc/js-taxonomy.inc && ln -s ../../kOOL_lib/taxonomy/inc/js-taxonomy.inc ./inc/js-taxonomy.inc ; fi
+if [ ! -L ./inc/ajax.php ]; then rm -f inc/ajax.php && ln -s ../../kOOL_lib/taxonomy/inc/ajax.php ./inc/ajax.php ; fi
 
 
 # Module: donations
@@ -374,6 +395,25 @@ if [ ! -L ./inc/js-selproject.inc ]; then rm -f inc/js-selproject.inc && ln -s .
 if [ ! -L ./inc/ajax.php ]; then rm -f inc/ajax.php && ln -s ../../kOOL_lib/crm/inc/ajax.php ./inc/ajax.php ; fi
 
 
+# Module: subscription
+echo -n "subscription, "
+cd ..
+if [ ! -d ./subscription ]; then mkdir subscription ; fi
+cd subscription
+if [ ! -L ./index.php ]; then rm -f index.php && ln -s ../kOOL_lib/subscription/index.php ./index.php ; fi
+if [ ! -L ./form.php ]; then rm -f form.php && ln -s ../kOOL_lib/subscription/form.php ./form.php ; fi
+if [ ! -d ./inc ]; then mkdir inc ; fi
+if [ ! -L ./inc/ajax.php ]; then rm -f inc/ajax.php && ln -s ../../kOOL_lib/subscription/inc/ajax.php ./inc/ajax.php ; fi
+if [ ! -L ./inc/subscription.inc ]; then rm -f inc/subscription.inc && ln -s ../../kOOL_lib/subscription/inc/subscription.inc ./inc/subscription.inc ; fi
+if [ ! -L ./inc/fields_edit.php ]; then rm -f inc/fields_edit.php && ln -s ../../kOOL_lib/subscription/inc/fields_edit.php ./inc/fields_edit.php ; fi
+if [ ! -L ./inc/Form.php ]; then rm -f inc/Form.php && ln -s ../../kOOL_lib/subscription/inc/Form.php ./inc/Form.php ; fi
+if [ ! -L ./inc/FormException.php ]; then rm -f inc/FormException.php && ln -s ../../kOOL_lib/subscription/inc/FormException.php ./inc/FormException.php ; fi
+if [ ! -L ./inc/iframeResizer.contentWindow.min.js ]; then rm -f inc/iframeResizer.contentWindow.min.js && ln -s ../../kOOL_lib/subscription/inc/iframeResizer.contentWindow.min.js ./inc/iframeResizer.contentWindow.min.js ; fi
+if [ ! -L ./inc/iframeResizer.min.js ]; then rm -f inc/iframeResizer.min.js && ln -s ../../kOOL_lib/subscription/inc/iframeResizer.min.js ./inc/iframeResizer.min.js ; fi
+if [ ! -d ./res ]; then mkdir res ; fi
+if [ ! -L ./res/form.css ]; then rm -f res/form.css && ln -s ../../kOOL_lib/subscription/res/form.css ./res/form.css ; fi
+if [ ! -L ./res/form.js ]; then rm -f res/form.js && ln -s ../../kOOL_lib/subscription/res/form.js ./res/form.js ; fi
+if [ ! -L ./res/bg.jpg ]; then rm -f res/bg.jpg && ln -s ../../kOOL_lib/subscription/res/bg.jpg ./res/bg.jpg ; fi
 
 # Download folder
 echo -n "download, "
@@ -406,14 +446,6 @@ if [ ! -d ./rotaical ]; then mkdir rotaical ; fi
 cd rotaical
 if [ ! -L ./index.php ]; then rm -f index.php && ln -s ../kOOL_lib/rotaical/index.php ./index.php ; fi
 cd ..
-
-
-# Webfolders
-echo -n "Webfolders, "
-if [ ! -d ./webfolders ]; then mkdir webfolders ; fi
-if [ ! -d ./.webfolders ]; then mkdir .webfolders ; fi
-# chgrp $WWW_GROUP webfolders .webfolders
-chmod g+w webfolders .webfolders
 
 
 # Plugins
@@ -462,13 +494,35 @@ cd ..
 
 
 
+# Webfolders
+echo -n "DELETING Webfolders, "
+if [ -d ./webfolders ]; then mv webfolders save_webfolders ; fi
+if [ -d ./.webfolders ]; then rm -rf .webfolders ; fi
+
+
+
+# Module: fileshare
+echo -n "DELETING fileshare, "
+cd ..
+if [ -d ./fileshare ]; then rm -rf fileshare ; fi
+
+
 # Module: news
-echo -n ", DELETING news"
+echo -n "DELETING news, "
 if [ -d ./news ]; then rm -rf news ; fi
 
 # Module: dp
-echo -n ", DELETING dp"
+echo -n "DELETING dp, "
 if [ -d ./dp ]; then rm -rf dp ; fi
+
+# Module: tapes
+echo -n "DELETING tapes, "
+if [ -d ./tapes ]; then rm -rf tapes ; fi
+
+
+if [ ! -L ./js-home.inc ]; then rm -f js-home.inc ; fi
+if [ ! -L ./print.css ]; then rm -f print.css ; fi
+if [ -L ./inc/ClassLoader.php ]; then rm -f ./inc/ClassLoader.php ; fi
 
 
 

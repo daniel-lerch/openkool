@@ -1,0 +1,38 @@
+# behat.yml
+default:
+  suites:
+    default:
+      contexts:
+        - CommonContext:
+            base_dir: '/var/www/lauper/kool/site'
+            mail: [ 'mail.your-server.de', 'testing@laupercomputing.ch', 'da5py9lXBww8fnO8' ]
+            koolencryptionkey: '928c4d908cc0c94f54db6a52ba8cbabf91c15f81f7ef4eb2a38ea689b79a7535'
+            login: [ '3', 'root', 'test23' ]
+        - FeatureContext
+        - VesrContext
+        - IcalContext
+        - TaxonomyContext
+  formatters:
+    html:
+      output_path: %paths.base%/reports
+  extensions:
+    Behat\MinkExtension:
+      base_url:  'http://127.0.0.1'
+      goutte: ~
+      selenium2: ~
+    emuse\BehatHTMLFormatter\BehatHTMLFormatterExtension:
+      name: html
+      renderer: Twig,Behat2
+      file_name: index
+      print_args: true
+      print_outp: true
+      loop_break: true
+
+phantomjs:
+  extensions:
+    Behat\MinkExtension:
+      base_url: 'http://127.0.0.1'
+      goutte: ~
+      selenium2:
+        wd_host: "http://localhost:8643/wd/hub"
+      show_cmd: firefox %s

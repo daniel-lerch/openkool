@@ -28,9 +28,9 @@
 				<b>{$s.name}</b>
 			{elseif $s.type == "group"}
 				<input type="checkbox" name="chk_itemlist_group_{$s.value}" id="chk_itemlist_group_{$table}_{$s.value}" value="{$s.value}" title="{$s.name|strip_tags}" {$s.params} {if $s.aktiv} checked="checked"{/if} onclick="sendReq('../inc/ajax.php', 'action,table,id,state,sesid', 'kotaitemlistgroup,{$table},{$s.value},'+this.checked+',{$sm.sesid}', do_element);{if $s.onclick_post != ''}{$s.onclick_post}{else}{$item_onclick_post}{/if}">
-				<a href="#" onclick="sendReq('../inc/ajax.php', 'action,table,id,state,sesid', 'kotaitemlisttogglegroup,{$table},{$s.value},{$s.open},{$sm.sesid}', do_element);change_vis('itemlist_group_{$table}_{$s.value}');s=document.getElementById('span_itemlist_group_{$table}_{$s.value}');{literal}if(s.className=='itemlist_group_0'){s.className='itemlist_group_1'}else{s.className='itemlist_group_0'}{/literal};">
+				<span class="itemlist_item__link" onclick="sendReq('../inc/ajax.php', 'action,table,id,state,sesid', 'kotaitemlisttogglegroup,{$table},{$s.value},{$s.open},{$sm.sesid}', do_element);change_vis('itemlist_group_{$table}_{$s.value}');s=document.getElementById('span_itemlist_group_{$table}_{$s.value}');{literal}if(s.className=='itemlist_group_0'){s.className='itemlist_group_1'}else{s.className='itemlist_group_0'}{/literal};">
 					<span class="itemlist_group_{$s.open}" id="span_itemlist_group_{$table}_{$s.value}">{$s.name}{$closed}</span>
-				</a>
+				</span>
 			{elseif $s.type == 'html'}
 				{$s.html}
 			{else}

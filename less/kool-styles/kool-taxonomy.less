@@ -1,0 +1,55 @@
+.taxonomy__suggestnew {
+    display: none;
+    position: absolute;
+    z-index: 100;
+    top: 45px;
+    left: 15px;
+    width: calc(100% - 30px);
+    height: 28px;
+    border: 1px solid #281a12;
+    border-radius: 0 0 5px 5px;
+    -webkit-box-shadow: 0px 5px 5px -1px rgba(0,0,0,0.75);
+    -moz-box-shadow: 0px 5px 5px -1px rgba(0,0,0,0.75);
+    box-shadow: 0px 5px 5px -1px rgba(0,0,0,0.75);
+    background-color: #edffe1;
+    padding: 4px 8px;
+    font-size: 14px;
+    cursor: pointer;
+}
+
+.taxonomy-term__button {
+    margin: 2px 0 5px 15px;
+		padding: 3px 10px;
+		background-color: #5bc0de;
+		border: none;
+}
+.taxonomy-term__button i.fa-remove {
+	color: #fff;
+}
+.taxonomy-term__button:hover i.fa-remove {
+	color: @state-danger-text;
+}
+
+.taxonomy-term__label {
+    line-height:23px;
+    font-size:11px;
+}
+.dropdown-menu__parent a {
+  color: #808080 !important;
+}
+.dropdown-menu__parent a:hover {
+  background-color: transparent !important;
+  cursor: default !important;
+}
+
+.dropdown-menu__children a {
+  margin-left: 15px;
+}
+
+
+select#searchbox_taxonomy:required:invalid {
+	color: #999;
+}
+select#searchbox_taxonomy:required:invalid option {
+	color: #555;
+}

@@ -53,22 +53,24 @@
 							<div class="list-group-item list-group-item-info">
 								{ll key="donations_mod_assign_fields"}
 							</div>
-							<div class="list-group-item">
-								<div class="formular_header">
-									<label>{ll key="donations_mod_list_add_to_suggested_person"}</label>
-								</div>
-								{foreach item=dbp from=$donation.db}
-									<div class="input-group">
-										<div class="input-group-addon" style="width:auto;" data-toggle="tooltip" data-html="true" data-container="body" title="{$dbp.adressdaten}" >{if $dbp.firm}{$dbp.firm}{/if} {if $dbp.department}({$dbp.department}){/if} {$dbp.name}</div>
-										<div class="input-group-btn">
-											<button type="submit" class="btn btn-sm btn-primary" name="submit" value="{ll key="donations_mod_list_submit"}" onclick="set_action('submit_donations_mod', this);set_hidden_value('donations_mod_id', '{$donation.id}', this);set_hidden_value('donations_mod_person_id', '{$dbp.lid}', this);this.submit">{ll key="donations_mod_list_submit"}</button>
-										</div>
-										<div class="input-group-btn">
-											<button type="submit" class="btn btn-sm btn-primary" name="submit" value="{ll key="donations_mod_list_submit_and_mutation"}" onclick="set_action('submit_donations_mod_aa', this);set_hidden_value('donations_mod_id', '{$donation.id}', this);set_hidden_value('donations_mod_person_id', '{$dbp.lid}', this);this.submit">{ll key="donations_mod_list_submit_and_mutation"}</button>
-										</div>
+							{if $donation.db|@sizeof > 0}
+								<div class="list-group-item">
+									<div class="formular_header">
+										<label>{ll key="donations_mod_list_add_to_suggested_person"}</label>
 									</div>
-								{/foreach}
-							</div>
+									{foreach item=dbp from=$donation.db}
+										<div class="input-group">
+											<div class="input-group-addon" style="width:auto;" data-toggle="tooltip" data-html="true" data-container="body" title="{$dbp.adressdaten}" >{if $dbp.firm}{$dbp.firm}{/if} {if $dbp.department}({$dbp.department}){/if} {$dbp.name}</div>
+											<div class="input-group-btn">
+												<button type="submit" class="btn btn-sm btn-primary" name="submit" value="{ll key="donations_mod_list_submit"}" onclick="set_action('submit_donations_mod', this);set_hidden_value('donations_mod_id', '{$donation.id}', this);set_hidden_value('donations_mod_person_id', '{$dbp.lid}', this);this.submit">{ll key="donations_mod_list_submit"}</button>
+											</div>
+											<div class="input-group-btn">
+												<button type="submit" class="btn btn-sm btn-primary" name="submit" value="{ll key="donations_mod_list_submit_and_mutation"}" onclick="set_action('submit_donations_mod_aa', this);set_hidden_value('donations_mod_id', '{$donation.id}', this);set_hidden_value('donations_mod_person_id', '{$dbp.lid}', this);this.submit">{ll key="donations_mod_list_submit_and_mutation"}</button>
+											</div>
+										</div>
+									{/foreach}
+								</div>
+							{/if}
 							<div class="list-group-item">
 								<div class="formular_header">
 									<label>{ll key="donations_mod_list_add_to_selected_person"}</label>

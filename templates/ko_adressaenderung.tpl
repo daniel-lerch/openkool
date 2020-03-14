@@ -1,4 +1,6 @@
-<h3>{$tpl_fm_title}</h3>
+<h3>{$tpl_fm_title}
+	{if $help.show}<span>{$help.link}</span>{/if}
+</h3>
 
 
 <input type="hidden" name="aa_id" id="aa_id" value="" />

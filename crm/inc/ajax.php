@@ -2,7 +2,7 @@
 /***************************************************************
  *  Copyright notice
  *
- *  (c) 2003-2015 Renzo Lauper (renzo@churchtool.org)
+ *  (c) 2003-2017 Renzo Lauper (renzo@churchtool.org)
  *  All rights reserved
  *
  *  This script is part of the kOOL project. The kOOL project is
@@ -49,9 +49,6 @@ ko_include_kota(array('ko_crm_projects', 'ko_crm_status', 'ko_crm_contacts'));
 $hooks = hook_include_main('crm');
 if(sizeof($hooks) > 0) foreach($hooks as $hook) include_once($hook);
 
-//Smarty-Templates-Engine laden
-require($BASE_PATH.'inc/smarty.inc');
-
 require($BASE_PATH.'crm/inc/crm.inc');
 
 //HOOK: Submenus einlesen
@@ -68,6 +65,34 @@ if(isset($_GET) && isset($_GET['action'])) {
 
 	switch($action) {
 
+		case 'setfilter':
+			$status = $_GET['status'];
+			$field = $_GET['field'];
+			$state = $_GET['state'];
+			if(!in_array($field, array('project_status'))) continue;
+
+			switch($field) {
+				case 'project_status':
+					if(in_array($state, $_SESSION['crm_filter']['project_status'])) {
+						$_SESSION['crm_filter']['project_status'] = array_diff($_SESSION['crm_filter']['project_status'], array($state));
+					} else {
+						$_SESSION['crm_filter']['project_status'][] = $state;
+					}
+					$_SESSION['crm_filter']['project_status'] = $_SESSION['crm_filter']['project_status'];
+					ko_save_userpref($_SESSION['ses_userid'], 'crm_filter_project_status', serialize($_SESSION['crm_filter']['project_status']));
+				break;
+			}
+
+			print 'main_content@@@';
+			if($_SESSION['show'] == 'list_crm_projects') {
+				ko_list_crm_projects();
+			} else if($_SESSION['show'] == 'list_crm_status') {
+				ko_list_crm_status();
+			} else if($_SESSION['show'] == 'list_crm_contacts') {
+				ko_list_crm_contacts();
+			}
+		break;
+
 		case 'setstart':
 			//Set list start
 			if(isset($_GET['set_start'])) {
@@ -81,11 +106,11 @@ if(isset($_GET) && isset($_GET['action'])) {
 
 			print 'main_content@@@';
 			if($_SESSION['show'] == 'list_crm_projects') {
-				print ko_list_crm_projects(FALSE);
+				ko_list_crm_projects();
 			} else if($_SESSION['show'] == 'list_crm_status') {
-				print ko_list_crm_status(FALSE);
+				ko_list_crm_status();
 			} else if($_SESSION['show'] == 'list_crm_contacts') {
-				print ko_list_crm_contacts(FALSE);
+				ko_list_crm_contacts();
 			}
 		break;
 
@@ -96,57 +121,104 @@ if(isset($_GET) && isset($_GET['action'])) {
 				$_SESSION['sort_crm_contacts_order'] = format_userinput($_GET['sort_order'], 'alpha', TRUE, 4);
 
 				print 'main_content@@@';
-				print ko_list_crm_contacts(FALSE);
+				ko_list_crm_contacts();
 			}
 			else if($_SESSION['show'] == 'list_crm_projects') {
 				$_SESSION['sort_crm_projects'] = format_userinput($_GET['sort'], 'alphanum+', TRUE, 30);
 				$_SESSION['sort_crm_projects_order'] = format_userinput($_GET['sort_order'], 'alpha', TRUE, 4);
 
 				print 'main_content@@@';
-				print ko_list_crm_projects(FALSE);
+				ko_list_crm_projects();
 			}
 			else if($_SESSION['show'] == 'list_crm_status') {
 				$_SESSION['sort_crm_status'] = format_userinput($_GET['sort'], 'alphanum+', TRUE, 30);
 				$_SESSION['sort_crm_status_order'] = format_userinput($_GET['sort_order'], 'alpha', TRUE, 4);
 
 				print 'main_content@@@';
-				print ko_list_crm_status(FALSE);
+				ko_list_crm_status();
 			}
 		break;
 
 
-		case 'itemlist':
-			//ID and state of the clicked field
-			$id = format_userinput($_GET['id'], 'js');
-			$state = $_GET['state'] == 'true' ? 'checked' : '';
+		case "itemlist":
+		case 'itemlistRedraw':
+		case "itemlistgroup":
 
-			//Single event group selected
-			if($state == 'checked') {  //Select it
-				if(!in_array($id, $_SESSION['show_crm_projects'])) $_SESSION['show_crm_projects'][] = $id;
-			} else {  //deselect it
-				if(in_array($id, $_SESSION['show_crm_projects'])) $_SESSION['show_crm_projects'] = array_diff($_SESSION['show_crm_projects'], array($id));
+			if($action == 'itemlistRedraw') {
+				$action = 'itemlist';
+				$redraw = TRUE;
 			}
-			array_unique($_SESSION['show_crm_projects']);
-			foreach($_SESSION['show_crm_projects'] as $k => $v) {
-				if($v == '') unset($_SESSION['show_crm_projects'][$k]);
+			//ID and state of the clicked field
+			$id = format_userinput($_GET["id"], "js");
+			$state = $_GET["state"] == "true" ? "checked" : "";
+
+			//Single project selected
+			if($action == "itemlist") {
+				if($state == "checked") {  //Select it
+					if(!in_array($id, $_SESSION["show_crm_projects"])) $_SESSION["show_crm_projects"][] = $id;
+				} else {  //deselect it
+					if(in_array($id, $_SESSION["show_crm_projects"])) $_SESSION["show_crm_projects"] = array_diff($_SESSION["show_crm_projects"], array($id));
+				}
+			}
+			//Project status selected or unselected
+			else if($action == "itemlistgroup") {
+				$projects = db_select_data("ko_crm_projects", "WHERE `project_status` = '$id'", "*", "ORDER BY `title` ASC");
+				foreach($projects as $pid => $project) {
+					if($state == "checked") {  //Select it
+						if(!in_array($pid, $_SESSION["show_crm_projects"])) $_SESSION["show_crm_projects"][] = $pid;
+					} else {  //Deselect it
+						if(in_array($pid, $_SESSION["show_crm_projects"])) $_SESSION["show_crm_projects"] = array_diff($_SESSION["show_crm_projects"], array($pid));
+					}
+				}//foreach(groups)
+			}
+
+			//Get rid of invalid event group ids
+			$allProjects = db_select_data('ko_crm_projects', 'WHERE 1', '*');
+			$allProjects[0] = [
+				"id" => "0",
+				"number" => "",
+				"title" => getLL('crm_projects_dummy_entry'),
+			];
+
+			foreach($_SESSION['show_crm_projects'] as $k => $pid) {
+				if(!in_array($pid, array_keys($allProjects))) {
+					unset($_SESSION['show_crm_projects'][$k]);
+				}
 			}
 
 			//Save userpref
-			sort($_SESSION['show_crm_projects']);
-			ko_save_userpref($_SESSION['ses_userid'], 'show_crm_projects', implode(',', $_SESSION['show_crm_projects']));
+			sort($_SESSION["show_crm_projects"]);
+			ko_save_userpref($_SESSION["ses_userid"], "show_crm_projects", implode(",", $_SESSION["show_crm_projects"]));
 
-			//Redraw content for tracking list
 			print 'main_content@@@';
-			ko_list_crm_contacts(FALSE);
+			ko_list_crm_contacts();
 
-			break;
+			//Find position of submenu for redraw
+			if($action == "itemlistgroup" || $redraw) {
+				print '@@@';
+				print submenu_crm("itemlist_projects", "open", 2);
+			}
+		break;
+
+
+		case "itemlisttogglegroup":
+			//ID and state of the clicked field
+			$id = format_userinput($_GET["id"], "js");
+			if(isset($_SESSION["crm_project_status_states"][$id])) {
+				$_SESSION["crm_project_status_states"][$id] = $_SESSION["crm_project_status_states"][$id] ? 0 : 1;
+			} else {
+				$_SESSION["crm_project_status_states"][$id] = ($_GET["state"] == 1 ? 0 : 1);
+			}
+
+			//Don't redraw the submenu, as this is done in JS so the list doesn't scroll of the mouse's position
+		break;
 
 
 		case 'itemlistsave':
 			//save new value
 			if($_GET['name'] == '') continue;
 			$new_value = implode(',', $_SESSION['show_crm_projects']);
-			$user_id = $access['tracking']['MAX'] > 3 && $_GET['global'] == 'true' ? '-1' : $_SESSION['ses_userid'];
+			$user_id = $access['crm']['MAX'] > 3 && $_GET['global'] == 'true' ? '-1' : $_SESSION['ses_userid'];
 			$name = format_userinput($_GET['name'], 'js', FALSE, 0, array('allquotes'));
 			ko_save_userpref($user_id, $name, $new_value, 'crm_itemset');
 
@@ -194,7 +266,7 @@ if(isset($_GET) && isset($_GET['action'])) {
 
 			print submenu_crm('itemlist_projects', 'open', 2);
 			print '@@@main_content@@@';
-			ko_list_crm_contacts(FALSE);
+			ko_list_crm_contacts();
 		break;
 
 

@@ -58,7 +58,6 @@ class dbStructUpdater
 	var $updateActions = array();//Allowed actions to be performed (set in config)
 	var $typesUpper = array();
 	var $typesLower = array();
-	var $mysqlFunctions = array();
 
 	/**
 	 * Constructor
@@ -114,8 +113,6 @@ class dbStructUpdater
 		$this->typesUpper = array(' VARCHAR', ' TINYINT', ' SMALLINT', ' MEDIUMINT', ' BIGINT', ' INT', ' ENUM', ' DATE', ' DATETIME', ' DECIMAL');
 		$upperTypes = $this->typesUpper;
 		$this->typesLower = array_map(function($e)use($upperTypes){return strtolower($e);}, $upperTypes);
-
-		$this->mysqlFunctions = array('concat');
 
 
 		$this->setConfig($_config);
@@ -242,7 +239,7 @@ class dbStructUpdater
 	 * @param bool $asString if true - result will be a string, otherwise - array
 	 * @return array|string update sql statements - in array or string (separated with ';')
 	 */
-	function getUpdates($source, $dest, $asString=false)
+	function getUpdates($source, $dest, $asString=false, $debug=FALSE)
 	{
 		$result = $asString?'':array();
 		$compRes = $this->compare($source, $dest);
@@ -255,7 +252,7 @@ class dbStructUpdater
 		{
 			return $result;
 		}
-		$result = $this->getDiffSql($compRes);
+		$result = $this->getDiffSql($compRes, $debug);
 		if ($asString)
 		{
 			$result = implode(";\r\n", $result).';';
@@ -266,96 +263,109 @@ class dbStructUpdater
 
 
 	function getInserts($dest) {
-		$openingBrackets = array(
-			'(',
-			'[',
-			'{',
-		);
-		$closingBrackets = array(
-			')',
-			']',
-			'}',
-		);
-		$delimiters = array(
-			'"',
-			"'",
-			'`',
-		);
+		global $UPDATER_CONF;
 		$inserts = array();
-		foreach(explode("\n", $dest) as $line) {
-			if(substr($line, 0, 12) != 'INSERT INTO ') continue;
-			if(preg_match('/INSERT INTO `?(\w+)`?(?:\s*\([^\)]+\))? VALUES ?\((.*)\);$/', $line, $m)) {
-				$table = $m[1];
-				$values = $m[2];
+		foreach(preg_split("/(?<=;)\s*\n/", $dest) as $line) {
+			if(preg_match('/^(INSERT INTO `?(\w+)`?(?:\s*\([^\)]+\))?\s*VALUES)\s*?\((.*)\);$/s', $line, $matches)) {
+				$table = $matches[2];
+
 				if(in_array($table, array_keys($this->insertTables))) {
-					foreach ($this->mysqlFunctions as $fcn) {
-						$offset = 0;
-						while (($pos=strpos(strtolower($values), $fcn, $offset)) !== FALSE) {
-							$pos = $pos + strlen($fcn);
-							$offset = $pos;
-							$start = $pos;
+					$columnNames = array();
+					$tableLines = $this->splitTabSql($this->getTabSql($this->destStruct, $table, true));
+					foreach ($tableLines as $tableLine) {
+						$lineInfo = $this->processLine($tableLine);
+						if (substr($lineInfo['key'], 0, 2) == '!`') $columnNames[] = substr($lineInfo['key'], 2, -1);
+					}
 
-							while (in_array(substr($values, $pos, 1), array(' ', "\n", "\t"))) $pos++;
-							if (substr($values, $pos, 1) !== '(') continue;
+					$insertValues = [];
+					foreach(preg_split('/\)\s*,\s*\(/s',$matches[3]) as $values) {
 
-							$stack = array('(');
-							$pos++;
-							while (sizeof($stack) > 0 && $pos < strlen($values)) {
-								$char = substr($values, $pos, 1);
-								if (in_array($char, $delimiters)) {
-									if (end($stack) == $char) {
-										array_pop($stack);
-									} else {
-										$stack[] = $char;
-									}
-								} else if (in_array($char, $openingBrackets) && !in_array(end($stack), $delimiters)) {
-									$stack[] = $char;
-								} else if (in_array($char, $closingBrackets) && !in_array(end($stack), $delimiters)) {
-									$index = array_search($char, $closingBrackets);
-									if (end($stack) == $openingBrackets[$index]) {
-										array_pop($stack);
-									} else {
-										throw new Exception("Could not parse insert statement: {$line}");
+						$result = mysqli_query(db_get_link(),"SELECT ".$values);
+						$vals = $result->fetch_row();
+
+						// create a map from column names to values (for identity check below)
+						if (preg_match('/^INSERT INTO `?(\w+)`?\s*\((.+)\)\s*VALUES\s*\((.*)\);$/s', $line, $m)) {
+							$keys = array_map(function($e){return substr(trim($e), 1, -1);}, explode(',', $m[2]));
+						} else {
+							$tableExists = db_query("SHOW TABLES LIKE '{$table}';");
+							if (sizeof($tableExists) > 0) {
+								$keys = array();
+								foreach (db_get_columns($table) as $field) {
+									$keys[] = $field['Field'];
+								}
+								$keys = array_unique(array_merge($keys, $columnNames));
+							} else {
+								$keys = $columnNames;
+							}
+						}
+						$keys = array_slice($keys,0,count($vals));
+						$map = array_combine($keys,$vals);
+
+						$q = implode(' AND ',array_map(function($key) use($map) {
+							return "`".$key."` = '".mysqli_real_escape_string(db_get_link(),$map[$key])."'";
+						},$this->insertTables[$table]['keys']));
+						$checkQuery = "SELECT * FROM `$table` WHERE ".$q;
+						$resultCheck = mysqli_query(db_get_link(), $checkQuery);
+
+						if(mysqli_num_rows($resultCheck) == 0) {
+							$insertValues[] = $values;
+						} else if(!empty($UPDATER_CONF['updateFields'][$table])) {
+							$updateFields = $UPDATER_CONF['updateFields'][$table];
+							if($updateFields === '*') {
+								$updateFields = $keys;
+							}
+
+							$updateFields = array_filter($keys,function($field) use($UPDATER_CONF,$table) {
+								return ($UPDATER_CONF['updateFields'][$table] === '*' || in_array($field,$UPDATER_CONF['updateFields'][$table])) && !$this->isAutoIncrement($table,$field);
+							});
+
+							//Check for excludeFields
+							$doUpdate = TRUE;
+							foreach($updateFields as $field) {
+								if(in_array($table.'.'.$field.'.'.$map[$field], $this->excludeFields)) $doUpdate = FALSE;
+							}
+
+							if($updateFields && $doUpdate) {
+								$secondCheckWhere = implode(' AND ',array_map(function($field) use($map) {
+									return '`'.$field."`='".mysqli_real_escape_string(db_get_link(),$map[$field])."'";
+								},$updateFields));
+								$result = mysqli_query(db_get_link(),'SELECT * FROM `'.$table.'` WHERE '.$secondCheckWhere);
+								if(mysqli_num_rows($result) == 0) {
+									$currentRow = mysqli_fetch_assoc($resultCheck);
+									$updateFields = array_filter($updateFields,function($field) use($currentRow,$map) {
+										return !isset($currentRow[$field]) || $currentRow[$field] != $map[$field];
+									});
+									if($updateFields) {
+										$inserts[] = "UPDATE `".$table."` SET ".implode(', ',array_map(function($field) use($map) {
+											return "`".$field."` = '".mysqli_real_escape_string(db_get_link(),$map[$field])."'";
+										},$updateFields))." WHERE ".$q;
 									}
 								}
-								$pos++;
 							}
-							$stop = $pos;
-
-							$values = substr($values, 0, $start) . str_replace(',', "im_am_an_escaped_comma_yey", substr($values, $start, $stop - $start)) . substr($values, $stop);
 						}
 					}
-					$vals = array_map(function($el){return str_replace("im_am_an_escaped_comma_yey", ',', $el);}, explode(',', $values));
-
-					// create a map from column names to values (for identity check below)
-					if (preg_match('/INSERT INTO `?(\w+)`?\s*\((.+)\)\s*VALUES\s*\((.*)\);$/', $line, $m)) {
-						$keys = array_map(function($e){return substr(trim($e), 1, -1);}, explode(',', $m[2]));
-					} else {
-						$keys = array();
-						$fields = db_get_columns($table);
-						foreach ($fields as $field) {
-							$keys[] = $field['Field'];
-						}
-					}
-					$map = array();
-					foreach ($vals as $k => $v) {
-						$map[$keys[$k]] = $v;
-					}
-
-					$q = '';
-					foreach($this->insertTables[$table]['keys'] as $v) {
-						$q .= " AND `$v` = '".trim(str_replace("'", '', $map[$v]))."' ";
-					}
-					$checkQuery = "SELECT * FROM `$table` WHERE ".substr($q, 4);
-					$resultCheck = mysqli_query(db_get_link(), $checkQuery);
-					if(mysqli_num_rows($resultCheck) == 0) {
-						$inserts[] = $line;
+					if($insertValues) {
+						$inserts[] = $matches[1].' ('.implode('), (',$insertValues).');';
 					}
 				}
 			}
 		}
 		return $inserts;
 	}//getInserts()
+
+	protected $autoIncrementColumns = [];
+
+	function isAutoIncrement($table,$column) {
+		if(!isset($this->autoIncrementColumns[$table])) {
+			$res = mysqli_query(db_get_link(),"SHOW COLUMNS FROM `".$table."` WHERE FIND_IN_SET('auto_increment',extra)");
+			$cols = array();
+			while($row = $res->fetch_assoc()) {
+				$cols[] = $row['Field'];
+			}
+			$this->autoIncrementColumns[$table] = $cols;
+		}
+		return in_array($column,$this->autoIncrementColumns[$table]);
+	}
 
 
 	function getAlters($dest) {
@@ -745,7 +755,6 @@ class dbStructUpdater
 		$destKeys = array_keys($destPartsIndexed);
 		$all = array_unique(array_merge($sourceKeys, $destKeys));
 		sort($all);//fields first, then indexes - because fields are prefixed with '!'
-
 		foreach ($all as $key)
 		{
 			$info = array('source'=>'', 'dest'=>'');
@@ -825,6 +834,9 @@ class dbStructUpdater
 		{
 			$line = preg_replace("/ AUTO_INCREMENT=[0-9]+/i", '', $line);
 		}
+		// convert default values for integer columns to integer
+		$line = preg_replace("/(int\([0-9]+\)\s+.*\sdefault\s)'(\d+)'(.*)/i",'$1$2$3',$line);
+
 		$result['key'] = $this->normalizeString($key);
 		$result['line']= $line;
 		return $result;
@@ -838,7 +850,7 @@ class dbStructUpdater
 	 * @return array list of sql statements
 	 * supports query generation options
 	 */
-	function getDiffSql($diff)//maybe add option to ommit or force 'IF NOT EXISTS', skip autoincrement
+	function getDiffSql($diff, $debug=FALSE)//maybe add option to ommit or force 'IF NOT EXISTS', skip autoincrement
 	{
 		$options = $this->config;
 		$sqls = array();
@@ -879,16 +891,19 @@ class dbStructUpdater
 					if ($inSource && !$inDest)
 					{
 						$sql = $finfo['source'];
+						if($debug && $finfo['dest']) print "\e[0;32mDEBUG DROP  : $tab ".$finfo['dest']."\e[0m\n";
 						$action = 'drop';
 					}
 					elseif ($inDest && !$inSource)
 					{
 						$sql = $finfo['dest'];
+						if($debug && $finfo['source']) print "\e[0;32mDEBUG ADD   : $tab ".$finfo['source']."\e[0m\n";
 						$action = 'add';
 					}
 					else
 					{
 						$sql = $finfo['dest'];
+						if($debug && $finfo['source']) print "\e[0;32mDEBUG MODIFY: $tab ".$finfo['source']."\e[0m\n";
 						$action = 'modify';
 					}
 					if(in_array($action, $this->updateActions)) {

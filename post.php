@@ -2,7 +2,7 @@
 /***************************************************************
  *  Copyright notice
  *
- *  (c) 2003-2015 Renzo Lauper (renzo@churchtool.org)
+ *  (c) 2003-2017 Renzo Lauper (renzo@churchtool.org)
  *  All rights reserved
  *
  *  This script is part of the kOOL project. The kOOL project is
@@ -24,7 +24,6 @@
  *  This copyright notice MUST APPEAR in all copies of the script!
  ***************************************************************/
 
-
 $POST_ERRORS_MESSAGES = array(
 	'1' => 'Invalid request',
 	'2' => 'kOOL encryption key is not set',
@@ -35,6 +34,24 @@ $POST_ERRORS_MESSAGES = array(
 	'gs_4' => 'Your request contains invalid fields',
 	'gs_5' => 'You are not allowed to write to some fields',
 	'gs_6' => 'Your request contains invalid group datafields',
+	'res_1' => "Invalid date, please enter in the form 14.3.2008.",
+	'res_2' => "Invalid time.",
+	'res_3' => "The given code doesn't match the selected reservation.",
+	'res_4' => "The following reservations could not be saved because they are colliding with existing ones. %s",
+	'res_5' => "No stop time given. For reservations that last longer than one day, you have to enter start and stop times.",
+	'res_6' => "Your permissions are not sufficient to assign this item to the selected group.",
+	'res_7' => "No events found in the given time span.",
+	'res_8' => "No reservations selected.",
+	'res_9' => "No object selected.",
+	'res_10' => "No objects selected.",
+	'res_11' => "No group selected. Every object has to belong to a group.",
+	'res_12' => "Not all obligatory fields are completed.",
+	'res_13' => "No encryption key set in ko-config.php",
+	'res_14' => "Enddate is before startdate which is not allowed.",
+	'res_15' => "Invalid format of intermediate times",
+	'res_58' => "Invalid columns selected, can not continue.",
+	'res_59' => "Can not continue.",
+	'res_60' => "Please make sure you fill in all the mandatory fields.",
 );
 
 
@@ -52,6 +69,7 @@ function responseError($id=null, $message=null) {
 		$response['message'] = $message;
 	}
 
+	array_walk_recursive($response, 'utf8_encode_array');
 	print json_encode($response);
 	exit;
 }
@@ -63,13 +81,13 @@ $ko_menu_akt = 'post.php';
 
 require($ko_path."config/ko-config.php");
 require($ko_path."inc/ko.inc");
-require($ko_path."inc/kotafcn.php");
+require_once($ko_path."inc/kotafcn.php");
 
 
 
 /*
-// Small testsuite, set $test to {1..9}
-$test = 0;
+// Small testsuite, set $test to {1..11}
+$test = 11;
 
 // error
 if ($test == 1) {
@@ -164,8 +182,34 @@ else if ($test == 9) {
 	$_POST['request'] = json_encode($requestArray);
 	$_POST['key'] = md5($_POST['action'] . KOOL_ENCRYPTION_KEY . $_POST['request']);
 }
+// success
+else if ($test == 10) {
+	$_POST['action'] = 'newgroupsubscription';
+	$requestArray = array(
+		'_group_id' => 'g001252',
+		'_bemerkung' => 'Test Bemerkung',
+		'_moderated' => 1,
+		'vorname' => 'John',
+		'nachname' => 'Doe',
+	);
+	$_POST['request'] = json_encode($requestArray);
+	$_POST['key'] = md5($_POST['action'] . KOOL_ENCRYPTION_KEY . $_POST['request']);
+}
+// error
+else if ($test == 11) {
+	$_POST['action'] = 'newgroupsubscription';
+	$requestArray = array(
+		'_group_id' => 'g001252',
+		'_bemerkung' => 'Test Bemerkung',
+		'_moderated' => 0,
+		'vorname' => 'John',
+		'nachname' => 'Doe',
+	);
+	$_POST['request'] = json_encode($requestArray);
+	$_POST['key'] = md5($_POST['action'] . KOOL_ENCRYPTION_KEY . $_POST['request']);
+}
 
-set $request['_moderated'] to 0 or 1
+//set $request['_moderated'] to 0 or 1
 */
 
 
@@ -207,166 +251,89 @@ switch ($action) {
 			responseError(1);
 		}
 
-		$groupString = format_userinput($request['_group_id'], 'alphanumlist');
-
-		if ($groupString == '') {
-			responseError(1, $action);
-		}
-
-		if (strpos($groupString, ':') !== false) {
-
-			list($groupId, $roleId) = explode(':', $groupString);
-			if (substr($groupId, 0, 1) != 'g') {
-				responseError('gs_1');
-			}
-			$groupId = substr($groupId, 1);
-			if (substr($roleId, 0, 1) != 'r') {
-				responseError('gs_2');
-			}
-			$roleId = substr($roleId, 1);
-		}
-		else {
-			if (substr($groupString, 0, 1) != 'g') {
-				responseError('gs_1');
-			}
-			$groupId = substr($groupString, 1);
-			$roleId = null;
-		}
-
-		$group = db_select_data('ko_groups', 'where id = ' . $groupId, 'id, roles, datafields, maxcount, count', '', '', TRUE, TRUE);
-
-		// Check if group id is valid
-		if ($group === null) {
-			responseError(1, $action);
-		}
-
-		// check if role id is valid
-		if ($roleId !== null && !in_array($roleId, explode(',', $group['roles']))) {
-			responseError('gs_2');
-		}
-
-		// Check if group is full
-		if ($group['maxcount'] != 0 && $group['count'] >= $group['maxcount']) {
-			responseError('gs_3');
-		}
-
-		// Check if all fields exist in ko_leute
-		$dbColumnsRaw = db_get_columns("ko_leute");
-		$dbColumns = array();
-		foreach ($dbColumnsRaw as $dbColumnRaw) $dbColumns[] = $dbColumnRaw['Field'];
-		foreach ($request as $requestColumn => $v) {
-			if (substr($requestColumn, 0, 1) != '_' && !in_array($requestColumn, $dbColumns)) {
-				responseError('gs_4');
-			}
-		}
-
-		// Check if datafields exist
-		$dbDataFields = explode(',', $group['datafields']);
-		$requestDataFields = $request['_group_datafields'];
-		foreach ($requestDataFields as $dataFieldName => $dataFieldValue) {
-			if ($dataFieldName != '' && !in_array($dataFieldName, $dbDataFields)) {
-				responseError('gs_6');
-			}
-		}
-
 		$moderated = $request['_moderated'];
 		unset($request['_moderated']);
 
-		//Moderation (store in ko_leute_mod)
-		if($moderated) {
+		$overflow = isset($request['_overflow']) ? $request['_overflow'] : $moderated;
+		unset($request['_overflow']);
 
-			// Insert data into ko_leute_mod
-			$allowFilling = array('_bemerkung', '_group_id', '_group_datafields', '_additional_group_ids', '_additional_group_datafields');
-
-			$insert = array();
-			foreach ($request as $requestColumn => $v) {
-				// Check if column is writable
-				if (substr($requestColumn, 0, 1) == '_' && !in_array($requestColumn, $allowFilling)) {
-					responseError('gs_5');
-				}
-
-				if ($requestColumn == '_group_datafields') {
-					$insert[$requestColumn] = serialize($v);
-				}
-				else if (in_array($requestColumn, array('_additional_group_ids', '_additional_group_datafields'))) {
-					$insert[$requestColumn] = serialize($v);
-				}
-				else {
-					$insert[$requestColumn] = $v;
-				}
-			}
-			$insert['_crdate'] = date("Y-m-d H:i:s");
-
-			// Insert new entry into ko_leute_mod
-			db_insert_data('ko_leute_mod', $insert);
+		require_once($ko_path.'subscription/inc/subscription.inc');
+		ko_log('subscription_post',ko_subscription_get_log_message($request));
+		try {
+			$leute_id = ko_subscription_store_subscription($request,$moderated,$overflow);
+		} catch(kOOL\Subscription\FormException $ex) {
+			responseError($ex->getError(),$ex->getMessage());
 		}
-
-		//No moderation (store in ko_leute and ko_leute_revisions)
-		else {
-			$insert = array();
-			$gdfs = array();
-
-			//Normal address columns
-			foreach($request as $requestColumn => $v) {
-				if(substr($requestColumn, 0, 1) == '_') continue;
-				$insert[$requestColumn] = $v;
-			}
-			$insert['crdate'] = date('Y-m-d H:i:s');
-			$insert['lastchange'] = date('Y-m-d H:i:s');
-
-			//Main group
-			if($request['_group_id']) {
-				$fullGid = ko_groups_decode($request['_group_id'], 'full_gid');
-				$group_id = ko_groups_decode($request['_group_id'], 'group_id');
-				$insert['groups'][] = $fullGid;
-
-				//datafields
-				foreach($request['_group_datafields'] as $gdfid => $gdfvalue) {
-					$gdfs[] = array('group_id' => $group_id, 'datafield_id' => $gdfid, 'value' => $gdfvalue);
-				}
-			}
-
-			//Additional groups
-			if($request['_additional_group_ids']) {
-				foreach($request['_additional_group_ids'] as $agid => $checked) {
-					if(!$checked) continue;
-					$fullGid = ko_groups_decode($agid, 'full_gid');
-					$group_id = ko_groups_decode($fullGid, 'group_id');
-					$insert['groups'][] = $fullGid;
-
-					//gdf
-					foreach($request['_additional_group_datafields'][$group_id] as $gdfid => $gdfvalue) {
-						$gdfs[] = array('group_id' => $group_id, 'datafield_id' => $gdfid, 'value' => $gdfvalue);
-					}
-				}
-			}
-
-			$insert['groups'] = implode(',', $insert['groups']);
-
-
-			//Store in ko_leute
-			$leute_id = db_insert_data('ko_leute', $insert);
-
-			//leute_revision
-			//TODO: Add remarks
-			db_insert_data('ko_leute_revisions', array('leute_id' => $leute_id, 'reason' => 'groupsubscription', 'crdate' => date('Y-m-d H:i:s'), 'group_id' => $request['_group_id']));
-
-			//gdfs
-			foreach($gdfs as $gdf) {
-				$gdf['person_id'] = $leute_id;
-				//Check on current value and update, or insert new entry
-				if(db_get_count('ko_groups_datafields_data', 'id', " AND `group_id` = '".$gdf['groups_id']."' AND `datafield_id` = '".$gdf['datafield_id']."' AND `person_id` = '".$gdf['person_id']."'") > 0) {
-					db_update_data('ko_groups_datafields_data', "WHERE `group_id` = '".$gdf['groups_id']."' AND `datafield_id` = '".$gdf['datafield_id']."' AND `person_id` = '".$gdf['person_id']."'", array('value' => $gdf['value']));
-				} else {
-					db_insert_data('ko_groups_datafields_data', $gdf);
-				}
-			}
-		}//if..else($request['_moderated'])
 
 		$response['status'] = 'success';
 		if($leute_id) $response['leute_id'] = $leute_id;
 
 		break;
+
+	case 'newreservation':
+		require($ko_path."reservation/inc/reservation.inc");
+
+		$moderation = format_userinput($request['_moderate'], 'uint');
+		unset($request['_moderate']);
+
+		kota_process_data("ko_reservation", $request, "post");
+		if($request["enddatum"] == "0000-00-00" || trim($request["enddatum"]) == "") $request["enddatum"] = $request["startdatum"];
+
+		$err = check_entries($request);
+		if($err > 0) {
+			responseError('res_'.$err);
+		}
+
+		$sendModerationEmails = TRUE;
+		$res_confirm_mailtext = "";
+		$res_data = $request;  //Data for the single item
+		$data = $mod_data = array();   //Will hold all res_datas for all items on all repeated days
+		$items = db_select_data("ko_resitem", "WHERE 1=1", "*");
+
+		//Check for valid item_id and access rights
+		$item_id = format_userinput($request['item_id'], "uint");
+		$res_data["item_id"] = $item_id;
+
+		//Loop through all repetitions
+		if(FALSE === ko_res_check_double($item_id,$request['startdatum'], $request['enddatum'], $request["startzeit"], $request["endzeit"],$double_error_txt)) {  //Check for double
+			$response['conflict'] = 1;
+			$response['message'] = $request['startdatum'].': '.getLL('res_collision').' '.$double_error_txt.'';
+			if (!$moderation) {
+				$response['status'] = 'error';
+			} else { // save as moderated res
+				$res_data["startdatum"] = sql_datum($request['startdatum']);
+				$res_data["enddatum"] = $request['enddatum'] != "" ? sql_datum($request['enddatum']) : $res_data["startdatum"];
+
+				$mod_data[] = $res_data;
+				$sendModerationEmails = FALSE;
+				$response['status'] = 'success';
+			}
+		} else {
+			$res_data["startdatum"] = sql_datum($request['startdatum']);
+			$res_data["enddatum"] = $request['enddatum'] != "" ? sql_datum($request['enddatum']) : $res_data["startdatum"];
+
+			if($moderation == 0) {
+				//No moderation needed
+				$data[] = $res_data;
+			} else {
+				//Moderation needed
+				$mod_data[] = $res_data;
+			}
+			$response['status'] = 'success';
+		}//if..else(ko_res_check_double())
+
+
+		//Store reservations
+		if(sizeof($data) > 0) {
+			ko_res_store_reservation($data,null);
+		}
+		//Store moderations
+		if(sizeof($mod_data) > 0) {
+			ko_res_store_moderation($mod_data, $sendModerationEmails);
+		}
+
+		break;
+
 	default:
 
 		// example requests can be found in the action handlers

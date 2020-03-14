@@ -1,5 +1,5 @@
 <?php
-require('fpdf.php');
+require_once('fpdf.php');
 
 class PDF_MC_Table extends FPDF {
 	var $widths;
@@ -186,7 +186,7 @@ class PDF_MC_Table extends FPDF {
 		//ko: Return if no auto page breaking
 		if(!$this->AutoPageBreak) return FALSE;
 		//If the height h would cause an overflow, add a new page immediately
-		if($this->GetY()+$h>$this->PageBreakTrigger)
+		if($this->GetY()+$h>$this->PageBreakTrigger && !$this->InHeader && !$this->InFooter)
 			$this->AddPage($this->CurOrientation);
 	}
 

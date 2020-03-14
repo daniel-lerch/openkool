@@ -64,30 +64,49 @@ class PDF_HTML extends PDF_MC_Table
 		$this->footerFcn=NULL;
 	}
 
-	// TODO: Does not seem to work for cMargin < 1
-	function WriteHtmlRow($data, PDF_HTML &$dummy) {
-		$maxY = 0;
-		foreach ($data as $k => $v) {
-			$dummy->SetXY(0, $this->cMargin);
-			$dummy->WriteHtmlCell($this->widths[$k] - 2 * $this->cMargin, $v);
-
-			$maxY = max($maxY, $dummy->GetY() + $this->cMargin);
+	function getHeights($data) {
+		$cHeights = array();
+		$nb = 0;
+		for($i=0;$i<count($data);$i++) {
+			$nbLines = $this->nbHtmlLines(($this->widths[$i] - 2 * $this->innerBorderX), $data[$i], $this);
+			$cHeight = $nbLines * $this->zeilenhoehe; //max(0, $nbLines - 1) * $this->zeilenhoehe + min(1, $nbLines) * $this->FontSizePt * 0.35;
+			$nb = max($nb, $nbLines);
+			$cHeights[] = $cHeight;
 		}
-		$maxY += 4.5; // TODO: fix this quick-fix
 
-		if ($this->AcceptPageBreak() && $maxY + $this->GetY() > $this->PageBreakTrigger) {
+		return array($nb * $this->zeilenhoehe, $cHeights);
+	}
+
+	// TODO: Does not seem to work for innerBorderX < 1
+	function WriteHtmlRow($data, PDF_HTML &$dummy) {
+		//Calculate the height of the row
+		$cHeights = array();
+		if($this->doCalculateHeight) {
+			$nb=0;
+			for($i=0;$i<count($data);$i++) {
+				$nbLines = $this->nbHtmlLines(($this->widths[$i] - 2 * $this->innerBorderX), $data[$i], $dummy);
+				$cHeight = $nbLines * $this->zeilenhoehe; //max(0, $nbLines - 1) * $this->zeilenhoehe + min(1, $nbLines) * $this->FontSizePt * 0.35;
+				$nb = max($nb, $nbLines);
+				$cHeights[] = $cHeight;
+			}
+			$h=$this->zeilenhoehe*$nb+2*$this->innerBorderY;
+		} else {
+			$h = $this->height;
+		}
+
+		if ($this->AcceptPageBreak() && $h + $this->GetY() > $this->PageBreakTrigger && !$this->InHeader && !$this->InFooter) {
 			$this->AddPage($this->CurOrientation);
-			$this->SetXY($this->lMargin, $this->tMargin);
 		}
 
 		$initX = $this->GetX();
 		$initY = $this->GetY();
 
-		$maxY += $this->GetY();
+		$maxY = $h + $this->GetY();
 
 		$lAcc = 0;
 		foreach ($data as $k => $v) {
 			$f = $this->fills[$k];
+			$va = $this->valigns[$k];
 			if(is_array($this->fillColors[$k])) {
 				$this->SetFillColor($this->fillColors[$k][0], $this->fillColors[$k][1], $this->fillColors[$k][2]);
 			}
@@ -111,19 +130,30 @@ class PDF_HTML extends PDF_MC_Table
 
 			$this->SetXY($this->GetX(), $initY);
 			$l = $this->GetX();
-			$l = $l + $this->cMargin;
-			$r = $l + $this->widths[$k] - 2 * $this->cMargin;
+			$l = $l + $this->innerBorderX;
+			$r = $l + $this->widths[$k] - 2 * $this->innerBorderX;
 
-			$this->SetXY($l, $this->GetY() + $this->cMargin);
+			$yOffset = $this->innerBorderY;
+
+			if ($va == 'C') $yOffset = ($h - $cHeights[$k]) / 2;
+
+			$this->SetXY($l, $this->GetY() + $yOffset);
 			$this->WriteHtmlCell($r-$l, $v);
 
-			$this->SetY($this->GetY() + $this->cMargin);
+			$this->SetY($this->GetY() + $yOffset);
 
 			$lAcc += $this->widths[$k];
 			$this->SetX($initX + $lAcc);
 		}
+		$this->SetXY($initX, $initY);
+		$this->Ln($h);
+	}
 
-		$this->SetXY($initX, $maxY);
+	function nbHtmlLines($cellWidth, $html, PDF_HTML &$dummy) {
+		$dummy->SetXY(0, 0);
+		$dummy->WriteHtmlCell($cellWidth, $html);
+
+		return ($dummy->GetY() / $this->zeilenhoehe) + 1;
 	}
 
 	function WriteHtmlCell($cellWidth, $html){
@@ -153,7 +183,7 @@ class PDF_HTML extends PDF_MC_Table
 				if($this->HREF)
 					$this->PutLink($this->HREF,$e);
 				else
-					$this->Write(5,stripslashes(txtentities($e)));
+					$this->Write($this->zeilenhoehe,stripslashes(txtentities($e)));
 			}
 			else
 			{
@@ -207,10 +237,10 @@ class PDF_HTML extends PDF_MC_Table
 			case 'TR':
 			case 'BLOCKQUOTE':
 			case 'BR':
-				$this->Ln(4.5);
+				$this->Ln($this->zeilenhoehe);
 				break;
 			case 'P':
-				$this->Ln(4.5);
+				$this->Ln($this->zeilenhoehe);
 				break;
 			case 'FONT':
 				if (isset($attr['COLOR']) && $attr['COLOR']!='') {

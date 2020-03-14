@@ -1,5 +1,5 @@
 {if $input.type == "text"}
-	<input type="{if $input.html_type}{$input.html_type}{else}text{/if}" class="input-sm form-control {$input.add_class}" name="{$input.name}" value="{$input.value}" {$input.params} />
+	<input type="{if $input.html_type}{$input.html_type}{else}text{/if}" class="input-sm form-control {$input.add_class}" name="{$input.name}" value="{$input.value}" {$input.params} {if $tpl_isInline}placeholder="{$input.desc}"{/if} />
 
 
 {elseif $input.type == "password"}
@@ -15,7 +15,7 @@
 
 
 {elseif $input.type == "textarea"}
-	<textarea name="{$input.name}" class="input-sm form-control {$input.add_class}" {$input.params}>{$input.value}</textarea>
+	<textarea name="{$input.name}" class="input-sm form-control {$input.add_class}" {$input.params} {if $tpl_isInline}placeholder="{$input.desc}"{/if}>{$input.value}</textarea>
 
 
 {elseif $input.type == "richtexteditor"}
@@ -37,7 +37,7 @@
     </script>
 
 
-{elseif $input.type == "datepicker"}
+{elseif $input.type == "datepicker" || $input.type == "jsdate"}
 	{if !$input.html_id}
 		{uid loc="id"}
 	{else}
@@ -50,15 +50,41 @@
 	{/if}
 	<div class="input-group input-group-sm if-noblur datetimepicker" id="{$id}-input-group" data-picker-mode="{$picker_mode}">
 		<span id="{$id}-addon" class="input-group-addon"><span class="glyphicon glyphicon-calendar"></span></span>
-		<input type="text" id="{$id}-input" name="{$input.name}" class="input-sm form-control {$input.add_class}" value="{$input.value}" data-id="{$id}" {$input.params}>
+		<input type="text" id="{$id}-input" name="{$input.name}" class="input-sm form-control {$input.add_class}" value="{$input.value}" data-id="{$id}" {$input.params} {if $tpl_isInline}placeholder="{$input.desc}"{/if}>
 	</div>
 	<script type="text/javascript">
 		$('#{$id}-input-group').datetimepicker({ldelim}
+			keyBinds: {ldelim}
+				'left': null,
+				'right': null,
+				'delete': null,
+				'enter': null,
+				'escape': null
+			{rdelim},
 			locale: kOOL.language,
 			format: '{if $picker_mode == 'datetime'}DD.MM.YYYY HH:mm{else}DD.MM.YYYY{/if}',
 			showTodayButton: true,
 			useCurrent: false{if $input.additional_options},
-			{$input.additional_options}{/if}
+			{$input.additional_options}{/if}{if $input.viewDate},
+			viewDate: '{$input.viewDate}'{/if}
+		{rdelim});
+
+		$('#{$id}-input-group').on('dp.change', function(e){ldelim}
+			var $input = $('#{$id}-input');
+			var oldValue = $input.data('dp-old-val');
+			if (typeof(oldValue) == 'undefined' || $input.val() != oldValue) {ldelim}
+				$input.data('dp-old-val', $input.val());
+				$input.trigger('dp.change', []);
+			{rdelim}
+
+			{if $input.sibling}
+				datePickerStart = $('#{$id}-input-group').data("DateTimePicker");
+				datePickerEnd = $('#{$input.sibling}-input-group').data("DateTimePicker");
+
+				if (datePickerStart.date() != null && datePickerEnd.date() == null) {ldelim}
+					datePickerEnd.viewDate(datePickerStart.date());
+				{rdelim}
+			{/if}
 		{rdelim});
 		$('#{$id}-input').on('keyup');
 		$('#{$id}-input').on('keydown');
@@ -87,7 +113,7 @@
 
 
 {elseif $input.type == "radio"}
-	{html_radios name=$input.name values=$input.values output=$input.descs selected=$input.value separator=$input.separator}
+	{html_radios name=$input.name values=$input.values output=$input.descs selected=$input.value separator=$input.separator class="`$input.add_class`"}
 
 
 {elseif $input.type == "select"}
@@ -111,7 +137,8 @@
 			</div>
 		</div>
 	{else}
-		<select name="{$input.name}" class="input-sm form-control {$input.add_class}" {$input.params} {if $input.js_func_add}onclick="{$input.js_func_add}(this.options[parseInt(this.selectedIndex)].text, this.options[parseInt(this.selectedIndex)].value, this.name);"{/if}>
+		<select name="{$input.name}{if $input.overwrite}_original{/if}" class="input-sm form-control {$input.add_class}" {$input.params} {if $input.js_func_add}onclick="{$input.js_func_add}(this.options[parseInt(this.selectedIndex)].text, this.options[parseInt(this.selectedIndex)].value, this.name);"{/if}
+		{if $input.overwrite_value} disabled='disabled' {/if} >
 			{foreach from=$input.values item=v key=k}
 				<option value="{$v}" {if $v == $input.value}selected="selected"{/if} {if $v === '_DISABLED_'}disabled{/if}>
 					{if $input.descs.$k}{$input.descs.$k}{else}{$input.descs.$v}{/if}
@@ -123,17 +150,39 @@
 		{$input.buttons}
 		</div>
 	{/if}
+	{if $input.overwrite}
+		<div>
+			<input type="text" id="{$id}_overwrite" name="{$input.overwrite_name}" class="input-sm form-control {$input.add_class}" value="{$input.overwrite_value}">
+			<input type="hidden" name="{$input.name}" value="{$input.value}">
+		</div>
+		<script>
+			$('#{$id}_overwrite, select[name="{$input.name}_original"]').on('change', function(e){ldelim}
+				if ($('#{$id}_overwrite').val() != '') {ldelim}
+					$('select[name="{$input.name}_original"]').prop('disabled', 'disabled');
+					$('input[name="{$input.name}"]').val($('#{$id}_overwrite').val());
+				{rdelim} else {ldelim}
+					$('select[name="{$input.name}_original"]').prop('disabled', false);
+					$('input[name="{$input.name}"]').val($('select[name="{$input.name}_original"]').val());
+				{rdelim}
+			{rdelim});
+	   	</script>
+	{/if}
 
 {elseif $input.type == "multidateselect"}
+	{if !$input.html_id}
+		{uid loc="id"}
+	{else}
+		{assign var="id" value=$input.html_id}
+	{/if}
 	<table class="ko-select-wrapper">
 		<tr>
 			<td valign="top">
 				<input type="hidden" name="{$input.name}" value="{$input.avalue}">
 				<input type="hidden" name="old_{$input.name}" value="{$input.avalue}">
 				<div style="font-size:x-small;">{$label_form_ds_objects}:</div>
-				<div id="{$input.html_id}-input-group" style="position:relative;width:38px;">
-					<input type="text" name="fake_input_{$input.name}" id="fake_input_{$input.html_id}" class="input-sm form-control {$input.add_class}" value="{$input.avalue}" style="visibility:hidden;width:1px;padding:0px;margin:0px;">
-					<button type="button" class="btn btn-default" id="{$input.html_id}-btn" style="position:absolute;top:0px;left:0px;"><i class="fa fa-calendar"></i></button>
+				<div id="{$id}-input-group" style="position:relative;width:38px;">
+					<input type="text" name="fake_input_{$input.name}" id="fake_input_{$id}" class="input-sm form-control {$input.add_class}" value="{$input.avalue}" style="visibility:hidden;width:1px;padding:0px;margin:0px;">
+					<button type="button" class="btn btn-default" id="{$id}-btn" style="position:absolute;top:0px;left:0px;"><i class="fa fa-calendar"></i></button>
 				</div>
 			</td>
 			<td valign="top">
@@ -151,18 +200,18 @@
 		</tr>
 	</table>
 	<script>
-		$('#fake_input_{$input.html_id}').datetimepicker({ldelim}
+		$('#fake_input_{$id}').datetimepicker({ldelim}
 			locale: kOOL.language,
 			format: 'YYYY-MM-DD',
 			showTodayButton: true,
 			useCurrent: false
 		{rdelim});
-		$('#{$input.html_id}-btn').click(function() {ldelim}
-			$('#fake_input_{$input.html_id}').data('DateTimePicker').toggle();
+		$('#{$id}-btn').click(function() {ldelim}
+			$('#fake_input_{$id}').data('DateTimePicker').toggle();
 		{rdelim});
-		$('#fake_input_{$input.html_id}').datetimepicker().on('dp.change', function(e) {ldelim}
-			double_select_add($('#fake_input_{$input.html_id}').val(), $('#fake_input_{$input.html_id}').val(), 'sel_ds2_{$input.name}', '{$input.name}');
-			$('#fake_input_{$input.html_id}').val('');
+		$('#fake_input_{$id}').datetimepicker().on('dp.change', function(e) {ldelim}
+			double_select_add($('#fake_input_{$id}').val(), $('#fake_input_{$id}').val(), 'sel_ds2_{$input.name}', '{$input.name}');
+			$('#fake_input_{$id}').val('');
 		{rdelim});
 	</script>
 
@@ -175,13 +224,14 @@
 	{/if}
 	<table class="ko-select-wrapper">
 		<tr>
+			{if !$input.disabled}
 			<td class="v-align-t" style="width:50%;">
 				<input type="hidden" class="{$input.add_class}" name="{$input.name}" value="{$input.avalue}">
 				<input type="hidden" name="old_{$input.name}" value="{$input.avalue}">
 				<div style="font-size:x-small;">{$label_form_ds_objects}:</div>
 				<div class="doubleselect doubleselect-left" id="sel_ds1_{$input.name}" name="sel_ds1_{$input.name}" data-js-func-add="{$input.js_func_add}" data-target-name="sel_ds2_{$input.name}" data-hidden-name="{$input.name}" {$input.params}>
 					{foreach from=$input.values item=v key=k}
-						<div class="select-item" data-value="{$v}" title="{$input.descs.$k}">{$input.descs.$k}</div>
+						<div class="select-item" data-value="{$v}" title="{if $input.titles.$k}{$input.titles.$k}{else}{$input.descs.$k}{/if}">{$input.descs.$k}</div>
 					{/foreach}
 				</div>
 			</td>
@@ -211,9 +261,46 @@
 				{/if}
 				</div>
 			</td>
+			{/if}
 			<td class="v-align-t" style="width:50%;">
 				<div style="font-size:x-small;">{$label_form_ds_assigned}:</div>
-				<div class="doubleselect doubleselect-right" id="{$id}" name="sel_ds2_{$input.name}" {$input.params}>
+				<div class="doubleselect doubleselect-right" id="{$id}" name="sel_ds2_{$input.name}" {$input.params}{if $input.disabled} disabled{/if}>
+					{foreach from=$input.avalues item=v key=k}
+						<div class="select-item" data-value="{$v}" title="{$input.adescs.$k}">{$input.adescs.$k}</div>
+					{/foreach}
+				</div>
+			</td>
+		</tr>
+	</table>
+
+
+{elseif $input.type == "groupselect"}
+	{if !$input.html_id}
+		{uid loc="id"}
+	{else}
+		{assign var="id" value=$input.html_id}
+	{/if}
+	<table class="ko-select-wrapper">
+		<tr>
+			<td class="v-align-t" style="width:35%;">
+				<input type="hidden" name="{$input.name}" value="{$input.avalue}" />
+				<input type="hidden" name="old_{$input.name}" value="{$input.avalue}" />
+				<div style="font-size:x-small;">{ll key="groups_group"}:</div>
+				<div class="groupselect groupselect-left" name="sel_ds0_{$input.name}" {$input.params} size="10" data-js-func-add="fill_grouproles_select" style="border-top-right-radius:0px;border-bottom-right-radius:0px;border-right:0px;"></div>
+			</td>
+			<td class="v-align-t" style="width:30%;">
+				<div style="font-size:x-small;">{ll key="groups_role"}:</div>
+				<div class="groupselect doubleselect-left" name="sel_ds1_{$input.name}" {$input.params} size="10" data-js-func-add="double_select_add" data-target-name="sel_ds2_{$input.name}" data-hidden-name="{$input.name}" data-js-after-add="{$input.onclick_2_add}" style="border-top-left-radius:0px;border-bottom-left-radius:0px;"></div>
+			</td>
+			<td class="v-align-t btn-column" style="width:1%;">
+				<div style="font-size:x-small;">&nbsp;</div>
+				<button type="button" class="btn btn-xs btn-danger" alt="del" title="{$label_doubleselect_remove}" onclick="{if $input.allow_assign}double_select_move('{$input.name}', 'del');{$input.onclick_del_add}{/if}">
+					<i class="fa fa-remove"></i>
+				</button>
+			</td>
+			<td class="v-align-t" style="width:35%;">
+				<div style="font-size:x-small;">{ll key="groups_assigned"}:</div>
+				<div class="doubleselect doubleselect-right" id="{$id}" name="sel_ds2_{$input.name}" {$input.params} size="10">
 					{foreach from=$input.avalues item=v key=k}
 						<div class="select-item" data-value="{$v}" title="{$input.adescs.$k}">{$input.adescs.$k}</div>
 					{/foreach}
@@ -241,6 +328,7 @@
 				<label for="chk_{$input.name}_entry_{$id}">
 					<input type="checkbox" id="chk_{$input.name}_entry_{$id}" name="chk_{$input.name}" value="{$v}" {$checked} />
 					{$input.descs.$k}
+				</label>
 			</div>
 		{/foreach}
 	</div>
@@ -253,6 +341,7 @@
 		{else}
 			{assign var="id" value=$input.html_id}
 		{/if}
+		{assign var="valueKey" value=-1}
 		{if $input.descs}
 		<div class="input-group input-group-sm">
 				{/if}
@@ -273,7 +362,22 @@
 						</ul>
 					</div>
 				{/if}
-				<input type="text" class="input-sm form-control textplus-display {$input.add_class}" id="{$id}-input" name="{$input.name}" value="{$input.descs.$valueKey}" {$input.params}>
+			{if $valueKey < 0 && $input.value}
+				{assign var="inputValue" value=$input.value}
+			{else}
+				{assign var="inputValue" value=$input.descs.$valueKey}
+			{/if}
+				<input type="text" class="input-sm form-control textplus-display {$input.add_class}" id="{$id}-input" list="{$id}-textplus-list" name="{$input.name}" value="{$inputValue}" {$input.params} {if $tpl_isInline}placeholder="{$input.desc}"{/if}>
+				<datalist id="{$id}-textplus-list">
+					{foreach from=$input.values item=v key=k}
+						{if $v==$input.value}
+							{assign var="valueKey" value=$k}
+						{/if}
+						{if $input.descs.$k}
+							<option>{$input.descs.$k}</option>
+						{/if}
+					{/foreach}
+				</datalist>
 			{if $input.descs}
 		</div>
 		{/if}
@@ -378,7 +482,21 @@
 		{assign var="id" value=$input.html_id}
 	{/if}
 
-	<input type="hidden" class="{$input.add_class}" name="{$input.name}" id="{$id}">
+	<table width="100%">
+		<tr>
+			<td valign="top">
+				<input type="hidden" class="{$input.add_class}" name="{$input.name}" id="{$id}">
+			</td>
+			{if $input.show_add}
+			<td width="1%" valign="top">
+				<button type="button" title="{ll key="kota_async_form_label_ko_leute_add"}" class="btn btn-success btn-sm" id="{$id}-async-form-1-btn" data-target="#{$id}-async-form-1" data-af-entry-id="0" data-af-table="ko_leute" data-af-mode="new">
+					<i class="fa fa-plus" style="line-height:1.5;"></i>
+				</button>
+			</td>
+			{/if}
+		</tr>
+	</table>
+
 	<script>
 		$('#{$id}').peoplesearch({ldelim}
 			multiple: {if $input.single}false{else}true{/if}{if $input.data},
@@ -386,8 +504,33 @@
 			avalues: {$input.avalues|@json_encode},
 			adescs: {utf8_encode_array arr=$input.adescs var="encArray"}{$encArray|@json_encode}{/if}{if $input.exclude},
 			exclude: '{$input.exclude}'{/if}{if $input.exclude_sql},
-			excludeSql: '{$input.exclude_sql}'{/if}
+			excludeSql: '{$input.exclude_sql}'{/if}{if $input.disabled},
+			disabled: true{/if}
 		{rdelim});
+		{if $input.show_add}
+			$("#{$id}-async-form-1-btn").asyncform({ldelim}tag: '{$input.async_form_tag}'{rdelim});
+			$("#{$id}-async-form-1-btn").on('asyncform.response', function(event, r) {ldelim}
+				var person = r.actions.ko_leute.insert.entries[r.actions.ko_leute.insert.ids[0]];
+				var descParts = [];
+				if (person.firm) descParts.push(person.firm);
+				if (person.department) descParts.push('('+person.department+')');
+				descParts.push(person.vorname);
+				descParts.push(person.nachname);
+				var titleParts = [];
+				if (person.firm) titleParts.push(person.firm);
+				titleParts.push(person.vorname);
+				titleParts.push(person.nachname);
+				if (person.adresse) titleParts.push(" - " + person.adresse);
+				if (person.plz) titleParts.push(person.plz);
+				if (person.ort) titleParts.push(person.ort);
+				titleParts.push("("+person.id+")");
+				$('#{$id}').peoplesearch('add', {ldelim}
+					id: person.id,
+					name: descParts.join(" "),
+					title: titleParts.join(" ")
+				{rdelim});
+			{rdelim});
+		{/if}
 	</script>
 
 
@@ -398,7 +541,20 @@
 		{assign var="id" value=$input.html_id}
 	{/if}
 
-	<input type="hidden" class="{$input.add_class}" name="{$input.name}" id="{$id}">
+	<table width="100%">
+		<tr>
+			<td valign="top">
+				<input type="hidden" class="{$input.add_class}" name="{$input.name}" id="{$id}" {if $input.disallowPlaceholder}data-disallowplaceholder="true"{/if}>
+			</td>
+			{if $input.show_add}
+				<td width="1%" valign="top">
+					<button type="button" title="{ll key="kota_async_form_label_ko_groups_add"}" class="btn btn-success btn-sm" id="{$id}-async-form-1-btn" data-target="#{$id}-async-form-1" data-af-entry-id="0" data-af-table="ko_groups" data-af-mode="new">
+						<i class="fa fa-plus" style="line-height:1.5;"></i>
+					</button>
+				</td>
+			{/if}
+		</tr>
+	</table>
 	<script>
 		$('#{$id}').groupsearch({ldelim}
 			multiple: {if $input.single}false{else}true{/if}{if $input.data},
@@ -410,7 +566,87 @@
 			excludeSql: '{$input.exclude_sql}'{/if}{if $input.include_roles},
 			includeRoles: true{/if}{if $input.show_removal_warning === FALSE},
 			showRemovalWarning: false{/if}
+		{rdelim});
+		{if $input.show_add}
+			$("#{$id}-async-form-1-btn").asyncform();
+			$("#{$id}-async-form-1-btn").on('asyncform.response', function(event, r) {ldelim}
+				var gr = r.actions.ko_groups.insert.entries[r.actions.ko_groups.insert.ids[0]];
+				var desc = gr.name;
+				var title = gr.name;
+				$('#{$id}').groupsearch('add', {ldelim}
+					id: "g"+gr.id,
+					name: desc,
+					title: title
+				{rdelim});
 			{rdelim});
+		{/if}
+	</script>
+
+
+{elseif $input.type == "dynamicsearch"}
+	{if !$input.html_id}
+		{assign var="id" value=$input.name}
+	{else}
+		{assign var="id" value=$input.html_id}
+	{/if}
+
+	<table style="width: 100%;">
+		<tr>
+			<td valign="top">
+				<input type="hidden" class="{$input.add_class}" name="{$input.name}" id="{$id}">
+			</td>
+			{if $input.show_add}
+				<td width="1%" valign="top">
+					<button type="button" title="{ll key="kota_async_form_label_ko_rotas_add"}" class="btn btn-success btn-sm" id="{$id}-async-form-1-btn" data-target="#{$id}-async-form-1" data-af-entry-id="0" data-af-table="ko_rotas" data-af-mode="new">
+						<i class="fa fa-plus" style="line-height:1.5;"></i>
+					</button>
+				</td>
+			{/if}
+		</tr>
+	</table>
+	<script type="text/javascript">
+		$('#{$id}').dynamicsearch({ldelim}
+			multiple: {if $input.single}false{else}true{/if}{if $input.data},
+			selectedData: {utf8_encode_array arr=$input.data var="encArray"}{$encArray|@json_encode}{/if}{if $input.avalues},
+			avalues: {utf8_encode_array arr=$input.avalues var="encArray"}{$encArray|@json_encode}{/if}{if $input.avalue},
+			avalue: {utf8_encode_array arr=$input.avalue var="encArray"}{$encArray|@json_encode}{/if}{if $input.adescs},
+			adescs: {utf8_encode_array arr=$input.adescs var="encArray"}{$encArray|@json_encode}{/if}{if $input.node_id},
+			node_id: '{$input.node_id}'{/if}{if $input.module},
+			module: '{$input.module}'{/if}{if $input.exclude},
+			exclude: '{$input.exclude}'{/if}{if $input.show_removal_warning === FALSE},
+			showRemovalWarning: false{/if}{if $input.allowParentselect === TRUE},
+			allowParentselect: true{/if},
+			ajaxHandler: {utf8_encode_array arr=$input.ajaxHandler var="encArray"}{$encArray|@json_encode}
+		{rdelim});
+		{if $input.show_add}
+			$("#{$id}-async-form-1-btn").asyncform();
+			$("#{$id}-async-form-1-btn").on('asyncform.response', function(event, r) {ldelim}
+				var gr = r.actions.ko_rota.insert.entries[r.actions.ko_rota.insert.ids[0]];
+				var desc = gr.name;
+				var title = gr.name;
+				$('#{$id}').rotasearch('add', {ldelim}
+					id: "g"+gr.id,
+					name: desc,
+					title: title
+				{rdelim});
+			{rdelim});
+		{/if}
+
+		{if $tpl_isInline}
+			$('input[name="{$input.name}"]').on('change', function() {ldelim}
+				fullid = $(this).parents(".inlineform").attr("id").slice(3);
+				inlineform_submit($(this), fullid, true);
+			{rdelim});
+
+			$('.dynamicsearch-input').on('blur',  function() {ldelim}
+				var blurredElem = $(this);
+				setTimeout(function() {ldelim}
+					fullid = blurredElem.parents(".inlineform").attr("id").slice(3);
+					sendReq("../inc/ajax.php", "action,id,module,sesid", "inlineformblur,"+fullid+","+kOOL.module+","+kOOL.sid, inlineform_show);
+				{rdelim}, 600);
+			{rdelim});
+		{/if}
+
 	</script>
 
 
@@ -453,19 +689,29 @@
 
 
 {elseif $input.type == "foreign_table"}
+	{if $ft_preset_table != null}
+	<script>
+		<!--
+		if (window.kota_ft_alert_no_join_value === undefined) {ldelim}
+			window.kota_ft_alert_no_join_value = {ldelim}{rdelim};
+			{rdelim}
+		window.kota_ft_alert_no_join_value['{$ft_field}'] = '{$ft_alert_no_join_value}';
+		//-->
+	</script>
+	{/if}
+
 	<div class="btn-group btn-group-sm">
+	{if $ft_show_new_btn}
 	<button type="button" class="btn btn-sm btn-success form_ft_new" data-field="{$ft_field}" data-after="0" data-pid="{$ft_pid}">
 		<i class="fa fa-plus"></i>&nbsp;{$label_form_ft_new}
 	</button>
+	{/if}
+		{if $ft_show_sort_btn}
+	<button class="btn btn-sm btn-default form_ft_sort" data-field="{$ft_field}" data-pid="{$ft_pid}" data-preset-table="{$ft_preset_table}" title="{$ft_sort_btn_title}">
+		<i class="fa fa-sort"></i>&nbsp;{ll key="form_ft_button_sort"}
+	</button>
+		{/if}
 	{if $ft_preset_table != null}
-			<script>
-				<!--
-				if (window.kota_ft_alert_no_join_value === undefined) {ldelim}
-                    window.kota_ft_alert_no_join_value = {ldelim}{rdelim};
-				{rdelim}
-				window.kota_ft_alert_no_join_value['{$ft_field}'] = '{$ft_alert_no_join_value}';
-				//-->
-			</script>
 			<button class="btn btn-sm btn-default form_ft_load_preset" data-field="{$ft_field}" data-after="0" data-pid="{$ft_pid}" data-preset-table="{$ft_preset_table}" data-preset-join-value-local="{$ft_preset_join_value_local}" data-preset-join-column-foreign="{$ft_preset_join_column_foreign}">
 				<span class="glyphicon glyphicon-open"></span>&nbsp;{ll key="form_ft_button_load_presets"}
 			</button>

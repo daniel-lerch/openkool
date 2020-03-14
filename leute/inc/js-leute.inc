@@ -52,7 +52,7 @@ function do_fill_grouproles_select() {
 			responseText = http.responseText;
 
 			// Remove entries from select
-			var $list = $(document.getElementsByName('sel_ds1_input_groups')[0]);
+			var $list = $('.groupselect.doubleselect-left');
 			if($list.length > 0) {
 				$list.children().remove();
 
@@ -61,11 +61,9 @@ function do_fill_grouproles_select() {
 				var options = responseText.split("#");
 				for(i=0; i<options.length; i++) {
 					if (options[i] == '') continue;
-					var temp = options[i].split(",");
-					var val = temp[0],
-						text = temp[1],
-						title = temp[2];
-					html += getSelectOption(val, text, (title ? 'title="'+title+'"' : null));
+					var val = options[i].substr(0, options[i].indexOf(","));
+					var text = options[i].substr(options[i].indexOf(",")+1);
+					html += getSelectOption(val, text);
 				}
 
 				// insert html
@@ -77,84 +75,144 @@ function do_fill_grouproles_select() {
 			alert("Request URL does not exist");
 
 		//Hide message box
-		msg = document.getElementsByName('wait_message')[0];
-		msg.style.display = "none";
-		document.body.style.cursor = 'default';
+		var $msg = $('[name="wait_message"]');
+		$msg.hide();
+		$msg.css('cursor', 'default');
   }
 }//do_fill_grouproles_select()
 
 
 
 function do_submit_filter(mode,sesid) {
-	do_var1 = do_var2 = do_var3 = do_var4 = "";
+	do_var1 = do_var2 = do_var3 = do_var4 = do_var5 = "";
 	do_neg = false;
 
-	var var1 = document.getElementsByName('var1')[0];
-	if(var1 && var1.type == 'checkbox') {
-		if(var1.checked == 1) do_var1 = true;
-		else do_var1 = false;
+	var allParams = $('[name="filter_form"]').find(':input').toAssocArray(),
+		names = ['action', 'sesid'],
+		values = [mode, sesid],
+		isKota = false;
+	$.each(allParams, function(name, value) {
+		if (name.substr(0, 11) == 'kota_filter') {
+			isKota = true;
+		}
+	});
+
+	if (isKota) {
+		$.each(allParams, function(name, value) {
+			if (name.substr(0, 5) == 'kota_') {
+				names.push(name);
+				values.push(value);
+			}
+		});
 	} else {
-		if(var1) do_var1 = var1.value;
+		var var1 = document.getElementsByName('var1')[0];
+		if(var1 && var1.type == 'checkbox') {
+			if(var1.checked == 1) do_var1 = true;
+			else do_var1 = false;
+		} else {
+			if(var1) do_var1 = var1.value;
+		}
+
+		var var2 = document.getElementsByName('var2')[0];
+		if(var2 && var2.type == 'checkbox') {
+			if(var2.checked == 1) do_var2 = true;
+			else do_var2 = false;
+		} else {
+			if(var2) do_var2 = var2.value;
+		}
+
+		var var3 = document.getElementsByName('var3')[0];
+		if(var3 && var3.type == 'checkbox') {
+			if(var3.checked == 1) do_var3 = true;
+			else do_var3 = false;
+		} else {
+			if(var3) do_var3 = var3.value;
+		}
+
+		var var4 = document.getElementsByName('var4')[0];
+		if(var4 && var4.type == 'checkbox') {
+			if(var4.checked == 1) do_var4 = true;
+			else do_var4 = false;
+		} else {
+			if(var4) do_var4 = var4.value;
+		}
+
+		var var5 = document.getElementsByName('var5')[0];
+		if(var5 && var5.type == 'checkbox') {
+			if(var5.checked == 1) do_var5 = true;
+			else do_var5 = false;
+		} else {
+			if(var5) do_var5 = var5.value;
+		}
+
+		names.push('var1');
+		names.push('var2');
+		names.push('var3');
+		names.push('var4');
+		names.push('var5');
+		values.push(do_var1);
+		values.push(do_var2);
+		values.push(do_var3);
+		values.push(do_var4);
+		values.push(do_var5);
 	}
 
-	var var2 = document.getElementsByName('var2')[0];
-	if(var2 && var2.type == 'checkbox') {
-		if(var2.checked == 1) do_var2 = true;
-		else do_var2 = false;
-	} else {
-		if(var2) do_var2 = var2.value;
-	}
 
-	var var3 = document.getElementsByName('var3')[0];
-	if(var3 && var3.type == 'checkbox') {
-		if(var3.checked == 1) do_var3 = true;
-		else do_var3 = false;
-	} else {
-		if(var3) do_var3 = var3.value;
-	}
-
-	var var4 = document.getElementsByName('var4')[0];
-	if(var4 && var4.type == 'checkbox') {
-		if(var4.checked == 1) do_var4 = true;
-		else do_var4 = false;
-	} else {
-		if(var4) do_var4 = var4.value;
-	}
 
 	var neg = document.getElementsByName('filter_negativ')[0];
-	if(neg && neg.checked == 1) do_neg = true;
+	if (neg && neg.checked == 1) do_neg = true;
 	else do_neg = false;
+
+	names.push('neg');
+	values.push(do_neg);
 
 	//do_var1 = encodeURIComponent(do_var1);
 	//do_var2 = encodeURIComponent(do_var2);
 	//do_var3 = encodeURIComponent(do_var3);
 
-	sendReq('../leute/inc/ajax.php', 'action,var1,var2,var3,var4,neg,sesid', mode+','+do_var1+','+do_var2+','+do_var3+','+do_var4+','+do_neg+','+sesid, do_element);
+	sendReq('../leute/inc/ajax.php', names, values, do_element);
 }//do_submit_filter()
 
 
 
-$(document).ready(function() {
-	// Warning when modifying family fields
+
+
+familyFields = {};
+function createFamilyFieldsShapshot() {
 	familyFields = {};
-	$(".family_field_with_warning").keypress(function () {
+	$(".family_field_with_warning").each(function () {
 		var name = $(this).children('input').attr('name');
 		var value = $(this).children('input').val();
 		if (!(name in familyFields)) {
 			familyFields[name] = value;
 		}
-	});
-	$(".family_field_with_warning").keyup(function () {
-		var name = $(this).children('input').attr('name');
-		var value = $(this).children('input').val();
 
 		var label = $(this).closest('.formular-cell').find('.family_field_warning');
+		label.css('visibility', 'hidden');
+	});
+}
 
-		if (familyFields[name] != value) {
-			label.css('visibility', 'visible');
-		}
-		else if (familyFields[name] == value) {
-			label.css('visibility', 'hidden');
+
+
+
+$(document).ready(function() {
+	// Warning when modifying family fields
+
+	createFamilyFieldsShapshot();
+
+	$(".family_field_with_warning").keyup(function () {
+		if ($('#sel_familie').val() != '0') {
+			var name = $(this).children('input').attr('name');
+			var value = $(this).children('input').val();
+
+			var label = $(this).closest('.formular-cell').find('.family_field_warning');
+
+			if (familyFields[name] != value) {
+				label.css('visibility', 'visible');
+			}
+			else if (familyFields[name] == value) {
+				label.css('visibility', 'hidden');
+			}
 		}
 	});
 
@@ -177,6 +235,7 @@ $(document).ready(function() {
 	$("input[name='chk_return_address']").on('click', function() {
 		if (this.checked) {
 			$("#extended_return_address").show();
+			$("select[name='sel_return_address']").change();
 		}
 		else {
 			$("#extended_return_address").hide();
@@ -189,7 +248,26 @@ $(document).ready(function() {
 		else {
 			$("#manual_return_address").hide();
 		}
-	})
+	});
+
+	// PP in 'etiketten export'
+	$("input[name='chk_pp']").on('click', function() {
+		if (this.checked) {
+			$("#extended_pp").show();
+			$("select[name='sel_pp']").change();
+		}
+		else {
+			$("#extended_pp").hide();
+		}
+	});
+	$("select[name='sel_pp']").on('change', function() {
+		if (this.value.indexOf('manual_address') > -1) {
+			$("#manual_pp").show();
+		}
+		else {
+			$("#manual_pp").hide();
+		}
+	});
 
 	//Accordion for filter groups
 	$('body').on('click', ".filter-divider", function(event) {
@@ -273,11 +351,8 @@ $(document).ready(function() {
 	});
 
 
-
 	//Init clipboard the first time
-	<?php if (ko_get_userpref($_SESSION['ses_userid'], 'enable_zero_clipboard')) { ?>
 	clipBoardInit();
-	<?php } ?>
 
 
 	$('body').on('mouseleave', 'td.list-edit-overlay', function() {
@@ -299,7 +374,7 @@ $(document).ready(function() {
 	$('body').on('click', '.leute-crm-entries-add-entry-form-btn', function() {
 		var leute_id = $(this).closest('.ko-js-table-container').attr('data-parent-row-id');
 		var target = '#leute-crm-entries-'+leute_id;
-		$.get('inc/ajax.php', {
+		$.get('../leute/inc/ajax.php', {
 			action: 'addcrmentry',
 			leute_id: leute_id,
 			sesid: kOOL.sid
@@ -319,7 +394,7 @@ $(document).ready(function() {
 		submit_object.append('sesid', kOOL.sid);
 		$.ajax(
 			{
-				url: 'inc/ajax.php',
+				url: '../leute/inc/ajax.php',
 				type: 'POST',
 				data: submit_object,
 				async: false,
@@ -359,7 +434,7 @@ $(document).ready(function() {
 		var contact_id = $(this).closest('.ko-js-table-data-row').attr('data-id');
 		var target = '#leute-crm-entries-'+leute_id;
 		var row = $(target).find('.ko-js-table-data-row[data-id="'+contact_id+'"]');
-		$.get('inc/ajax.php', {
+		$.get('../leute/inc/ajax.php', {
 			action: 'editcrmentry',
 			leute_id: leute_id,
 			contact_id: contact_id,
@@ -383,7 +458,7 @@ $(document).ready(function() {
 		submit_object.append('sesid', kOOL.sid);
 		$.ajax(
 			{
-				url: 'inc/ajax.php',
+				url: '../leute/inc/ajax.php',
 				type: 'POST',
 				data: submit_object,
 				async: false,
@@ -418,7 +493,7 @@ $(document).ready(function() {
 		var contact_id = $(this).closest('.ko-js-table-data-row').attr('data-id');
 		var target = '#leute-crm-entries-'+leute_id;
 		var row = $(target).find('.ko-js-table-data-row[data-id="'+contact_id+'"]');
-		$.get('inc/ajax.php', {
+		$.get('../leute/inc/ajax.php', {
 			action: 'deletecrmentry',
 			leute_id: leute_id,
 			contact_id: contact_id,
@@ -463,11 +538,6 @@ $(document).ready(function() {
 		$('.richtexteditor').ckeditor({customConfig : '/leute/inc/ckeditor_custom_config.js' });
 	}
 
-	$('.family-relative-id').peoplesearch({
-		removalWarning: kOOL_ll.relative_removal_warning,
-		showRemovalWarning: true,
-		multiple: false
-	});
 	$('input').on('peoplesearch.remove', function(id) {
 		update_families();
 	});
@@ -509,9 +579,36 @@ $(document).ready(function() {
 
 
 	// automatically fill geschlecht / anrede if other is selected and it is still empty
-	$('[name="input_geschlecht"], [name="input_anrede"]').on('change', function() {
+	var anredeSelector = escapeSelector("koi[ko_leute][anrede]["),
+		geschlechtSelector = escapeSelector('koi[ko_leute][geschlecht][');
+	$('[name*="'+geschlechtSelector+'"]').on('change', function() {
 		checkTitleAndGeschlecht($(this));
 	});
+	$('[name*="'+anredeSelector+'"]').on('input', function() {
+		checkTitleAndGeschlecht($(this));
+	});
+
+
+	$('body').on('mouseover', '.leute-email-person-preview', function() {
+		var $this = $(this);
+		setTimeout(function(){
+			if (!$this.data('utd')) {
+				leute_email_load_preview($this, $this.attr('data-id'));
+			}
+		}, 300);
+	});
+	$('body').on('change', '[name="leute_mailing_reply_to"], [name="leute_mailing_placeholders"], [name="leute_email_sent_emails"]', function() {
+		leute_email_invalidate_previews();
+	});
+	$('body').on('input', '[name="leute_mailing_subject"]', function() {
+		leute_email_invalidate_previews();
+	});
+	if (typeof(CKEDITOR) != 'undefined' && typeof(CKEDITOR.instances['leute_mailing_text']) != 'undefined') {
+		CKEDITOR.instances['leute_mailing_text'].on('change', function() {
+			leute_email_invalidate_previews();
+		});
+	}
+	leute_email_update_recipients();
 });
 
 
@@ -530,7 +627,7 @@ function update_families() {
 
 	if (el.val() == '0' && ids.length > 0) {
 		$.get(
-			"inc/ajax.php",
+			"../leute/inc/ajax.php",
 			{
 				action: "getfamilies",
 				memberids: memberids,
@@ -562,21 +659,26 @@ function update_family() {
 
 	if (el.val() > 0) {
 		$.get(
-			"inc/ajax.php",
+			"../leute/inc/ajax.php",
 			{
 				action: "getfamily",
 				famid: el.val(),
 				sesid: kOOL.sid
 			}, function(data) {
 				var json = JSON.parse(data);
+				console.log(json);
 				for (var name in json) {
 					var value = json[name];
-					$('[name="'+name+'"]').setVal(value);
+					$('[name^="'+escapeSelector(name)+'"]').setVal(value);
 				}
 				$('form[name="formular"]').children('.alert.alert-warning.alert-dismissible').remove();
 				$('form[name="formular"]').prepend('<div class="alert alert-warning alert-dismissible"><button type="button" class="close" data-dismiss="alert"><span>&times;</span></button>'+leute_warning_family_fields_changed+'</div>');
+
+				createFamilyFieldsShapshot();
 			}
 		)
+	} else {
+		createFamilyFieldsShapshot();
 	}
 }
 
@@ -602,7 +704,7 @@ function change_crm_div(id, mode, callback) {
 	else if (mode == 'show' || (mode == 'toggle' && container.css('display') == 'none')) {
 		if(crm_div.children().length == 0) {
 			$.get(
-				'inc/ajax.php',
+				'../leute/inc/ajax.php',
 				{
 					action: 'crm',
 					id: id,
@@ -627,7 +729,7 @@ function change_crm_div(id, mode, callback) {
 
 <?php
 $title2GeschlechtMap = $LEUTE_TITLE_TO_SEX[$_SESSION['lang']];
-array_walk_recursive($title2GeschlechtMap, 'utf8_encode_array');
+$title2GeschlechtMap = ko_utf8_encode_assoc($title2GeschlechtMap);
 
 $geschlecht2TitleMap = array();
 foreach ($title2GeschlechtMap as $t => $s) {
@@ -639,13 +741,18 @@ foreach ($title2GeschlechtMap as $t => $s) {
 var title2GeschlechtMap = <?php print json_encode($title2GeschlechtMap); ?>;
 var geschlecht2TitleMap = <?php print json_encode($geschlecht2TitleMap); ?>;
 function checkTitleAndGeschlecht($this) {
-	var $title = $('[name="input_anrede"]');
-	var $geschlecht = $('[name="input_geschlecht"]');
+	var anredeSelector = escapeSelector('koi[ko_leute][anrede]['),
+		geschlechtSelector = escapeSelector('koi[ko_leute][geschlecht][');
 
-	if ($this.attr('name') == 'input_anrede' && !$geschlecht.val() && $title.val() && title2GeschlechtMap[$title.val()]) {
-		$geschlecht.val(title2GeschlechtMap[$title.val()]);
-	} else if ($this.attr('name') == 'input_geschlecht' && !$title.val() && $geschlecht.val() && geschlecht2TitleMap[$geschlecht.val()]) {
-		$title.val(geschlecht2TitleMap[$geschlecht.val()]);
+	var $title = $('[name*="'+anredeSelector+'"]'),
+		$geschlecht = $('[name*="'+geschlechtSelector+'"]');
+
+	if ($this.attr('name').indexOf('anrede') >= 0 && !$geschlecht.val() && $title.val() && title2GeschlechtMap[$title.val()]) {
+		console.log(title2GeschlechtMap[$title.val()]);
+		$geschlecht.setVal(title2GeschlechtMap[$title.val()]);
+	} else if ($this.attr('name').indexOf('geschlecht') >= 0 && !$title.val() && $geschlecht.val() && geschlecht2TitleMap[$geschlecht.val()]) {
+		console.log(geschlecht2TitleMap[$geschlecht.val()]);
+		$title.setVal(geschlecht2TitleMap[$geschlecht.val()]);
 	}
 }
 
@@ -661,7 +768,8 @@ function filter_crm_project(target, id) {
 
 
 function do_update_df_form(id, sesid) {
-	groups = document.getElementsByName('input_groups')[0].value;
+	var escapedName = escapeSelector('koi[ko_leute][groups]');
+	var groups = $('[name^="'+escapedName+'"]').val() + "";
 	while(groups.indexOf(",") != -1) groups = groups.replace(",", "A");
 	sendReq('../leute/inc/ajax.php', 'action,groups,id,sesid', 'updatedfform,'+groups+','+id+','+sesid, do_element);
 }
@@ -702,9 +810,9 @@ function mailmerge_reuse() {
 			alert("Request URL does not exist");
 
 		//Hide message box
-		msg = document.getElementsByName('wait_message')[0];
-		msg.style.display = "none";
-		document.body.style.cursor = 'default';
+		var $msg = $('[name="wait_message"]');
+		$msg.hide();
+		$msg.css('cursor', 'default');
   }
 
 }//mailmerge_reuse()
@@ -771,30 +879,155 @@ function add_markup(input, code) {
 
 
 
-// Initialize clipBoard for copying address to the clipboard
+function mailingCheckSend(btn, noSubjectMsg, noReplyToMsg, confirmPlaceholdersMsg) {
+	var $this = $(btn);
 
-function clipBoardInit() {
+	var s = document.getElementsByName('leute_mailing_subject')[0];
+	var r = document.getElementsByName('leute_mailing_reply_to')[0];
+	if(s.value == '') {
+		alert(noSubjectMsg);
+		return false;
+	} else if(r.value == '') {
+		alert(noReplyToMsg);
+		return false;
+	} else {
+		var phOK = mailingCheckPlaceholders();
+		if (!phOK) {
+			var c = confirm(confirmPlaceholdersMsg);
+			if (!c) return false;
+		}
+		set_action('submit_email', btn);
+		$this.click();
+	}
+	return true;
+}
 
-	ZeroClipboard.config({
-		swfPath: "<?php print $ko_path; ?>inc/ZeroClipboard.swf"
+function mailingCheckPlaceholders() {
+	var supportedTags = [];
+	$('#leute_mailing_placeholders').children().each(function(e) {
+		if ($(this).attr('value')) supportedTags.push($(this).attr('value'));
 	});
 
-	var ko_zclip = new ZeroClipboard();
+	var text = '';
+	for(var i in CKEDITOR.instances) {
+		if (CKEDITOR.instances[i].name == 'leute_mailing_text') {
+			text = CKEDITOR.instances[i].getData();
+		}
+	}
 
-	ko_zclip.on("copy", function() {
-		ko_infobox('INFO', '<?php print getLL('leute_info_address_to_clipboard'); ?>');
-	});
+	console.log(text);
 
-	$('body').on('mouseenter', '.list-edit-overlay', function(){
-		var el = $(this).find('.clipboardContainer');
-		var text = (el).data('clipboard-text');
-		ko_zclip.clip($(el).parent('button'));
-		ko_zclip.setText(text);
-	});
+	text = text + ' ' + $('#leute_mailing_subject').val();
+
+	var re = /###[^#]+###/g;
+	while (match = re.exec(text)) {
+		if (supportedTags.indexOf(match[0]) < 0) return false;
+	}
+
+	return true;
 }
 
 
 
+// Initialize clipBoard for copying address to the clipboard
+
+function clipBoardInit() {
+	var supported = false;
+	try {
+		supported = document.queryCommandSupported('copy');
+	} catch(err) {}
+	if(supported) {
+		$(document).on('click','.list-edit-overlay .clipboardContainer',function() {
+			var ta = $('<textarea>').css({
+				position:'fixed',
+				top:0,
+				left:0,
+				width:'2em',
+				height:'2em',
+				padding:0,
+				border:'none',
+				outline:'none',
+				'box-shadow':'none',
+				background:'transparent',
+			}).val($(this).data('clipboard-text')).appendTo($('body'));
+			ta[0].select();
+			var success = false;
+			try {
+				success = document.execCommand('copy');
+			} catch(err) {}
+			ta.remove();
+			if(success) {
+				ko_infobox('INFO', '<?php print getLL('leute_info_address_to_clipboard'); ?>');
+			} else {
+				ko_infobox('INFO', '<?php print getLL('leute_info_address_to_clipboard_failed'); ?>');
+			}
+		});
+	} else {
+		$('.list-edit-overlay .clipboardContainer').closest('li').remove();
+		$(document).on('DOMNodeInserted','.ko_list',function() {
+			$(this).find('.list-edit-overlay .clipboardContainer').closest('li').remove();
+		});
+	}
+}
+
+
+
+function leute_email_update_recipients() {
+	if ($('#email-preview').length > 0) {
+		var params = $('form[name="formular"]').toAssocArray();
+		params.action = 'emailpreviewrecs';
+		params.sesid = kOOL.sid;
+		$.post('../leute/inc/ajax.php', params).done(function(data) {
+			$('#email-preview').html(data);
+		});
+	}
+}
+function leute_email_invalidate_previews() {
+	$('.leute-email-person-preview')
+		.attr('data-original-title', '<i class=&quot;fa fa-pulse fa-spinner&quot;></i>')
+		.tooltip('fixTitle')
+		.data('utd', false);
+}
+function leute_email_load_preview($this, id) {
+	var params = $('form[name="formular"]').toAssocArray();
+	params.action = 'emailpreview';
+	params.sesid = kOOL.sid;
+	params.recipient_id = id;
+	$.post('../leute/inc/ajax.php', params).done(function(data) {
+		$this
+			.attr('data-original-title', data)
+			.tooltip('fixTitle')
+			.data('utd', true);
+		if ($(':hover').filter($this).length > 0) $this.tooltip('show');
+	});
+}
+
+/**
+ * Hides/Show the warning in leute submenu "Aktion"-Box if hidden or deleted-button is active
+ *
+ * @param element
+ * @param status
+ */
+function toggle_hidden_deleted_warning(element, status) {
+	var show_warning = false;
+	if (status == 1) {
+		show_warning = true;
+	}
+
+	if (element == "sb-show-hidden-li" && $("#sb-show-deleted-li a").hasClass("danger")) {
+			show_warning = true;
+	}
+
+	if (element == "sb-show-deleted-li" && $("#sb-show-hidden-li a").hasClass("danger")) {
+			show_warning = true;
+	}
+
+	if (show_warning == true) {
+		$("#leute-warning-export").css("display","block");
+	} else {
+		$("#leute-warning-export").css("display","none");
+	}
+}
 
 
 -->

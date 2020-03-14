@@ -46,12 +46,17 @@ function my_leute_column_map_col_age_ageendofyear($data, $col, &$p) {
 	if($df && isset($p[$df]) && $p[$df] != '0000-00-00') {
 		$todayY = substr($p[$df], 0, 4);
 		$suffix = '&nbsp;&dagger;';
+
+		$todayMD = str_replace('-', '', substr($p[$df], 5));
+		if((int)(substr($p['geburtsdatum'], 5, 2).substr($p['geburtsdatum'], 8, 2)) > (int)($todayMD)) $ageCorrection = -1;
 	} else {
 		$todayY = date('Y');
 		$suffix = '';
+		$ageCorrection = 0;
 	}
 
-	$age = (int)$todayY - (int)substr($p['geburtsdatum'], 0, 4);
+  $age = (int)$todayY - (int)substr($p['geburtsdatum'], 0, 4);
+  $age += $ageCorrection;
 
 	return $age.$suffix;
 }//my_leute_column_map()

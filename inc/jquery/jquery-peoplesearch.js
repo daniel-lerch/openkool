@@ -27,7 +27,7 @@
 			avalues: [],
 			adescs: [],
 			atitles: [],
-			removalWarning: 'do you really want to proceed?',
+			removalWarning: 'Wollen Sie diese Zuweisung wirklich entfernen?',
 			showRemovalWarning: true,
 			disabled: false,
 			exclude: '',
@@ -148,7 +148,7 @@
 					if (this.disabled) {
 						this.$buttonsWrapper.append('<div class="col-sm-6"><button type="button" style="width:100%" class="btn btn-default btn-sm" title="'+person.title+'" data-id="'+person.id+'" disabled>'+person.name+'</button></div>');
 					} else {
-						this.$buttonsWrapper.append('<div class="col-sm-6"><button type="button" style="width:100%" class="peoplesearch-button btn btn-default btn-sm" title="'+person.title+'" data-id="'+person.id+'">'+person.name+'<i class="text-danger pull-right fa fa-remove icon-line-height"></i></button></div>');
+						this.$buttonsWrapper.append('<div class="col-sm-6"><button type="button" style="width:100%" class="peoplesearch-button btn btn-default btn-sm" title="'+person.title+'" data-id="'+person.id+'"><span class="pull-left">'+person.name+'</span><i class="text-danger pull-right fa fa-remove icon-line-height"></i></button></div>');
 					}
 				}
 			} else {
@@ -158,7 +158,7 @@
 					if (!this.disabled) removeButtonHtml = '<i class="text-danger pull-right fa fa-remove icon-line-height"></i>';
 					this.$button
 						.show()
-						.html(this.selectedPeople[0].name+removeButtonHtml)
+						.html('<span class="pul-left">'+this.selectedPeople[0].name+'</span>'+removeButtonHtml)
 						.attr('title', this.selectedPeople[0].title);
 				}
 				else {
@@ -173,7 +173,7 @@
 			this.selectedPeople.forEach(function(person) {
 				values.push(person.id);
 			});
-			this.$element.val(values.join(','));
+			this.$element.val(values.join(',')).trigger("change");
 		},
 
 		listen: function () {
@@ -203,8 +203,9 @@
 			}
 		},
 
-		add: function () {
-			var person = this.$input.typeahead('getActive');
+		add: function (person) {
+			if (typeof(person) == 'undefined') person = this.$input.typeahead('getActive');
+
 			if (this.multiple) {
 				this.selectedPeople.push(person);
 			} else {

@@ -2,7 +2,7 @@
 /***************************************************************
 *  Copyright notice
 *
-*  (c) 2003-2015 Renzo Lauper (renzo@churchtool.org)
+*  (c) 2003-2017 Renzo Lauper (renzo@churchtool.org)
 *  All rights reserved
 *
 *  This script is part of the kOOL project. The kOOL project is
@@ -159,7 +159,7 @@ function ko_kg_update_people() {
 	$all_kgs = db_select_data('ko_kleingruppen', 'WHERE 1=1');
 	$all_ids = array_keys($all_kgs);
 
-	$people = db_select_data('ko_leute', "WHERE `smallgroups` != ''", 'id,smallgroups');
+	$people = db_select_data('ko_leute', "WHERE `smallgroups` != '' AND `deleted` = '0'".ko_get_leute_hidden_sql(), 'id,smallgroups');
 	foreach($people as $p) {
 		$p_kgs = explode(',', $p['smallgroups']);
 		$new_kgs = array();

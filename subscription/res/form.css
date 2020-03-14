@@ -1,0 +1,234 @@
+* {
+	font-family:sans-serif;
+}
+
+html {
+	height:100%;
+}
+
+body.standalone {
+	margin:0;
+	display:flex;
+	justify-content:center;
+	align-items:stretch;
+	min-height:100%;
+	background:url(bg.jpg);
+}
+
+body.standalone .page {
+	max-width:1000px;
+	width:100%;
+	padding:40px;
+	box-shadow:0 0 10px -2px #000;
+	background:#fff;
+	border-color:#2b6ea2;
+	border-style:solid none;
+	border-width:12px;
+	font-size:14px;
+}
+
+body.standalone .alert {
+	margin-top: 20px;
+}
+
+/** fix for including children margins in height calculation **/
+body.framed .page {
+	margin:-1px 0;
+	padding:1px 0;
+}
+
+.lpcForm .lpcFormGroup {
+	position:relative; /* needed by datetimepicker */
+}
+
+/**************** LPC From ****************/
+
+.lpcForm {
+	width:100%;
+}
+
+.lpcForm .lpcFormGroup,
+.lpcForm .lpcFormButtons {
+	display:flex;
+	flex-flow:row wrap;
+	align-items:flex-start;
+	margin:0.4em 0;
+}
+
+.lpcForm .lpcFormGroup > label,
+.lpcForm .lpcFormGroup > .emptyCell,
+.lpcForm .lpcFormError:before,
+.lpcForm .lpcFormGroup.aligned:before,
+.lpcForm .lpcFormButtons:before {
+	width:20%;
+	min-width:10em;
+	max-width:400px;
+	flex-grow:1;
+	line-height:16px;
+	box-sizing:border-box;
+	margin:0;
+}
+.lpcForm .lpcFormGroup > label {
+	padding:0.5em 1em 0.4em 0;
+}
+
+.lpcForm .lpcFormGroup > .text {
+	padding:0.7em 1em 0.4em 0;
+	line-height:16px;
+}
+
+.lpcForm .lpcFormGroup > input,
+.lpcForm .lpcFormGroup > select,
+.lpcForm .lpcFormGroup > button,
+.lpcForm .lpcFormInput {
+	flex-grow:10;
+	padding:5px 8px;
+	margin:0;
+	white-space:nowrap;
+	font-size:16px;
+	border:1px solid #aaa;
+	width:300px;
+	box-sizing:border-box;
+}
+.lpcForm .lpcFormGroup > textarea {
+	flex-grow:10;
+	padding:5px 8px;
+	margin:0;
+	font-size:16px;
+	border:1px solid #aaa;
+	width:300px;
+	box-sizing:border-box;
+}
+
+.lpcForm .lpcFormGroup.aligned > div,
+.lpcForm .lpcFormError > div {
+	flex-grow:10;
+	padding:0;
+	margin:0.2em 0;
+	width:300px;
+}
+
+.lpcForm .lpcFormGroup > .showText {
+	flex-grow:10;
+	padding:0.5em 0 0.4em;
+	width:300px;
+}
+
+.lpcForm .lpcFormGroup > div.lpcCheckbox {
+	flex-grow:10;
+	margin:0.2em;
+	width:300px;
+	display:flex;
+}
+
+.lpcForm .lpcFormGroup > div.lpcCheckbox > div {
+	margin:0.2em 0 0 0.5em;
+}
+
+.lpcForm .lpcFormGroup.error input,
+.lpcForm .lpcFormGroup.error textarea,
+.lpcForm .lpcFormGroup.error select {
+	border-color:#f99;
+}
+.lpcForm .lpcFormGroup.error input[type=checkbox] {
+	outline:1px solid #f00;
+}
+
+.lpcForm .lpcFormGroup input[type="checkbox"],
+.lpcForm .lpcFormGroup input[type="radio"] {
+	margin:0.5em 0;
+	transform:scale(1.2);
+}
+
+.lpcForm .lpcFormGroup input[type="submit"],
+.lpcForm .lpcFormButtons input[type="submit"],
+.lpcForm .lpcFormGroup button,
+.lpcForm .lpcFormButtons button,
+.lpcForm .lpcFormButton,
+.lpcForm .lpcFormButtons a {
+	flex-grow:0;
+	margin-right:1em;
+	width:auto;
+	font-size:16px;
+	border:1px solid #aaa;
+	padding:5px 8px;
+	background:#eee;
+	text-decoration:none;
+	color:#000;
+	cursor:pointer;
+}
+
+.lpcForm .lpcFormError,
+.lpcForm .lpcFormGroup.aligned .lpcFormError {
+	color:#f00;
+	margin:-0.2em 0 0.5em;
+	display:flex;
+	flex-flow:row wrap;
+	width:100%;
+}
+
+.lpcForm .lpcFormGroup.aligned:before,
+.lpcForm .lpcFormError:before,
+.lpcForm .lpcFormButtons:before {
+	content:'';
+}
+
+.lpcForm .lpcFormGroup textarea {
+	resize: vertical;
+}
+
+.lpcForm .lpcFormGroup.mandatory > label:first-of-type:after {
+	content:' *';
+	color:red;
+}
+
+.notification {
+	padding:0.5em;
+	background-color:#f8f88f;
+	color:#850;
+	margin:1em 0;
+	display:flex;
+	align-items:center;
+}
+
+.notification:before {
+	font-weight:bold;
+	content:'!';
+	margin:0 0.5em 0 0.3em;
+	font-size:200%;
+	vertical-align:middle;
+	line-height:70%;
+}
+
+.helpTooltip {
+	width:16px;
+	height:16px;
+	border-radius:8px;
+	border:2px solid #086ebd;
+	color:#fff;
+	color:#086ebd;
+	display:inline-block;
+	vertical-align:top;
+	text-align:center;
+	line-height:12px;
+	margin:0 4px;
+	font-size:11px;
+}
+
+.kOOLSubscriptionForm.busy .submitButton {
+	color: transparent;
+	background:#eee url('/images/loading.svg') no-repeat center/contain;
+}
+
+
+
+div.subscriptionTextHeader {
+	margin: 25px 0 5px 0;
+	padding-bottom: 5px;
+	border-bottom: 1px solid #999;
+}
+
+div.subscriptionTextFooter {
+	margin-top: 25px;
+	padding-top: 10px;
+}

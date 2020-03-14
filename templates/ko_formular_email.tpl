@@ -27,7 +27,7 @@
 		</div>
 	</div>
 
-	<div class="panel panel-primary email-form">
+	<div class="panel panel-primary">
 		<div class="panel-heading">
 			<h4 class="panel-title">
 				{$tpl_title2}
@@ -98,16 +98,18 @@
 		{assign var="tpl_special_submit" value="&nbsp"}
 		{include file="ko_formular.tpl"}
 	{/if}
-	<div class="btn-field email-form-send">
+	<div class="btn-field">
 		{if $crm_contact_tpl_groups}
-			<button class="btn btn-primary" type="submit" value="{ll key="save"}" name="submit" onclick="set_action('submit_email_contact_entry', this);this.submit;">{ll key="save"}&nbsp;<i class="fa fa-save"></i></button>
+			<button class="btn btn-primary" type="submit" value="{ll key="save"}" name="submit" onclick="if(ko_validate_email_form() === false) {literal}{{/literal} return false; {literal}} else {{/literal} set_action('submit_email_contact_entry', this);this.submit; {literal}}{/literal}">{ll key="save"}&nbsp;<i class="fa fa-save"></i></button>
 		{/if}
 
 		{if $tpl_show_send}
 			<input type="hidden" name="ohne_email" value="{$tpl_ohne_email}" />
 			<input type="hidden" name="res_ids" value="{$tpl_res_ids}" />
-			<button class="btn btn-primary" type="submit" value="{if $crm_contact_tpl_groups}{ll key="leute_email_save_and_send"}{else}{ll key="send"}{/if}" name="submit_2" onclick="s=document.getElementsByName('txt_betreff')[0]; if(s.value == '') {literal}{{/literal} alert('{$tpl_error_no_subject}'); return false; {literal}} else {{/literal} set_action('submit_email', this);this.submit; {literal}}{/literal}">{if $crm_contact_tpl_groups}{ll key="leute_email_save_and_send"}{else}{ll key="send"}{/if}&nbsp;<i class="fa fa-send"></i></button>
+			<button class="btn btn-primary" type="submit" value="{if $crm_contact_tpl_groups}{ll key="leute_email_save_and_send"}{else}{ll key="send"}{/if}" name="submit_2" onclick="if(ko_validate_email_form() === false) {literal}{{/literal} return false; {literal}} else {{/literal} set_action('submit_email', this);this.submit; {literal}}{/literal}">{if $crm_contact_tpl_groups}{ll key="leute_email_save_and_send"}{else}{ll key="send"}{/if}&nbsp;<i class="fa fa-send"></i></button>
 		{/if}
 	</div>
 
 {/if}
+
+

@@ -1,5 +1,7 @@
 {if $tpl_show_header}
-	<h3>{$tpl_send_sms}</h3>
+	<h3>{$tpl_send_sms}
+		{if $help.show}<span>{$help.link}</span>{/if}
+	</h3>
 {/if}
 <i class="text-hidden"><small>{$tpl_sms_bal} {$sms_balance}</small></i>
 

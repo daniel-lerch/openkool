@@ -270,16 +270,18 @@ class RawSmtpMailer
      * Constructor
      * @param boolean $exceptions Should we throw external exceptions?
      */
-    public function __construct($exceptions = false)
-    {
-		global $MAIL_TRANSPORT;
-        $this->exceptions = ($exceptions == true);
-		$this->Host = $MAIL_TRANSPORT['host'];
-		$this->Port = $MAIL_TRANSPORT['port'];
-		$this->SMTPAuth = ($MAIL_TRANSPORT['auth_user'] || $MAIL_TRANSPORT['auth_pass']);
-		$this->SMTPSecure = ($MAIL_TRANSPORT['tls'] ? 'tls' : ($MAIL_TRANSPORT['ssl'] ? 'ssl' : ""));
-		$this->Username = $MAIL_TRANSPORT['auth_user'];
-		$this->Password = $MAIL_TRANSPORT['auth_pass'];
+    public function __construct($exceptions = false) {
+			global $MAIL_TRANSPORT;
+
+			$this->exceptions = ($exceptions == true);
+			$this->Host = $MAIL_TRANSPORT['host'];
+			$this->Port = $MAIL_TRANSPORT['port'];
+			$this->SMTPAuth = ($MAIL_TRANSPORT['auth_user'] && $MAIL_TRANSPORT['auth_pass']);
+			$this->SMTPSecure = ($MAIL_TRANSPORT['tls'] ? 'tls' : ($MAIL_TRANSPORT['ssl'] ? 'ssl' : ""));
+			if($MAIL_TRANSPORT['auth_user'] && $MAIL_TRANSPORT['auth_pass']) {
+				$this->Username = $MAIL_TRANSPORT['auth_user'];
+				$this->Password = $MAIL_TRANSPORT['auth_pass'];
+			}
     }
 
     /**
@@ -1620,6 +1622,14 @@ class SMTP
 			if ($this->do_debug >= 4) {
 				$this->edebug("SMTP -> get_lines(): \$data is \"$data\"");
 			}
+
+			//LPC: If an empty line is returned, just ignore it an read the next line
+			// Hetzner server sometimes return empty response after DATA END command which then gets interpreted as an error.
+			// The next response after that was a 250 but that came too late for rawSmtpMailer.
+			// So we just skip empty responses to prevent this.
+			// As far as I understand SMTP RFC empty responses should never occur, so we should be save
+			if(trim($str) == '') continue;
+
 			// If 4th character is a space, we are done reading, break the loop, micro-optimisation over strlen
 			if ((isset($str[3]) and $str[3] == ' ')) {
 				break;

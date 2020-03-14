@@ -1,4 +1,4 @@
-{if $searchbox.general_input && !$searchbox_only}
+{if $searchbox.general_input && !$searchbox_only && !$additional_only}
 	{if !$hide_li}<li style="padding-right:10px;" id="general-search-li" name="general-search-li">{/if}
 		<table style="height:100%;">
 			<tr>
@@ -13,7 +13,20 @@
 		</table>
 	{if !$hide_li}</li>{/if}
 {/if}
-{if $searchbox.inputs && $searchbox.inputs|@count > 0 && !$general_only}
+{if $searchbox.taxonomy_select}
+	{if !$hide_li}<li name="searchbox-li">{/if}
+	<table style="height:100%;">
+		<tr>
+			<td style="vertical-align:middle;">
+				<div class="form-group nomargin">
+					{$searchbox.taxonomy_select}
+				</div>
+			</td>
+		</tr>
+	</table>
+	{if !$hide_li}</li>{/if}
+{/if}
+{if $searchbox.inputs && $searchbox.inputs|@count > 0 && !$general_only && !$additional_only}
 	{if !$hide_li}<li id="searchbox-li" name="searchbox-li">{/if}
 		<a href="#" class="{if $searchbox.has_active_filters}danger{/if}" data-toggle="popover" id="searchbox-inputs-btn"><span class="fa fa-search icon-line-height"></span></a>
 		<div id="searchbox-inputs-content-script" style="display:none;">
@@ -55,5 +68,18 @@
 				{rdelim});
 		</script>
 	{if !$hide_li}</li>{/if}
+{/if}
+{if $searchbox.additional_elements && $searchbox.additional_elements|@count > 0 && !$general_only && !$searchbox_only}
+	{foreach from=$searchbox.additional_elements item="input"}
+		{if !$additional_only || $input.id == $additional_only_id}
+			{if $input.type == 'button'}
+				{if !$hide_li}<li{if $input.id} id="{$input.id}" name="{$input.id}"{/if}>{/if}
+					<a href="{if $input.href}{$input.href}{else}#{/if}" class="{if $input.active}danger{/if}"{if $input.title} title="{$input.title}"{/if}{if $input.onclick} onclick="{$input.onclick}"{/if}><i class="fa fa-{$input.icon} icon-line-height"></i>{if $input.text}&nbsp;{$input.text}{/if}</a>
+				{if !$hide_li}</li>{/if}
+			{elseif $input.type == 'html'}
+				{$input.html}
+			{/if}
+		{/if}
+	{/foreach}
 {/if}
 

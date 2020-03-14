@@ -2,7 +2,7 @@
 /***************************************************************
 *  Copyright notice
 *
-*  (c) 2003-2015 Renzo Lauper (renzo@churchtool.org)
+*  (c) 2003-2017 Renzo Lauper (renzo@churchtool.org)
 *  All rights reserved
 *
 *  This script is part of the kOOL project. The kOOL project is
@@ -32,7 +32,7 @@ require_once($BASE_PATH.'inc/class.kOOL_listview.php');
 /**
  * List currently available trackings
  */
-function ko_list_trackings($output=TRUE) {
+function ko_list_trackings() {
 	global $smarty;
 	global $access;
 
@@ -54,7 +54,6 @@ function ko_list_trackings($output=TRUE) {
 			$rows--;
 		}
 	}
-
 	$list = new kOOL_listview();
 
 	$list->init('tracking', 'ko_tracking', array('chk', 'edit', 'delete'), $_SESSION['show_start'], $_SESSION['show_limit']);
@@ -68,20 +67,16 @@ function ko_list_trackings($output=TRUE) {
 	$list->setStats($rows);
 	$list->setColumnLink('name', 'index.php?action=enter_tracking&amp;id=ID');
 	$list->setRowClass("ko_list_hidden", 'return HIDDEN == 1;');
-
+	$list->showColItemlist();
 
 	//Output the list
-	if($output) {
-		$list->render($es);
-	} else {
-		print $list->render($es);
-	}
+	$list->render($es);
 }//ko_list_trackings()
 
 
 
 
-function ko_list_tracking_mod_entries($output=TRUE) {
+function ko_list_tracking_mod_entries() {
 	global $smarty;
 	global $access;
 
@@ -126,11 +121,7 @@ function ko_list_tracking_mod_entries($output=TRUE) {
 
 
 	//Output the list
-	if($output) {
-		$list->render($es);
-	} else {
-		print $list->render($es);
-	}
+	$list->render($es);
 }//ko_list_tracking_mod_entries()
 
 
@@ -160,7 +151,7 @@ function ko_formular_tracking_entry_mod($id) {
 	$KOTA['ko_tracking_entries']['tid']['form']['type'] = 'html';
 	//$KOTA['ko_tracking_entries']['tid']['form']['dontsave'] = TRUE;
 	$KOTA['ko_tracking_entries']['tid']['form']['ignore_test'] = TRUE;
-	$KOTA['ko_tracking_entries']['tid']['pre'] = 'db_get_column("ko_tracking", @VALUE@, "name")';
+	$KOTA['ko_tracking_entries']['tid']['pre'] = 'db_get_column("ko_tracking", "@VALUE@", "name")';
 
 	$dates = array();
 	$peopleIds = ko_tracking_get_people($tracking['filter'], $dates, $tracking['id']);
@@ -219,7 +210,7 @@ function ko_formular_tracking($mode, $id='') {
 /**
  * Show form to enter tracking
  */
-function ko_tracking_enter_form($output=TRUE) {
+function ko_tracking_enter_form() {
 	global $smarty, $access, $DATETIME;
 
 	$tracking = db_select_data('ko_tracking', 'WHERE `id` = \''.$_SESSION['tracking_id'].'\'', '*', '', '', TRUE);
@@ -249,6 +240,7 @@ function ko_tracking_enter_form($output=TRUE) {
 		$row = ko_get_userpref($userid, str_replace('@G@', '', $preset), 'leute_itemset');
 		$columns = explode(',', $row[0]['value']);
 		if(sizeof($columns) > 0) {
+			$all_datafields = db_select_data("ko_groups_datafields", "WHERE 1=1", "*");
 			list($testp) = $people;
 			$_people = $people;
 			$testp = array_shift($_people);
@@ -257,7 +249,7 @@ function ko_tracking_enter_form($output=TRUE) {
 				if(in_array($col, array('vorname', 'nachname'))) continue;
 				if(!isset($testp[$col])) {
 					foreach($people as $pid => $p) {
-						$people[$pid][$col] = strip_tags(ko_unhtml(map_leute_daten($p[$col], $col, $p)));
+						$people[$pid][$col] = strip_tags(ko_unhtml(map_leute_daten($p[$col], $col, $p, $all_datafields)));
 					}
 				}
 				$show_cols[] = $col;
@@ -417,6 +409,9 @@ function ko_tracking_enter_form($output=TRUE) {
 			}
 			$sum[$date] = $s;
 		}
+		foreach ($sum as $date => $s) {
+			$sum[$date] = '<a href="/leute?action=set_trackingentries_filter&tid='.$tracking['id'].'&from='.$date.'&to='.$date.'&value=1">'.$s.'</a>';
+		}
 	} elseif($tracking['mode'] == 'value' || $tracking['mode'] == 'type') {
 		foreach($sums as $date => $values) {
 			$s1 = $s2 = $s3 = 0;
@@ -439,7 +434,7 @@ function ko_tracking_enter_form($output=TRUE) {
 		foreach($sums as $date => $values) {
 			$_sum = array();
 			foreach($types as $t) {
-				if($values[$t['value']]) $_sum[] = $values[$t['value']].'x'.$t['value'];
+				if($values[$t['value']]) $_sum[] = '<a href="/leute?action=set_trackingentries_filter&tid='.$tracking['id'].'&from='.$date.'&to='.$date.'&value='.$t['value'].'"">'.$values[$t['value']].'x'.$t['value'].'</a>';
 			}
 			if(sizeof($_sum) > 0) $sum[$date] = implode('<br />', $_sum);
 		}
@@ -529,11 +524,7 @@ function ko_tracking_enter_form($output=TRUE) {
 	$smarty->assign('tracking_order_people', ko_get_userpref($_SESSION['ses_userid'], 'tracking_order_people'));
 
 	//Output the list
-	if($output) {
-		$smarty->display('ko_formular_tracking.tpl');
-	} else {
-		print $smarty->fetch('ko_formular_tracking.tpl');
-	}
+	$smarty->display('ko_formular_tracking.tpl');
 }//ko_tracking_enter_form()
 
 
@@ -684,6 +675,7 @@ function ko_tracking_get_dates($tracking, $_start='', $_limit='', &$prev, &$next
 	}
 
 
+
 	if(sizeof($_dates) == 0) return array();
 
 	$dateformat = ko_get_userpref($_SESSION['ses_userid'], 'tracking_dateformat');
@@ -764,7 +756,7 @@ function ko_tracking_get_people($filters, &$dates, $tid, $apply_filters=FALSE) {
 		if($apply_filters && (isset($_SESSION['tracking_filter']['filter']) && $_SESSION['tracking_filter']['filter'] != 'all' && $_SESSION['tracking_filter']['filter'] != $filter)) continue;
 
 		//Group ID
-		if(strlen($filter) >= 7 && substr($filter, 0, 1) == 'g' && ereg('[g0-9:r,]*', $filter)) {
+		if(strlen($filter) >= 7 && substr($filter, 0, 1) == 'g' && preg_match('/^[g0-9:r,]*$/', $filter)) {
 			$mode = 'group';
 			list($gid, $rid) = explode(':', $filter);
 			if(ko_get_setting('tracking_add_roles') == 1 && strlen($filter) > 7) {  //Role
@@ -963,6 +955,48 @@ function ko_tracking_settings() {
 				'value' => $value == '' ? 0 : $value,
 		);
 		$rowcounter++;
+
+		if ($_SESSION['ses_userid'] == ko_get_root_id()) {
+			$value = ko_get_setting('tracking_enable_checkin');
+			$frmgroup[$gc]['row'][$rowcounter++]['inputs'][0] = array('desc' => getLL('tracking_settings_enable_checkin'),
+				'type' => 'switch',
+				'name' => 'chk_enable_checkin',
+				'value' => $value,
+			);
+		}
+
+		if ($_SESSION['ses_userid'] == ko_get_root_id() || ko_get_setting('tracking_enable_checkin')) {
+			$values = array('vorname', 'nachname', 'adresse', 'plz', 'ort', 'geburtsdatum');
+			$descs = ko_array_ll($values, 'kota_ko_leute_');
+			$avalue = ko_get_setting('checkin_display_leute_fields');
+			$avalues = $adescs = array();
+			foreach (explode(',', $avalue) as $av) {
+				$av = trim($av);
+				if (!$av) continue;
+
+				if (($k = array_search($av, $values)) !== FALSE) {
+					$avalues[] = $av;
+					$adescs[] = $descs[$k];
+				}
+			}
+			$frmgroup[$gc]['row'][$rowcounter]['inputs'][0] = array('desc' => getLL('tracking_settings_checkin_display_leute_fields'),
+				'type' => 'checkboxes',
+				'name' => 'sel_checkin_display_leute_fields',
+				'avalue' => $avalue,
+				'avalues' => $avalues,
+				'adescs' => $adescs,
+				'values' => $values,
+				'descs' => $descs,
+				'size' => '6',
+			);
+
+			$value = ko_get_setting('checkin_max_results');
+			$frmgroup[$gc]['row'][$rowcounter++]['inputs'][1] = array('desc' => getLL('tracking_settings_checkin_max_results'),
+				'type' => 'text',
+				'name' => 'txt_checkin_max_results',
+				'value' => $value,
+			);
+		}
 	}
 
 
@@ -1008,17 +1042,17 @@ function ko_tracking_export($mode, $filename, $id, $address_columns='name', $dat
 	$tracking = db_select_data('ko_tracking', 'WHERE `id` = \''.$id.'\'', '*', '', '', TRUE);
 	switch($dates) {
 		case 'current':
-			$dates = ko_tracking_get_dates($tracking, '', '', $prev, $next);
+			$dates = ko_tracking_get_dates($tracking, '', '', $prev, $next, $prev1);
 		break;
 		case 'filter':
 			if($_SESSION['tracking_filter']['date1'] && $_SESSION['tracking_filter']['date2']) {
-				$dates = ko_tracking_get_dates($tracking, $_SESSION['tracking_filter']['date1'], 10000, $prev, $next);
+				$dates = ko_tracking_get_dates($tracking, $_SESSION['tracking_filter']['date1'], 10000, $prev, $next, $prev1);
 			} else if($_SESSION['tracking_filter']['date1']) {
-				$dates = ko_tracking_get_dates($tracking, $_SESSION['tracking_filter']['date1'], 250, $prev, $next);
+				$dates = ko_tracking_get_dates($tracking, $_SESSION['tracking_filter']['date1'], 250, $prev, $next, $prev1);
 			} else if($_SESSION['tracking_filter']['date2']) {
-				$dates = ko_tracking_get_dates($tracking, -1, 250, $prev, $next);
+				$dates = ko_tracking_get_dates($tracking, -1, 250, $prev, $next, $prev1);
 			} else {
-				$dates = ko_tracking_get_dates($tracking, '', '', $prev, $next);
+				$dates = ko_tracking_get_dates($tracking, '', '', $prev, $next, $prev1);
 			}
 		break;
 		case 'all':
@@ -1026,7 +1060,7 @@ function ko_tracking_export($mode, $filename, $id, $address_columns='name', $dat
 		break;
 		//Get current dates by default (continuos without a filter doesn't give any options to choose from)
 		default:
-			$dates = ko_tracking_get_dates($tracking, '', '', $prev, $next);
+			$dates = ko_tracking_get_dates($tracking, '', '', $prev, $next, $prev1);
 	}
 
 	$raw_dates = array();
@@ -1066,6 +1100,8 @@ function ko_tracking_export($mode, $filename, $id, $address_columns='name', $dat
 		$famSumCols[$k] = trim($v);
 	}
 
+	$all_datafields = db_select_data("ko_groups_datafields", "WHERE 1=1", "*");
+
 	//Combine output by family
 	if($combine_families) {
 		$done_famids = array();
@@ -1086,7 +1122,7 @@ function ko_tracking_export($mode, $filename, $id, $address_columns='name', $dat
 
 			if(!$p['famid']) {
 				foreach($columns as $col) {
-					$data[$row][] = strip_tags(ko_unhtml(map_leute_daten($p[$col], $col, $p)));
+					$data[$row][] = strip_tags(ko_unhtml(map_leute_daten($p[$col], $col, $p, $all_datafields)));
 				}
 				$sums = array();
 				$famSums = array();
@@ -1154,7 +1190,7 @@ function ko_tracking_export($mode, $filename, $id, $address_columns='name', $dat
 								$p[$col] = $fam['famfirstname'];
 							} else {
 								//use first names of parents for firstname-col
-								$parents = db_select_data('ko_leute', "WHERE `famid` = '".$p['famid']."' AND `famfunction` IN ('husband', 'wife')", 'famfunction,vorname', 'ORDER BY famfunction ASC');
+								$parents = db_select_data('ko_leute', "WHERE `famid` = '".$p['famid']."' AND `famfunction` IN ('husband', 'wife') AND `deleted` = '0'".ko_get_leute_hidden_sql(), 'famfunction,vorname', 'ORDER BY famfunction ASC');
 								$parent_values = array();
 								foreach($parents as $parent) $parent_values[] = $parent['vorname'];
 								$p[$col] = implode((' '.getLL('family_link').' '), $parent_values);
@@ -1167,7 +1203,7 @@ function ko_tracking_export($mode, $filename, $id, $address_columns='name', $dat
 
 
 			foreach($columns as $col) {
-				$data[$row][] = strip_tags(ko_unhtml(map_leute_daten($p[$col], $col, $p)));
+				$data[$row][] = strip_tags(ko_unhtml(map_leute_daten($p[$col], $col, $p, $all_datafields)));
 			}
 			$sums = array();
 			$famSums = array();
@@ -1253,13 +1289,9 @@ function ko_tracking_export($mode, $filename, $id, $address_columns='name', $dat
 						if(substr($tracking['mode'], 0, 8) == 'bitmask_') {
 							$oneValue = 0;
 							foreach($famdata[$p['famid']][$date['date']] as $d) {
-								$class = salta_lunch_get_class($p['groups']);
-								$factor = $class['salta_lunch_meal_factor'];
-								if($factor == 0) $factor = 1;
-
 								$oneNum = call_user_func('my_'.$tracking['mode'].'_psum', array('value' => $d['value']));
 								if($oneNum > 0)  {
-									$sums['p'] += $factor * $oneNum;
+									$sums['p'] += $oneNum;
 									$oneValue += $oneNum;
 								}
 							}
@@ -1313,7 +1345,7 @@ function ko_tracking_export($mode, $filename, $id, $address_columns='name', $dat
 		$row = 0;
 		foreach($people as $p) {
 			foreach($columns as $col) {
-				$v = strip_tags(ko_unhtml(map_leute_daten($p[$col], $col, $p)));
+				$v = strip_tags(ko_unhtml(map_leute_daten($p[$col], $col, $p, $all_datafields)));
 				//Mark inactive people
 				if($p['_inactive'] && in_array($col, array('vorname', 'nachname'))) $v = '('.$v.')';
 				$data[$row][] = $v;
@@ -1824,7 +1856,7 @@ function ko_tracking_get_filter_name($filter, $returnTitle=FALSE) {
 function ko_tracking_set_default($tid, $lid) {
 	$tracking = db_select_data('ko_tracking', "WHERE `id` = '$tid'", '*', '', '', TRUE);
 
-	$dates = ko_tracking_get_dates($tracking, '', '', $prev, $next);
+	$dates = ko_tracking_get_dates($tracking, '', '', $prev, $next, $prev1);
 	foreach($dates as $date) {
 		$default_entries = db_select_data('ko_tracking_entries', "WHERE `tid` = '$tid' AND `lid` = '-1' AND `date` = '".$date['date']."'");
 		foreach($default_entries as $default_entry) {

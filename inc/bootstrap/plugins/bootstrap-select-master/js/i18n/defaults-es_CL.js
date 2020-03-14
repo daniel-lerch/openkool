@@ -5,10 +5,12 @@
  */
 (function ($) {
   $.fn.selectpicker.defaults = {
-    noneSelectedText: 'No hay selecciÃ³n',
+    noneSelectedText: 'No hay selección',
     noneResultsText: 'No hay resultados {0}',
     countSelectedText: 'Seleccionados {0} de {1}',
-    maxOptionsText: ['LÃ­mite alcanzado ({n} {var} max)', 'LÃ­mite del grupo alcanzado({n} {var} max)', ['elementos', 'element']],
-    multipleSeparator: ', '
+    maxOptionsText: ['Límite alcanzado ({n} {var} max)', 'Límite del grupo alcanzado({n} {var} max)', ['elementos', 'element']],
+    multipleSeparator: ', ',
+    selectAllText: 'Seleccionar Todos',
+    deselectAllText: 'Desmarcar Todos'
   };
 })(jQuery);

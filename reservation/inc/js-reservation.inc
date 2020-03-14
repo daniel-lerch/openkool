@@ -133,27 +133,27 @@ function resgroup_doubleselect_add_no_linked(text, value, name, hid_name) {
 				right: ''
 			},
 			//Header layout
-			/*titleFormat: {
-				month: '<?php print str_replace("'", "\'", getLL('fullcalendar_title_month')); ?>',
-				week: "<?php print str_replace("'", "\'", getLL('fullcalendar_title_week')); ?>",
-				day: '<?php print str_replace("'", "\'", getLL('fullcalendar_title_day')); ?>',
-				timelineMonth: '<?php print str_replace("'", "\'", getLL('fullcalendar_title_month')); ?>',
-				timelineWeek: "<?php print str_replace("'", "\'", getLL('fullcalendar_title_week')); ?>",
-				timelineDay: '<?php print str_replace("'", "\'", getLL('fullcalendar_title_day')); ?>'
-			},
-			columnFormat: {
-				month: '<?php print str_replace("'", "\'", getLL('fullcalendar_column_month')); ?>',
-				week: '<?php print str_replace("'", "\'", getLL('fullcalendar_column_week')); ?>',
-				day: '<?php print str_replace("'", "\'", getLL('fullcalendar_column_day')); ?>',
-				timelineMonth: '<?php print str_replace("'", "\'", getLL('fullcalendar_column_resource_month')); ?>',
-				timelineWeek: '<?php print str_replace("'", "\'", getLL('fullcalendar_column_resource_week')); ?>',
-				timelineDay: '<?php print str_replace("'", "\'", getLL('fullcalendar_column_resource_day')); ?>'
-			},
-			timeFormat: {
-				agenda: '<?php print str_replace("'", "\'", getLL('fullcalendar_time_agenda')); ?>',
-				month: '<?php print str_replace("'", "\'", getLL('fullcalendar_time_default')); ?>',
-				timeline: '<?php print str_replace("'", "\'", getLL('fullcalendar_time_default')); ?>'
-			},*/
+			//titleFormat: {
+			//	month: '<?php //print str_replace("'", "\'", getLL('fullcalendar_title_month')); ?>//',
+			//	week: "<?php //print str_replace("'", "\'", getLL('fullcalendar_title_week')); ?>//",
+			//	day: '<?php //print str_replace("'", "\'", getLL('fullcalendar_title_day')); ?>//',
+			//	timelineMonth: '<?php //print str_replace("'", "\'", getLL('fullcalendar_title_month')); ?>//',
+			//	timelineWeek: "<?php //print str_replace("'", "\'", getLL('fullcalendar_title_week')); ?>//",
+			//	timelineDay: '<?php //print str_replace("'", "\'", getLL('fullcalendar_title_day')); ?>//'
+			//},
+			//columnFormat: {
+			//	month: '<?php //print str_replace("'", "\'", getLL('fullcalendar_column_month')); ?>//',
+			//	week: '<?php //print str_replace("'", "\'", getLL('fullcalendar_column_week')); ?>//',
+			//	day: '<?php //print str_replace("'", "\'", getLL('fullcalendar_column_day')); ?>//',
+			//	timelineMonth: '<?php //print str_replace("'", "\'", getLL('fullcalendar_column_resource_month')); ?>//',
+			//	timelineWeek: '<?php //print str_replace("'", "\'", getLL('fullcalendar_column_resource_week')); ?>//',
+			//	timelineDay: '<?php //print str_replace("'", "\'", getLL('fullcalendar_column_resource_day')); ?>//'
+			//},
+			//timeFormat: {
+			//	agenda: '<?php //print str_replace("'", "\'", getLL('fullcalendar_time_agenda')); ?>//',
+			//	month: '<?php //print str_replace("'", "\'", getLL('fullcalendar_time_default')); ?>//',
+			//	timeline: '<?php //print str_replace("'", "\'", getLL('fullcalendar_time_default')); ?>//'
+			//},
 			views: {
 				month: {
 					columnFormat: '<?php print str_replace("'", "\'", getLL('fullcalendar_column_month')); ?>',
@@ -208,9 +208,9 @@ function resgroup_doubleselect_add_no_linked(text, value, name, hid_name) {
 			//Some general layout settings
 			aspectRatio: 1.5,
 			allDayText: '<?php print str_replace("'", "\'", getLL('time_all_day')); ?>',
-			minTime: '<?php $fH = ko_get_userpref($_SESSION['ses_userid'], 'cal_woche_start'); print ($fH ? (strlen($fH) == 1 ? '0'.$fH : $fH).':00:00' : '06:00:00'); ?>',
-			maxTime: '<?php $fH = ko_get_userpref($_SESSION['ses_userid'], 'cal_woche_end'); print ($fH ? (strlen($fH) == 1 ? '0'.$fH : $fH).':00:00' : '24:00:00'); ?>',
-			nextDayThreshold: '<?php $fH = ko_get_userpref($_SESSION['ses_userid'], 'cal_woche_start'); print ($fH ? (strlen($fH) == 1 ? '0'.$fH : $fH).':00:00' : '06:00:00'); ?>',
+			minTime: '<?php $fH = ko_get_userpref($_SESSION['ses_userid'], 'cal_woche_start'); print ($fH != '' ? (strlen($fH) == 1 ? '0'.$fH : $fH).':00:00' : '06:00:00'); ?>',
+			maxTime: '<?php $fH = ko_get_userpref($_SESSION['ses_userid'], 'cal_woche_end'); print ($fH != '' ? (strlen($fH) == 1 ? '0'.$fH : $fH).':00:00' : '24:00:00'); ?>',
+			nextDayThreshold: '<?php $fH = ko_get_userpref($_SESSION['ses_userid'], 'cal_woche_start'); print ($fH != '' ? (strlen($fH) == 1 ? '0'.$fH : $fH).':00:00' : '06:00:00'); ?>',
 			editable: false,
 			firstDay: 1,  //Start week on monday
 			selectable: true,
@@ -259,15 +259,10 @@ function resgroup_doubleselect_add_no_linked(text, value, name, hid_name) {
 			//Source for resources
 			resources: function(callback, start, end, timezone) {
 				if ($koCalendar.fullCalendar('getView').name.slice(0, 8) == 'timeline') {
-					if (resourcesCache === null) {
-						$.get("inc/ajax.php?action=jsongetresitems").success(function (data) {
-							console.log(data);
-							resourcesCache = JSON.parse(data);
-							callback(resourcesCache);
-						});
-					} else {
+					$.get("inc/ajax.php?action=jsongetresitems").success(function (data) {
+						resourcesCache = JSON.parse(data);
 						callback(resourcesCache);
-					}
+					});
 				} else {
 					callback([]);
 				}
@@ -382,7 +377,7 @@ function resgroup_doubleselect_add_no_linked(text, value, name, hid_name) {
 			//Dropping a reservation changes start and end
 			eventDrop: function(event, delta, revertFunc, jsEvent, ui, view) {
 				$('.tooltip.in').remove();
-				sendReq('inc/ajax.php', 'action,id,mode,secondDelta,allDay,item', 'fceditres,'+event.id+',drop,'+delta.asSeconds()+','+(event.allDay ? 1 : 0)+','+event.resourceId, fc_check_redraw);
+				sendReq('inc/ajax.php', 'action,id,mode,secondDelta,allDay,item,isMod', 'fceditres,'+event.id+',drop,'+delta.asSeconds()+','+(event.allDay ? 1 : 0)+','+event.resourceId+','+event.isMod, fc_check_redraw);
 			},
 
 			//Click to edit
@@ -396,15 +391,39 @@ function resgroup_doubleselect_add_no_linked(text, value, name, hid_name) {
 
 					if(id <= 0) return false;
 
-					c = confirm('<?php print str_replace("'", "\'", getLL('res_delete_res_confirm')); ?>');
-					if(!c) return false;
-					if(serie) {
-						c2 = confirm('<?php print str_replace("'", "\'", getLL('res_delete_serie_confirm')); ?>');
-					} else {
+					var eventId = $(btn).data('event-id');
+					var eventTitle = $(btn).data('event-title');
+					var eventGroup = $(btn).data('event-group');
+					if (eventId) {
+						c = confirm('<?php print str_replace("'", "\'", getLL('res_delete_res_confirm_event')); ?>');
+						if(!c) return false;
+
 						c2 = false;
+
+						c3 = confirm('<?php print str_replace("'", "\'", getLL('res_delete_event_confirm')); ?>');
+					} else {
+						c = confirm('<?php print str_replace("'", "\'", getLL('res_delete_res_confirm')); ?>');
+						if(!c) return false;
+
+						if(serie) {
+							c2 = confirm('<?php print str_replace("'", "\'", getLL('res_delete_serie_confirm')); ?>');
+						} else {
+							c2 = false;
+						}
+
+						c3 = false;
 					}
-					sendReq('inc/ajax.php', 'action,id,serie', 'fcdelres,'+id+','+c2, do_element);
+
+					sendReq('inc/ajax.php', ['action','id','serie','delevent'], ['fcdelres', id, c2, c3], do_element);
 				}
+
+				//Add link to absence item
+				if($(this).hasClass('fc-absence')) {
+					if($(this).hasClass('fc-absence-readonly') === false) {
+						document.location = "/daten/index.php?action=edit_absence&id="+calEvent.id;
+					}
+				}
+
 				if (!actionIcon) {
 					$target = $(jsEvent.target).parent();
 					//Dont edit event if deleteIcon has been clicked (with id item[0-9]*[ms]
@@ -492,8 +511,11 @@ function calcCalendarHeight() {
 <?php } ?>
 
 
-
 $(document).ready(function() {
+	$('input[name="sel_repeat_dates"]').parent().on('dp.change', function(e) {
+		$('input[name="rd_wiederholung"][value="dates"]').prop('checked',true);
+	});
+
 	$("body").on("click", '#chk_perm_filter', function(e) {
 		if(this.checked == true) {
 			jumpToUrl("index.php?action=set_perm_filter");
@@ -536,6 +558,66 @@ $(document).ready(function() {
 	if(kOOL.module == 'reservation') {
 		$('.richtexteditor').ckeditor({customConfig : '/reservation/inc/ckeditor_custom_config.js' });
 	}
+
+<?PHP
+	if($do_action == "multiedit") {
+?>
+
+
+	$('div[id^="koi_ko_reservation_startdatum_"]').on('dp.change', function (e) {
+		if ($('input[name="koi[ko_reservation][doForAll]"]') === 'undefined') return;
+
+		var startfield = $(this).find('input').attr('name');
+		var regex = /.*\[(.*)\]/gm;
+		var m;
+
+		while ((m = regex.exec(startfield)) !== null) {
+			if (m.index === regex.lastIndex) {
+				regex.lastIndex++;
+			}
+
+			m.forEach(function (match, groupIndex) {
+				if (groupIndex === 1) {
+					var id = match;
+					var endfield = "koi[ko_reservation][enddatum][" + id + "]";
+					$("input[name='" + endfield + "']").val($("input[name='" + startfield + "']").val())
+				}
+			});
+		}
+	});
+
+	if ($('input[name="koi[ko_reservation][doForAll]"]') !== undefined &&
+		$('input[name="koi[ko_reservation][doForAll]"]').length > 0) {
+
+		var startfields = $('input[name^="koi[ko_reservation][startdatum]"]');
+		var regex = /.*\[(\d*)\]/gm;
+		var m;
+
+		if (startfields !== undefined && startfields.length > 0) {
+			startfields.each(function (index) {
+				while ((m = regex.exec($(this).attr("name"))) !== null) {
+					if (m.index === regex.lastIndex) {
+						regex.lastIndex++;
+					}
+
+					m.forEach(function (match, groupIndex) {
+						if (groupIndex === 1) {
+							var id = match;
+							var endfield = $("input[name='koi[ko_reservation][enddatum][" + id + "]']");
+							if (endfield.val() === '') {
+								endfield.val($(this).val());
+							}
+						}
+					});
+				}
+			});
+		}
+	}
+
+<?PHP
+}
+?>
+
 });
 
 

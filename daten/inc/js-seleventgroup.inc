@@ -47,6 +47,18 @@ function selEventGroup(gid) {
 		if (ko_module_installed('reservation')) $code .= sprintf("rEl['%s'] = '%s';", 'res_endzeit', substr($eg["res_endzeit"], 0, -3));
 		if (ko_module_installed('reservation')) $code .= sprintf("rEl['%s'] = %s;", 'responsible_for_res', $eg["responsible_for_res"]);
 
+		if (ko_module_installed('taxonomy')) {
+			$terms = ko_taxonomy_get_terms_by_node($eg['id'],'ko_eventgruppen');
+			if($terms != null) {
+				$term_code = [];
+				foreach($terms as $term) {
+					$term_code[] = ["id" => $term['id'], "name" => $term['name']];
+				}
+
+				$code .= sprintf("rEl['%s'] = %s;", 'terms', json_encode_latin1($term_code));
+			}
+		}
+
 		foreach ($EVENT_PROPAGATE_FIELDS as $prop) {
 			if (!$prop['module'] || ko_module_installed($prop['module'])) {
 				$val = $eg[$prop['from']];
@@ -87,6 +99,7 @@ function selEventGroup(gid) {
 	<?php if (ko_module_installed('reservation')) { ?>fields['res_endzeit'] = $('[name="res_endzeit"]');<?php } ?>
 	<?php if (ko_module_installed('reservation')) { ?>fields['resitems'] = $('#sel_ds1_sel_do_res');<?php } ?>
 	<?php if (ko_module_installed('reservation')) { ?>fields['responsible_for_res'] = $('[name="sel_responsible_for_res"]');<?php } ?>
+	<?php if (ko_module_installed('taxonomy')) { ?>fields['terms'] = $(document.getElementsByName('koi[ko_event][terms][0]')[0]);<?php } ?>
 	<?php
 	foreach ($EVENT_PROPAGATE_FIELDS as $prop) {
 		if (!$prop['module'] || ko_module_installed($prop['module'])) {
@@ -102,14 +115,14 @@ function selEventGroup(gid) {
 		}
 
 		if(r[gid]['startzeit'] != "00:00" || r[gid]['endzeit'] != "00:00") {
-			fields['startzeit'].setVal(r[gid]['startzeit'] == '00:00' ? '' : r[gid]['startzeit']);
-			fields['endzeit'].setVal(r[gid]['endzeit'] == '00:00' ? '' : r[gid]['endzeit']);
+			fields['startzeit'].setVal(r[gid]['startzeit'] == '00:00' ? '' : r[gid]['startzeit'], true);
+			fields['endzeit'].setVal(r[gid]['endzeit'] == '00:00' ? '' : r[gid]['endzeit'], true);
 		}
 		if(r[gid]['do_notify'] !== null) {
 			fields['do_notify'].closest('.formular-cell').show();
-			fields['do_notify'].setVal(1);
+			fields['do_notify'].setVal(1, true);
 		} else {
-			fields['do_notify'].setVal(1);
+			fields['do_notify'].setVal(1, true);
 			fields['do_notify'].closest('.formular-cell').hide();
 		}
 
@@ -133,18 +146,44 @@ function selEventGroup(gid) {
 		<?php if (ko_module_installed('reservation')) { ?>
 
 		if(r[gid]['res_startzeit'] != "00:00" || r[gid]['res_endzeit'] != "00:00") {
-			fields['res_startzeit'].setVal(r[gid]['res_startzeit'] == '00:00' ? '' : r[gid]['res_startzeit']);
-			fields['res_endzeit'].setVal(r[gid]['res_endzeit'] == '00:00' ? '' : r[gid]['res_endzeit']);
+			fields['res_startzeit'].setVal(r[gid]['res_startzeit'] == '00:00' ? '' : r[gid]['res_startzeit'], true);
+			fields['res_endzeit'].setVal(r[gid]['res_endzeit'] == '00:00' ? '' : r[gid]['res_endzeit'], true);
 		}
-		fields['resitems'].setVal(r[gid]['resitems']);
-		if(r[gid]['responsible_for_res']) fields['responsible_for_res'].setVal(r[gid]['responsible_for_res']);
-		else fields['responsible_for_res'].setVal(<?= $_SESSION['ses_userid']; ?>);
+		fields['resitems'].setVal(r[gid]['resitems'], true);
+		if(r[gid]['responsible_for_res']) fields['responsible_for_res'].setVal(r[gid]['responsible_for_res'], true);
+		else fields['responsible_for_res'].setVal(<?= $_SESSION['ses_userid']; ?>, true);
 
 		<?php }
 
+			if (ko_module_installed('taxonomy')) {
+		?>
+
+		var ids = [];
+		var selectedDataFromDynamicSearch = [];
+
+		fields['terms'].parent().find(".dynamicsearch-buttons-wrapper").text("");
+		if(r[gid]['terms'] !== undefined) {
+			r[gid]['terms'].forEach(function (element, index) {
+				var terms_code = "<button type=\"button\" class=\"dynamicsearch-button taxonomy-term__button btn btn-sm btn-primary\" " +
+					"title=\"" + element['name'] + " entfernen\" data-id=\"" + element['id'] + " \"><span class=\"pull-left\">" + element['name'] + "</span>" +
+					"<i class=\"text-danger pull-right fa fa-remove icon-line-height\"></i></button>";
+				selectedDataFromDynamicSearch.push({'id': element.id, 'name': element.name, 'title': element.name, 'placeholder': ""});
+
+				fields['terms'].parent().find(".dynamicsearch-buttons-wrapper").append(terms_code);
+				ids.push(element['id']);
+			});
+
+			fields['terms'].setVal(ids.join(","));
+			$('#koi_ko_event_terms_0').data('dynamicsearch').selectedData = selectedDataFromDynamicSearch;
+		}
+
+
+		<?PHP
+			}
+
 		foreach ($EVENT_PROPAGATE_FIELDS as $prop) {
 			if (!$prop['module'] || ko_module_installed($prop['module'])) {
-				printf("fields['%s'].setVal(r[gid]['%s']);", $prop['to'], $prop['to'], $prop['to']);
+				printf("\t\tif(r[gid]['".$prop['to']."']) fields['%s'].setVal(r[gid]['%s'], true);\n", $prop['to'], $prop['to']);
 			}
 		}
 
@@ -160,9 +199,9 @@ function selEventGroup(gid) {
 	if(r[gid]) {
 		if(r[gid]['do_notify'] !== null) {
 			fields['do_notify'].closest('.formular-cell').show();
-			fields['do_notify'].setVal(1);
+			fields['do_notify'].setVal(1, true);
 		} else {
-			fields['do_notify'].setVal(1);
+			fields['do_notify'].setVal(1, true);
 			fields['do_notify'].closest('.formular-cell').hide();
 		}
 	}

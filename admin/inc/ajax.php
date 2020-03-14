@@ -2,7 +2,7 @@
 /***************************************************************
 *  Copyright notice
 *
-*  (c) 2003-2015 Renzo Lauper (renzo@churchtool.org)
+*  (c) 2003-2017 Renzo Lauper (renzo@churchtool.org)
 *  All rights reserved
 *
 *  This script is part of the kOOL project. The kOOL project is
@@ -31,7 +31,7 @@ if(FALSE === session_id($_GET["sesid"])) exit;
 //Send headers to ensure latin1 charset
 header('Content-Type: text/html; charset=ISO-8859-1');
 
-error_reporting(0);
+error_reporting(E_ALL);
 $ko_menu_akt = 'admin';
 $ko_path = "../../";
 require($ko_path."inc/ko.inc");
@@ -43,14 +43,11 @@ array_walk_recursive($_GET,'utf8_decode_array');
 ko_get_access('admin');
 
 //Include KOTA for sms log
-ko_include_kota(array('_ko_sms_log', 'ko_log', 'ko_admin', 'ko_labels', 'ko_pdf_layout', 'ko_vesr'));
+ko_include_kota(array('_ko_sms_log', 'ko_log', 'ko_admin', 'ko_labels', 'ko_pdf_layout', 'ko_vesr', 'ko_detailed_person_exports'));
 
 // Plugins einlesen:
 $hooks = hook_include_main("admin");
 if(sizeof($hooks) > 0) foreach($hooks as $hook) include_once($hook);
-
-//Smarty-Templates-Engine laden
-require($BASE_PATH."inc/smarty.inc");
 
 require($BASE_PATH."admin/inc/admin.inc");
 
@@ -67,6 +64,17 @@ if(isset($_GET) && isset($_GET["action"])) {
 	hook_ajax_pre($ko_menu_akt, $action);
 
 	switch($action) {
+		case 'regeneratecamtkeys':
+			$rsa = new \phpseclib\Crypt\RSA();
+			$rsa->setPublicKeyFormat(\phpseclib\Crypt\RSA::PUBLIC_FORMAT_OPENSSH);
+			$result = $rsa->createKey(4096);
+			extract($rsa->createKey(4096));
+			ko_set_setting('camt_import_private_key', $privatekey);
+			ko_set_setting('camt_import_public_key', $publickey);
+			print 'POST@@@';
+			print '$(\'[name="txt_camt_import_private_key"]\').val("'.str_replace(array("\n", "\r"), array('\\n', ""), $privatekey).'");';
+			print '$(\'[name="txt_camt_import_public_key"]\').val("'.str_replace(array("\n", "\r"), array('\\n', ""), $publickey).'");';
+		break;
 
 		case 'setsortlogins':
 			if($access['admin']['MAX'] < 5) continue;
@@ -75,7 +83,7 @@ if(isset($_GET) && isset($_GET["action"])) {
 			$_SESSION['sort_logins_order'] = format_userinput($_GET['sort_order'], 'alpha', TRUE, 4);
 
 			print 'main_content@@@';
-			ko_set_logins_list(FALSE);
+			ko_set_logins_list();
 		break;
 
 		case "setsortlog":
@@ -85,7 +93,7 @@ if(isset($_GET) && isset($_GET["action"])) {
 			$_SESSION["sort_logs_order"] = format_userinput($_GET["sort_order"], "alpha", TRUE, 4);
 
 			print "main_content@@@";
-			print ko_show_logs(FALSE);
+			ko_show_logs();
 		break;
 
 
@@ -105,9 +113,9 @@ if(isset($_GET) && isset($_GET["action"])) {
 
 				print "main_content@@@";
 				if($_SESSION['show'] == 'show_sms_log') {
-					print ko_show_sms_log(FALSE);
+					ko_show_sms_log();
 				} else {
-					print ko_set_logins_list(FALSE);
+					ko_set_logins_list();
 				}
 			}
 			else if($_SESSION['show'] == 'show_logs') {
@@ -124,7 +132,7 @@ if(isset($_GET) && isset($_GET["action"])) {
 				}
 
 				print "main_content@@@";
-				print ko_show_logs(FALSE);
+				ko_show_logs();
 			}
 		break;
 
@@ -159,33 +167,153 @@ if(isset($_GET) && isset($_GET["action"])) {
 			db_update_data("ko_admin", "WHERE `id` = '$id'", $data);
 
 			print "main_content@@@";
-			print ko_set_logins_list(FALSE);
+			ko_set_logins_list();
 		break;
 
+		case "paymentDetails":
 
-		case 'deletepic':
-			if($access['admin']['MAX'] < 2) continue;
-
-			$id = format_userinput($_GET['id'], 'alphanum');
-			if(!$id) continue;
-
-			//Check for picture for this label preset
-			ko_get_etiketten_vorlage($id, $v);
-			if($v['pic_file'] && file_exists($BASE_PATH.$v['pic_file']) && $BASE_PATH == substr(realpath($BASE_PATH.$v['pic_file']), 0, strlen($BASE_PATH))) {
-				//Remove image from label preset
-				db_update_data('ko_etiketten', "WHERE `vorlage` = '$id' AND `key` = 'pic_file'", array('value' => ''));
-				//Remove file from my_images
-				unlink(realpath($BASE_PATH.$v['pic_file']));
-				//Clean up cached files
-				ko_pic_cleanup_cache();
+			$file = $_GET['file'];
+			if(!file_exists($BASE_PATH.$_GET['file'])) {
+				throw new \Exception('the file '.htmlspecialchars($_GET['file']).' does not exist');
+			}
+			$ext = strtolower(substr($file,-4));
+			if($ext == '.xml') {
+				$vesrType = 'camt';
+			} else if($ext == '.v11') {
+				$vesrType = 'v11';
+			} else {
+				throw new \Exception('the given file is neither a camt nor a v11 file');
 			}
 
-			//Empty span containing preview
-			print 'label_pic@@@ ';
+			if($_GET['download'] == 'raw') {
+				header('Content-Description: File Transfer');
+				header('Content-Type: '.($vesrType == 'camt' ? 'application/xml' : 'text/plain'));
+				header('Content-Disposition: attachment; filename="'.basename($file).'";');
+				header('Content-Length: '.filesize($BASE_PATH.$file));
+				readfile($BASE_PATH.$file);
+				exit;
+			}
+
+			if($vesrType == 'camt') {
+
+				$reader = new LPC\LpcEsr\CashManagement\OfflineReader;
+
+				$processor = new \LPC\LpcEsr\CashManagement\koProcessor;
+				$processor->setReportOnly(true);
+				$reader->registerProcessor($processor);
+
+				$reader->readOne($BASE_PATH.$file);
+
+				$errorRows = [];
+				foreach($processor->getProcessedData() as $processed) {
+					if($processed['status'] != 'ok') {
+						$errorRows[] = $processed['row'];
+					}
+				}
+
+				if($_GET['download'] != 'pdf') {
+
+					ko_vesr_camt_overview($processor->getDoneTotal(),$processor->getDoneRows());
+
+					if($errorRows) {
+						ko_include_kota(array('ko_vesr_camt'));
+
+						echo '<h2>'.getLL('payment_list_not_mapped_title').'</h2>';
+
+						$list = new kOOL_listview();
+						$list->init('admin', 'ko_vesr_camt', array(), 1, 1000);
+						$list->setTitle('');
+						$list->setSort(FALSE);
+						$list->setStats(count($errorRows), '', '', '', TRUE);
+						$list->disableMultiedit();
+						$list->disableHeader();
+
+						echo $list->render($errorRows, 'html_fetch');
+					}
+
+					$fileLink = 'inc/ajax.php?'.http_build_query([
+						'action' => 'paymentDetails',
+						'file' => $file,
+						'download' => 'raw',
+						'sesid' => session_id(),
+					]);
+					echo '<a href="'.$fileLink.'" class="btn btn-default" download><i class="fa fa-download"></i> '.getLL('download_camt_file').'</a> ';
+					$pdfLink = 'inc/ajax.php?'.http_build_query([
+						'action' => 'paymentDetails',
+						'file' => $file,
+						'download' => 'pdf',
+						'sesid' => session_id(),
+					]);
+					echo '<a href="'.$pdfLink.'" class="btn btn-default" download><i class="fa fa-file-pdf-o"></i> '.getLL('download_as_pdf').'</a>';
+				}
+
+			} else if($vesrType == 'v11') {
+
+				ko_vesr_import($BASE_PATH.$file,$data,$done,true);
+
+				$errors = array();
+				foreach(array_values($done) as $d) {
+					$errors = array_merge($errors, $d);
+				}
+				unset($errors['ok']);
+				$errorRows = array();
+				foreach(array_values($errors) as $e) {
+					$errorRows = array_merge($errorRows, $e);
+				}
+
+				if($_GET['download'] != 'pdf') {
+					ko_vesr_v11_overview($data,$done);
+
+					if($errorRows) {
+						ko_include_kota(array('ko_vesr'));
+
+						echo '<h2>'.getLL('payment_list_not_mapped_title').'</h2>';
+
+						$list = new kOOL_listview();
+						$list->init('admin', 'ko_vesr', array(), 1, 1000);
+						$list->setTitle('');
+						$list->setSort(FALSE);
+						$list->setStats(count($errorRows), '', '', '', TRUE);
+						$list->disableMultiedit();
+						$list->disableHeader();
+
+						echo $list->render($errorRows, 'html_fetch');
+					}
+
+					$fileLink = 'inc/ajax.php?'.http_build_query([
+						'action' => 'paymentDetails',
+						'file' => $file,
+						'download' => 'raw',
+						'sesid' => session_id(),
+					]);
+					echo '<a href="'.$fileLink.'" class="btn btn-default" download><i class="fa fa-download"></i> '.getLL('download_v11_file').'</a> ';
+					$pdfLink = 'inc/ajax.php?'.http_build_query([
+						'action' => 'paymentDetails',
+						'file' => $file,
+						'download' => 'pdf',
+						'sesid' => session_id(),
+					]);
+					echo '<a href="'.$pdfLink.'" class="btn btn-default" download><i class="fa fa-file-pdf-o"></i> '.getLL('download_as_pdf').'</a>';
+				}
+			}
+
+			if($_GET['download'] == 'pdf') {
+				$vesrFiles = [basename($file)];
+				if($vesrType == 'camt') {
+					$done = $processor->getDoneRows();
+					$total = $processor->getDoneTotal();
+				} else {
+					$total = $data['totals'];
+					$total['total'] = $data['total'];
+				}
+				$pdf = ko_vesr_create_reportattachment($vesrFiles,$total,$done,$vesrType,$errorRows);
+				$pdf->Output(pathinfo($file,PATHINFO_FILENAME).'.pdf','D');
+				exit;
+			}
+
 		break;
 	}//switch(action);
 
 	hook_ajax_post($ko_menu_akt, $action);
 
 }//if(GET[action])
-?>

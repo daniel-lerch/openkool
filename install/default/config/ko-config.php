@@ -2,7 +2,7 @@
 /***************************************************************
 *  Copyright notice
 *
-*  (c) 2003-2015 Renzo Lauper (renzo@churchtool.org)
+*  (c) 2003-2017 Renzo Lauper (renzo@churchtool.org)
 *  All rights reserved
 *
 *  This script is part of the kOOL project. The kOOL project is
@@ -81,11 +81,6 @@ $PLUGINS = array(
 @define('WARRANTY_EMAIL', '');
 @define('WARRANTY_URL', '');
 
-//Webfolders
-@define('WEBFOLDERS', TRUE);//TODO
-$WEBFOLDERS_BASE = $BASE_PATH.'webfolders/';
-$WEBFOLDERS_BASE_HTACCESS = $BASE_PATH.'.webfolders/';
-
 //Family sort order
 $FAMFUNCTION_SORT_ORDER = array('husband' => 1, 'wife' => 2, 'child' => 3);
 
@@ -94,9 +89,6 @@ $FAMFUNCTION_SORT_ORDER = array('husband' => 1, 'wife' => 2, 'child' => 3);
 
 //Allow SingleSignon through TYPO3 extension (kool_sso)
 @define('ALLOW_SSO', FALSE);
-
-//Disable old fileshare
-@define('ENABLE_FILESHARE', FALSE);
 
 //Set additional email fields from DB.ko_leute ('email' is set by default)
 //$LEUTE_EMAIL_FIELDS[] = '';
@@ -126,13 +118,17 @@ $FAMFUNCTION_SORT_ORDER = array('husband' => 1, 'wife' => 2, 'child' => 3);
 
 //Define other rectypes as mapping arrays. E.g. for business address fields to be used in exports
 //$RECTYPES['b'] = array('adresse' => 'b_adresse', 'plz' => 'b_plz', 'ort' => 'b_ort');
+// Use _default to overwrite values for default rectype, e.g. empty firm field:
+// $RECTYPES['_default'] = array('firm' => '');
 
-//Define different colors for single events (see inc/ko.inc for details)
+//Define different colors for single events/reservations (see inc/ko.inc for details)
 //$EVENT_COLOR = array();
+//$RES_COLOR = array();
 
 //Conditions under which leute_admin_spalten are not to be applied
-//E.g. array('all' => array('dontapply' => '!_import_id'));
-//all is 'all' or login id, command 'dontapply' for addresses where _import_id != ''
+//E.g. array('ALL' => array('dontapply' => '!_import_id'));
+//ALL is 'ALL' or login id, command 'dontapply' for addresses where _import_id != ''
+//Multiple conditions possible, separated by comma. They are linked with AND
 //$LEUTE_ADMIN_SPALTEN_CONDITION = array();
 
 // This option (if set to true) disables the whole family functionality of kOOL
@@ -140,8 +136,5 @@ $LEUTE_NO_FAMILY = FALSE;
 
 // this option can be set to true in order to add the header 'Precedence: bulk' to outgoing group mails
 //$MAILING_ENABLE_BULK_HEADER = false;
-
-//Leute-Formular Layout einlesen
-include($ko_path.'config/leute_formular.inc');
 
 ?>

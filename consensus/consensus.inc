@@ -2,7 +2,7 @@
 /***************************************************************
  *  Copyright notice
  *
- *  (c) 2003-2015 Renzo Lauper (renzo@churchtool.org)
+ *  (c) 2003-2017 Renzo Lauper (renzo@churchtool.org)
  *  All rights reserved
  *
  *  This script is part of the kOOL project. The kOOL project is
@@ -31,10 +31,14 @@ function ko_consensus_list_consensus () {
 	require_once($BASE_PATH . 'inc/kotafcn.php');
 
 	$teams = ko_rota_get_teams($personId);
-
+	$consensus_comments = ko_consensus_get_comments_grouped_by_person($personId);
 	// sort out teams which don't support consensus
 	$noConsensusAllowed = array();
 	foreach ($teams as $k => $team) {
+		if(!empty($consensus_comments[$k])) {
+			$teams[$k]['consensus_comment'] = $consensus_comments[$k];
+		}
+
 		if ($team_ids !== NULL && !in_array($team['id'], $team_ids)) {
 			unset($teams[$k]);
 
@@ -86,7 +90,7 @@ function ko_consensus_list_consensus () {
 			$processedEvent = $event;
 			kota_process_data('ko_event', $processedEvent, 'list');
 			$events[$k]['_processed'] = $processedEvent;
-			$events[$k]['startingDate'] = strftime('%A ' . $DATETIME['dmy'], strtotime($event['startdatum'] . ' ' . $event['startzeit']));
+			$events[$k]['startingDate'] = strftime('%a. ' . $DATETIME['dmy'], strtotime($event['startdatum'] . ' ' . $event['startzeit']));
 			$events[$k]['startingTime'] = ($event['startzeit'] == '00:00:00' && $event['endzeit'] == '00:00:00') ? getLL('time_all_day') : strftime('%H:%M', strtotime($event['startdatum'] . ' ' . $event['startzeit']));
 			$eventStatus = ko_rota_get_status($event['id']);
 			$events[$k]['status'] = $eventStatus;
@@ -114,13 +118,48 @@ function ko_consensus_list_consensus () {
 
 	// variable, which is set to true if a description section is needed
 	$descriptionNeeded = false;
+	$event_fields = explode(',', ko_get_setting('consensus_eventfields'));
+
 	// fill in actual table data
-	foreach ($teams as $i => $team) {
-		$name = $team['name'];
-		$data[$i][0] = array('type' => 'title', 'content' => '<td><h3>' . $name. '</h3></td>');
-		foreach ($events as $j => $event) {
+	foreach ($events as $i => $event) {
+		$event_header = '<td>
+					<div class="' . ($event['status'] == 1 ? "open" : "closed").'">
+						' . ($event['status'] == 2 ? "<div class='closed_overlay'><i class='fa fa-lock'></i></div>" : "") .'
+						' . '<div class="event_date">'.$event['startingDate'] . ' ' . $event['startingTime'].'</div> 
+						<div class="event_title">'. $event['_processed']['eventgruppen_name'].'</div>';
+
+		require_once($BASE_PATH . 'daten/inc/daten.inc');
+		$absences = array_pop(ko_daten_get_absence_by_leute_id($personId, $event['startdatum']));
+		if(!empty($absences)) {
+			$event_header .= '<div class="status_absent" title="' .
+				prettyDateRange($absences['from_date'], $absences['to_date']) .
+				(!empty($absences['description']) ? ": " . $absences['description'] : "") . '">' .
+				getLL("kota_ko_event_absence_type_" . $absences['type']) . '</div>';
+		}
+
+		foreach($event_fields AS $field) {
+			if ($event[$field] != '') {
+				$event_header .= '<div class="event_comment">
+					<strong>'. getLL('kota_ko_event_'.$field) .':</strong> '. $event['_processed'][$field] .'
+					</div >';
+			}
+		}
+
+		$event_header.= '</div></td>';
+		$data[$i][0] = [
+			'type' => 'title',
+			'content' => $event_header,
+			'event_groupid' => $event['eventgruppen_id'],
+			'consensus_status' => '',
+			'event_status' => $event['status'] == 1 ? "open" : "closed",
+		];
+
+		$event_answers_count = db_get_count("ko_rota_consensus", "event_id", "AND event_id = " . $event['id']);
+$a = 1;
+		foreach ($teams as $j => $team) {
 			$entry = array();
-			if (in_array($event['eventgruppen_id'], $team['eg_ids']) && trim($team['rotatype']) == 'event') {
+
+			if(!ko_rota_is_scheduling_disabled($event['id'], $team['id']) && in_array($event['eventgruppen_id'], $team['eg_ids']) && trim($team['rotatype']) == 'event') {
 				$entry['type'] = 'entry';
 				$entry['content'] = ko_consensus_get_cell_contents('event', $event['id'], $team['id'], $personId);
 			}
@@ -129,11 +168,63 @@ function ko_consensus_list_consensus () {
 				$entry['content'] = '<td></td><td></td>';
 			}
 			$data[$i][$j + 1] = $entry;
-		}
-		if (trim($team['consensus_description']) != '') {
-			$descriptionNeeded = true;
+
+			if($entry['type'] != "empty") {
+				if($event['status'] == 2) {
+					$data[$i][0]['consensus_status'].= 1; // answered
+				}
+				else if (ko_rota_person_is_scheduled($team['id'], $event['id'], $personId)) {
+					$data[$i][0]['consensus_status'].= 3; // scheduled
+				} else if(!in_array(ko_consensus_get_answers('person', $event['id'], $team['id'], $personId), [1,2,3])) {
+					$data[$i][0]['consensus_status'].= 2; // to-do
+
+					if($event_answers_count == 0) {
+						$data[$i][0]['consensus_status'].= 4; // nobody
+					}
+				} else {
+					$data[$i][0]['consensus_status'].= 1; // answered
+				}
+			}
+
+			if (trim($team['consensus_description']) != '') {
+				$descriptionNeeded = true;
+			}
 		}
 	}
+
+
+	$status_list = [
+		0 => getLL('rota_consensus_filter_all'),
+		2 => getLL('rota_consensus_filter_todo'),
+		1 => getLL('rota_consensus_filter_answered'),
+		3 => getLL('rota_consensus_filter_scheduled'),
+		4 => getLL('rota_consensus_filter_nobody'),
+	];
+
+	$filter = "
+<form class=\"form-inline\">
+		 <div class=\"form-group form-group-sm\">
+	<label for='sel_consensus_status'>".getLL('filter_group_status').":</label>
+		<select class='form-control input-xs' name='sel_consensus_status'>";
+
+		foreach($status_list AS $status_key => $status) {
+				$filter.= "<option value='".$status_key."'>" . $status . "</option>";
+		}
+	$filter.="</select>
+</div>
+	";
+
+	$filter.= " &nbsp;
+			 <div class=\"form-group form-group-sm\">
+		<label for='sel_consensus_group'>".getLL('daten_eventgroup').":</label>
+		<select class='form-control input-xs' name='sel_consensus_group'>
+			<option value='0'>".getLL('all')."</option>";
+			foreach($eventGroups AS $eventGroup) {
+				$filter.= "<option value='".$eventGroup['id']."'>" . $eventGroup['name'] . "</option>";
+			}
+
+	$filter.="</select></div></form>";
+
 
 
 	// General description
@@ -145,15 +236,11 @@ function ko_consensus_list_consensus () {
 	$smarty->assign('tpl_general_description', ko_get_setting('consensus_description'));
 
 	// Prepare smarty
-	$smarty->assign('tpl_show_eventfields', explode(',', ko_get_setting('consensus_eventfields')));
-	foreach(explode(',', ko_get_setting('consensus_eventfields')) as $field) {
-		$labels[$field] = getLL('kota_ko_event_'.$field);
-	}
-	$smarty->assign('tpl_eventfield_labels', $labels);
 	$smarty->assign('tpl_submit_value', getLL('save'));
 	$smarty->assign('tpl_action', 'submit_consensus_entries');
 	$smarty->assign('tpl_timespan', ko_rota_timespan_title($start, $span));
 	$smarty->assign('tpl_person_name', $personName);
+	$smarty->assign('tpl_filter', $filter);
 	$smarty->assign('tpl_data', $data);
 	$smarty->assign('tpl_teams', $teams);
 	$smarty->assign('tpl_events', $events);
@@ -246,15 +333,19 @@ function ko_consensus_get_cell_contents($mode, $eventId, $teamId, $personId) {
  * @param string $id
  * @return array|int: $mode == 'person' ? 0, 1, 2, 3 : array(no_answer s, no s, maybe s, yes s)
  */
-function ko_consensus_get_answers($mode = 'person', $eventId, $teamId, $id = '') {
+function ko_consensus_get_answers($mode, $eventId, $teamId, $id = '') {
+	static $answerCache = [];
+	if($mode != 'group') {
+		if(!isset($answerCache[$teamId][$eventId])) {
+			$answerCache[$teamId][$eventId] = db_select_data('ko_rota_consensus', ' where team_id = ' . $teamId . ' and event_id = \'' . $eventId . '\'', 'person_id, answer', 'order by person_id asc') ?: [];
+		}
+	}
 	if ($mode == 'person') {
-		$answer = db_select_data('ko_rota_consensus', ' where team_id = ' . $teamId . ' and event_id = \'' . $eventId . '\' and person_id = ' . $id, 'answer', 'order by person_id asc', '', TRUE, TRUE);
-		return ($answer === null ? 0 : $answer['answer']);
+		return isset($answerCache[$teamId][$eventId][$id]) ? $answerCache[$teamId][$eventId][$id]['answer'] : 0;
 	}
 	else if ($mode == 'team') {
-		$answers = db_select_data('ko_rota_consensus', ' where team_id = ' . $teamId . ' and event_id = \'' . $eventId . '\'', 'answer, person_id', 'order by person_id asc', '', FALSE, TRUE);
 		$teamAnswers = array(0, 0, 0, 0);
-		foreach ($answers as $answer) {
+		foreach ($answerCache[$teamId][$eventId] as $answer) {
 			$teamAnswers[$answer['answer']]++;
 		}
 		return $teamAnswers;
@@ -315,19 +406,48 @@ function ko_consensus_get_cell_contents_inner ($mode, $eventId, $teamId, $person
 	}
 
 	$htmlPerson = '<div id="person_' . $eventId . '_' . $teamId . '_' . $personId . '" class="person ' . $am[$answerPerson] . ' ' . $sm[$status] . '"' . $tooltip . '>';
-	$htmlPerson .= '<p id="' . $eventId . '_' . $teamId . '_' . $personId . '_yes" class="button yes ' . ($am[$answerPerson] == 'yes' ? ' active' : '') . $editable1 . '" '.$tt1.'>'.$amLL[2].'</p>';
+	$htmlPerson .= '<button id="' . $eventId . '_' . $teamId . '_' . $personId . '_yes" class="btn btn-default button yes ' . ($am[$answerPerson] == 'yes' ? ' active' : '') . $editable1 . '" '.$tt1.'>'.$amLL[2].'</button>';
 	if (!$disableMaybeOption) {
-		$htmlPerson .= '<p id="' . $eventId . '_' . $teamId . '_' . $personId . '_maybe" class="button maybe ' . ($am[$answerPerson] == 'maybe' ? ' active' : '') . $editable2 . '">'.$amLL[1].'</p>';
+		$htmlPerson .= '<button id="' . $eventId . '_' . $teamId . '_' . $personId . '_maybe" class="btn btn-default button maybe ' . ($am[$answerPerson] == 'maybe' ? ' active' : '') . $editable2 . '">'.$amLL[1].'</button>';
 	}
-	$htmlPerson .= '<p id="' . $eventId . '_' . $teamId . '_' . $personId . '_no" class="button no' . ($am[$answerPerson] == 'no' ? ' active' : '') . $editable3 . '">'.$amLL[0].'</p>';
+	$htmlPerson .= '<button id="' . $eventId . '_' . $teamId . '_' . $personId . '_no" class="btn btn-default button no' . ($am[$answerPerson] == 'no' ? ' active' : '') . $editable3 . '">'.$amLL[0].'</button>';
 	$htmlPerson .= '</div>';
 
+
+
+
+
+	$display_participation = ko_get_setting("consensus_display_participation");
 	$htmlTeam = '<ul class="team">';
-	for ($i = 3; $i > 0; $i--) {
-		if ($i != 2 || !$disableMaybeOption) {
-			$htmlTeam .= '<li><p class="team_members ' . $am[$i] . '">' . $answersTeam[$i] . '</p></li>';
+
+	if($display_participation == 2) {
+		$htmlTeam.= "";
+	} else if($display_participation == 1) {
+		$where = "WHERE team_id = '" . $teamId . "' AND event_id = '" . $eventId . "'";
+		$join = "LEFT JOIN ko_leute ON ko_leute.id = ko_rota_consensus.person_id";
+		$participants = db_select_data("ko_rota_consensus " . $join, $where, "*", "ORDER BY ko_leute.vorname ASC");
+		$participants_tooltips = [];
+		foreach ($participants AS $participant) {
+			$participants_tooltips[$participant['answer']][] = $participant['vorname'] . " " . $participant['nachname'];
+		}
+
+		for ($i = 3; $i > 0; $i--) {
+			if ($i != 2 || !$disableMaybeOption) {
+				$participants_tooltip = implode("<br>", $participants_tooltips[$i]);
+				if(!empty($participants_tooltip)) {
+					$participants_tooltip = 'onmouseover="tooltip.show(\'' . $participants_tooltip . '\');" onmouseout="tooltip.hide();"';
+				}
+				$htmlTeam .= '<li '.$participants_tooltip.'><p class="team_members ' . $am[$i] . '" data-members="' . $answersTeam[$i] . '">' . ($answersTeam[$i] > 0 ? $answersTeam[$i] : '&nbsp;') . '</p></li>';
+			}
+		}
+	} else {
+		for ($i = 3; $i > 0; $i--) {
+			if ($i != 2 || !$disableMaybeOption) {
+				$htmlTeam .= '<li><p class="team_members ' . $am[$i] . '" data-members="' . $answersTeam[$i] . '">' . ($answersTeam[$i] > 0 ? $answersTeam[$i] : '&nbsp;') . '</p></li>';
+			}
 		}
 	}
+
 	$htmlTeam .= '</ul>';
 
 	return array('person' => $htmlPerson, 'team' => $htmlTeam);
@@ -408,7 +528,75 @@ function ko_consensus_timespan_title($start, $ts) {
 	return $r;
 }//ko_rota_timespan_title()
 
+function ko_consensus_check_hash($x) {
+	$get = explode('x', $x);
+
+	$personId = $get[0];
+	$start = substr($get[1], 0, 4) . '-' . substr($get[1], -4, -2) . '-' . substr($get[1], 6, 8);
+	$span = $get[2];
+	$team_ids = NULL;
+	if (sizeof($get) == 5) {
+		if ($get[3]) {
+			$team_ids = explode('-', $get[3]);
+		}
+		$key = $get[4];
+	} else {
+		$key = $get[3];
+	}
+
+	$pass = substr(md5($personId . $start . $span . ($team_ids == NULL ? '' : implode('-', $team_ids)) . KOOL_ENCRYPTION_KEY), 0, 6) == $key;
+
+	return [$pass, $personId, $team_ids, $start, $span];
+}
 
 
+/**
+ * Return all consensus comments groups by [$person_id][$team_id]
+ *
+ * @param int $person_id if set: just return comments array for this person
+ * @return array|mixed list of comments sorted by team_id
+ */
+function ko_consensus_get_comments_grouped_by_person($person_id = NULL) {
+	if(is_numeric($person_id)) {
+		$where = "WHERE person_id = " . $person_id;
+	} else {
+		$where = '';
+	}
 
-?>
+	$comments = db_select_data("ko_rota_consensus_comment", $where);
+	$comments_by_person = [];
+	foreach($comments AS $comment) {
+		$comments_by_person[$comment['person_id']][$comment['team_id']] = $comment['comment'];
+	}
+
+	if(is_numeric($person_id)) {
+		return $comments_by_person[$person_id];
+	} else {
+		return $comments_by_person;
+	}
+}
+
+
+/**
+ * Save a comment for a team and person, if already set: update
+ *
+ * @param $team_id
+ * @param $person_id
+ * @param $comment
+ */
+function ko_consensus_save_comment($team_id, $person_id, $comment) {
+	$comments = ko_consensus_get_comments_grouped_by_person($person_id);
+
+	$data = [
+		"team_id" => $team_id,
+		"person_id" => $person_id,
+		"comment" => $comment,
+	];
+
+	if(!empty($comments[$team_id])) {
+		$where = "WHERE person_id = " . $person_id . " AND team_id = " . $team_id;
+		db_update_data("ko_rota_consensus_comment", $where, $data);
+	} else {
+		db_insert_data("ko_rota_consensus_comment", $data);
+	}
+}

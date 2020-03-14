@@ -2,7 +2,7 @@
 /***************************************************************
  *  Copyright notice
  *
- *  (c) 2003-2015 Renzo Lauper (renzo@churchtool.org)
+ *  (c) 2003-2017 Renzo Lauper (renzo@churchtool.org)
  *  All rights reserved
  *
  *  This script is part of the kOOL project. The kOOL project is
@@ -30,43 +30,43 @@ function ko_get_submenus($type) {
 	global $GSM_SUBMENUS, $my_submenu, $DISABLE_SM;
 
 	$sm['daten']                 = array('termine', 'termingruppen', 'export', 'reminder', 'filter', 'itemlist_termingruppen');
-  $sm['daten_dropdown']        = array('termine','termingruppen', 'reminder');
+	$sm['daten_dropdown']        = array('termine','termingruppen', 'reminder');
 
-  $sm['leute']                 = array('leute', 'meine_liste', 'aktionen', 'kg', 'filter', 'itemlist_spalten', 'itemlist_chart');
-  $sm['leute_dropdown']        = array('leute,kg');
+	$sm['leute']                 = array('leute', 'meine_liste', 'aktionen', 'kg', 'filter', 'itemlist_spalten');
+	$sm['leute_dropdown']        = array('leute,kg');
 
-  $sm['reservation']           = array('reservationen','objekte','export', 'filter','objektbeschreibungen','itemlist_objekte');
-  $sm['reservation_dropdown']  = array('reservationen', 'objekte');
+	$sm['reservation']           = array('reservationen','objekte','export', 'filter','objektbeschreibungen','itemlist_objekte');
+	$sm['reservation_dropdown']  = array('reservationen', 'objekte');
 
-  $sm['rota']                  = array('rota', 'itemlist_teams', 'itemlist_eventgroups');
-  $sm['rota_dropdown']         = array('rota');
+	$sm['rota']                  = array('rota', 'itemlist_teams', 'itemlist_eventgroups');
+	$sm['rota_dropdown']         = array('rota');
 
-  $sm['admin']                 = array('logins', 'news', 'logs', 'presets', 'vesr', 'filter');
-  $sm['admin_dropdown']        = array('logins', 'logs', 'presets', 'vesr', 'news');
+	$sm['admin']                 = array('logins', 'news', 'logs', 'presets', 'vesr', 'cloud_printing', 'filter', 'pubkey');
+	$sm['admin_dropdown']        = array('logins', 'logs', 'presets', 'vesr', 'news');
 
-  $sm['fileshare']             = array('webfolders');
-  $sm['fileshare_dropdown']    = array('webfolders');
+	$sm['tools']                 = array('submenus', 'leute-db', 'ldap', 'locallang', 'plugins', 'scheduler', 'typo3');
+	$sm['tools_dropdown']        = array('submenus', 'leute-db', 'ldap', 'locallang', 'plugins', 'scheduler', 'typo3');
 
-  $sm['tools']                 = array('submenus', 'leute-db', 'ldap', 'locallang', 'plugins', 'scheduler', 'typo3');
-  $sm['tools_dropdown']        = array('submenus', 'leute-db', 'ldap', 'locallang', 'plugins', 'scheduler', 'typo3');
+	$sm['groups']                = array('groups', 'roles', 'export', 'dffilter');
+	$sm['groups_dropdown']       = array('groups', 'roles');
 
-  $sm['tapes']                 = array('tapes', 'series', 'groups', 'print', 'filter', 'settings');
-  $sm['tapes_dropdown']        = array('tapes', 'series', 'groups');
+	$sm['taxonomy']              = array('taxonomy');
+	$sm['taxonomy_dropdown']     = array('taxonomy');
 
-  $sm['groups']                = array('groups', 'roles', 'export', 'dffilter');
-  $sm['groups_dropdown']       = array('groups', 'roles');
+	$sm['donations']             = array('donations', 'accounts', 'export', 'filter', 'itemlist_accounts');
+	$sm['donations_dropdown']    = array('donations', 'accounts');
 
-  $sm['donations']             = array('donations', 'accounts', 'export', 'filter', 'itemlist_accounts');
-  $sm['donations_dropdown']    = array('donations', 'accounts');
+	$sm['tracking']              = array('trackings', 'filter', 'export', 'itemlist_trackinggroups');
+	$sm['tracking_dropdown']     = array('trackings');
 
-  $sm['tracking']              = array('trackings', 'filter', 'export', 'itemlist_trackinggroups');
-  $sm['tracking_dropdown']     = array('trackings');
+	$sm['projects']              = array('projects', 'filter', 'hosting', 'stats');
+	$sm['projects_dropdown']     = array('projects', 'hosting');
 
-  $sm['projects']              = array('projects', 'filter', 'hosting', 'stats');
-  $sm['projects_dropdown']     = array('projects', 'hosting');
+	$sm['crm']                   = array('projects', 'status', 'contacts', 'filter', 'itemlist_projects');
+	$sm['crm_dropdown']          = array('projects', 'status', 'contacts');
 
-  $sm['crm']                   = array('projects', 'status', 'contacts', 'itemlist_projects');
-  $sm['crm_dropdown']          = array('projects', 'status', 'contacts');
+	$sm['subscription']          = array('forms', 'form_groups', 'double_opt_in');
+	$sm['subscription_dropdown'] = array('forms', 'form_groups', 'double_opt_in');
 
 
 	//HOOK: Include submenus from plugins
@@ -366,13 +366,31 @@ function submenu($menu, $state, $display=3, $module="") {
  * 1: normale Ausgabe über smarty, 2: Rückgabe des HTML-Codes für Ajax, 3: Array für Dropdown-Menu
  */
 function submenu_daten($namen, $state, $display=1, $doClean = true) {
-	global $ko_path, $smarty;
+	global $ko_path, $smarty, $ko_menu_akt, $EVENT_ABSENCE_COLOR;
 	global $access;
 	global $my_submenu;
 
 	$return = "";
 
-	$all_rights = ko_get_access_all('event_admin', '', $max_rights);
+	if($ko_menu_akt == 'daten') {
+		$all_rights = $access['daten']['ALL'];
+		$max_rights = $access['daten']['MAX'];
+		$absence_rights = $access['daten']['ABSENCE'];
+	} else {
+		$all_rights = ko_get_access_all('event_admin', '', $max_rights);
+		$login = db_select_data('ko_admin', 'WHERE `id` = \''.$_SESSION['ses_userid'].'\'', 'id,event_absence_rights,admingroups', '', '', TRUE);
+		$absence_rights = $login['event_absence_rights'];
+		//Check admin groups
+		if($login['admingroups'] != '') {
+			$ags = db_select_data('ko_admingroups', "WHERE `id` IN (".$login['admingroups'].") AND `event_absence_rights` > 0");
+			foreach($ags as $ag) {
+				$absence_rights = max($absence_rights, $ag['event_absence_rights']);
+			}
+		}
+	}
+
+
+
 	if($max_rights < 1) return FALSE;
 
 	if (!is_array($namen)) {
@@ -422,6 +440,10 @@ function submenu_daten($namen, $state, $display=1, $doClean = true) {
 
 			if($max_rights > 1 && db_get_count('ko_eventgruppen', 'id', "AND `type` = '0'") > 0) {
 				$submenu[$menucounter]['items'][] = ko_get_menuitem('daten', 'import');
+			}
+
+			if($absence_rights > 1 || (ko_get_logged_in_id() > 0 && $absence_rights > 0)) {
+				$submenu[$menucounter]['items'][] = ko_get_menuitem('daten', 'list_absence');
 			}
 		break;
 
@@ -488,14 +510,18 @@ function submenu_daten($namen, $state, $display=1, $doClean = true) {
 					$c .= '<option value="12m-1">'.getLL('time_next').'</option>';
 					$c .= '</optgroup>';
 					$c .= '<optgroup label="'.getLL('halfayear').'">';
+					$c .= '<option value="s-minus1:1">1/'.(date('Y')-1).'</option>';
+					$c .= '<option value="s-minus1:7">2/'.(date('Y')-1).'</option>';
 					$c .= '<option value="s-0:1">1/'.date('Y').'</option>';
 					$c .= '<option value="s-0:7">2/'.date('Y').'</option>';
 					$c .= '<option value="s-1:1">1/'.(date('Y')+1).'</option>';
 					$c .= '<option value="s-1:7">2/'.(date('Y')+1).'</option>';
 					$c .= '</optgroup>';
 					$c .= '<optgroup label="'.getLL('year').'">';
+					$c .= '<option value="y-minus1">'.getLL('time_last').'</option>';
 					$c .= '<option value="y-0">'.getLL('time_current').'</option>';
 					$c .= '<option value="y-1">'.getLL('time_next').'</option>';
+					$c .= '<option value="y-2">'.getLL('time_after_next').'</option>';
 					$c .= '</optgroup>';
 					//TODO: Allow plugins to add new export options
 					$c .= '</select>';
@@ -504,17 +530,31 @@ function submenu_daten($namen, $state, $display=1, $doClean = true) {
 
 				//Excel-Export
 				if($_SESSION['show'] == 'all_events' && $max_rights > 0) {
-					$c = '<select name="sel_xls_cols" class="input-sm form-control" onchange="jumpToUrl(\'?action=export_xls_daten&sel_xls_cols=\'+this.options[this.selectedIndex].value);">';
+					$includeProgram = ko_get_setting('activate_event_program') ? TRUE : FALSE;
+					$c = '
+						<form action="index.php" method="POST">
+						<input type="hidden" name="action" value="">
+						<input type="hidden" name="ids" value="">
+																											
+						<select name="sel_xls_cols" class="input-sm form-control" onchange="set_ids_from_chk(this);jumpToUrl(\'?action=export_xls_daten&sel_xls_cols=\'+this.options[this.selectedIndex].value+\'&chk=\'+document.getElementsByName(\'ids\')[0].value);">';
 					$c .= '<option value="">'.getLL('submenu_daten_xls_export').'</option>';
-					$c .= '<option value="" disabled="disabled">--- '.getLL('columns').' ---</option>';
-					$c .= '<option value="_session">'.getLL('shown').'</option>';
+
+					$c .= '<optgroup label="'.getLL('columns').'">';
+					$c .= '<option value="n_session">'.getLL('shown').'</option>';
+					if ($includeProgram) {
+						$c .= '<option value="p_session">'.getLL('shown').' ('.getLL('submenu_daten_label_export_include_program').')</option>';
+					}
 					$itemset = array_merge((array)ko_get_userpref('-1', '', 'ko_event_colitemset', 'ORDER by `key` ASC'), (array)ko_get_userpref($_SESSION['ses_userid'], '', 'ko_event_colitemset', 'ORDER by `key` ASC'));
 					foreach($itemset as $i) {
 						$value = $i['user_id'] == '-1' ? '@G@'.$i['key'] : $i['key'];
 						$output = $i['user_id'] == '-1' ? getLL('itemlist_global_short').' '.$i['key'] : $i['key'];
-						$c .= '<option value="'.$value.'">"'.$output.'"</option>';
+						$c .= '<option value="n'.$value.'">"'.$output.'"</option>';
+						if ($includeProgram) {
+							$c .= '<option value="p'.$value.'">"'.$output.' ('.getLL('submenu_daten_label_export_include_program').')</option>';
+						}
 					}
-					$c .= '</select>';
+					$c .= "</optgroup>";
+					$c .= '</select></form>';
 					$submenu[$menucounter]["items"][] = ko_get_menuitem_html($c);
 				}
 
@@ -547,31 +587,34 @@ function submenu_daten($namen, $state, $display=1, $doClean = true) {
 			addmonth($monat, $jahr, -18);
 
 			$akt_von = ko_daten_parse_time_filter($_SESSION["filter_start"], 'today', FALSE);
-			if ($akt_von == 'today') $akt_von = getLL('time_today');
+			if ($akt_von == 'today') $akt_von = date("d.m.Y", time());
 			else $akt_von = sql2datum($akt_von);
 			$akt_bis = ko_daten_parse_time_filter($_SESSION["filter_ende"], '', FALSE);
-			if ($akt_bis == 'today') $akt_bis = getLL('time_today');
+			if ($akt_bis == 'today') $akt_von = date("d.m.Y", time());
 			else $akt_bis = sql2datum($akt_bis);
-
-			$additional_options =
-		"keyBinds: {
-			't': null,
-			'enter': null
-		},
-		keepInvalid: true";
 
 			$code =
 "<script>
 	$('body').on('keydown', '#daten_filter_start-input, #daten_filter_end-input', function(e) {
 		if (e.which == 13) document.getElementById('submit_filter').click();
+		else if (e.which == 84) {
+			$(this).val($(this).val() + 't');
+			e.preventDefault();
+			return false;
+		}
 	});
 </script>";
 
-			$datePickerInput = array('type' => 'datepicker', 'value' => $akt_von, 'name' => 'daten_filter[date1]', 'html_id' => 'daten_filter_start', 'additional_options' => $additional_options);
+			$datePickerInput = array('type' => 'datepicker', 'value' => $akt_von, 'name' => 'daten_filter[date1]', 'html_id' => 'daten_filter_start', 'add_class' => $akt_von ? 'jsdate-active' : '');
+			$datePickerInput['sibling'] = "daten_filter_end";
 			$smarty->assign('input', $datePickerInput);
 			$code .= $smarty->fetch('ko_formular_elements.tmpl');
 			$code .= '<div style="width:20px;margin:0px auto;border-left:1px solid rgb(204,204,204);border-right:1px solid rgb(204,204,204);text-align:center;">-</div>';
-			$datePickerInput = array('type' => 'datepicker', 'value' => $akt_bis, 'name' => 'daten_filter[date2]', 'html_id' => 'daten_filter_end', 'additional_options' => $additional_options);
+			$datePickerInput = array('type' => 'datepicker', 'value' => $akt_bis, 'name' => 'daten_filter[date2]', 'html_id' => 'daten_filter_end', 'add_class' => $akt_bis ? 'jsdate-active' : '');
+			if(!empty($akt_von) && empty($akt_bis)) {
+				$datePickerInput['viewDate'] = sql_datum($akt_von);
+			}
+
 			$smarty->assign('input', $datePickerInput);
 			$code .= $smarty->fetch('ko_formular_elements.tmpl');
 			$code .=
@@ -695,11 +738,61 @@ function submenu_daten($namen, $state, $display=1, $doClean = true) {
 				$itemlist[$counter++]["value"] = $i_i;
 			}//foreach(groups)
 
+
+			$show_absences_in_pages = ['calendar',];
+			if(in_array($_SESSION['show'], $show_absences_in_pages) && $_SESSION['ses_userid'] != ko_get_guest_id() && $absence_rights > 0) {
+				if ($absence_rights > 1) {
+					$absence_group_status = 0;
+					foreach($_SESSION["show_absences"] AS $absence) {
+						if(is_numeric($absence)) {
+							$absence_group_status = 1;
+						}
+					}
+
+					$itemlist[$counter] = [
+						"type" => "group",
+						"name" => getLL('absence_eventgroup_filter'),
+						"prename" => '<span style="margin-right:2px;background-color:#fff">&emsp;</span>',
+						"aktiv" => $absence_group_status,
+						"value" => "absence",
+						"open" => isset($_SESSION["daten_calendar_states"]["absence"]) ? $_SESSION["daten_calendar_states"]["absence"] : 0,
+					];
+					$counter++;
+
+					$absence_filters = array_merge((array)ko_get_userpref('-1', '', 'filterset', 'ORDER BY `key` ASC'), (array)ko_get_userpref($_SESSION['ses_userid'], '', 'filterset', 'ORDER BY `key` ASC'));
+
+					foreach ($absence_filters AS $absence_filter) {
+						$label = ($absence_filter['user_id'] == '-1' ? getLL('itemlist_global_short').$absence_filter["key"] : $absence_filter["key"]);
+						$itemlist[$counter++] = [
+							"name" => $label,
+							"aktiv" => in_array($absence_filter["id"], $_SESSION["show_absences"]) ? 1 : 0,
+							"value" => "absence_" . $absence_filter["id"],
+							"parent" => TRUE,
+						];
+					}
+					$itemlist[$counter-1]["last"] = TRUE;
+
+					$itemlist[$counter++] = [
+						"name" => getLL('absence_eventgroup_all'),
+						"prename" => '<span style="margin-right:2px;background-color:#' . $EVENT_ABSENCE_COLOR . '">&emsp;</span>',
+						"aktiv" => in_array("all", $_SESSION["show_absences"]) ? 1 : 0,
+						"value" => "absence_all",
+					];
+				}
+
+				if ($absence_rights >= 1) {
+					$itemlist[$counter++] = [
+						"name" => getLL('absence_eventgroup_own'),
+						"prename" => '<span style="margin-right:2px;background-color:#' . $EVENT_ABSENCE_COLOR . '">&emsp;</span>',
+						"aktiv" => in_array("own", $_SESSION["show_absences"]) ? 1 : 0,
+						"value" => "absence_own",
+					];
+				}
+			}
+
 			$itemlist_content['tpl_itemlist_select'] = $itemlist;
 
-
 			//Get all presets
-			$akt_value = $_SESSION["show_tg"];
 			$akt_value = implode(",", $_SESSION["show_tg"]);
 			$itemset = array_merge((array)ko_get_userpref('-1', '', 'daten_itemset', 'ORDER BY `key` ASC'), (array)ko_get_userpref($_SESSION['ses_userid'], '', 'daten_itemset', 'ORDER BY `key` ASC'));
 			foreach($itemset as $i) {
@@ -712,6 +805,24 @@ function submenu_daten($namen, $state, $display=1, $doClean = true) {
 			$itemlist_content['tpl_itemlist_output'] = $itemselect_output;
 			$itemlist_content['tpl_itemlist_selected'] = $itemselect_selected;
 			if($max_rights > 3) $itemlist_content['allow_global'] = TRUE;
+
+			if(ko_module_installed("taxonomy") && $access['taxonomy']['MAX'] >= 1) {
+				$taxonomy_filter = ko_taxonomy_form_field("", "ko_event", explode(",", $_SESSION['daten_taxonomy_filter']));
+				$taxonomy_filter['name'] = "submenu_taxonomy_filter";
+				$taxonomy_filter['allowParentselect'] = TRUE;
+				unset($taxonomy_filter['ajaxHandler']['actions']['insert']);
+				$localSmarty = clone($smarty);
+				$localSmarty->assign('input', $taxonomy_filter);
+				$taxonomy_filter_code = $localSmarty->fetch('ko_formular_elements.tmpl');
+				$taxonomy_filter_code.= "<script>
+					$('#submenu_taxonomy_filter').on('change', function() {
+						sendReq('../daten/inc/ajax.php', ['action','id','sesid'], ['itemlisttaxonomy', $(this).val(),'".session_id()."'], do_element);
+					});
+				</script>";
+
+				$taxonomy_filter_label = getLL('submenu_daten_filter_taxonomy_label');
+				$itemlist_content['taxonomy_filter'] = "<br />" . $taxonomy_filter_label  . ":<br />" . $taxonomy_filter_code;
+			}
 
 			$submenu[$menucounter]["titel"] = getLL("submenu_daten_title_itemlist_termingruppen");
 
@@ -739,10 +850,10 @@ function submenu_daten($namen, $state, $display=1, $doClean = true) {
 			$submenu[$menucounter]["sesid"] = session_id();
 			$submenu[$menucounter]["state"] = $state;
 
+			$smarty->assign("help", ko_get_help("daten", "submenu_".$menu));
 			if($display == 1) {
 				$smarty->assign("sm", $submenu[$menucounter]);
 				$smarty->assign("ko_path", $ko_path);
-				$smarty->assign("help", ko_get_help("daten", "submenu_".$menu));
 				$smarty->display("ko_submenu.tpl");
 			} else if($display == 2) {
 				$smarty->assign("sm", $submenu[$menucounter]);
@@ -858,7 +969,7 @@ function submenu_leute($namen, $state, $display=1, $doClean = true) {
 				$submenu[$menucounter]["items"][] = ko_get_menuitem_link("leute", "revisions", $nr_mod, '', !($nr_mod>0));
 			}
 			//Import (allow with max rights 2)
-			if($max_rights > 1) {
+			if($max_rights > 1 && ko_get_setting('leute_allow_import') == 1) {
 				$submenu[$menucounter]["items"][] = ko_get_menuitem_seperator();
 				$submenu[$menucounter]["items"][] = ko_get_menuitem_link("leute", "import", null, $ko_path."leute/index.php?action=import&amp;state=1");
 			}
@@ -886,6 +997,8 @@ function submenu_leute($namen, $state, $display=1, $doClean = true) {
 				$submenu[$menucounter]['items'][] = ko_get_menuitem_seperator();
 				$submenu[$menucounter]['items'][] = ko_get_menuitem_html($code, getLL('submenu_leute_global_assign'));
 			}
+
+			$submenu[$menucounter]['items'][] = ko_get_menuitem_link('leute', 'leute_chart');
 		break;
 
 		case "meine_liste":
@@ -899,7 +1012,7 @@ function submenu_leute($namen, $state, $display=1, $doClean = true) {
 			$submenu[$menucounter]["items"][] = ko_get_menuitem_seperator(true);
 			//Add mailing link
 			if(ko_module_installed('mailing') && $MAILING_PARAMETER['domain'] != '' && sizeof($_SESSION['my_list']) > 0) {
-				$add = '<a href="mailto:ml@'.$MAILING_PARAMETER['domain'].'">'.getLL('mailing_send_email').'&nbsp;&nbsp;<i class="fa fa-send"></i></a>';
+				$add = '<a href="mailto:ml@'.$MAILING_PARAMETER['domain'].'">'.getLL('mylist_send_email').'&nbsp;&nbsp;<i class="fa fa-send"></i></a>';
 			} else {
 				$add = '';
 			}
@@ -954,10 +1067,17 @@ function submenu_leute($namen, $state, $display=1, $doClean = true) {
 			$html .= '<option value="angezeigte" selected="selected">'.getLL("shown").'</option>';
 			if (!$LEUTE_NO_FAMILY) $html .= '<option value="children">'.getLL("children").'</option>';
 			$itemset = array_merge((array)ko_get_userpref('-1', '', 'leute_itemset', 'ORDER BY `key` ASC'), (array)ko_get_userpref($_SESSION['ses_userid'], '', 'leute_itemset', 'ORDER BY `key` ASC'));
+
+			$colNames = ko_get_leute_col_name(FALSE, TRUE);
 			foreach($itemset as $i) {
+				$cols = explode(',', $i['value']);
+				$llCols = array();
+				foreach($cols as $col) {
+					$llCols[] = $colNames[$col];
+				}
 				$value = $i['user_id'] == '-1' ? '@G@'.$i['key'] : $i['key'];
 				$desc = $i['user_id'] == '-1' ? getLL('itemlist_global_short').' '.$i['key'] : $i['key'];
-				$html .= '<option value="set_'.$value.'" title="'.ko_html($desc).'">&quot;'.$desc.'&quot;</option>';
+				$html .= '<option value="set_'.$value.'" title="'.ko_html(implode(', ', $llCols)).'">&quot;'.$desc.'&quot;</option>';
 			}
 			$html .= '</select>';
 			$submenu[$menucounter]["items"][] = ko_get_menuitem_html($html, getLL("columns"));
@@ -969,6 +1089,7 @@ function submenu_leute($namen, $state, $display=1, $doClean = true) {
 				$html .= '<option value="" disabled="disabled">------</option>';
 				$html .= '<option value="_default">'.getLL("kota_ko_leute_rectype_default").'</option>';
 				foreach($RECTYPES as $k => $v) {
+					if($k == '_default') continue;
 					$html .= '<option value="'.$k.'">'.getLL('kota_ko_leute_rectype_'.$k).'</option>';
 				}
 				$html .= '</select>';
@@ -978,18 +1099,31 @@ function submenu_leute($namen, $state, $display=1, $doClean = true) {
 			$submenu[$menucounter]["items"][] = ko_get_menuitem_seperator(true);
 			$buttons[] = '<button type="submit" class="btn btn-primary" onclick="set_ids_from_chk(this);set_action(\'leute_action\', this);set_hidden_value(\'id\', \'excel\', this);" title="'.getLL("export_excel").'"><i class="fa fa-file-excel-o"></i>&nbsp;<small>'.getLL("export_excel_short").'</small></button>';
 			$buttons[] = '<button type="submit" class="btn btn-primary" onclick="set_ids_from_chk(this);set_action(\'leute_action\', this);set_hidden_value(\'id\', \'xls_settings\', this);" title="'.getLL("export_excel_settings").'"><span class="fa-stack"><i class="fa fa-file-excel-o fa-stack-1x"></i><i class="fa fa-plus-circle fa-stack-sm fa-stack-bottom-right"></i></span>&nbsp;&nbsp;<small>'.getLL("export_excel_settings_short").'</small></button>';
-			$buttons[] = '<button type="submit" class="btn btn-primary" onclick="set_ids_from_chk(this);set_action(\'leute_action\', this);set_hidden_value(\'id\', \'email\', this);" title="'.getLL("export_email").'"><i class="fa fa-envelope"></i>&nbsp;<small>'.getLL("export_email_short").'</small></button>';
+
+			if(
+				(defined('ALLOW_SEND_EMAIL') && ALLOW_SEND_EMAIL === FALSE) === FALSE &&
+				(db_get_count('ko_scheduler_tasks', 'id', 'AND name = "Mailing" AND status = 1') >= 1) &&
+				!(!is_array($MAILING_PARAMETER) || sizeof($MAILING_PARAMETER) < 3)
+			) {
+				$buttons[] = '<button type="submit" class="btn btn-primary" onclick="set_ids_from_chk(this);set_action(\'leute_action\', this);set_hidden_value(\'id\', \'email\', this);" title="' . getLL("export_email") . '"><i class="fa fa-envelope"></i>&nbsp;<small>' . getLL("export_email_short") . '</small></button>';
+			}
+
 			$buttons[] = '<button type="submit" class="btn btn-primary" onclick="set_ids_from_chk(this);set_action(\'leute_action\', this);set_hidden_value(\'id\', \'etiketten_settings\', this);" title="'.getLL("export_etiketten").'"><i class="fa fa-print"></i>&nbsp;<small>'.getLL("export_etiketten_short").'</small></button>';
-			$buttons[] = '<button type="submit" class="btn btn-primary" onclick="set_ids_from_chk(this);set_action(\'leute_action\', this);set_hidden_value(\'id\', \'mailmerge\', this);" title="'.getLL("export_mailmerge").'"><i class="fa fa-files-o"></i>&nbsp;<small>'.getLL("export_mailmerge_short").'</small></button>';
+			//TODO: Remove completely: $buttons[] = '<button type="submit" class="btn btn-primary" onclick="set_ids_from_chk(this);set_action(\'leute_action\', this);set_hidden_value(\'id\', \'mailmerge\', this);" title="'.getLL("export_mailmerge").'"><i class="fa fa-files-o"></i>&nbsp;<small>'.getLL("export_mailmerge_short").'</small></button>';
+			$buttons[] = '<button type="submit" class="btn btn-primary" onclick="set_ids_from_chk(this);set_action(\'leute_action\', this);set_hidden_value(\'id\', \'details_settings\', this);" title="'.getLL("export_details").'"><i class="fa fa-file-text-o"></i>&nbsp;<small>'.getLL("export_details_short").'</small></button>';
 			if(ko_module_installed('sms') && $SMS_PARAMETER['user'] != '' && $SMS_PARAMETER['pass'] != '') {
 				$buttons[] = '<button type="submit" class="btn btn-primary" onclick="set_ids_from_chk(this);set_action(\'leute_action\', this);set_hidden_value(\'id\', \'sms\', this);" title="'.getLL("export_sms").'"><i class="fa fa-mobile-phone"></i>&nbsp;<small>'.getLL("export_sms_short").'</small></button>';
 			}
 			$buttons[] = '<button type="submit" class="btn btn-primary" onclick="set_ids_from_chk(this);set_action(\'leute_action\', this);set_hidden_value(\'id\', \'vcard\', this);" title="'.getLL("export_vcard").'"><i class="fa fa-credit-card"></i>&nbsp;<small>'.getLL("export_vcard_short").'</small></button>';
-			if(extension_loaded('gd')) {
-				$buttons[] = '<a class="btn btn-primary" href="?action=leute_chart" onclick="set_action(\'leute_action\', this);set_hidden_value(\'id\', \'chart\', this);" title="'.getLL("export_chart").'"><i class="fa fa-pie-chart"></i>&nbsp;<small>'.getLL("export_chart_short").'</small></a>';
-			}
 			$buttons[] = '<button type="submit" class="btn btn-primary" onclick="set_ids_from_chk(this);set_action(\'leute_action\', this);set_hidden_value(\'id\', \'csv\', this);" title="'.getLL("export_csv").'"><i class="fa fa-file-o"></i>&nbsp;<small>'.getLL("export_csv_short").'</small></button>';
-			$html = '<div id="leute-actions-icons"><div class="btn-group" style="width:100%;">';
+
+			if(ko_get_userpref($_SESSION["ses_userid"], "leute_show_deleted") || ko_get_userpref($_SESSION["ses_userid"], "leute_show_hidden")) {
+				$leute_warning_export_box = TRUE;
+			} else {
+				$leute_warning_export_box = FALSE;
+			}
+
+			$html = '<div class="alert alert-danger" role="alert" style="display:'.($leute_warning_export_box ? "block" : "none").';" id="leute-warning-export">'.getLL("leute_export_warning_hiddendeleted").'</div> <div id="leute-actions-icons"><div class="btn-group" style="width:100%;">';
 			$i = 0;
 			foreach ($buttons as $button) {
 				if ($i == 3) {
@@ -1007,7 +1141,7 @@ function submenu_leute($namen, $state, $display=1, $doClean = true) {
 			if($_SESSION['show'] != 'geburtstagsliste') {
 				$pdf_layouts = db_select_data("ko_pdf_layout", "WHERE `type` = 'leute'", "id, name", "ORDER BY `name` ASC");
 				if(sizeof($pdf_layouts) > 0) {
-					$html = '<select name="pdf_layout_id" class="input-sm form-control" onchange="set_ids_from_chk(this);set_action(\'export_pdf\', this);jQuery(this).closest(\'form\').submit();">';
+					$html = '<select name="pdf_layout_id" class="input-sm form-control" onchange="set_ids_from_chk(this);set_action(\'leute_action\', this);set_hidden_value(\'id\', \'pdf_settings\', this);jQuery(this).closest(\'form\').submit();">';
 					$html .= '<option value=""></option>';
 					foreach($pdf_layouts as $l) {
 						$html .= '<option value="'.$l["id"].'">'.ko_html($l["name"]).'</option>';
@@ -1155,13 +1289,15 @@ function submenu_leute($namen, $state, $display=1, $doClean = true) {
 
 			//Vorlage speichern
 			$code_vorlage_save = '<div class="checkbox"><label><input type="checkbox" name="chk_filterset_new_with_col" id="chk_filterset_new_with_col" value="1">'.getLL('leute_filter_save_with_cols').'</label></div>';
-			if($max_rights > 3) $code_vorlage_save .= '<div class="checkbox"><label><input type="checkbox" name="chk_filterset_global" id="chk_filterset_global" value="1">'.getLL('leute_filter_global').'</label></div>';
+			if($max_rights > 2) $code_vorlage_save .= '<div class="checkbox"><label><input type="checkbox" name="chk_filterset_global" id="chk_filterset_global" value="1">'.getLL('leute_filter_global').'</label></div>';
 			$code_vorlage_save .= '<div class="input-group input-group-sm">';
 			$code_vorlage_save .= '<input type="text" class="input-sm form-control" name="txt_filterset_new" id="txt_filterset_new">';
 
 			//Save filter for other users
-			$code_vorlage_save .= '<div class="input-group-btn"><button type="button" class="btn btn-default" title="'.getLL("itemlist_save_preset").'" onclick="sendReq(\'../leute/inc/ajax.php\', [\'action\',\'name\',\'withcols\',\'logins\',\'global\',\'sesid\'], [\'leutesavefilterset\',document.getElementById(\'txt_filterset_new\').value,document.getElementById(\'chk_filterset_new_with_col\').checked,document.getElementsByName(\'chk-filter-for-logins\')[0].value,document.getElementById(\'chk_filterset_global\').checked,\''.session_id().'\'], do_element);return false;"><i class="fa fa-save"></i></button></div>';
-			$code_vorlage_save .= '<div class="input-group-btn"><button type="button" class="btn btn-default" onclick="change_vis(\'filter_for_logins\');" alt="options"><i class="fa fa-arrow-down"></i></button></div>';
+			$code_vorlage_save .= '<div class="input-group-btn"><button type="button" class="btn btn-default" title="'.getLL("itemlist_save_preset").'" onclick="sendReq(\'../leute/inc/ajax.php\', [\'action\',\'name\',\'withcols\',\'logins\',\'global\',\'sesid\'], [\'leutesavefilterset\',document.getElementById(\'txt_filterset_new\').value,document.getElementById(\'chk_filterset_new_with_col\').checked,document.getElementsByName(\'chk-filter-for-logins\')[0].value,$(\'#chk_filterset_global\').is(\':checked\'),\''.session_id().'\'], do_element);return false;"><i class="fa fa-save"></i></button></div>';
+			if($max_rights > 2) {
+				$code_vorlage_save .= '<div class="input-group-btn"><button type="button" class="btn btn-default" onclick="change_vis(\'filter_for_logins\');" alt="options"><i class="fa fa-arrow-down"></i></button></div>';
+			}
 			$code_vorlage_save .= '</div>';
 			$code_vorlage_save .= '<div name="filter_for_logins" id="filter_for_logins" style="display:none;visibility:hidden;">';
 			$code_vorlage_save .= '<h5 for="chk-filter-for-logins">'.getLL("leute_filter_save_for_logins").'</h5>';
@@ -1213,9 +1349,30 @@ function submenu_leute($namen, $state, $display=1, $doClean = true) {
 					//Name des Filters
 					$f_name = $f_["name"];
 
+					$processedValues = array();
 					//Tabellen-Name, auf den dieser Filter am ehesten wirkt, auslesen/erraten:
-					for($c=1; $c<4; $c++) {
-						list($col[$c]) = explode(' ', $f_['sql'.$c]);
+					$col = array();
+					if ($f_['sql1'] == 'kota_filter') {
+						ko_leute_filter_make_bw_compatible($f_, $f);
+						$kotaFilterData = $f[1][1]['kota_filter_data']['ko_leute'];
+						$f[1] = array();
+						$c = 1;
+						foreach ($kotaFilterData as $column => $value) {
+							if ($KOTA['ko_leute'][$column]['form']['type'] == 'jsdate' || $KOTA['ko_leute'][$column]['filter']['type'] == 'jsdate') {
+								$valueString = "";
+								if ($value['neg']) $valueString .= '!';
+								$valueString .= sql2datum($value['from']);
+								$valueString .= '-'.sql2datum($value['to']);
+								$processedValues[$column] = $valueString;
+							}
+							$f[1][$c] = $value;
+							$col[$c] = $column;
+							$c++;
+						}
+					} else {
+						for($c=1; $c<5; $c++) {
+							list($col[$c]) = explode(' ', $f_['sql'.$c]);
+						}
 					}
 
 					//Variablen auslesen
@@ -1223,7 +1380,42 @@ function submenu_leute($namen, $state, $display=1, $doClean = true) {
 					$fulltitle = '';
 					$t1 = $t2 = '';
 					for($i = 1; $i <= sizeof($f[1]); $i++) {
-						$v = map_leute_daten($f[1][$i], ($col[$i] ? $col[$i] : $col[1]), $t1, $t2, FALSE, array('num' => $i));
+						if ($processedValues[$col[$i]]) {
+							$v = $processedValues[$col[$i]];
+						} else if($f_['_name'] == "billing") {
+							if($i == 1) {
+								if(is_numeric($f[1][1])) {
+									$dossiers = ko_billing_get_dossiers();
+									$v = $dossiers[$f[1][1]]['title'];
+								} else {
+									$v = '';
+								}
+							}
+							if($i == 2) {
+								if(is_numeric($f[1][2])) {
+									$billing_status = ko_billing_get_status();
+									$v = $billing_status[$f[1][2]]['title'];
+								} else {
+									$v = '';
+								}
+							}
+						} else if($f_['_name'] == "taxonomy") {
+							if($i == 1) {
+								$term = ko_taxonomy_get_term_by_id($f[1][1]);
+								$v = $term['name'];
+							}
+							if($i == 2) {
+								$role_id = format_userinput($f[1][2], "int");
+								if(is_numeric($role_id)) {
+									$role = db_select_data("ko_grouproles", "WHERE id = " . $role_id, "name", "", "", TRUE, TRUE);
+									$v = $role['name'];
+								}
+							}
+						} else {
+							$v = map_leute_daten($f[1][$i], ($col[$i] ? $col[$i] : $col[1]), $t1, $t2, FALSE, array('num' => $i));
+						}
+						if (!$v) $v = $f[1][$i];
+						$v = strip_tags($v);
 						//Limit length of group name for filter list
 						if(!$fulltitle) $fulltitle = $v;
 						else $fulltitle .= ', '.$v;
@@ -1235,7 +1427,7 @@ function submenu_leute($namen, $state, $display=1, $doClean = true) {
 					$vars = substr($vars, 0, -2);
 
 					//Negative Filter markieren
-					if($f[2] == 1) $neg = "!";
+					if($f[2] == 1 && $f_['sql1'] != 'kota_filter') $neg = "!";
 					else $neg = "";
 
 					$label = ko_html($f_i.':'.$f_name.': '.$neg.$vars);
@@ -1272,6 +1464,11 @@ function submenu_leute($namen, $state, $display=1, $doClean = true) {
 					$code_akt_filter .= '</label>';
 
 					//Regular filter link with AND/OR
+					if(!$filter_link['and'] && !$filter_link['or']) $filter_link['and'] = 'checked="checked"';
+
+					$help = ko_get_help('leute', 'filter_link');
+					$code_akt_filter .= '<div style="display: block; float: right;">'.$help['link'].'</div>';
+
 					$code_akt_filter .= '<div id="filter_link" '.$vis_link.'>';
 					$code_akt_filter .= '<label class="radio-inline"><input type="radio" name="rd_filter_link" id="rd_filter_link_and" value="and" '.$filter_link['and'].' onclick="sendReq(\'../leute/inc/ajax.php\', \'action,link,sesid\', \'leutefilterlink,and,'.session_id().'\', do_element);">' . getLL('filter_AND') . '</label>';
 					$code_akt_filter .= '<label class="radio-inline"><input type="radio" name="rd_filter_link" id="rd_filter_link_or" value="or" '.$filter_link['or'].' onclick="sendReq(\'../leute/inc/ajax.php\', \'action,link,sesid\', \'leutefilterlink,or,'.session_id().'\', do_element);">' . getLL('filter_OR') . '</label>';
@@ -1311,10 +1508,14 @@ function submenu_leute($namen, $state, $display=1, $doClean = true) {
 			$itemlist_content = array();
 			$found = TRUE;
 
+			// define html skeleton for title entries
+			$titleSkeleton = "<span class=\"bg-info\" style=\"display:block;text-align:center;padding:0px 0 0px 0;\"><b>%s</b></span>";
+
 			//Alle Spalten auslesen
 			$counter = 0;
-			$cols = ko_get_leute_col_name(TRUE, TRUE, 'view', FALSE, $rawgdata);
+			$cols = ko_get_leute_col_name(TRUE, TRUE, 'view', FALSE, $rawgdata, 'form', TRUE);
 			$groups = $smallgroups = FALSE;
+			$seenPlugins = array();
 			$open_ids = $only_open_ids = array();
 			foreach($cols as $i_i => $i) {
 				if($i == '') continue;
@@ -1326,19 +1527,38 @@ function submenu_leute($namen, $state, $display=1, $doClean = true) {
 					}
 				}
 
+				//Add title for layout groups in leute form
+				if(substr($i_i, 0, 9) == '___title_') {
+					$itemlist[$counter]['html'] = sprintf($titleSkeleton, $i);
+					$itemlist[$counter++]['type'] = "html";
+					continue;
+				}
+
 				//Add title above first smallgroup (disabled)
 				if(substr($i_i, 0, 8) == 'MODULEkg' && !$smallgroups) {
 					$smallgroups = TRUE;
-					$itemlist[$counter]['name'] = '---'.getLL('module_kg').'---';
-					$itemlist[$counter]['params'] = 'disabled="disabled"';
-					$itemlist[$counter++]['value'] = '';
+					$itemlist[$counter]['html'] = sprintf($titleSkeleton, getLL('module_kg'));
+					$itemlist[$counter++]['type'] = "html";
 				}
 				//Add title above first group (disabled)
 				if(substr($i_i, 0, 9) == "MODULEgrp" && !$groups) {
 					$groups = TRUE;
-					$itemlist[$counter]["name"] = "---".getLL("groups")."---";
-					$itemlist[$counter]["params"] = 'disabled="disabled"';
-					$itemlist[$counter++]["value"] = "";
+					$itemlist[$counter]['html'] = sprintf($titleSkeleton, getLL('groups'));
+					$itemlist[$counter++]['type'] = "html";
+				}
+				//Allow plugins to add header by defining LL key my_PLUGIN-leute_column_header
+				// which will be added before first MODULEpluginPLUGIN_* entry
+				if(substr($i_i, 0, 12) == "MODULEplugin") {
+					preg_match('/MODULEplugin([a-z]*)_.*/', $i_i, $matches);
+					$plugin = $matches[1];
+					if($plugin && !in_array($plugin, $seenPlugins)) {
+						$seenPlugins[] = $plugin;
+						$llTitle = getLL('my_'.$plugin.'_leute_column_header');
+						if($llTitle) {
+							$itemlist[$counter]['html'] = sprintf($titleSkeleton, $llTitle);
+							$itemlist[$counter++]['type'] = 'html';
+						}
+					}
 				}
 
 				//Group columns: only collect group ids to set the state below
@@ -1478,7 +1698,7 @@ function submenu_leute($namen, $state, $display=1, $doClean = true) {
 						if($access['tracking']['ALL'] < 1 && $access['tracking'][$t['id']] < 1) continue;
 
 						//Check for selected tracking
-						$tracking_checked = '';
+						$checked = '';
 						foreach($_SESSION['show_leute_cols'] as $s) {
 							if($s == 'MODULEtracking'.$t['id']) {
 								$group_state = 'open';
@@ -1489,6 +1709,7 @@ function submenu_leute($namen, $state, $display=1, $doClean = true) {
 						$tracking_state = 'closed';
 						$fr_code = '';
 						foreach ($filters as $filter) {
+							$filter_checked = '';
 							foreach($_SESSION['show_leute_cols'] as $s) {
 								if($s == 'MODULEtracking'.$t['id'].'f'.$filter['id']) {
 									$group_state = 'open';
@@ -1497,7 +1718,7 @@ function submenu_leute($namen, $state, $display=1, $doClean = true) {
 								}
 							}
 
-							$fr_code .= '<li class="gtree gtree_1 gree_state_open gtree_leaf" id="t'.$t['id'].'f'.$filter['id'].'">';
+							$fr_code .= '<li class="gtree gtree_1 gtree_state_open gtree_leaf" id="t'.$t['id'].'f'.$filter['id'].'">';
 							$fr_code .= '<input type="checkbox" class="itemlist_chk" id="MODULEtracking'.$t['id'].'f'.$filter['id'].'" '.$filter_checked.' />';
 							$fr_code .= '<label for="MODULEtracking'.$t['id'].'f'.$filter['id'].'">'.ko_html($filter['key']).'</label>';
 
@@ -1506,7 +1727,7 @@ function submenu_leute($namen, $state, $display=1, $doClean = true) {
 						}
 
 
-						$tg_code .= '<li class="gtree gtree_0 gree_state_' . $tracking_state .' gtree_state_' . $tracking_state .'" id="t'.$t['id'].'">';
+						$tg_code .= '<li class="gtree gtree_0 gtree_state_' . $tracking_state .' gtree_state_' . $tracking_state .'" id="t'.$t['id'].'">';
 						$tg_code .= '<input type="checkbox" class="itemlist_chk" id="MODULEtracking'.$t['id'].'" '.$checked.' />';
 						$tg_code .= '<label for="MODULEtracking'.$t['id'].'">'.ko_html($t['name']).'</label>';
 
@@ -1530,9 +1751,8 @@ function submenu_leute($namen, $state, $display=1, $doClean = true) {
 				$c .= '</ul>';
 
 				//Add title above trackings (disabled)
-				$itemlist[$counter]['name'] = '---'.getLL('module_tracking').'---';
-				$itemlist[$counter]['params'] = 'disabled="disabled"';
-				$itemlist[$counter++]['value'] = '';
+				$itemlist[$counter]['html'] = sprintf($titleSkeleton, getLL('module_tracking'));
+				$itemlist[$counter++]['type'] = "html";
 
 				$itemlist[$counter]['type'] = 'html';
 				$itemlist[$counter++]['html'] = $c;
@@ -1544,8 +1764,23 @@ function submenu_leute($namen, $state, $display=1, $doClean = true) {
 			//Donations
 			if(ko_module_installed('donations')) {
 				if(!is_array($access['donations'])) ko_get_access('donations');
-				$accounts = db_select_data('ko_donations_accounts', 'WHERE 1=1', '*', 'ORDER BY `name` ASC');
+				$accounts = db_select_data('ko_donations_accounts', 'WHERE 1=1', '*', 'ORDER BY number ASC, `name` ASC');
 				$c  = '<ul class="gtree gtree_NULL">';
+				foreach($accounts as $account) {
+					if($access['donations']['ALL'] < 1 && $access['donations'][$account['id']] < 1) continue;
+
+					//Check for select ed account
+					$checked = '';
+					foreach($_SESSION['show_leute_cols'] as $s) if($s == 'MODULEdonationsa'.$account['id']) {
+						$checked = 'checked="checked"';
+					}
+
+					$c .= '<li class="gtree gtree_0 gtree_state_open gtree_leaf" id="sa'.$account['id'].'">';
+					$c .= '<input type="checkbox" class="itemlist_chk" id="MODULEdonationsa'.$account['id'].'" '.$checked.' />';
+					$c .= '<label for="MODULEdonationsa'.$account['id'].'">'.ko_html($account['name']).'</label>';
+
+					$c .= '</li>';
+				}
 				$years = db_select_distinct('ko_donations', "YEAR(`date`)", "ORDER BY `date` DESC");
 				foreach($years as $year) {
 					$tg_code = '';
@@ -1560,7 +1795,7 @@ function submenu_leute($namen, $state, $display=1, $doClean = true) {
 							$checked = 'checked="checked"';
 						}
 
-						$tg_code .= '<li class="gtree gtree_1 gree_state_open gtree_leaf" id="t'.$account['id'].'">';
+						$tg_code .= '<li class="gtree gtree_1 gtree_state_open gtree_leaf" id="t'.$account['id'].'">';
 						$tg_code .= '<input type="checkbox" class="itemlist_chk" id="MODULEdonations'.$year.$account['id'].'" '.$checked.' />';
 						$tg_code .= '<label for="MODULEdonations'.$year.$account['id'].'">'.ko_html($account['name']).'</label>';
 
@@ -1587,9 +1822,8 @@ function submenu_leute($namen, $state, $display=1, $doClean = true) {
 				$c .= '</ul>';
 
 				//Add title above years (disabled)
-				$itemlist[$counter]['name'] = '---'.getLL('module_donations').'---';
-				$itemlist[$counter]['params'] = 'disabled="disabled"';
-				$itemlist[$counter++]['value'] = '';
+				$itemlist[$counter]['html'] = sprintf($titleSkeleton, getLL('module_donations'));
+				$itemlist[$counter++]['type'] = "html";
 
 				$itemlist[$counter]['type'] = 'html';
 				$itemlist[$counter++]['html'] = $c;
@@ -1599,31 +1833,71 @@ function submenu_leute($namen, $state, $display=1, $doClean = true) {
 			//Donations reference number
 			if(ko_module_installed('donations') && ko_module_installed('vesr')) {
 				if(!is_array($access['donations'])) ko_get_access('donations');
+				if(!is_array($access['crm'])) ko_get_access('crm');
 				if(!isset($access['vesr'])) ko_get_access('vesr');
+
 				if ($access['vesr'] > 0) {
-					$accounts = db_select_data('ko_donations_accounts', 'WHERE 1=1', '*', 'ORDER BY `name` ASC');
+					$accounts = db_select_data('ko_donations_accounts', 'WHERE 1=1', '*', 'ORDER BY number ASC, `name` ASC');
 					$c  = '<ul class="gtree gtree_NULL">';
+					if(ko_module_installed('crm')) {
+						$crmProjects = db_select_data('ko_crm_projects', 'WHERE 1', '*', 'ORDER BY `number` ASC, `title` ASC');
+					}
+
 					foreach($accounts as $account) {
 						if($access['donations']['ALL'] < 1 && $access['donations'][$account['id']] < 1) continue;
 
-						//Check for select ed account
-						$checked = '';
-						foreach($_SESSION['show_leute_cols'] as $s) if($s == 'MODULErefno_donations'.$account['id']) {
-							$checked = 'checked="checked"';
+						$tg_code = '';
+						$group_state = 'closed';
+						foreach($crmProjects as $project) {
+							if($access['crm']['ALL'] < 1 && $access['crm'][$project['id']] < 1) continue;
+
+							//Check for selected project
+							$checked = '';
+							foreach($_SESSION['show_leute_cols'] as $s) if($s == 'MODULErefno_donations'.$account['id'].':'.$project['id']) {
+								$group_state = 'open';
+								$checked = 'checked="checked"';
+							}
+
+							$tg_code .= '<li class="gtree gtree_1 gtree_state_open gtree_leaf" id="trefno1'.$project['id'].'">';
+							$tg_code .= '<input type="checkbox" class="itemlist_chk" id="MODULErefno_donations'.$account['id'].':'.$project['id'].'" '.$checked.' />';
+							$tg_code .= '<label for="MODULErefno_donations'.$account['id'].':'.$project['id'].'">'.ko_html(trim($project['number'].' '.$project['title'])).'</label>';
+
+							$tg_code .= '</li>';
 						}
+						if($tg_code != '') {
+							//Check for selected account
+							$checked = '';
+							foreach($_SESSION['show_leute_cols'] as $s) if($s == 'MODULErefno_donations'.$account['id']) {
+								$checked = 'checked="checked"';
+							}
 
-						$c .= '<li class="gtree gtree_0 gree_state_open gtree_leaf" id="trefno'.$account['id'].'">';
-						$c .= '<input type="checkbox" class="itemlist_chk" id="MODULErefno_donations'.$account['id'].'" '.$checked.' />';
-						$c .= '<label for="MODULErefno_donations'.$account['id'].'">'.ko_html($account['name']).'</label>';
+							$c .= '<li class="gtree gtree_0 gtree_state_'.$group_state.'" id="trefno'.$account['id'].'">';
+							$c .= '<input type="checkbox" class="itemlist_chk" id="MODULErefno_donations'.$account['id'].'" '.$checked.' />';
+							$c .= ko_html($account['name']);
 
-						$c .= '</li>';
+							$c .= '<ul class="gtree gtree_1 gtree_state_'.$group_state.'" id="trefnou'.$account['id'].'">';
+							$c .= $tg_code;
+							$c .= '</ul>';
+
+							$c .= '</li>';
+						} else {
+							//Check for selected account
+							$checked = '';
+							foreach($_SESSION['show_leute_cols'] as $s) if($s == 'MODULErefno_donations'.$account['id']) {
+								$checked = 'checked="checked"';
+							}
+
+							$c .= '<li class="gtree gtree_0 gtree_state_'.$group_state.' gtree_leaf" id="trefno'.$account['id'].'">';
+							$c .= '<input type="checkbox" class="itemlist_chk" id="MODULErefno_donations'.$account['id'].'" '.$checked.' />';
+							$c .= '<label for="MODULErefno_donations'.$account['id'].'">'.ko_html($account['name']).'</label>';
+							$c .= '</li>';
+						}
 					}
 					$c .= '</ul>';
 
 					//Add title above years (disabled)
-					$itemlist[$counter]['name'] = '---'.getLL('leute_itemlist_donations_refno').'---';
-					$itemlist[$counter]['params'] = 'disabled="disabled"';
-					$itemlist[$counter++]['value'] = '';
+					$itemlist[$counter]['html'] = sprintf($titleSkeleton, getLL('leute_itemlist_donations_refno'));
+					$itemlist[$counter++]['type'] = "html";
 
 					$itemlist[$counter]['type'] = 'html';
 					$itemlist[$counter++]['html'] = $c;
@@ -1636,9 +1910,8 @@ function submenu_leute($namen, $state, $display=1, $doClean = true) {
 				if(!is_array($access['crm'])) ko_get_access('crm');
 
 				// add title
-				$itemlist[$counter]['name'] = '---'.getLL('module_crm').'---';
-				$itemlist[$counter]['params'] = 'disabled="disabled"';
-				$itemlist[$counter++]['value'] = '';
+				$itemlist[$counter]['html'] = sprintf($titleSkeleton, getLL('module_crm'));
+				$itemlist[$counter++]['type'] = "html";
 
 				$active = 0;
 				foreach($_SESSION["show_leute_cols"] as $s) {
@@ -1653,6 +1926,28 @@ function submenu_leute($namen, $state, $display=1, $doClean = true) {
 				$itemlist[$counter++]["value"] = 'MODULEcrm';
 			}
 
+			//subscription
+			if(ko_module_installed('subscription') || $force) {
+				ko_get_access('subscription');
+				if($access['subscription']['MAX'] > 0) {
+					$itemlist[$counter]['html'] = sprintf($titleSkeleton,getLL('module_subscription'));
+					$itemlist[$counter++]['type'] = 'html';
+
+					$forms = db_select_data('ko_subscription_forms','','id,title,form_group,cruser');
+					foreach($forms as $form) {
+						$formAccess = max($access['subscription']['ALL'],$access['subscription'][$form['form_group']]);
+						if($formAccess > 1 || ($formAccess == 1 && $form['cruser'] == $_SESSION['ses_userid'])) {
+							$value = 'MODULEsubscription_'.$form['id'];
+							$itemlist[$counter]['prename'] = '';
+							$itemlist[$counter]['name'] = $form['title'];
+							$itemlist[$counter]['aktiv'] = in_array($value,$_SESSION['show_leute_cols']);
+							$itemlist[$counter++]['value'] = $value;
+						}
+					}
+				}
+			}
+
+
 
 			$itemlist_content['tpl_itemlist_select'] = $itemlist;
 
@@ -1660,18 +1955,26 @@ function submenu_leute($namen, $state, $display=1, $doClean = true) {
 			//Alle Vorlagen auslesen
 			$akt_value = implode(",", $_SESSION["show_leute_cols"]);
 			$itemset = array_merge((array)ko_get_userpref('-1', '', 'leute_itemset', 'ORDER BY `key` ASC'), (array)ko_get_userpref($_SESSION["ses_userid"], "", "leute_itemset", 'ORDER BY `key` ASC'));
+			$colNames = ko_get_leute_col_name(FALSE, TRUE);
 			foreach($itemset as $i) {
+				$cols = explode(',', $i['value']);
+				$llCols = array();
+				foreach($cols as $col) {
+					$llCols[] = $colNames[$col];
+				}
 				$value = $i['user_id'] == '-1' ? '@G@'.$i['key'] : $i['key'];
 				$itemselect_values[] = $value;
 				$itemselect_output[] = $i['user_id'] == '-1' ? getLL('itemlist_global_short').' '.$i['key'] : $i['key'];
+				$itemselect_title[] = implode(', ', $llCols);
 				if($i["value"] == $akt_value) $itemselect_selected = $value;
 			}
 			$itemlist_content['tpl_itemlist_values'] = $itemselect_values;
 			$itemlist_content['tpl_itemlist_output'] = $itemselect_output;
 			$itemlist_content['tpl_itemlist_selected'] = $itemselect_selected;
+			$itemlist_content['tpl_itemlist_title'] = $itemselect_title;
 			if($_SESSION['show'] != 'geburtstagsliste') $itemlist_content['show_sort_cols'] = TRUE;
 			$itemlist_content['sort_cols_checked'] = ko_get_userpref($_SESSION["ses_userid"], "sort_cols_leute") == "0" ? '' : 'checked="checked"';
-			if($max_rights > 3) $itemlist_content['allow_global'] = TRUE;
+			if($max_rights > 2) $itemlist_content['allow_global'] = TRUE;
 
 			$submenu[$menucounter]["titel"] = getLL("submenu_leute_title_itemlist_spalten");
 
@@ -1754,42 +2057,6 @@ function submenu_leute($namen, $state, $display=1, $doClean = true) {
 
 
 
-		case "itemlist_chart":
-			if($_SESSION["show"] != "chart") continue;
-			$itemlist_content = array();
-
-			$found = TRUE;
-			$counter = 0;
-			foreach($LEUTE_CHART_TYPES as $type) {
-				$itemlist[$counter]["name"] = getLL("leute_chart_title_".$type);
-				$itemlist[$counter]["aktiv"] = in_array($type, $_SESSION["show_leute_chart"]) ? 1 : 0;
-				$itemlist[$counter++]["value"] = $type;
-			}
-			$itemlist_content['tpl_itemlist_select'] = $itemlist;
-
-			//Get user's presets
-			$akt_value = implode(",", $_SESSION["show_leute_chart"]);
-			$itemset = array_merge((array)ko_get_userpref('-1', '', 'leute_chart_itemset', 'ORDER BY `key` ASC'), (array)ko_get_userpref($_SESSION['ses_userid'], '', 'leute_chart_itemset', 'ORDER BY `key` ASC'));
-			sort($itemset);
-			foreach($itemset as $i) {
-				$value = $i['user_id'] == '-1' ? '@G@'.$i['key'] : $i['key'];
-				$itemselect_values[] = $value;
-				$itemselect_output[] = $i['user_id'] == '-1' ? getLL('itemlist_global_short').' '.$i['key'] : $i['key'];
-				if($i["value"] == $akt_value) $itemselect_selected = $value;
-			}
-			$itemlist_content['tpl_itemlist_values'] = $itemselect_values;
-			$itemlist_content['tpl_itemlist_output'] = $itemselect_output;
-			$itemlist_content['tpl_itemlist_selected'] = $itemselect_selected;
-			if($kg_all_rights > 2) $itemlist_content['allow_global'] = TRUE;
-
-			$submenu[$menucounter]["titel"] = getLL("submenu_leute_title_itemlist_chart");
-
-			$submenu[$menucounter]["items"][] = ko_get_menuitem_itemlist($itemlist_content);
-		break;
-
-
-
-
 		default:
 			if($menu) {
 				$submenu[$menucounter] = submenu($menu, $state, 3, 'leute');
@@ -1847,7 +2114,7 @@ function submenu_leute($namen, $state, $display=1, $doClean = true) {
 
 function submenu_reservation($namen, $state, $display=1, $doClean = true) {
 	global $ko_path, $smarty;
-	global $RESITEM_IMAGE_WIDTH;
+	global $RESITEM_IMAGE_WIDTH, $EVENT_ABSENCE_COLOR;
 	global $ko_menu_akt, $access;
 	global $my_submenu;
 
@@ -1910,12 +2177,17 @@ function submenu_reservation($namen, $state, $display=1, $doClean = true) {
 
 
 		case "export":
-			if($max_rights > 0 && $_SESSION['ses_userid'] != ko_get_guest_id()) {
+			$allowedExports = array();
+			if($_SESSION['ses_userid'] != ko_get_guest_id()) $allowedExports = array('pdf', 'xls');
+			elseif(ko_get_setting('res_allow_exports_for_guest')) $allowedExports = explode(',', ko_get_setting('res_allow_exports_for_guest'));
+			else $allowedExports = array();
+
+			if($max_rights > 0 && sizeof($allowedExports) > 0) {
 				$found = TRUE;
 				$submenu[$menucounter]["titel"] = getLL("submenu_reservation_title_export");
 
 				//PDF exports for daily, weekly, monthly and yearly calendar
-				if($max_rights > 0) {
+				if(in_array('pdf', $allowedExports)) {
 					$c = '<select name="sel_pdf_export" class="input-sm form-control" onchange="jumpToUrl(\'?action=export_pdf&mode=\'+this.options[this.selectedIndex].value);">';
 					$c .= '<option value="">'.getLL('submenu_reservation_pdf_export').'</option>';
 					$c .= '<option value="" disabled="disabled">----------</option>';
@@ -1941,12 +2213,15 @@ function submenu_reservation($namen, $state, $display=1, $doClean = true) {
 					$c .= '<option value="12m-1">'.getLL('time_next').'</option>';
 					$c .= '</optgroup>';
 					$c .= '<optgroup label="'.getLL('halfayear').'">';
+					$c .= '<option value="s-minus1:1">1/'.(date('Y')-1).'</option>';
+					$c .= '<option value="s-minus1:7">2/'.(date('Y')-1).'</option>';
 					$c .= '<option value="s-0:1">1/'.date('Y').'</option>';
 					$c .= '<option value="s-0:7">2/'.date('Y').'</option>';
 					$c .= '<option value="s-1:1">1/'.(date('Y')+1).'</option>';
 					$c .= '<option value="s-1:7">2/'.(date('Y')+1).'</option>';
 					$c .= '</optgroup>';
 					$c .= '<optgroup label="'.getLL('year').'">';
+					$c .= '<option value="y-minus1">'.getLL('time_last').'</option>';
 					$c .= '<option value="y-0">'.getLL('time_current').'</option>';
 					$c .= '<option value="y-1">'.getLL('time_next').'</option>';
 					$c .= '<option value="y-2">'.getLL('time_after_next').'</option>';
@@ -1957,19 +2232,31 @@ function submenu_reservation($namen, $state, $display=1, $doClean = true) {
 
 
 				//Excel-Export
-				if($_SESSION['show'] == 'liste' && $max_rights > 0) {
+				if($_SESSION['show'] == 'liste' && in_array('xls', $allowedExports)) {
 					$submenu[$menucounter]['items'][] = ko_get_menuitem_seperator();
 
 					$submenu[$menucounter]['form'] = TRUE;
 					$submenu[$menucounter]['form_hidden_inputs'] = array(array('name' => 'action', 'value' => ''),
 						array('name' => 'ids', 'value' => ''));
 
+					$colitemsets = array_merge((array)ko_get_userpref('-1', '', 'ko_reservation_colitemset', 'ORDER by `key` ASC'), (array)ko_get_userpref($_SESSION['ses_userid'], '', 'ko_reservation_colitemset', 'ORDER by `key` ASC'));
+
 					$c = '<select name="sel_xls_rows" class="input-sm form-control" onchange="set_ids_from_chk(this); jumpToUrl(\'?action=export_xls_reservation&sel_xls_rows=\'+this.options[this.selectedIndex].value+\'&chk=\'+document.getElementsByName(\'ids\')[0].value);">';
 					$c .= '<option value="">'.getLL('submenu_reservation_xls_export').'</option>';
 					$c .= '<option value="" disabled="disabled">----------</option>';
-					$c .= '<option value="alle">'.getLL("all").'</option>';
-					$c .= '<option value="markierte">'.getLL("selected").'</option>';
-					$c .= '<option value="meine">'.getLL("mine").'</option>';
+
+					$optgroups = array('alle' => getLL('all'), 'markierte' => getLL('selected'));
+					if($_SESSION['ses_userid'] != ko_get_guest_id()) $optgroups['meine'] = getLL('mine');
+					foreach($optgroups as $value => $label) {
+						$c .= '<optgroup label="'.$label.'">';
+						$c .= '<option value="'.$value.':shown">'.getLL('shown_columns').'</option>';
+						$c .= '<option value="'.$value.':all">'.getLL('all_columns').'</option>';
+						foreach($colitemsets as $colitemset) {
+							$c .= '<option value="'.$value.':'.$colitemset['id'].'">'.$colitemset['key'].'</option>';
+						}
+						$c .= '</optgroup>';
+					}
+
 					$c .= '</select>';
 					$submenu[$menucounter]["items"][] = ko_get_menuitem_html($c);
 				}
@@ -1990,18 +2277,11 @@ function submenu_reservation($namen, $state, $display=1, $doClean = true) {
 			addmonth($monat, $jahr, -18);
 
 			$akt_von = ko_daten_parse_time_filter($_SESSION["filter_start"], 'today', FALSE);
-			if ($akt_von == 'today') $akt_von = getLL('time_today');
+			if ($akt_von == 'today') $akt_von = date("d.m.Y", time());
 			else $akt_von = sql2datum($akt_von);
 			$akt_bis = ko_daten_parse_time_filter($_SESSION["filter_ende"], '', FALSE);
-			if ($akt_bis == 'today') $akt_bis = getLL('time_today');
+			if ($akt_von == 'today') $akt_von = date("d.m.Y", time());
 			else $akt_bis = sql2datum($akt_bis);
-
-			$additional_options =
-		"keyBinds: {
-			't': null,
-			'enter': null
-		},
-		keepInvalid: true";
 
 			$code =
 "<script>
@@ -2015,11 +2295,17 @@ function submenu_reservation($namen, $state, $display=1, $doClean = true) {
 	});
 </script>";
 
-			$datePickerInput = array('type' => 'datepicker', 'value' => $akt_von, 'name' => 'res_filter[date1]', 'html_id' => 'res_filter_start', 'additional_options' => $additional_options);
+			$datePickerInput = array('type' => 'datepicker', 'value' => $akt_von, 'name' => 'res_filter[date1]', 'html_id' => 'res_filter_start', 'add_class' => $akt_von ? 'jsdate-active' : '');
+			$datePickerInput['sibling'] = "res_filter_end";
 			$smarty->assign('input', $datePickerInput);
 			$code .= $smarty->fetch('ko_formular_elements.tmpl');
 			$code .= '<div style="width:20px;margin:0px auto;border-left:1px solid rgb(204,204,204);border-right:1px solid rgb(204,204,204);text-align:center;">-</div>';
-			$datePickerInput = array('type' => 'datepicker', 'value' => $akt_bis, 'name' => 'res_filter[date2]', 'html_id' => 'res_filter_end', 'additional_options' => $additional_options);
+			$datePickerInput = array('type' => 'datepicker', 'value' => $akt_bis, 'name' => 'res_filter[date2]', 'html_id' => 'res_filter_end', 'add_class' => $akt_bis ? 'jsdate-active' : '');
+
+			if(!empty($akt_von) && empty($akt_bis)) {
+				$datePickerInput['viewDate'] = sql_datum($akt_von);
+			}
+
 			$smarty->assign('input', $datePickerInput);
 			$code .= $smarty->fetch('ko_formular_elements.tmpl');
 			$code .=
@@ -2030,7 +2316,7 @@ function submenu_reservation($namen, $state, $display=1, $doClean = true) {
 </script>";
 
 			//Permanenter Filter bei Stufe 4
-			if($max_rights > 3) {
+			if($max_rights > 3 && $_SESSION['show'] != 'show_mod_res') {
 				if($perm_filter_start || $perm_filter_ende) {
 					$style = 'color:red;font-weight:900;';
 
@@ -2113,6 +2399,57 @@ function submenu_reservation($namen, $state, $display=1, $doClean = true) {
 				$itemlist[$counter-1]["last"] = TRUE;
 			}//foreach(groups)
 
+			$absence_rights = $access['daten']['ABSENCE'];
+			$show_absences_in_pages = ['calendar',];
+			if(in_array($_SESSION['show'], $show_absences_in_pages) && $_SESSION['ses_userid'] != ko_get_guest_id() && $absence_rights > 0) {
+				if ($absence_rights > 1) {
+					$absence_group_status = 0;
+					foreach($_SESSION["show_absences_res"] AS $absence) {
+						if(is_numeric($absence)) {
+							$absence_group_status = 1;
+						}
+					}
+
+					$itemlist[$counter] = [
+						"type" => "group",
+						"name" => getLL('absence_eventgroup_filter'),
+						"prename" => '<span style="margin-right:2px;background-color:#fff">&emsp;</span>',
+						"aktiv" => $absence_group_status,
+						"value" => "absence",
+						"open" => isset($_SESSION["daten_calendar_states"]["absence"]) ? $_SESSION["daten_calendar_states"]["absence"] : 0,
+					];
+					$counter++;
+
+					$absence_filters = array_merge((array)ko_get_userpref('-1', '', 'filterset', 'ORDER BY `key` ASC'), (array)ko_get_userpref($_SESSION['ses_userid'], '', 'filterset', 'ORDER BY `key` ASC'));
+
+					foreach ($absence_filters AS $absence_filter) {
+						$label = ($absence_filter['user_id'] == '-1' ? getLL('itemlist_global_short').$absence_filter["key"] : $absence_filter["key"]);
+						$itemlist[$counter++] = [
+							"name" => $label,
+							"aktiv" => in_array($absence_filter["id"], $_SESSION["show_absences_res"]) ? 1 : 0,
+							"value" => "absence_" . $absence_filter["id"],
+							"parent" => TRUE,
+						];
+					}
+					$itemlist[$counter-1]["last"] = TRUE;
+
+					$itemlist[$counter++] = [
+						"name" => getLL('absence_eventgroup_all'),
+						"prename" => '<span style="margin-right:2px;background-color:#' . $EVENT_ABSENCE_COLOR . '">&emsp;</span>',
+						"aktiv" => in_array("all", $_SESSION["show_absences_res"]) ? 1 : 0,
+						"value" => "absence_all",
+					];
+				}
+
+				if ($absence_rights >= 1) {
+					$itemlist[$counter++] = [
+						"name" => getLL('absence_eventgroup_own'),
+						"prename" => '<span style="margin-right:2px;background-color:#' . $EVENT_ABSENCE_COLOR . '">&emsp;</span>',
+						"aktiv" => in_array("own", $_SESSION["show_absences_res"]) ? 1 : 0,
+						"value" => "absence_own",
+					];
+				}
+			}
 
 			$itemlist_content['tpl_itemlist_select'] = $itemlist;
 
@@ -2145,43 +2482,42 @@ function submenu_reservation($namen, $state, $display=1, $doClean = true) {
 			$f_code .= "\n".'<script language="JavaScript" type="text/javascript">
 				<!--
 				function changeResItem(item) {';
+					ko_get_resitems($all_items);
+					foreach($access['reservation'] as $id => $level) {
+						if(!intval($id) || $level < 2) continue;
+						$item = $all_items[$id];
 
-			ko_get_resitems($all_items);
-			foreach($access['reservation'] as $id => $level) {
-				if(!intval($id) || $level < 2) continue;
-				$item = $all_items[$id];
+						$f_code .= 'if(item == '.$item['id'].') {
+							document.getElementById("res_beschreibung").innerHTML= "';
 
-				$f_code .= 'if(item == '.$item['id'].') {
-						document.getElementById("res_beschreibung").innerHTML= "';
+							$escape_code = '';
+							$escape_code .= '<b>'.$item['name'].'</b>';
+							$escape_code .= '<br />';
+							if($item['bild'] && file_exists($ko_path.$item['bild'])) {
+								$preview = ko_pic_get_thumbnail($item['bild'], 800, FALSE);
+								$thumb = ko_pic_get_thumbnail($item['bild'], $RESITEM_IMAGE_WIDTH, FALSE);
 
-				$escape_code = '';
-				$escape_code .= '<b>'.$item['name'].'</b>';
-				$escape_code .= '<br />';
-				if($item['bild'] && file_exists($ko_path.$item['bild'])) {
-					$preview = ko_pic_get_thumbnail($item['bild'], 800, FALSE);
-					$thumb = ko_pic_get_thumbnail($item['bild'], $RESITEM_IMAGE_WIDTH, FALSE);
+								$escape_code .= "<a href='#' onclick=".'"'."TINY.box.show({image:'$preview'});".' ">';
+								$escape_code .= "<img src='$thumb' border='0' alt='".getLL('description')."' /><br />";
+								$escape_code .= '</a>';
+							}
+							$line = array(); foreach(explode("\n", $item['beschreibung']) as $l) $line[] = trim($l);
+							$escape_code .= implode('<br />', $line);
+							//moderation
+							$escape_code .= '<br /><br />' . getLL('moderated') . ': ' . (((int)$item['moderation'] > 0) ? getLL('yes') : getLL('no'));
+							//linked items
+							$linked_items = '';
+							if($item['linked_items']) {
+								foreach(explode(',', $item['linked_items']) as $litem) {
+									$linked_items .= $all_items[$litem]['name'].', ';
+								}
+								$linked_items = substr($linked_items, 0, -2);
+							}
+							if($linked_items) $escape_code .= '<br /><br />'.getLL('res_linked_items').': '.$linked_items;
 
-					$escape_code .= "<a href='#' onclick=".'"'."TINY.box.show({image:'$preview'});".' ">';
-					$escape_code .= "<img src='$thumb' border='0' alt='".getLL('description')."' /><br />";
-					$escape_code .= '</a>';
-				}
-				$line = array(); foreach(explode("\n", $item['beschreibung']) as $l) $line[] = trim($l);
-				$escape_code .= implode('<br />', $line);
-				//moderation
-				$escape_code .= '<br /><br />' . getLL('moderated') . ': ' . (((int)$item['moderation'] > 0) ? getLL('yes') : getLL('no'));
-				//linked items
-				$linked_items = '';
-				if($item['linked_items']) {
-					foreach(explode(',', $item['linked_items']) as $litem) {
-						$linked_items .= $all_items[$litem]['name'].', ';
+							$f_code .= str_replace('"', '\"', $escape_code) . '";}';
 					}
-					$linked_items = substr($linked_items, 0, -2);
-				}
-				if($linked_items) $escape_code .= '<br /><br />'.getLL('res_linked_items').': '.$linked_items;
-
-				$f_code .= str_replace('"', '\"', $escape_code) . '";}';
-			}
-			$f_code .= '}
+					$f_code .= '}
 				-->
 				</script>';
 
@@ -2277,6 +2613,7 @@ function submenu_rota($namen, $state, $display=1, $doClean=TRUE) {
 			}
 
 			$submenu[$menucounter]['items'][] = ko_get_menuitem('rota', 'schedule');
+			$submenu[$menucounter]['items'][] = ko_get_menuitem('rota', 'planning');
 
 			if($max_rights > 0) {
 				$submenu[$menucounter]['items'][] = ko_get_menuitem('rota', 'ical_links');
@@ -2295,6 +2632,8 @@ function submenu_rota($namen, $state, $display=1, $doClean=TRUE) {
 				if($all_rights > 0 || $access['rota'][$d_i] > 0) {
 					$active = 0;
 					foreach($_SESSION['rota_teams'] as $s) if($s == $d_i) $active = 1;
+
+					if($d['rotatype'] == "week" && $_SESSION['show'] == "planning") continue;
 					$itemlist[$counter]['name'] = $d['name'].($d['rotatype'] == 'week' ? ' <sup>('.getLL('rota_week_short').')</sup>' : '');
 					$itemlist[$counter]['aktiv'] = $active;
 					$itemlist[$counter]['value'] = $d_i;
@@ -2476,8 +2815,9 @@ function submenu_admin($namen, $state, $display=1, $doClean=TRUE) {
 
 	$return = "";
 
-	$all_rights = ko_get_access_all('admin');
-	if($all_rights < 1) return FALSE;
+	$all_rights = ko_get_access_all('admin', '', $max_rights);
+	$all_rights_vesr = ko_get_access_all('vesr');
+	if($all_rights < 1 && $all_rights_vesr < 1) return FALSE;
 
 	if(!is_array($namen)) {
 		$namen = explode(',', $namen);
@@ -2609,23 +2949,44 @@ function submenu_admin($namen, $state, $display=1, $doClean=TRUE) {
 				$submenu[$menucounter]["items"][] = ko_get_menuitem_seperator();
 				$submenu[$menucounter]["items"][] = ko_get_menuitem("admin", "set_leute_pdf_new");
 				$submenu[$menucounter]["items"][] = ko_get_menuitem("admin", "set_leute_pdf");
+				$submenu[$menucounter]["items"][] = ko_get_menuitem_seperator();
+				$submenu[$menucounter]["items"][] = ko_get_menuitem("admin", "new_detailed_person_export");
+				$submenu[$menucounter]["items"][] = ko_get_menuitem("admin", "list_detailed_person_exports");
 			}
 		break;
 
 		case "vesr":
-			if (ko_module_installed('vesr')) {
-				ko_get_access('vesr');
-				if($access['vesr'] > 0) {
-					$found = TRUE;
-					$submenu[$menucounter]["titel"] = getLL("submenu_admin_title_vesr");
-					$submenu[$menucounter]["items"][] = ko_get_menuitem("admin", "vesr_import");
+			if (ko_module_installed('vesr') && $all_rights_vesr > 0) {
+				$found = TRUE;
+				$submenu[$menucounter]["titel"] = getLL("submenu_admin_title_vesr");
+				$submenu[$menucounter]["items"][] = ko_get_menuitem("admin", "vesr_import");
+				$submenu[$menucounter]["items"][] = ko_get_menuitem("admin", "vesr_archive");
 
-					if ($access['vesr'] > 1) {
-						$submenu[$menucounter]["items"][] = ko_get_menuitem("admin", "vesr_settings");
-					}
+				if($all_rights_vesr > 1) {
+					$submenu[$menucounter]["items"][] = ko_get_menuitem("admin", "vesr_settings");
 				}
 			}
 		break;
+
+		case "cloud_printing":
+			if ($max_rights > 4) {
+				$found = TRUE;
+				$submenu[$menucounter]["titel"] = getLL("submenu_admin_title_cloud_printing");
+				$submenu[$menucounter]["items"][] = ko_get_menuitem("admin", "google_cloud_printers");
+				if(ko_get_setting('qz_tray_enable')) {
+					$submenu[$menucounter]["items"][] = ko_get_menuitem("admin", "qz_tray_printers");
+				}
+			}
+			break;
+
+		case "pubkey":
+
+			if($_SESSION['ses_userid'] == ko_get_root_id()) {
+				$found = TRUE;
+				$submenu[$menucounter]['titel'] = getLL('submenu_admin_title_pubkey');
+				$submenu[$menucounter]['items'][] = ko_get_menuitem('admin','show_pubkey');
+			}
+			break;
 
 		default:
 			if($menu) {
@@ -2684,116 +3045,6 @@ function submenu_admin($namen, $state, $display=1, $doClean=TRUE) {
 
 
 
-function submenu_fileshare($namen, $state, $display=1) {
-	global $ko_path, $smarty;
-	global $my_submenu;
-
-	$return = "";
-
-	$all_rights = ko_get_access_all('fileshare_admin');
-	if($all_rights < 1) return FALSE;
-
-	$namen = explode(",", $namen);
-	$menucounter = 0;
-	foreach($namen as $menu) {
-		$found = FALSE;
-
-		$itemcounter = 0;
-		switch($menu) {
-
-		case "shares":
-			if(ENABLE_FILESHARE && $all_rights > 1) {
-				$found = TRUE;
-				$submenu[$menucounter]["titel"] = getLL("submenu_fileshare_title_shares");
-				$submenu[$menucounter]["items"][] = ko_get_menuitem("fileshare", "new_share");
-				if($all_rights > 3) {
-					$submenu[$menucounter]["items"][] = ko_get_menuitem("fileshare", "new_folder");
-				}
-			}
-		break;
-
-
-		case "webfolders":
-			if($all_rights > 3 && WEBFOLDERS) {
-				$found = TRUE;
-				$submenu[$menucounter]["titel"] = getLL("submenu_fileshare_title_webfolders");
-				$submenu[$menucounter]["items"][] = ko_get_menuitem("fileshare", "new_webfolder");
-				$submenu[$menucounter]["items"][] = ko_get_menuitem("fileshare", "list_webfolders");
-			}
-		break;
-
-
-		case "foldertree":
-			if(ENABLE_FILESHARE && $all_rights > 0) {
-				if($display) {  //Ohne Popup-Menu, normaler JS-TreeView erstellen
-					$found = TRUE;
-					$submenu[$menucounter]["titel"] = getLL("submenu_fileshare_title_foldertree");
-					$submenu[$menucounter]["output"][$itemcounter] = " ";
-					$submenu[$menucounter]["no_ul"][$itemcounter] = TRUE;
-					$html = '<div id="treeview"><script language="javascript" type="text/javascript">CreateProjectExplorer();</script></div>';
-					$submenu[$menucounter]["html"][$itemcounter] = $html;
-				} else {  //Code für Popup-Menü
-					$found = TRUE;
-					$submenu[$menucounter]["titel"] = getLL("submenu_fileshare_title_foldertree");
-					$folders = ko_fileshare_get_folders($_SESSION["ses_userid"]);
-					foreach($folders as $folder) {
-						if($folder["parent"] == 0 && $itemcounter < 7) {
-							$submenu[$menucounter]["output"][$itemcounter] = $folder["name"];
-							$submenu[$menucounter]["link"][$itemcounter++] = $ko_path."fileshare/index.php?action=show_folder&amp;id=".$folder["id"];
-						}
-					}//foreach(folders as folder)
-				}//if..else(display)
-			}//if(group_view)
-		break;
-
-		default:
-			if($menu) {
-				$submenu[$menucounter] = submenu($menu, $state, 3, 'fileshare');
-				$found = (is_array($submenu[$menucounter]));
-			}
-		}//switch(menu)
-
-		//Plugins erlauben, Menuitems hinzuzufügen
-		hook_submenu("fileshare", $menu, $submenu, $menucounter, $itemcounter);
-
-		if($found) {
-			$submenu[$menucounter]["key"] = "fileshare_".$menu;
-			$submenu[$menucounter]["id"] = $menu;
-			$submenu[$menucounter]["mod"] = "fileshare";
-			$submenu[$menucounter]["sesid"] = session_id();
-			$submenu[$menucounter]["state"] = $state;
-
-			if($display == 1) {
-				$smarty->assign("sm", $submenu[$menucounter]);
-				$smarty->assign("ko_path", $ko_path);
-				$smarty->assign("help", ko_get_help("fileshare", "submenu_".$menu));
-				$smarty->display("ko_submenu.tpl");
-			} else if($display == 2) {
-				$smarty->assign("sm", $submenu[$menucounter]);
-				$smarty->assign('hideWrappingDiv', TRUE);
-				$smarty->assign("ko_path", $ko_path);
-				$return = "sm_fileshare_".$menu."@@@";
-				$return .= $smarty->fetch("ko_submenu.tpl");
-			}
-
-			$smarty->clear_assign("help");
-			$menucounter++;
-		}
-
-
-	}//foreach(namen as menu)
-
-	if($display == 2) {
-		return $return;
-	} else if($display == 3) {
-		return $submenu;
-	}
-}//submenu_fileshare()
-
-
-
-
-
 function submenu_tools($namen, $state, $display=1, $doClean = true) {
 	global $ko_path, $smarty;
 	global $my_submenu;
@@ -2819,13 +3070,13 @@ function submenu_tools($namen, $state, $display=1, $doClean = true) {
 			$submenu[$menucounter]['items'][] = ko_get_menuitem('tools', 'misc');
 			$submenu[$menucounter]["items"][] = ko_get_menuitem("tools", "testmail");
 			$submenu[$menucounter]["items"][] = ko_get_menuitem("tools", "mailing_mails");
+			$submenu[$menucounter]["items"][] = ko_get_menuitem("tools", "kota_fields");
 		break;
 
 		case "leute-db":
 			$found = TRUE;
 			$submenu[$menucounter]["titel"] = getLL("submenu_tools_title_leute-db");
 			$submenu[$menucounter]["items"][] = ko_get_menuitem("tools", "show_leute_db");
-			$submenu[$menucounter]["items"][] = ko_get_menuitem("tools", "show_leute_formular");
 			$submenu[$menucounter]["items"][] = ko_get_menuitem("tools", "show_familie_db");
 		break;
 
@@ -2861,6 +3112,14 @@ function submenu_tools($namen, $state, $display=1, $doClean = true) {
 			$found = TRUE;
 			$submenu[$menucounter]['titel'] = getLL('submenu_tools_title_typo3');
 			$submenu[$menucounter]['items'][] = ko_get_menuitem('tools', 'typo3_connection');
+		break;
+
+		case 'payments':
+			if(mysqli_query(db_get_link(),'SELECT 1 FROM ko_vesr UNION SELECT 1 FROM ko_leute LIMIT 1')->num_rows) {
+				$found = TRUE;
+				$submenu[$menucounter]['titel'] = getLL('submenu_tools_title_payments');
+				$submenu[$menucounter]['items'][] = ko_get_menuitem('tools','payments_list');
+			}
 		break;
 
 		default:
@@ -2917,236 +3176,81 @@ function submenu_tools($namen, $state, $display=1, $doClean = true) {
 
 
 
-
-function submenu_tapes($namen, $state, $display=1) {
+function submenu_taxonomy($namen, $state, $display=1, $doClean = true) {
 	global $ko_path, $smarty;
-	global $ko_menu_akt, $access;
 	global $my_submenu;
 
 	$return = "";
 
-	$all_rights = ko_get_access_all('tapes_admin', '', $max_rights);
+	if(!ko_module_installed("taxonomy")) return FALSE;
+
+	$all_rights = ko_get_access_all('taxonomy_admin', '', $max_rights);
 	if($max_rights < 1) return FALSE;
 
-	$namen = explode(",", $namen);
+	if (!is_array($namen)) {
+		$namen = explode(",", $namen);
+	}
+
 	$menucounter = 0;
 	foreach($namen as $menu) {
 		$found = FALSE;
 
-		$itemcounter = 0;
+
 		switch($menu) {
 
-		case "tapes":
-			$found = TRUE;
-			$submenu[$menucounter]["titel"] = getLL("submenu_tapes_title_tapes");
-			if($max_rights > 2 && db_get_count('ko_tapes_groups') > 0) {  //Ohne Tapegruppen keine neuen Predigten erfassen lassen
-				$submenu[$menucounter]["items"][] = ko_get_menuitem("tapes", "new_tape");
-			}
-			$submenu[$menucounter]["items"][] = ko_get_menuitem("tapes", "list_tapes");
-		break;
-
-
-		case "series":
-			$found = TRUE;
-			$submenu[$menucounter]["titel"] = getLL("submenu_tapes_title_series");
-			if($max_rights > 2) {
-				$submenu[$menucounter]["items"][] = ko_get_menuitem("tapes", "new_serie");
-			}
-			$submenu[$menucounter]["items"][] = ko_get_menuitem("tapes", "list_series");
-		break;
-
-
-		case "groups":
-			if($max_rights > 3) {
+			case "taxonomy":
 				$found = TRUE;
-				$submenu[$menucounter]["titel"] = getLL("submenu_tapes_title_groups");
-				$submenu[$menucounter]["items"][] = ko_get_menuitem("tapes", "new_tapegroup");
-				$submenu[$menucounter]["items"][] = ko_get_menuitem("tapes", "list_tapegroups");
-			}
-		break;
-
-
-		case "print":
-			if($max_rights > 1) {
-				$found = TRUE;
-
-				//Print-Queue durchgehen und Select aufbauen
-				$total_num = 0;
-				$sel_code = "";
-				if(is_array($_SESSION["printqueue"])) {
-					foreach($_SESSION["printqueue"] as $tape_id => $num_) {
-						$num = format_userinput($num_, "uint", FALSE, 2);
-						if($num > 0) {
-							$total_num += $num;
-							ko_get_tapes($tape_, "AND ko_tapes.id = '$tape_id'");
-							$tape = $tape_[$tape_id];
-							$sel_code .= '<option value="'.$tape_id.'">'.$num."x".strftime($GLOBALS["DATETIME"]["dm"], strtotime($tape["date"]));
-							$sel_code .= ': '.substr($tape["title"], 0, 15).(strlen($tape["title"])>15?"..":"").'</option>';
-						}
-					}//foreach(_SESSION[printqueue])
+				$submenu[$menucounter]["titel"] = getLL("submenu_taxonomy_title_taxonomy");
+				if ($all_rights > 1) {
+					$submenu[$menucounter]['items'][] = ko_get_menuitem("taxonomy", "new_term");
 				}
 
-				$submenu[$menucounter]["titel"] = getLL("submenu_tapes_title_print");
-				if($total_num > 0) {
-					$layouts = ko_get_tape_printlayout();
-					$print_code  = '<select name="sel_printqueue" size="'.min(4, max(2,sizeof($_SESSION["printqueue"]))).'">'.$sel_code.'</select>';
-					$print_code .= '<p style="white-space:nowrap;text-align:center;">';
-					$print_code .= '<input type="submit" value="'.getLL("delete").'" onclick="set_action(\'del_from_printqueue\', this);" />&nbsp;&nbsp;';
-					$print_code .= '<input type="submit" value="'.getLL("delete_all").'" onclick="set_action(\'clear_printqueue\', this);" /></p>';
-
-					$submenu[$menucounter]["output"][$itemcounter] = getLL("total").": ".$total_num;
-					$submenu[$menucounter]["html"][$itemcounter++] = $print_code;
-
-					$template_code = '<select name="sel_printlayout" size="0">';
-					foreach($layouts as $l) {
-						if($l["default"] == 1) $sel = 'selected="selected"'; else $sel = "";
-						$template_code .= '<option value="'.$l["id"].'" '.$sel.'>'.$l["name"].'</option>';
-					}
-					$template_code .= '</select><br />';
-
-					$submenu[$menucounter]["output"][$itemcounter] = getLL("tapes_print_preset").":";
-					$submenu[$menucounter]["html"][$itemcounter++] = $template_code;
-
-					$start_code = '<select name="sel_printstart" size="0">';
-					for($i=0; $i<12; $i++) {
-						$start_code .= '<option value="'.$i.'">'.($i+1).'</option>';
-					}
-					$start_code .= '</select>';
-
-					$submenu[$menucounter]["output"][$itemcounter] = getLL("tapes_print_start").":";
-					$submenu[$menucounter]["html"][$itemcounter++] = $start_code;
-
-					$submenu[$menucounter]["output"][$itemcounter] = " ";
-					$submenu[$menucounter]["no_ul"][$itemcounter] = TRUE;
-					$submenu[$menucounter]["html"][$itemcounter++] = '<p align="center"><input type="submit" value="'.getLL("tapes_print").'" onclick="set_action(\'do_print\', this);" /></p>';
-
-				}//if(total_num > 0)
-				else {
-					$submenu[$menucounter]["output"][$itemcounter] = getLL("tapes_print_empty");
-					$submenu[$menucounter]["link"][$itemcounter++] = "";
+				if ($all_rights >= 1) {
+					$submenu[$menucounter]["items"][] = ko_get_menuitem("taxonomy", "list_terms");
 				}
-			}//if(group_new)
-		break;
+				break;
 
-
-
-		case "filter":
-			$found = TRUE;
-			//Gruppe
-			$code_group  = '<select name="sel_group_filter" size="0" onchange="jumpToUrl(\'?action=submit_group_filter&amp;set_filter=\'+this.options[this.selectedIndex].value);">';
-			$code_group .= '<option value=""></option>';
-			ko_get_tapegroups($groups, $z_where);
-			foreach($groups as $i => $group) {
-				if($all_rights > 0 || $access['tapes'][$i] > 0) {
-					$sel = $_SESSION["tape_group_filter"] == $i ? 'selected="selected"' : "";
-					$code_group .= '<option value="'.$i.'" '.$sel.'>'.substr($group["name"], 0, ITEMLIST_LENGTH_MAX).(strlen($group["name"])>ITEMLIST_LENGTH_MAX?"..":"").'</option>';
+			default:
+				if($menu) {
+					$submenu[$menucounter] = submenu($menu, $state, 3, 'taxonomy');
+					$found = (is_array($submenu[$menucounter]));
 				}
-			}
-			$code_group .= '</select><br />';
-
-			//Serie
-			$code_serie  = '<select name="sel_serie_filter" size="0" onchange="jumpToUrl(\'?action=submit_serie_filter&amp;set_filter=\'+this.options[this.selectedIndex].value);">';
-			$code_serie .= '<option value=""></option>';
-			ko_get_tapeseries($series);
-			foreach($series as $i => $serie) {
-				$sel = $_SESSION["tape_serie_filter"] == $i ? 'selected="selected"' : "";
-				$code_serie .= '<option value="'.$i.'" '.$sel.'>'.substr($serie["name"], 0, ITEMLIST_LENGTH_MAX).(strlen($serie["name"])>ITEMLIST_LENGTH_MAX?"..":"").'</option>';
-			}
-			$code_serie .= '</select><br />';
-
-			//Titel
-			$code_title .= '<input type="text" name="txt_title_filter" size="15" onkeydown="if ((event.which == 13) || (event.keyCode == 13)) { this.form.submit_title_filter.click(); return false; } else return true;">';
-			$code_title .= '<input type="submit" name="submit_title_filter" value="OK" onclick="set_action(\'submit_title_filter\', this);set_hidden_value(\'id\', this.form.txt_title_filter.value, this); this.submit;" />';
-			$code_title .= '<br />';
-
-			//Untertitel
-			$code_subtitle .= '<input type="text" name="txt_subtitle_filter" size="15" onkeydown="if ((event.which == 13) || (event.keyCode == 13)) { this.form.submit_subtitle_filter.click(); return false; } else return true;">';
-			$code_subtitle .= '<input type="submit" name="submit_subtitle_filter" value="OK" onclick="set_action(\'submit_subtitle_filter\', this);set_hidden_value(\'id\', this.form.txt_subtitle_filter.value, this); this.submit;" />';
-			$code_subtitle .= '<br />';
-
-			//Prediger
-			$code_preacher  = '<select name="sel_preacher_filter" size="0" onchange="jumpToUrl(\'?action=submit_preacher_filter&amp;set_filter=\'+this.options[this.selectedIndex].value);">';
-			$code_preacher .= '<option value=""></option>';
-			ko_get_preachers($preachers);
-			foreach($preachers as $i => $preacher) {
-				$sel = $_SESSION["tape_preacher_filter"] == $preacher ? 'selected="selected"' : "";
-				$code_preacher .= '<option value="'.urlencode($preacher).'" '.$sel.'>'.substr($preacher, 0, ITEMLIST_LENGTH_MAX).(strlen($preacher)>ITEMLIST_LENGTH_MAX?"..":"").'</option>';
-			}
-			$code_preacher .= '</select><br />';
-
-
-			$submenu[$menucounter]["titel"] = getLL("submenu_tapes_title_filter");
-
-			if(isset($_SESSION["tape_group_filter"])) {$pre="<b>";$post="</b>";} else $pre=$post="";
-			$submenu[$menucounter]["output"][$itemcounter] = $pre.getLL("kota_ko_tapes_group_id").$post;
-			$submenu[$menucounter]["html"][$itemcounter++] = $code_group;
-
-			if(isset($_SESSION["tape_serie_filter"])) {$pre="<b>";$post="</b>";} else $pre=$post="";
-			$submenu[$menucounter]["output"][$itemcounter] = $pre.getLL("kota_ko_tapes_serie_id").$post;
-			$submenu[$menucounter]["html"][$itemcounter++] = $code_serie;
-
-			if(isset($_SESSION["tape_title_filter"])) {$pre="<b>";$post="</b>: '".ko_html($_SESSION["tape_title_filter"])."'";} else $pre=$post="";
-			$submenu[$menucounter]["output"][$itemcounter] = $pre.getLL("kota_ko_tapes_title").$post;
-			$submenu[$menucounter]["html"][$itemcounter++] = $code_title;
-
-			if(isset($_SESSION["tape_subtitle_filter"])) {$pre="<b>";$post="</b>: '".ko_html($_SESSION["tape_subtitle_filter"])."'";} else $pre=$post="";
-			$submenu[$menucounter]["output"][$itemcounter] = $pre.getLL("kota_ko_tapes_subtitle").$post;
-			$submenu[$menucounter]["html"][$itemcounter++] = $code_subtitle;
-
-			if(isset($_SESSION["tape_preacher_filter"])) {$pre="<b>";$post="</b>";} else $pre=$post="";
-			$submenu[$menucounter]["output"][$itemcounter] = $pre.getLL("kota_ko_tapes_preacher").$post;
-			$submenu[$menucounter]["html"][$itemcounter++] = $code_preacher;
-
-			$submenu[$menucounter]["output"][$itemcounter++] = "";
-			$submenu[$menucounter]["output"][$itemcounter] = getLL("tapes_remove_all_filters");
-			$submenu[$menucounter]["link"][$itemcounter++] = $ko_path."tapes/index.php?action=clear_filters";
-		break;
-
-
-		case "settings":
-			if($max_rights > 3) {
-				$found = TRUE;
-				$submenu[$menucounter]["titel"] = getLL("submenu_tapes_title_settings");
-				$submenu[$menucounter]["items"][] = ko_get_menuitem("tapes", "settings");
-				$submenu[$menucounter]["items"][] = ko_get_menuitem("tapes", "list_printlayouts");
-			}
-		break;
-
-
-		default:
-			if($menu) {
-				$submenu[$menucounter] = submenu($menu, $state, 3, 'tapes');
-				$found = (is_array($submenu[$menucounter]));
-			}
 		}//switch(menu)
 
 		//Plugins erlauben, Menuitems hinzuzufügen
-		hook_submenu("tapes", $menu, $submenu, $menucounter, $itemcounter);
+		hook_submenu("taxonomy", $menu, $submenu, $menucounter);
+
+		// Clean up submenu
+		if ($doClean) ko_clean_submenu('taxonomy', $submenu[$menucounter], $found);
 
 		if($found) {
-			$submenu[$menucounter]["key"] = "tapes_".$menu;
+			$submenu[$menucounter]["key"] = "taxonomy_".$menu;
 			$submenu[$menucounter]["id"] = $menu;
-			$submenu[$menucounter]["mod"] = "tapes";
+			$submenu[$menucounter]["mod"] = "taxonomy";
 			$submenu[$menucounter]["sesid"] = session_id();
 			$submenu[$menucounter]["state"] = $state;
 
 			if($display == 1) {
 				$smarty->assign("sm", $submenu[$menucounter]);
 				$smarty->assign("ko_path", $ko_path);
-				$smarty->assign("help", ko_get_help("tapes", "submenu_".$menu));
+				$smarty->assign("help", ko_get_help("taxonomy", "submenu_".$menu));
 				$smarty->display("ko_submenu.tpl");
 			} else if($display == 2) {
 				$smarty->assign("sm", $submenu[$menucounter]);
 				$smarty->assign('hideWrappingDiv', TRUE);
 				$smarty->assign("ko_path", $ko_path);
-				$return = "sm_tapes_".$menu."@@@";
+				$return = "sm_taxonomy_".$menu."@@@";
 				$return .= $smarty->fetch("ko_submenu.tpl");
 			}
 
 			$smarty->clear_assign("help");
 			$menucounter++;
 		}
-
+		else {
+			if ($display == 2) {
+				$return = "sm_taxonomy_".$menu."@@@";
+			}
+		}
 
 	}//foreach(namen as menu)
 
@@ -3155,7 +3259,7 @@ function submenu_tapes($namen, $state, $display=1) {
 	} else if($display == 3) {
 		return $submenu;
 	}
-}//submenu_tapes()
+}//submenu_taxonomy()
 
 
 
@@ -3250,22 +3354,25 @@ function submenu_groups($namen, $state, $display=1, $doClean=TRUE) {
 				$submenu[$menucounter]['items'][] = ko_get_menuitem_html($html, getLL('submenu_groups_export_pdf'));
 			}
 
+			$presets = array_merge((array)ko_get_userpref('-1', '', "leute_itemset"), (array)ko_get_userpref($_SESSION['ses_userid'], '', "leute_itemset"));
 			$options = array();
-			foreach (ko_get_userpref('-1', '', "leute_itemset") as $preset) {
-				$options[] = '<option value="'.$preset['id'].'">'.$preset['key'].'</option>';
+			$colNames = ko_get_leute_col_name(FALSE, TRUE);
+			foreach($presets as $preset) {
+				$cols = explode(',', $preset['value']);
+				$llCols = array();
+				foreach($cols as $col) {
+					$llCols[] = $colNames[$col];
+				}
+				$options[] = '<option value="'.$preset['id'].'" title="'.implode(', ', $llCols).'">'.($preset['user_id'] == '-1' ? '[G] ' : '').$preset['key'].'</option>';
 			}
-			foreach (ko_get_userpref($_SESSION['ses_userid'], '', "leute_itemset") as $preset) {
-				$options[] = '<option value="'.$preset['id'].'">[G] '.$preset['key'].'</option>';
-			}
-			if (sizeof($options) > 0) {
-				$html = '<select name="leute_col_presets" class="input-sm form-control" onchange="set_ids_from_chk(this); jumpToUrl(\'?action=export_xls_with_people&preset_id=\'+this.options[this.selectedIndex].value+\'&ids=\'+document.getElementsByName(\'ids\')[0].value);">';
-				$html .= '<option value="">'.getLL('submenu_groups_export_xls_with_people_col_preset').'</option>';
-				$html .= implode('', $options);
-				$html .= '</select>';
+			$html = '<select name="leute_col_presets" class="input-sm form-control" onchange="set_ids_from_chk(this); jumpToUrl(\'?action=export_xls_with_people&preset_id=\'+this.options[this.selectedIndex].value+\'&ids=\'+document.getElementsByName(\'ids\')[0].value);">';
+			$html .= '<option value="">'.getLL('submenu_groups_export_xls_with_people_col_preset').'</option>';
+			$html .= '<option value="default">'.getLL('submenu_groups_export_xls_with_people_col_default').'</option>';
+			if(sizeof($options) > 0) $html .= implode('', $options);
+			$html .= '</select>';
 
-				$submenu[$menucounter]['items'][] = ko_get_menuitem_seperator();
-				$submenu[$menucounter]['items'][] = ko_get_menuitem_html($html, getLL('submenu_groups_export_xls_with_people'));
-			}
+			$submenu[$menucounter]['items'][] = ko_get_menuitem_seperator();
+			$submenu[$menucounter]['items'][] = ko_get_menuitem_html($html, getLL('submenu_groups_export_xls_with_people'));
 		break;
 
 
@@ -3401,40 +3508,49 @@ function submenu_donations($namen, $state, $display=1, $doClean = true) {
 
 		case "itemlist_accounts":
 			if($max_rights < 1) break;
-			$itemlist_content = array();
 			$found = TRUE;
 
-			//Alle Objekte auslesen
-			$counter = 0;
-			$gruppen = db_select_data("ko_donations_accounts", "", "*", "ORDER by number ASC");
-			foreach($gruppen as $i_i => $i) {
-				if($all_rights > 0 || $access['donations'][$i_i] > 0) {
-					$aktiv = 0;
-					foreach($_SESSION["show_accounts"]as $s) if($s == $i_i) $aktiv = 1;
-					$itemlist[$counter]["name"] = ko_html($i["number"])."&nbsp;".ko_html($i["name"]);
-					$itemlist[$counter]["aktiv"] = $aktiv;
-					$itemlist[$counter++]["value"] = $i_i;
-				}//if(show_view[i_i])
-			}//foreach(items)
-			$itemlist_content['tpl_itemlist_select'] = $itemlist;
-
-			//Get all presets
-			$akt_value = $_SESSION["show_accounts"];
-			$akt_value = implode(",", $_SESSION["show_accounts"]);
-			$itemset = array_merge((array)ko_get_userpref('-1', '', 'accounts_itemset', 'ORDER BY `key` ASC'), (array)ko_get_userpref($_SESSION['ses_userid'], '', 'accounts_itemset', 'ORDER BY `key` ASC'));
-			foreach($itemset as $i) {
-				$value = $i['user_id'] == '-1' ? '@G@'.$i['key'] : $i['key'];
-				$itemselect_values[] = $value;
-				$itemselect_output[] = $i['user_id'] == '-1' ? getLL('itemlist_global_short').' '.$i['key'] : $i['key'];
-				if($i["value"] == $akt_value) $itemselect_selected = $value;
+			// prepare data for itemlist
+			$globalMinRights = 4;
+			$groupColumn = 'account_group';
+			$table = 'ko_donations_accounts';
+			$tableOrdering = "ORDER BY `number` ASC, name ASC";
+			$sessionShowKey = 'show_donations_accounts';
+			$sessionStatesKey = 'donations_accounts_group_states';
+			$presetType = 'accounts_itemset';
+			$groups = array_map(function($e){return array('id' => $e, '_title' => $e);}, db_select_distinct($table, $groupColumn, $tableOrdering, "WHERE `{$groupColumn}` <> '' AND `archived` = 0"));
+			foreach ($groups as $gk => &$group) {
+				$group['_elements'] = db_select_data($table, "WHERE `{$groupColumn}` = '{$group['id']}'", "*", $tableOrdering);
+				foreach ($group['_elements'] as $eid => &$element) {
+					if($access['donations']['ALL'] < 1 && $access['donations'][$element['id']] < 1) unset($group['_elements'][$eid]);
+					$element['_title'] = ko_html($element["number"])."&nbsp;".ko_html($element["name"]);
+				}
 			}
-			$itemlist_content['tpl_itemlist_values'] = $itemselect_values;
-			$itemlist_content['tpl_itemlist_output'] = $itemselect_output;
-			$itemlist_content['tpl_itemlist_selected'] = $itemselect_selected;
-			if($max_rights > 3) $itemlist_content['allow_global'] = TRUE;
 
+			$archivedAccounts = db_select_data('ko_donations_accounts', "WHERE `archived` = 1", '*', $tableOrdering);
+			foreach($archivedAccounts as $aaid => $aa) {
+				if($access['donations']['ALL'] < 1 && $access['donations'][$aa['id']] < 1) unset($archivedAccounts[$aaid]);
+			}
+			if (sizeof($archivedAccounts) > 0) {
+				$archivedGroup = array('id' => '@@archived@@', '_title' => getLL('kota_ko_donations_accounts_archived'), '_elements' => $archivedAccounts);
+				foreach ($archivedGroup['_elements'] as &$element) {
+					$element['_title'] = ko_html($element["number"])."&nbsp;".ko_html($element["name"]);
+				}
+				$groups[] = $archivedGroup;
+			}
+
+
+			$noGroupElements = db_select_data($table, "WHERE `{$groupColumn}` = '' AND `archived` = 0", "*", $tableOrdering);
+			foreach ($noGroupElements as $eid => &$element) {
+				if($access['donations']['ALL'] < 1 && $access['donations'][$element['id']] < 1) unset($noGroupElements[$eid]);
+				$element['_title'] = ko_html($element["number"])."&nbsp;".ko_html($element["name"]);
+			}
+
+			// fill in itemlist
+			ko_prepare_itemlist($itemlist_content, $groups, $noGroupElements, $sessionShowKey, $sessionStatesKey, $presetType, $globalMinRights, $max_rights);
+
+			// create entry in submenu
 			$submenu[$menucounter]["titel"] = getLL("submenu_donations_title_itemlist_accounts");
-
 			$submenu[$menucounter]["items"][] = ko_get_menuitem_itemlist($itemlist_content);
 		break;
 
@@ -3455,6 +3571,8 @@ function submenu_donations($namen, $state, $display=1, $doClean = true) {
 
 			$code = '';
 			$datePickerInput = array('type' => 'datepicker', 'value' => sql2datum($_SESSION["donations_filter"]["date1"]), 'name' => 'donations_filter[date1]', 'html_id' => 'donations_filter_date_1');
+			$datePickerInput['sibling'] = "donations_filter_date_2";
+
 			$smarty->assign('input', $datePickerInput);
 			$code .= $smarty->fetch('ko_formular_elements.tmpl');
 			$code .= '<div style="width:20px;margin:0px auto;border-left:1px solid rgb(204,204,204);border-right:1px solid rgb(204,204,204);text-align:center;">-</div>';
@@ -3466,7 +3584,7 @@ function submenu_donations($namen, $state, $display=1, $doClean = true) {
 			$submenu[$menucounter]['items'][] = ko_get_menuitem_html($code, $pre.getLL('kota_ko_donations_'.$date_field).':'.$post);
 
 			//Leute-modul filter
-			$code  = '<select class="input-sm form-control" name="donations_filter[leute]"><option value=""></option>';
+			$code  = '<select class="input-sm form-control" name="donations_filter[leute]" onchange="$(\'#submit_donations_filter\').click();"><option value=""></option>';
 			$filterset = array_merge((array)ko_get_userpref('-1', '', 'filterset', 'ORDER BY `key` ASC'), (array)ko_get_userpref($_SESSION['ses_userid'], '', 'filterset', 'ORDER BY `key` ASC'));
 			foreach($filterset as $f) {
 				$value = $f['user_id'] == '-1' ? '@G@'.$f['key'] : $f['key'];
@@ -3503,20 +3621,22 @@ function submenu_donations($namen, $state, $display=1, $doClean = true) {
 			$submenu[$menucounter]['items'][] = ko_get_menuitem_html($code, $pre.getLL('donations_filter_amount').$post);
 
 			//Promise
-			$checked = $_SESSION['donations_filter']['promise'] == 1 ? 'checked="checked"' : '';
-			$code  = '<input type="checkbox" name="donations_filter[promise]" value="1" '.$checked.' />';
-			$help = ko_get_help('donations', 'submenu_filter_promise', array('ph' => 'l'));
+			if (ko_get_setting('donations_use_promise')) {
+				$checked = $_SESSION['donations_filter']['promise'] == 1 ? 'checked="checked"' : '';
+				$code  = '<input type="checkbox" name="donations_filter[promise]" onchange="$(\'#submit_donations_filter\').click();" value="1" '.$checked.' />';
+				$help = ko_get_help('donations', 'submenu_filter_promise', array('ph' => 'l'));
 
-			$pre  = $_SESSION['donations_filter']['promise'] ? '<mark>' : '';
-			$post = $_SESSION['donations_filter']['promise'] ? '</mark>' : '';
-			$post .= '&nbsp;' . ($help['show'] ? $help['link'] : '');
-			$submenu[$menucounter]['items'][] = ko_get_menuitem_html($code, $pre.getLL('donations_filter_promise').$post);
+				$pre  = $_SESSION['donations_filter']['promise'] ? '<mark>' : '';
+				$post = $_SESSION['donations_filter']['promise'] ? '</mark>' : '';
+				$post .= '&nbsp;' . ($help['show'] ? $help['link'] : '');
+				$submenu[$menucounter]['items'][] = ko_get_menuitem_html($code, $pre.getLL('donations_filter_promise').$post);
+			}
 
 			//Thanked
 			$value = $_SESSION['donations_filter']['thanked'];
 			$values = array('', 'no', 'yes');
 			$descs = array('', getLL('no'), getLL('yes'));
-			$code  = '<select class="input-sm form-control" name="donations_filter[thanked]">';
+			$code  = '<select class="input-sm form-control" name="donations_filter[thanked]" onchange="$(\'#submit_donations_filter\').click();">';
 			foreach ($values as $k => $v) {
 				$d = $descs[$k];
 				$code .= '<option value="'.$v.'"'.($v==$value?' selected="selected"':'').'>'.$d.'</option>';
@@ -3552,11 +3672,20 @@ function submenu_donations($namen, $state, $display=1, $doClean = true) {
 				$code .= '<option value="family">'.getLL('donations_export_mode_family').'</option>';
 				$code .= '<option value="couple">'.getLL('donations_export_mode_couple').'</option>';
 				$code .= '<option value="all">'.getLL('donations_export_mode_all').'</option>';
-				for($i=0; $i<2; $i++) {
-					$year = date('Y')-$i;
-					$code .= '<option value="statsY'.$year.'">'.getLL('donations_export_mode_statsY').' '.$year.'</option>';
-				}
-				$code .= '<option value="statsM">'.getLL("donations_export_mode_statsM").'</option>';
+
+				//Yearly stats
+        //Get all years for which donations are available
+        $date_field = ko_get_userpref($_SESSION['ses_userid'], 'donations_date_field');
+        if(!$date_field || !in_array($date_field, array('date', 'valutadate'))) $date_field = 'date';
+        $years = db_select_distinct("ko_donations", "YEAR(`$date_field`)", '', "WHERE `promise` = '0'");
+        foreach($years as $key => $value) if(!$value) unset($years[$key]);
+        if(sizeof($years) == 0) $years[] = date('Y');
+        rsort($years);
+        foreach($years as $year) {
+          $code .= '<option value="statsY'.$year.'">'.getLL('donations_export_mode_statsY').' '.$year.'</option>';
+        }
+
+        $code .= '<option value="statsM">'.getLL("donations_export_mode_statsM").'</option>';
 
 				//Add exports from DB (can be added by plugins)
 				$pdf_layouts = db_select_data('ko_pdf_layout', "WHERE `type` = 'donations'", 'id, name', 'ORDER BY `name` ASC');
@@ -3569,6 +3698,22 @@ function submenu_donations($namen, $state, $display=1, $doClean = true) {
 
 				$code .= '</select>';
 				$submenu[$menucounter]["items"][] = ko_get_menuitem_html($code);
+
+
+				if(ko_module_installed('leute')) {
+					$all_rights = ko_get_access_all('leute_admin', '', $max_rights);
+					if($max_rights > 0) {
+						$submenu[$menucounter]['form'] = TRUE;
+						$submenu[$menucounter]['form_hidden_inputs'] = array(
+							array('name' => 'action', 'value' => ''),
+							array('name' => 'ids', 'value' => ''),
+						);
+
+						$code = '<button type="submit" name="add_to_my_list" class="btn btn-primary" value="add_to_my_list" title="'.getLL("donations_export_to_my_list_title").'" onclick="set_ids_from_chk(this);set_action('."'add_to_my_list'".', this)">'.getLL('donations_export_to_my_list').'</button>';
+						$submenu[$menucounter]["items"][] = ko_get_menuitem_seperator(true);
+						$submenu[$menucounter]['items'][] = ko_get_menuitem_html($code);
+					}
+				}
 			}
 		break;
 
@@ -3775,10 +3920,13 @@ function submenu_tracking($namen, $state, $display=1, $doClean = true) {
 
 
 			//Date filter
-			$datePickerInput = array('type' => 'datepicker', 'value' => ($_SESSION['tracking_filter']['date1'] ? strftime('%d.%m.%Y', strtotime($_SESSION['tracking_filter']['date1'])) : ''), 'name' => 'tracking_filter[date1]');
+			$datePickerInput = array('type' => 'datepicker', 'value' => ($_SESSION['tracking_filter']['date1'] ? strftime('%d.%m.%Y', strtotime($_SESSION['tracking_filter']['date1'])) : ''), 'name' => 'tracking_filter[date1]', 'html_id' => "tracking_filter_date1");
+
+			$datePickerInput['sibling'] = "tracking_filter_date2";
+
 			$smarty->assign('input', $datePickerInput);
 			$dateField1 = $smarty->fetch('ko_formular_elements.tmpl');
-			$datePickerInput = array('type' => 'datepicker', 'value' => ($_SESSION['tracking_filter']['date2'] ? strftime('%d.%m.%Y', strtotime($_SESSION['tracking_filter']['date2'])) : ''), 'name' => 'tracking_filter[date2]');
+			$datePickerInput = array('type' => 'datepicker', 'value' => ($_SESSION['tracking_filter']['date2'] ? strftime('%d.%m.%Y', strtotime($_SESSION['tracking_filter']['date2'])) : ''), 'name' => 'tracking_filter[date2]', 'html_id' => "tracking_filter_date2");
 			$smarty->assign('input', $datePickerInput);
 			$dateField2 = $smarty->fetch('ko_formular_elements.tmpl');
 
@@ -4036,171 +4184,6 @@ function submenu_tracking($namen, $state, $display=1, $doClean = true) {
 
 
 
-function submenu_projects($namen, $state, $display=1) {
-	global $ko_path, $smarty;
-	global $project_stati;
-	global $my_submenu;
-
-	$return = "";
-
-	if(!ko_module_installed("projects")) return FALSE;
-
-	ko_get_access_all('projects');
-
-	$namen = explode(",", $namen);
-
-	$menucounter = 0;
-	foreach($namen as $menu) {
-		$found = FALSE;
-
-		switch($menu) {
-
-		case "projects":
-			$found = TRUE;
-			$submenu[$menucounter]["titel"] = getLL("submenu_projects_title_projects");
-			$submenu[$menucounter]["items"][] = ko_get_menuitem("projects", "new_project");
-			$submenu[$menucounter]["items"][] = ko_get_menuitem("projects", "show_projects");
-			$submenu[$menucounter]["items"][] = ko_get_menuitem("projects", "show_todo");
-			$submenu[$menucounter]["items"][] = ko_get_menuitem("projects", "show_settings");
-		break;
-
-		case "filter":
-			$found = TRUE;
-
-			$submenu[$menucounter]["titel"] = getLL("submenu_projects_title_filter");
-
-			//State
-			$code = "";
-			foreach($project_stati as $i => $status) {
-				$code .= '<div style="white-space:nowrap;">';
-				$chk = in_array($status, $_SESSION["projects_filter_state"]) ? 'checked="checked"' : '';
-				$code .= '<input type="checkbox" id="chk_projects_filter_'.$i.'" name="chk_projects_filter_'.$i.'" onclick="sendReq(\'../projects/inc/ajax.php\', \'action,filters,sesid\', \'setfilter,\'+projects_get_filters()+\','.session_id().'\', do_element);" '.$chk.' /><label for="chk_projects_filter_'.$i.'">'.getLL("projects_status_".$status)." (".getLL("projects_status_short_".$status).")</label>";
-				$code .= "</div>";
-			}
-
-			$submenu[$menucounter]["html"][] = ko_get_menuitem_html($code, getLL("projects_listheader_status"));
-		break;
-
-
-		case "hosting":
-			$found = TRUE;
-			$submenu[$menucounter]["titel"] = getLL("submenu_projects_title_hosting");
-			$submenu[$menucounter]["items"][] = ko_get_menuitem("projects", "new_hosting");
-			$submenu[$menucounter]["items"][] = ko_get_menuitem("projects", "show_hostings");
-
-			$submenu[$menucounter]["items"][] = ko_get_menuitem("projects", "new_typo3");
-			$submenu[$menucounter]["items"][] = ko_get_menuitem("projects", "show_typo3");
-
-			$submenu[$menucounter]['items'][] = ko_get_menuitem('projects', 'new_ssl');
-			$submenu[$menucounter]['items'][] = ko_get_menuitem('projects', 'show_ssl');
-		break;
-
-
-		case 'stats':
-			$found = TRUE;
-			$submenu[$menucounter]['titel'] = getLL('submenu_projects_title_stats');
-
-			//Open amount from projects
-			$amount_projects = 0.0;
-			$details = array();
-			$projects = db_select_data('ko_projects', 'WHERE `status` IN (\'r\', \'p\', \'e\')', '*');
-			foreach($projects as $pid => $project) {
-				$open = $date = array();
-				$logs = db_select_data('ko_projects_logs', 'WHERE `project_id` = \''.$pid.'\' AND `type` IN (\'billed\', \'payment\')', '*', 'ORDER BY `time` ASC');
-				foreach($logs as $log) {
-					if($log['type'] == 'billed') {
-						$split = explode(' ', $log['comment']);
-						$open[] = $split[0];
-						$date[] = add2date($log['time'], 'tag', 30, TRUE);
-					} else {
-						$split = explode(' ', $log['comment']);
-						foreach($open as $oid => $o) {
-							if($o == $split[0]) {
-								unset($open[$oid]);
-								unset($date[$oid]);
-							}
-						}
-					}
-				}
-				foreach($open as $oid => $amount) {
-					if(!$amount) continue;
-					$amount_projects += $amount;
-					(float)$details[substr($date[$oid], 0, 10)] += (float)$amount;
-				}
-			}
-
-			ksort($details);
-			$tooltip = '';
-			foreach($details as $date => $amount) {
-				$tooltip .= $date.': <b>'.$amount.'</b><br />';
-			}
-
-			$submenu[$menucounter]['html'][] = ko_get_menuitem_html('<span onmouseover="tooltip.show(\''.$tooltip.'\');" onmouseout="tooltip.hide();">'.$amount_projects.'</span><br />', getLL('projects_stats_amount_projects'));
-
-
-			//Open amount from hostings
-			$details = array();
-			$hostings = db_select_data('ko_projects_hostings', 'WHERE `billed` > `payed`', '*', 'ORDER BY `billed` ASC');
-			foreach($hostings as $hosting) {
-				$details[$hosting['billed']] += $hosting['price'];
-			}
-			$tooltip = '';
-			$amount_hostings = 0.0;
-			foreach($details as $date => $amount) {
-				$tooltip .= add2date($date, 'tag', 30, TRUE).': <b>'.$amount.'</b><br />';
-				$amount_hostings += $amount;
-			}
-
-			$submenu[$menucounter]['html'][] = ko_get_menuitem_html('<span onmouseover="tooltip.show(\''.$tooltip.'\');" onmouseout="tooltip.hide();">'.$amount_hostings.'</span><br />', getLL('projects_stats_amount_hostings'));
-		break;
-
-
-		default:
-			if($menu) {
-				$submenu[$menucounter] = submenu($menu, $state, 3, 'projects');
-				$found = (is_array($submenu[$menucounter]));
-			}
-		}//switch(menu)
-
-		//Plugins erlauben, Menuitems hinzuzufügen
-		hook_submenu("projects", $menu, $submenu, $menucounter);
-
-		if($found) {
-			$submenu[$menucounter]["key"] = "projects_".$menu;
-			$submenu[$menucounter]["id"] = $menu;
-			$submenu[$menucounter]["mod"] = "projects";
-			$submenu[$menucounter]["sesid"] = session_id();
-			$submenu[$menucounter]["state"] = $state;
-
-			if($display == 1) {
-				$smarty->assign("sm", $submenu[$menucounter]);
-				$smarty->assign("ko_path", $ko_path);
-				$smarty->assign("help", ko_get_help("projects", "submenu_".$menu));
-				$smarty->display("ko_submenu.tpl");
-			} else if($display == 2) {
-				$smarty->assign("sm", $submenu[$menucounter]);
-				$smarty->assign('hideWrappingDiv', TRUE);
-				$smarty->assign("ko_path", $ko_path);
-				$return = "sm_projects_".$menu."@@@";
-				$return .= $smarty->fetch("ko_submenu.tpl");
-			}
-
-			$smarty->clear_assign("help");
-			$menucounter++;
-		}
-
-
-	}//foreach(namen as menu)
-
-	if($display == 2) {
-		return $return;
-	} else if($display == 3) {
-		return $submenu;
-	}
-}//submenu_projects()
-
-
-
 /**
  * Gibt ein CRM-Submenu mittels dem Template ko_menu.tpl aus.
  * namen ist eine ,-getrennte Liste der anzuzeigenden Submenus
@@ -4248,36 +4231,91 @@ function submenu_crm($namen, $state, $display=1, $doClean = true) {
 				$submenu[$menucounter]["titel"] = getLL("submenu_crm_title_contacts");
 				$submenu[$menucounter]['items'][] = ko_get_menuitem('crm', 'new_contact');
 				$submenu[$menucounter]['items'][] = ko_get_menuitem('crm', 'list_contacts');
+				$submenu[$menucounter]['items'][] = ko_get_menuitem('crm', 'list_todos');
+			break;
+			case "filter":
+				$found = TRUE;
+				$submenu[$menucounter]["titel"] = getLL("submenu_crm_title_filter");
+
+				//Filter: Status
+				$c = '';
+				$projectStatus = db_select_distinct('ko_crm_projects', 'project_status', "ORDER BY `project_status` ASC");
+				foreach($projectStatus as $status) {
+					$js = 'sendReq(\'../crm/inc/ajax.php\', [\'sesid\', \'action\', \'field\', \'state\'], [kOOL.sid, \'setfilter\', \'project_status\', \''.(str_replace("'", "\\'", $status)).'\'], do_element);';
+					$chk = in_array($status, $_SESSION['crm_filter']['project_status']) ? 'checked="checked"' : '';
+					$c .= '<div class="checkbox">';
+					$c .= '<label>';
+					$c .= '<input type="checkbox" name="chk_project_filter_status_'.$status.'" id="chk_project_filter_status_'.$status.'" value="1" '.$chk.' onclick="'.$js.'">';
+					$c .= $status ? $status : '[ '.getLL('crm_filter_no_status').' ]';
+					$c .= '</label>';
+					$c .= '</div>';
+				}
+				$submenu[$menucounter]['items'][] = ko_get_menuitem_html($c, getLL('submenu_crm_filter_project_status'));
 			break;
 			case "itemlist_projects":
+				if($max_rights <= 0) break;
 				$itemlist_content = array();
 				$found = TRUE;
 
-				//Get all groups
-				$counter = 0;
-				//Add a group for all trackings without a group
-				$itemlist[$counter]['name'] = ko_html(getLL('crm_itemlist_no_project'));
-				$itemlist[$counter]['aktiv'] = in_array(0, $_SESSION['show_crm_projects']) ? 1 : 0;
-				$itemlist[$counter++]['value'] = 0;
-				//Add all tracking groups
-				ko_get_crm_projects($projects, 'ORDER BY `title` ASC');
-				foreach($projects as $pid => $project) {
-					$itemlist[$counter]['name'] = ko_html($project['title']);
-					$itemlist[$counter]['aktiv'] = in_array($pid, $_SESSION['show_crm_projects']) ? 1 : 0;
-					$itemlist[$counter++]['value'] = $pid;
-				}//foreach(groups)
+				//Alle Objekte auslesen
+
+				$itemlist[0] = [
+					"name" => getLL('crm_projects_dummy_entry'),
+					"aktiv" => (in_array(0, $_SESSION["show_crm_projects"]) ? 1 : 0),
+					"value" => "0",
+				];
+
+				$counter = 1;
+
+				$projectStatus = db_select_distinct('ko_crm_projects', 'project_status', ' ORDER BY `project_status` ASC', " WHERE `project_status` <> ''");
+				foreach($projectStatus as $ps) {
+					$projects = db_select_data("ko_crm_projects", "WHERE `project_status` = '{$ps}'", "*", "ORDER BY `title` ASC");
+
+					//Find selected projects
+					$selected = $local_ids = array();
+					foreach($projects as $pid => $project) {
+						if(in_array($pid, $_SESSION["show_crm_projects"])) $selected[$pid] = TRUE;
+						$local_ids[] = $pid;
+					}
+
+					$itemlist[$counter]["type"] = "group";
+					$itemlist[$counter]["name"] = $ps.'<sup> (<span name="projectstatus_'.$ps.'">'.sizeof($selected).'</span>)</sup>';
+					$itemlist[$counter]["aktiv"] = (sizeof($projects) == sizeof($selected) ? 1 : 0);
+					$itemlist[$counter]["value"] = $ps;
+					$itemlist[$counter]["open"] = isset($_SESSION["crm_project_status_states"][$ps]) ? $_SESSION["crm_project_status_states"][$ps] : 0;
+
+					$counter++;
+
+					foreach($projects as $i_i => $i) {
+						$itemlist[$counter]["name"] = ko_html($i["title"]);
+						$itemlist[$counter]["aktiv"] = in_array($i_i, $_SESSION["show_crm_projects"]) ? 1 : 0;
+						$itemlist[$counter]["parent"] = TRUE;  //Is subitem to a project status
+						$itemlist[$counter++]["value"] = $i_i;
+					}//foreach(groups)
+					$itemlist[$counter-1]["last"] = TRUE;
+				}//foreach(cals)
+
+
+				//Add event groups without a calendar
+				$groups = db_select_data("ko_crm_projects", "WHERE `project_status` = ''", "*", "ORDER BY `title` ASC");
+
+				foreach($groups as $i_i => $i) {
+					$itemlist[$counter]["name"] = ko_html($i["title"]);
+					$itemlist[$counter]["aktiv"] = in_array($i_i, $_SESSION["show_crm_projects"]) ? 1 : 0;
+					$itemlist[$counter++]["value"] = $i_i;
+				}//foreach(projects)
 
 				$itemlist_content['tpl_itemlist_select'] = $itemlist;
 
 
 				//Get all presets
-				$akt_value = implode(',', $_SESSION['show_tracking_groups']);
+				$akt_value = implode(",", $_SESSION["show_crm_projects"]);
 				$itemset = array_merge((array)ko_get_userpref('-1', '', 'crm_itemset', 'ORDER BY `key` ASC'), (array)ko_get_userpref($_SESSION['ses_userid'], '', 'crm_itemset', 'ORDER BY `key` ASC'));
 				foreach($itemset as $i) {
 					$value = $i['user_id'] == '-1' ? '@G@'.$i['key'] : $i['key'];
 					$itemselect_values[] = $value;
 					$itemselect_output[] = $i['user_id'] == '-1' ? getLL('itemlist_global_short').' '.$i['key'] : $i['key'];
-					if($i['value'] == $akt_value) $itemselect_selected = $value;
+					if($i["value"] == $akt_value) $itemselect_selected = $value;
 				}
 				$itemlist_content['tpl_itemlist_values'] = $itemselect_values;
 				$itemlist_content['tpl_itemlist_output'] = $itemselect_output;
@@ -4343,6 +4381,118 @@ function submenu_crm($namen, $state, $display=1, $doClean = true) {
 }//submenu_crm()
 
 
+function submenu_subscription($namen, $state, $display=1, $doClean = true) {
+	global $ko_path, $smarty, $access;
+
+	ko_get_access('subscription');
+	if($access['subscription']['MAX'] < 1) return FALSE;
+
+	if(!is_array($namen)) {
+		$namen = explode(',', $namen);
+	}
+	$menucounter = 0;
+	foreach($namen as $menu) {
+		$found = FALSE;
+
+		switch($menu) {
+			case "forms":
+				$found = true;
+				$submenu[$menucounter]["titel"] = getLL("submenu_subscription_title_forms");
+				$submenu[$menucounter]["items"][] = ko_get_menuitem("subscription","new_form");
+				$submenu[$menucounter]["items"][] = ko_get_menuitem("subscription","list_forms");
+			break;
+
+			case "form_groups":
+				if($access['subscription']['MAX'] > 1) {
+					$found = true;
+					$submenu[$menucounter]["titel"] = getLL("submenu_subscription_title_form_groups");
+					$submenu[$menucounter]["items"][] = ko_get_menuitem("subscription","new_form_group");
+					$submenu[$menucounter]["items"][] = ko_get_menuitem("subscription","list_form_groups");
+				}
+			break;
+
+			case "double_opt_in":
+				$found = true;
+				$submenu[$menucounter]["titel"] = getLL("submenu_subscription_title_double_opt_in");
+				if($access['subscription']['ALL'] >= 2) {
+					list($num) = mysqli_query(db_get_link(),"SELECT COUNT(id) FROM ko_subscription_double_opt_in WHERE status=0")->fetch_row();
+				} else {
+					$fgids = array_keys(db_select_data('ko_subscription_form_groups','','id'));
+					$addAll = $addOwn = [];
+					foreach($fgids as $fgid) {
+						$formAccess = max($access['subscription']['ALL'],$access['subscription'][$fgid]);
+						if($formAccess >= 2) {
+							$addAll[] = $fgid;
+						} else if($formAccess == 1) {
+							$addOwn[] = $fgid;
+						}
+					}
+					$where = [];
+					if($addAll) {
+						$where[] = 'f.form_group IN ('.implode(',',$addAll).')';
+					}
+					if($addOwn) {
+						$where[] = '(f.form_group IN ('.implode(',',$addOwn).') AND f.cruser = '.$_SESSION['ses_userid'].')';
+					}
+					if(sizeof($where) > 0) {
+						list($num) = mysqli_query(db_get_link(),"SELECT COUNT(doi.id) FROM ko_subscription_double_opt_in doi JOIN ko_subscription_forms f ON(doi.form=f.id) WHERE doi.status=0 AND (".implode(' OR ',$where).")")->fetch_row();
+					} else {
+						$num = 0;
+					}
+				}
+				$submenu[$menucounter]["items"][] = ko_get_menuitem_link("subscription","list_unconfirmed_double_opt_ins",$num,'',$num <= 0);
+			break;
+
+			default:
+				if($menu) {
+					$submenu[$menucounter] = submenu($menu, $state, 3, 'subscription');
+					$found = (is_array($submenu[$menucounter]));
+				}
+		}//switch(menu)
+
+		//Plugins erlauben, Menuitems hinzuzufügen
+		hook_submenu("subscription", $menu, $submenu, $menucounter);
+
+		// Clean up submenu
+		if($doClean) ko_clean_submenu('subscription', $submenu[$menucounter], $found);
+
+		if($found) {
+			$submenu[$menucounter]["key"] = "subscription_".$menu;
+			$submenu[$menucounter]["id"] = $menu;
+			$submenu[$menucounter]["mod"] = "subscription";
+			$submenu[$menucounter]["sesid"] = session_id();
+			$submenu[$menucounter]["state"] = $state;
+
+			if($display == 1) {
+				$smarty->assign("sm", $submenu[$menucounter]);
+				$smarty->assign("ko_path", $ko_path);
+				$smarty->assign("help", ko_get_help("subscription", "submenu_".$menu));
+				$smarty->display("ko_submenu.tpl");
+			} else if($display == 2) {
+				$smarty->assign("sm", $submenu[$menucounter]);
+				$smarty->assign('hideWrappingDiv', TRUE);
+				$smarty->assign("ko_path", $ko_path);
+				$smarty->assign("help", ko_get_help("subscription", "submenu_".$menu));
+				$return = "sm_admin_".$menu."@@@";
+				$return .= $smarty->fetch("ko_submenu.tpl");
+			}
+
+			$smarty->clear_assign("help");
+			$menucounter++;
+		}
+		else {
+			if ($display == 2) {
+				$return = "sm_subscription_".$menu."@@@";
+			}
+		}
+	}//foreach(namen as menu)
+
+	if($display == 2) {
+		return $return;
+	} else if($display == 3) {
+		return $submenu;
+	}
+}
 
 
 $DISABLE_SM = array(
@@ -4380,6 +4530,7 @@ $DISABLE_SM = array(
 		'new_reminder' => array('filter', 'export', 'itemlist_termingruppen'),
 		'edit_reminder' => array('filter', 'export', 'itemlist_termingruppen'),
 		'list_reminders' => array('filter', 'export', 'itemlist_termingruppen'),
+		'list_absence' => array('export', 'itemlist_termingruppen'),
 	),
 	'rota' => array(
 		'list_teams' => array('itemlist_teams', 'itemlist_eventgroups'),
@@ -4388,7 +4539,6 @@ $DISABLE_SM = array(
 		'settings' => array('itemlist_teams', 'itemlist_eventgroups'),
 		'show_filesend' => array('itemlist_teams', 'itemlist_eventgroups'),
 	),
-	"fileshare" => array(),
 	'groups' => array(
 		'list_groups' => array('dffilter'),
 		'new_group' => array('dffilter', 'export'),
@@ -4400,34 +4550,33 @@ $DISABLE_SM = array(
 		'edit_datafield' => array('dffilter', 'export'),
 		'multiedit' => array('dffilter', 'export'),
 		'multiedit_roles' => array('dffilter', 'export'),
-		'list_rights' => array('dffilter', 'export'),
-		'edit_login_rights' => array('dffilter', 'export'),
+		'list_datafields' => array('export'),
 		'groups_settings' => array('dffilter', 'export'),
 	),
 	"leute" => array(
-		"show_all" => array("itemlist_chart"),
-		"show_my_list" => array("itemlist_chart"),
-		"show_adressliste" => array("itemlist_spalten", "aktionen", "itemlist_chart"),
-		"geburtstagsliste" => array("filter", "itemlist_chart"),
-		"single_view" => array("filter", "itemlist_spalten", "aktionen", "itemlist_chart"),
-		"neue_person" => array("filter", "itemlist_spalten", "aktionen", "meine_liste", "itemlist_chart"),
-		"edit_person" => array("filter", "itemlist_spalten", "aktionen", "meine_liste", "itemlist_chart"),
-		"email_versand" => array("filter", "itemlist_spalten", "aktionen", "meine_liste", "itemlist_chart"),
-		"edit_kg" => array("filter", "itemlist_spalten", "aktionen", "meine_liste", "itemlist_chart"),
-		"neue_kg" => array("filter", "itemlist_spalten", "aktionen", "meine_liste", "itemlist_chart"),
-		"etiketten_optionen" => array("filter", "itemlist_spalten", "aktionen", "meine_liste", "itemlist_chart"),
-		"xls_settings" => array("filter", "itemlist_spalten", "aktionen", "meine_liste", "itemlist_chart"),
-		"sms_versand" => array("filter", "itemlist_spalten", "aktionen", "meine_liste", "itemlist_chart"),
-		"list_kg" => array("filter", "meine_liste", "itemlist_spalten", "aktionen", "itemlist_chart"),
-		"chart_kg" => array("filter", "meine_liste", "itemlist_spalten", "aktionen", "itemlist_chart", ),
-		"mutationsliste" => array("filter", "itemlist_spalten", "itemlist_chart"),
-		"groupsubscriptions" => array("filter", "itemlist_spalten", "aktionen", "itemlist_chart"),
-		"multiedit" => array("filter", "itemlist_spalten", "aktionen", "meine_liste", "itemlist_chart"),
-		"import" => array("filter", "itemlist_spalten", "aktionen", "meine_liste", "itemlist_chart"),
-		"export_pdf" => array("filter", "itemlist_spalten", "aktionen", "meine_liste", "itemlist_chart"),
+		"show_all" => array(),
+		"show_my_list" => array(),
+		"show_adressliste" => array("itemlist_spalten", "aktionen"),
+		"geburtstagsliste" => array("filter"),
+		"single_view" => array("filter", "itemlist_spalten", "aktionen"),
+		"neue_person" => array("filter", "itemlist_spalten", "aktionen", "meine_liste"),
+		"edit_person" => array("filter", "itemlist_spalten", "aktionen", "meine_liste"),
+		"email_versand" => array("filter", "itemlist_spalten", "aktionen", "meine_liste"),
+		"edit_kg" => array("filter", "itemlist_spalten", "aktionen", "meine_liste"),
+		"neue_kg" => array("filter", "itemlist_spalten", "aktionen", "meine_liste"),
+		"etiketten_optionen" => array("filter", "itemlist_spalten", "aktionen", "meine_liste"),
+		"xls_settings" => array("filter", "itemlist_spalten", "aktionen", "meine_liste"),
+		"sms_versand" => array("filter", "itemlist_spalten", "aktionen", "meine_liste"),
+		"list_kg" => array("filter", "meine_liste", "itemlist_spalten", "aktionen"),
+		"chart_kg" => array("filter", "meine_liste", "itemlist_spalten", "aktionen"),
+		"mutationsliste" => array("filter", "itemlist_spalten"),
+		"groupsubscriptions" => array("filter", "itemlist_spalten", "aktionen"),
+		"multiedit" => array("filter", "itemlist_spalten", "aktionen", "meine_liste"),
+		"import" => array("filter", "itemlist_spalten", "aktionen", "meine_liste"),
+		"export_pdf" => array("filter", "itemlist_spalten", "aktionen", "meine_liste"),
 		"chart" => array("itemlist_spalten", "aktionen", "meine_liste"),
-		"mailmerge" => array("filter", "itemlist_spalten", "aktionen", "meine_liste", "itemlist_chart"),
-		'settings' => array('filter', 'itemlist_spalten', 'aktionen', 'itemlist_spalten_kg', 'meine_liste', 'itemlist_chart'),
+		"mailmerge" => array("filter", "itemlist_spalten", "aktionen", "meine_liste"),
+		'settings' => array('filter', 'itemlist_spalten', 'aktionen', 'itemlist_spalten_kg', 'meine_liste'),
 	),
 	"reservation" => array(
 		"neue_reservation" => array("filter", "itemlist_objekte", "export"),
@@ -4435,7 +4584,7 @@ $DISABLE_SM = array(
 		"liste" => array("objektbeschreibungen"),
 		"calendar" => array("objektbeschreibungen", "filter"),
 		"cal_jahr" => array("objektbeschreibungen", "filter"),
-		"show_mod_res" => array("objektbeschreibungen", "filter", "itemlist_objekte", "export"),
+		"show_mod_res" => array("objektbeschreibungen", "itemlist_objekte", "export"),
 		"list_items" => array("objektbeschreibungen", "filter", "itemlist_objekte", "export"),
 		"new_item" => array("objektbeschreibungen", "filter", "itemlist_objekte", "export"),
 		"edit_item" => array("objektbeschreibungen", "filter", "itemlist_objekte", "export"),
@@ -4444,20 +4593,6 @@ $DISABLE_SM = array(
 		"multiedit_group" => array("objektbeschreibungen", "filter", "itemlist_objekte", "export"),
 		"res_settings" => array("objektbeschreibungen", "filter", "itemlist_objekte"),
 		'ical_links' => array('objektbeschreibungen', 'filter'),
-	),
-	"tapes" => array(
-		"list_tapegroups" => array("filter", "print"),
-		"list_series" => array("filter", "print"),
-		"new_tape" => array("filter", "print"),
-		"new_serie" => array("filter", "print"),
-		"new_tapegroup" => array("filter", "print"),
-		"edit_tape" => array("filter", "print"),
-		"edit_tapegroup" => array("filter", "print"),
-		"edit_serie" => array("filter", "print"),
-		"settings" => array("filter", "print"),
-		"edit_printlayout" => array("filter", "print"),
-		"new_printlayout" => array("filter", "print"),
-		"list_printlayouts" => array("filter", "print"),
 	),
 	"tools" => array(),
 	"donations" => array(
@@ -4479,15 +4614,13 @@ $DISABLE_SM = array(
 		'tracking_settings' => array('export', 'filter', 'itemlist_trackinggroups'),
 		'mod_entries' => array('export', 'filter'),
 	),
-	'projects' => array(
-		'show_todo' => array('filter'),
-	),
 	'crm' => array(
 		'list_crm_projects' => array('itemlist_projects'),
-		'new_crm_project' => array('itemlist_projects'),
-		'list_crm_status' => array('itemlist_projects'),
-		'new_crm_status' => array('itemlist_projects'),
-		'new_crm_contact' => array('itemlist_projects'),
+		'new_crm_project' => array('itemlist_projects', 'filter'),
+		'list_crm_status' => array('itemlist_projects', 'filter'),
+		'new_crm_status' => array('itemlist_projects', 'filter'),
+		'list_crm_contacts' => array('filter'),
+		'new_crm_contact' => array('itemlist_projects', 'filter'),
 	),
 );
 

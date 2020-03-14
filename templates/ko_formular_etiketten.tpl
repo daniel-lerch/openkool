@@ -1,4 +1,12 @@
-<h3>{$label_title}</h3>
+<h3>{$label_title}
+	{if $help.show}
+		<span>{$help.link}</span>
+	{/if}
+</h3>
+
+{if $tpl_export_warning}
+	<div class="alert alert-danger" role="alert" id="leute-warning-export">{$tpl_export_warning}</div>
+{/if}
 
 {assign var="col_size_left" value=3}
 {math equation="x-y" x=12 y=$col_size_left assign="col_size_right"}
@@ -69,26 +77,59 @@
 							<input type="text" name="txt_multiply" class="input-sm form-control" value="1">
 						</div>
 					</div>
+
 					<div class="form-group">
 						<label class="col-sm-{$col_size_left} control-label">
 							{$label_return_address}:
 						</label>
 						<div class="col-sm-{$col_size_right}">
-							<input type="checkbox" name="chk_return_address" {if $return_address_chk}checked="checked"{/if}>
+							<div class="checkbox">
+								<input type="checkbox" name="chk_return_address" {if $return_address_chk}checked="checked"{/if}>
+							</div>
 						</div>
 					</div>
 					<div id="extended_return_address" class="form-group" style="{if !$return_address_chk}display:none;{/if}">
-						<div class="col-sm-12">
+						<div class="col-sm-{$col_size_right} col-sm-offset-{$col_size_left}">
 							<select name="sel_return_address" class="input-sm form-control">
-								{if $return_address_info}<option value="info_address" {if $return_address_sel == "info_address"}selected="selected"{/if}>{$return_address_info}</option>
-									<option value="info_address_pp" {if $return_address_sel == "info_address_pp"}selected="selected"{/if}>{ll key="leute_return_address_pp"} {$return_address_info}</option>{/if}
-								{if $return_address_login}<option value="login_address" {if $return_address_sel == "login_address"}selected="selected"{/if}>{$return_address_login}</option>
-									<option value="login_address_pp" {if $return_address_sel == "login_address_pp"}selected="selected"{/if}>{ll key="leute_return_address_pp"} {$return_address_login}</option>{/if}
+								{if $return_address_info}<option value="info_address" {if $return_address_sel == "info_address"}selected="selected"{/if}>{$return_address_info}</option>{/if}
+								{if $return_address_login}<option value="login_address" {if $return_address_sel == "login_address"}selected="selected"{/if}>{$return_address_login}</option>{/if}
 								<option value="manual_address" {if $return_address_sel == "manual_address"}selected="selected"{/if}>{ll key="leute_labels_manual_address"}</option>
 							</select>
 						</div>
-						<div class="col-sm-12">
+						<div class="col-sm-{$col_size_right} col-sm-offset-{$col_size_left}">
 							<input id="manual_return_address" type="text" class="input-sm form-control" name="txt_return_address" placeholder="{ll key="leute_labels_manual_address_placeholder"}" value="{$return_address_txt}" style="{if $return_address_sel != "manual_address"} display:none;{/if}">
+						</div>
+					</div>
+
+					<div class="form-group">
+						<label class="col-sm-{$col_size_left} control-label">
+							{$label_pp}:
+						</label>
+						<div class="col-sm-{$col_size_right}">
+							<div class="checkbox">
+								<input type="checkbox" name="chk_pp" {if $pp_chk}checked="checked"{/if}>
+							</div>
+						</div>
+					</div>
+					<div id="extended_pp" class="form-group" style="{if !$pp_chk}display:none;{/if}">
+						<div class="col-sm-{$col_size_right} col-sm-offset-{$col_size_left}">
+							<select name="sel_pp" class="input-sm form-control">
+								{foreach from=$pp_choices item="pp_address"}
+									<option value="{$pp_address}"{if $pp_sel == $pp_address} selected="selected"{/if}>{$pp_address}</option>
+								{/foreach}
+								<option value="manual_address" {if $pp_sel == "manual_address"}selected="selected"{/if}>{ll key="leute_labels_manual_address"}</option>
+							</select>
+						</div>
+						<div class="col-sm-{$col_size_right} col-sm-offset-{$col_size_left}">
+							<input id="manual_pp" type="text" class="input-sm form-control" name="txt_pp" placeholder="{ll key="leute_labels_manual_address_placeholder"}" value="{$pp_txt}" style="{if $pp_sel != "manual_address"} display:none;{/if}">
+						</div>
+						<label class="col-sm-{$col_size_left} control-label">
+							{$label_priority}:
+						</label>
+						<div class="col-sm-{$col_size_right}">
+							<div class="checkbox">
+								<input type="checkbox" name="chk_priority" {if $priority_chk}checked="checked"{/if}>
+							</div>
 						</div>
 					</div>
 				</div>

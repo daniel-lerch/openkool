@@ -2,7 +2,7 @@
 /***************************************************************
 *  Copyright notice
 *
-*  (c) 2003-2015 Renzo Lauper (renzo@churchtool.org)
+*  (c) 2003-2017 Renzo Lauper (renzo@churchtool.org)
 *  All rights reserved
 *
 *  This script is part of the kOOL project. The kOOL project is
@@ -41,9 +41,6 @@ require($ko_path."inc/ko.inc");
 
 array_walk_recursive($_GET, 'rawurldecode_array');
 array_walk_recursive($_GET,'utf8_decode_array');
-
-//Smarty-Templates-Engine laden
-require($BASE_PATH."inc/smarty.inc");
 
 //Include plugin code
 $hooks = hook_include_main('_all');
@@ -323,6 +320,14 @@ if(isset($_GET) && isset($_GET["action"])) {
 				$ok = ($access[$module]['ALL'] >= $rights_level);
 			}
 
+			if ($table == "ko_event_absence") {
+				require_once('../daten/inc/daten.inc');
+				$absence = ko_daten_get_absence_by_id($id);
+				if ($access['daten']['ABSENCE'] <= 2 && ko_get_logged_in_id() != $absence['leute_id']) {
+					return FALSE;
+				}
+			}
+
 			//Check for column access for leute module
 			if($table == 'ko_leute') {
 				//get the cols, for which this user has edit-rights (saved in allowed_cols[edit])
@@ -351,8 +356,12 @@ if(isset($_GET) && isset($_GET["action"])) {
 			}
 
 			//Check for access condition
+			$replacementEntry = array();
+			foreach ($entry as $k => $v) {
+				$replacementEntry["@{$k}@"] = $v;
+			}
 			if(isset($KOTA[$table]['_access']['condition'])) {
-				if(FALSE === eval(strtr($KOTA[$table]['_access']['condition'], $entry))) $ok = FALSE;
+				if(FALSE === eval(strtr($KOTA[$table]['_access']['condition'], $replacementEntry))) $ok = FALSE;
 			}
 
 			if(!$ok) continue;
@@ -369,15 +378,15 @@ if(isset($_GET) && isset($_GET["action"])) {
 			if(in_array($KOTA[$table][$col]['form']['type'], array('checkbox', 'switch'))) {
 				//Update value in db
 				$data = db_select_data($table, "WHERE `id` = '$id'", '*', '', '', TRUE);
+
+				//Save changes for ko_leute
+				if($table == 'ko_leute') ko_save_leute_changes($id, $data);
+
 				$old_value = $data[$col];
 				$data[$col] = $data[$col] == 0 ? 1 : 0;
 				db_update_data($table, "WHERE `id` = '$id'", array($col => $data[$col]));
 
 				ko_log('inline_edit', "{$table} ({$id}) {$col}: {$old_value} --> {$data[$col]}");
-
-
-				//Save changes for ko_leute
-				if($table == 'ko_leute') ko_save_leute_changes($id, $data);
 
 				//Check for redraw condition
 				$redraw = FALSE;
@@ -450,6 +459,36 @@ if(isset($_GET) && isset($_GET["action"])) {
 				//Output new value
 				print $_GET['id'].'@@@'.($value ? getLL('yes') : getLL('no'));
 			}
+
+			else if($table == 'ko_event' && substr($col, 0, 9) == 'rotateam_') {
+				if($access['rota']['MAX'] < 5) continue;
+
+				$event = db_select_data($table, "WHERE `id` = '$id'", '*', '', '', TRUE);
+				if($event['rota'] != 1) continue;
+
+				list($temp, $tid) = explode('_', $col);
+				if($access['rota'][$tid] < 5) continue;
+
+				if(ko_rota_team_is_in_event($tid, $event['id'])) {
+					if(ko_rota_is_scheduling_disabled($event['id'], $tid)) {
+						ko_rota_enable_scheduling($event['id'], $tid);
+						$value = '';
+					} else {
+						$scheduled = ko_rota_get_schedule_by_event_team($event, $tid);
+						if($scheduled['schedule'] == '') {
+							ko_rota_disable_scheduling($event['id'], $tid);
+							$value = getLL('rota_status_closed');
+						} else {
+							print 'ERROR@@@'.getLL('error_rota_2');
+							continue;
+						}
+					}
+				} else {
+					$value = '-';
+				}
+				print $_GET['id'].'@@@'.$value;
+			}
+
 			//For all other input types show form
 			else {
 				//Check for group with no or only one role - add/remove assignment directly
@@ -484,7 +523,7 @@ if(isset($_GET) && isset($_GET["action"])) {
 							db_update_data('ko_leute', "WHERE `id` = '$id'", array('groups' => $new_groups, 'lastchange' => date('Y-m-d H:i:s')));
 
 							// delete datafield data
-							db_delete_data('ko_groups_datafields_data', "where `person_id` = $id and `group_id` = $gid");
+							if($mode == 'remove') db_delete_data('ko_groups_datafields_data', "where `person_id` = $id and `group_id` = $gid");
 
 							//Table's post function
 							$ids = $id;
@@ -514,7 +553,7 @@ if(isset($_GET) && isset($_GET["action"])) {
 					}
 				}
 
-				$grp = ko_multiedit_formular($table, explode(',', $col), $id, '', '', TRUE);
+				$grp = ko_multiedit_formular($table, explode(',', $col), $id, '', '', TRUE, '', TRUE, 'inline');
 
 				$inputs = FALSE;
 				foreach($grp as $i) {
@@ -529,6 +568,7 @@ if(isset($_GET) && isset($_GET["action"])) {
 				if(is_array($inputs)) {
 					$classes = array('inlineform');
 					$code = '';
+					$smarty->assign('tpl_isInline', TRUE);
 					foreach($inputs as $input) {
 						$input['add_class'] .= " form-element-inline";
 						$smarty->assign('input', $input);
@@ -563,6 +603,11 @@ if(isset($_GET) && isset($_GET["action"])) {
 			ko_include_kota(array($table));
 
 			$data = db_select_data($table, "WHERE `id` = '$id'", '*', '', '', TRUE);
+
+			if($table == "ko_event" || $table == "ko_eventgruppen" || $table == "ko_groups") {
+				$data['terms'] = '';
+			}
+
 			//Add column if a special column has been shown
 			if(substr($col, 0, 6) == 'MODULE') $data[$col] = '';
 			$kota_data = $data;
@@ -598,7 +643,8 @@ if(isset($_GET) && isset($_GET["action"])) {
 			kota_submit_multiedit('', 'inline_edit');
 
 			if(koNotifier::Instance()->hasErrors()) {
-				print 'ERROR@@@'.getLL('error_'.$table.'_'.$error);
+				print 'ERROR@@@';
+				koNotifier::Instance()->display(TRUE);
 				continue;
 			}
 
@@ -658,7 +704,7 @@ if(isset($_GET) && isset($_GET["action"])) {
 			$sortEnabled = format_userinput($_GET['sortenabled'], 'uint');
 			$filterEnabled = format_userinput($_GET['filterenabled'], 'uint');
 
-			$r = '';
+			$r = '<form name="'.$table.'_'.$cols.'">';
 			$show_clear = FALSE;
 			ko_get_access($module);
 			ko_include_kota(array($table));
@@ -685,174 +731,7 @@ if(isset($_GET) && isset($_GET["action"])) {
 
 
 			if ($filterEnabled == '1') {
-				foreach(explode(',', $cols) as $col) {
-					if(!isset($KOTA[$table][$col])) continue;
-					$type = $KOTA[$table][$col]['filter']['type'];
-					if(!$type) $type = $KOTA[$table][$col]['form']['type'];
-					if(!$type) continue;
-
-					$val = $_SESSION['kota_filter'][$table][$col];
-					if($val != '') $show_clear = TRUE;
-
-					if ($type == 'jsdate') {
-						$val_from = $val['from'];
-						$val_to = $val['to'];
-						if($val['neg']) {
-							$val = substr($val, 1);
-							$negChk = 'checked="checked"';
-						} else {
-							$negChk = '';
-						}
-					}
-					else {
-						if(substr($val, 0, 1) == '!') {
-							$val = substr($val, 1);
-							$negChk = 'checked="checked"';
-						} else {
-							$negChk = '';
-						}
-					}
-
-					if(substr($val, 0, 1) == '!') {
-						$val = substr($val, 1);
-						$negChk = 'checked="checked"';
-					} else {
-						$negChk = '';
-					}
-					switch($type) {
-						case 'text':
-						case 'textarea':
-							$r .= '<label for="kota_filter['.$table.':'.$col.']">'.getLL('kota_'.$table.'_'.$col).'</label>';
-							$r .= '<input type="text" class="kota_filter_inputs form-control input-sm" id="kota_filter['.$table.':'.$col.']" name="kota_filter['.$table.':'.$col.']" value="'.$val.'" />';
-							break;
-
-						case 'select':
-						case 'doubleselect':
-							$r .= '<label for="kota_filter['.$table.':'.$col.']">'.getLL('kota_'.$table.'_'.$col).'</label>';
-							$params = $KOTA[$table][$col]['filter']['params'];
-							if(!$params) $params = $KOTA[$table][$col]['form']['params'];
-							$r .= '<select class="kota_filter_inputs input-sm form-control" id="kota_filter['.$table.':'.$col.']" name="kota_filter['.$table.':'.$col.']" '.$params.' >';
-
-							//Use data array if set
-							if(is_array($KOTA[$table][$col]['filter']['data'])) {
-								$values = array_keys($KOTA[$table][$col]['filter']['data']);
-								$descs = array_values(array_values($KOTA[$table][$col]['filter']['data']));
-							} else {
-								$values = $KOTA[$table][$col]['form']['values'];
-								$descs = array_values($KOTA[$table][$col]['form']['descs']);
-							}
-							foreach($values as $k => $v) {
-								$sel = $val == $v ? 'selected="selected"' : '';
-								$r .= '<option value="'.$v.'" '.$sel.'>'.$descs[$k].'</option>';
-							}
-							$r .= '</select>';
-							break;
-
-						case 'textplus':
-						case 'textmultiplus':
-							$r .= '<label for="kota_filter['.$table.':'.$col.']">'.getLL('kota_'.$table.'_'.$col).'</label>';
-							$params = $KOTA[$table][$col]['filter']['params'];
-							if(!$params) $params = $KOTA[$table][$col]['form']['params'];
-							$r .= '<select class="kota_filter_inputs input-sm form-control" size="0" id="kota_filter['.$table.':'.$col.']" name="kota_filter['.$table.':'.$col.']" '.$params.' >';
-							if($type == 'textmultiplus') {
-								$values = kota_get_textmultiplus_values($table, $col);
-							} else {
-								$values = db_select_distinct($table, $col, '', $KOTA[$table][$col]['form']['where'], $KOTA[$table][$col]['form']['select_case_sensitive'] ? TRUE : FALSE);
-							}
-
-							//Find FCN for list to apply
-							$applyMe = FALSE;
-							if(FALSE !== strpos($KOTA[$table][$col]['list'], '(')) {
-								$fcn = substr($KOTA[$table][$col]['list'], 0, strpos($KOTA[$table][$col]['list'], '('));
-								if(function_exists($fcn)) {
-									$applyMe = $KOTA[$table][$col]['list'];
-								}
-							}
-
-							foreach($values as $v) {
-								$sel = $val == $v ? 'selected="selected"' : '';
-								if($applyMe) {
-									eval("\$l=".str_replace('@VALUE@', addslashes($v), $applyMe).';');
-									if(!$l) $l = $v;
-								} else $l = $v;
-								if($l == '0') $l = '';
-								$r .= '<option value="'.$v.'" '.$sel.'>'.$l.'</option>';
-							}
-							$r .= '</select>';
-							break;
-
-						case 'checkbox':
-						case 'switch':
-							$r .= '<label for="kota_filter['.$table.':'.$col.']">'.getLL('kota_'.$table.'_'.$col).'</label><br>';
-							$r .= '<input type="checkbox" class="kota_filter_inputs" id="kota_filter['.$table.':'.$col.']" name="kota_filter['.$table.':'.$col.']" '.$KOTA[$table][$col]['form']['params'].' data-on-text="' . getLL('yes') . '" data-off-text="' . getLL('no') . '" value="1" ' . ($val ? 'checked' : '') . '>';
-							$r .= "<script>$('input[name=\"kota_filter[".$table.':'.$col."]\"]').bootstrapSwitch();</script>";
-							break;
-
-						case 'jsdate':
-							$r .= '<label>'.getLL('kota_'.$table.'_'.$col).'</label><br>';
-							$r .= getLL('date_from');
-							$r .= '<input type="date" class="input-sm form-control kota_filter_inputs" name="kota_filter['.$table.':'.$col.'][from]" value="'.$val_from.'" placeholder="YYYY-MM-DD">';
-							$r .= getLL('date_to');
-							$r .= '<input type="date" class="input-sm form-control kota_filter_inputs" name="kota_filter['.$table.':'.$col.'][to]" value="'.$val_to.'" placeholder="YYYY-MM-DD">';
-							break;
-
-						case 'peoplesearch':
-							if(!$access['leute']) ko_get_access('leute');
-							$values = db_select_distinct($table, $col, '', $KOTA[$table][$col]['form']['where'], FALSE);
-							$ids = array();
-							foreach($values as $value) {
-								if(FALSE !== strpos($value, ',')) {
-									foreach(explode(',', $value) as $v) {
-										if(!$v || !intval($v)) continue;
-										//Access check
-										if($access['leute']['ALL'] < 1 && $access['leute'][intval($v)] < 1) continue;
-										$ids[] = intval($v);
-									}
-								} else {
-									//Access check
-									if($access['leute']['ALL'] < 1 && $access['leute'][intval($value)] < 1) continue;
-									if(intval($value)) $ids[] = intval($value);
-								}
-							}
-							if(sizeof($ids) > 0) {
-								$people = db_select_data('ko_leute', "WHERE `id` IN (".implode(',', $ids).")", '*', 'ORDER BY `firm` ASC, `nachname` ASC, `vorname` ASC');
-
-								$r .= '<label for="kota_filter['.$table.':'.$col.']">'.getLL('kota_'.$table.'_'.$col).'</label>';
-								$r .= '<select class="kota_filter_inputs input-sm form-control" id="kota_filter['.$table.':'.$col.']" name="kota_filter['.$table.':'.$col.']" size="0">';
-								$r .= '<option value=""></option>';
-								foreach($people as $p) {
-									if($p['firm']) {
-										$p_name = $p['firm'];
-										if($p['nachname'] || $p['vorname']) $p_name .= ' ('.trim($p['vorname'].' '.$p['nachname']).')';
-									} else {
-										$p_name = trim($p['vorname'].' '.$p['nachname']);
-									}
-									$p_address = trim($p['adresse'].' '.$p['plz'].' '.$p['ort']).' (ID '.$p['id'].')';
-
-									$sel = $p['id'] == $val ? 'selected="selected"' : '';
-									$r .= '<option value="'.$p['id'].'" '.$sel.' title="'.$p_address.'">'.$p_name.'</option>';
-								}
-								$r .= '</select>';
-							}
-							break;
-
-						//TODO: other types
-					}
-				}
-				if($r != '') {
-					//Add negative checkbox
-					$r .= '<div class="checkbox">';
-					$r .= '<label for="kota_filterbox_neg" class="kota_filterbox_neg">';
-					$r .= '<input type="checkbox" id="kota_filterbox_neg" name="kota_filterbox_neg" value="1" '.$negChk.' >';
-					$r .= getLL('filter_negativ') . '</label></div>';
-					$r .= '<div style="margin-top: 8px;">';
-					if($show_clear) {
-						$r .= '<button type="submit" class="btn btn-sm btn-danger" id="kota_filterbox_clear" title="' . getLL('kota_filter_clear') . '" value="'.getLL('kota_filter_clear').'" rel="'.$table.':'.$cols.'"><span class="glyphicon glyphicon-remove"></span></button>';
-					}
-					$r .= '<button type="submit" class="btn btn-sm btn-primary pull-right" id="kota_filterbox_submit" title="' . getLL('kota_filter_submit') . '" value="'.getLL('kota_filter_submit').'"><span class="glyphicon glyphicon-ok"></span></button>';
-					$r .= '<i class="clearfix"></i>';
-					$r .= '</div>';
-				}
+				$r .= kota_get_filter_form($table, $cols, TRUE, TRUE, '');
 			}
 
 			$r = $r1 . ($r1 != '' && $r != '' ? '<hr style="margin-top:8px;margin-bottom:8px;">' : '') . $r;
@@ -861,6 +740,15 @@ if(isset($_GET) && isset($_GET["action"])) {
 				$r = getLL('kota_filter_title') . '@@@' . $r;
 			}
 
+
+			if($applied_filters = kota_get_applied_filter($table, $cols)) {
+				$r.= "<h4>".getLL('kota_filter_current')."</h4>";
+				$r.= "<ul class='applied_kota_filter'><li>";
+				$r.= implode("</li><li>", $applied_filters);
+				$r.= "</li></ul>";
+			}
+
+			$r.= "</form>";
 			print $r;
 		break;
 
@@ -884,27 +772,34 @@ if(isset($_GET) && isset($_GET["action"])) {
 			if(!$ok) break;
 
 			//Store filter in session
-			foreach($_GET['kota_filter'] as $k => $v) {
+			foreach($_GET['kota_filter'] as $k => $v) { // this loop is copied in leute/inc/ajax.inc
+				list($table, $col) = explode(':', $k);
+
 				$type = $KOTA[$table][$col]['filter']['type'];
 				if (!$type) $type = $KOTA[$table][$col]['form']['type'];
 
-				list($table, $col) = explode(':', $k);
-
 				if(!isset($KOTA[$table]) || !isset($KOTA[$table][$col])) continue;
+
+				$biggestId = -1;
+				foreach($_SESSION['kota_filter'][$table][$col] AS $currentId => $filter) {
+					if($biggestId < $currentId) $biggestId = $currentId;
+				}
+
+				$nextId = $biggestId+1;
 
 				if ($type == 'jsdate') {
 					$v_from = $v['from'];
 					$v_to = $v['to'];
 
 					if($_GET['neg'] == 1) {
-						$_SESSION['kota_filter'][$table][$col]['neg'] = TRUE;
+						$_SESSION['kota_filter'][$table][$col][$nextId]['neg'] = TRUE;
 					}
 					else {
-						$_SESSION['kota_filter'][$table][$col]['neg'] = FALSE;
+						$_SESSION['kota_filter'][$table][$col][$nextId]['neg'] = FALSE;
 					}
 					// depending on datepicker, do preprocessing
-					$_SESSION['kota_filter'][$table][$col]['from'] = $v_from;
-					$_SESSION['kota_filter'][$table][$col]['to'] = $v_to;
+					$_SESSION['kota_filter'][$table][$col][$nextId]['from'] = $v_from;
+					$_SESSION['kota_filter'][$table][$col][$nextId]['to'] = $v_to;
 				}
 				else {
 					//Replace | with , again
@@ -913,7 +808,7 @@ if(isset($_GET) && isset($_GET["action"])) {
 					//Add negation if checkbox was set
 					if($_GET['neg'] == 1) $v = '!'.$v;
 
-					$_SESSION['kota_filter'][$table][$col] = $v;
+					$_SESSION['kota_filter'][$table][$col][$nextId] = $v;
 				}
 			}
 
@@ -933,11 +828,18 @@ if(isset($_GET) && isset($_GET["action"])) {
 
 		case 'kotafilterclear':
 			$module = format_userinput($_GET['module'], 'alphanum+');
-			list($table, $cols) = explode(':', $_GET['id']);
+			list($table, $cols, $id) = explode(':', $_GET['id']);
 			ko_get_access($module);
 			ko_include_kota(array($table));
 			foreach(explode('|', $cols) as $col) {
-				unset($_SESSION['kota_filter'][$table][$col]);
+				if(isset($id)) {
+					unset($_SESSION['kota_filter'][$table][$col][$id]);
+					if (empty($_SESSION['kota_filter'][$table][$col])) {
+						unset($_SESSION['kota_filter'][$table][$col]);
+					}
+				} else {
+					unset($_SESSION['kota_filter'][$table][$col]);
+				}
 			}
 
 			//Store userpref
@@ -968,17 +870,41 @@ if(isset($_GET) && isset($_GET["action"])) {
 			$id = format_userinput($_GET['id'], 'js');
 			$state = $_GET['state'] == 'true' ? 'checked' : '';
 
-			if($state == 'checked') {  //Select it
-				if(!in_array($id, $_SESSION['kota_show_cols_'.$table])) $_SESSION['kota_show_cols_'.$table][] = $id;
-			} else {  //deselect it
-				if(in_array($id, $_SESSION['kota_show_cols_'.$table])) $_SESSION['kota_show_cols_'.$table] = array_diff($_SESSION['kota_show_cols_'.$table], array($id));
+			if($state == 'checked') {
+				// place the new selected column in correct order according to $KOTA[$table][_listview]
+				if(!in_array($id, $_SESSION['kota_show_cols_'.$table])) {
+					$found_on_position = FALSE;
+					$found = FALSE;
+					$ordered_listview = [];
+					foreach($KOTA[$table]['_listview'] AS $db_column) {
+						$ordered_listview[] = $db_column['name'];
+					}
+
+					$found_on_position = array_search($id, $ordered_listview);
+					if($found_on_position > 0) {
+						while($found_on_position > 0) {
+							$found_on_position--;
+							if(in_array($ordered_listview[$found_on_position], $_SESSION['kota_show_cols_'.$table])) {
+								$found = TRUE;
+								break;
+							}
+						}
+					}
+
+					if($found === TRUE) {
+						$previous_column = $ordered_listview[$found_on_position];
+						$insert_after = array_search($previous_column,$_SESSION['kota_show_cols_'.$table])+1;
+						array_splice($_SESSION['kota_show_cols_'.$table], $insert_after, 0, $id);
+					} else {
+						array_unshift($_SESSION['kota_show_cols_' . $table], $id);
+					}
+				}
+			} else {
+				if(in_array($id, $_SESSION['kota_show_cols_'.$table])) {
+					$_SESSION['kota_show_cols_'.$table] = array_diff($_SESSION['kota_show_cols_'.$table], array($id));
+				}
 			}
 
-			//Get rid of invalid columns
-			//TODO
-
-			//Save userpref
-			sort($_SESSION['kota_show_cols_'.$table]);
 			ko_save_userpref($_SESSION['ses_userid'], 'kota_show_cols_'.$table, implode(',', $_SESSION['kota_show_cols_'.$table]));
 
 			print 'main_content@@@';
@@ -992,6 +918,7 @@ if(isset($_GET) && isset($_GET["action"])) {
 			$table = format_userinput($_GET['table'], 'js');
 			ko_include_kota(array($table));
 			$module = $KOTA[$table]['_access']['module'];
+			ko_get_access($module);
 			if (isset($KOTA[$table]['_supermodule'])) $supermodule = $KOTA[$table]['_supermodule'];
 			else $supermodule = $module;
 			require_once($ko_path.$supermodule.'/inc/'.$module.'.inc');
@@ -1034,6 +961,7 @@ if(isset($_GET) && isset($_GET["action"])) {
 			$table = format_userinput($_GET['table'], 'js');
 			ko_include_kota(array($table));
 			$module = $KOTA[$table]['_access']['module'];
+			ko_get_access($module);
 			if (isset($KOTA[$table]['_supermodule'])) $supermodule = $KOTA[$table]['_supermodule'];
 			else $supermodule = $module;
 			require_once($ko_path.$supermodule.'/inc/'.$module.'.inc');
@@ -1067,6 +995,7 @@ if(isset($_GET) && isset($_GET["action"])) {
 			$table = format_userinput($_GET['table'], 'js');
 			ko_include_kota(array($table));
 			$module = $KOTA[$table]['_access']['module'];
+			ko_get_access($module);
 			if (isset($KOTA[$table]['_supermodule'])) $supermodule = $KOTA[$table]['_supermodule'];
 			else $supermodule = $module;
 			require_once($ko_path.$supermodule.'/inc/'.$module.'.inc');
@@ -1093,9 +1022,40 @@ if(isset($_GET) && isset($_GET["action"])) {
 			$pid = format_userinput($_GET['pid'], 'alphanum');
 
 			ko_include_kota(array($ptable));
+			$table = $KOTA[$ptable][$col]['form']['table'];
+			ko_include_kota(array($table));
 
-			print 'ft_content_'.$field.'@@@';
-			print kota_ft_get_content($field, $pid, $after);
+			if (!$KOTA[$ptable][$field]['form']['readonly'] && !$KOTA[$table]['_access']['readonly']) {
+				print 'ft_content_' . $field . '@@@';
+				print kota_ft_get_content($field, $pid, $after);
+
+				$active_module = $KOTA[$ptable]['_access']['module'];
+				print kota_ajax_convert_textareas_to_rte($active_module);
+			}
+		break;
+
+		//sort ft entries
+		case 'ftsort':
+			$field = format_userinput($_GET['field'], 'js');
+			list($ptable, $col) = explode('.', $field);
+			$pid = format_userinput($_GET['pid'], 'alphanum');
+
+			ko_include_kota(array($ptable));
+			$table = $KOTA[$ptable][$col]['form']['table'];
+			$sortCols = $KOTA[$ptable][$col]['form']['sort_button'];
+			if (!$sortCols) continue;
+
+			$entries = db_select_data($table, "WHERE `pid` = '{$pid}'", '*', "ORDER BY {$sortCols}");
+			$counter = 0;
+			foreach ($entries as $entry) {
+				db_update_data($table, "WHERE `id` = '{$entry['id']}'", array('sorting' => ++$counter));
+			}
+
+
+			ko_log_diff('ft_sort_' . $table, "{$ptable} (id {$pid}) -> {$field}: entries sorted in {$table} by {$sortCols}");
+
+			print 'ft_content_' . $field . '@@@';
+			print kota_ft_get_content($field, $pid);
 
 			$active_module = $KOTA[$ptable]['_access']['module'];
 			print kota_ajax_convert_textareas_to_rte($active_module);
@@ -1161,8 +1121,11 @@ if(isset($_GET) && isset($_GET["action"])) {
 			// insert presets into local table
 			foreach ($presetValues as $presetValue) {
 				if ($sortingMax > -1) $presetValue['sorting'] = ++$sortingMax;
+
+				if ($KOTA[$lTable][$col]['form']['sort_col']) unset($presetValue['sorting']);
 				unset($presetValue['id']);
 				$presetValue['pid'] = $pid;
+
 				db_insert_data($lTable, $presetValue);
 			}
 
@@ -1186,50 +1149,60 @@ if(isset($_GET) && isset($_GET["action"])) {
 
 			//Prepare new db entry
 			$table = $KOTA[$ptable][$col]['form']['table'];
-			$new = array('pid' => $pid, 'crdate' => date('Y-m-d H:i:s'), 'cruser' => $_SESSION['ses_userid']);
-			foreach($_GET as $k => $v) {
-				if(in_array($k, array('action', 'field', 'pid', 'after', 'sesid'))) continue;
-				$new[$k] = $v;
-			}
-			kota_process_data($table, $new, 'post', $log);
+			ko_include_kota(array($table));
 
-			//Find right sorting
-			$sorting = 0;
-			$inc = 0;
-			$max = 0;
-			$aa = db_select_data($table, "WHERE `pid` = '$pid'", '*', 'ORDER BY sorting ASC');
-			if(sizeof($aa) > 0) {
-				foreach($aa as $a) {
-					$max = max($max, $a['sorting']);
-					//after==0 --> insert at the beginning (but only once, when inc is still 0)
-					if($after == 0 && $inc == 0) {
-						$inc = 1;
-						$sorting = $a['sorting'];
-					}
-					//Move later entries to the back
-					if($inc > 0) {
-						db_update_data($table, "WHERE `id` = '".$a['id']."'", array('sorting' => $a['sorting']+$inc));
-					}
-					if($a['id'] == $after) {
-						$inc = 1;
-						$sorting = $a['sorting']+1;
-					}
+			if (!$KOTA[$ptable][$field]['form']['readonly'] && !$KOTA[$table]['_access']['readonly']) {
+				$new = array('pid' => $pid, 'crdate' => date('Y-m-d H:i:s'), 'cruser' => $_SESSION['ses_userid']);
+				foreach ($_GET as $k => $v) {
+					if (in_array($k, array('action', 'field', 'pid', 'after', 'sesid'))) continue;
+					$new[$k] = $v;
 				}
+				kota_process_data($table, $new, 'post', $log);
+
+
+				if (!$KOTA[$ptable][$col]['form']['sort_col']) {
+					//Find right sorting
+					$sorting = 0;
+					$inc = 0;
+					$max = 0;
+					$aa = db_select_data($table, "WHERE `pid` = '$pid'", '*', 'ORDER BY sorting ASC');
+					if (sizeof($aa) > 0) {
+						foreach ($aa as $a) {
+							$max = max($max, $a['sorting']);
+							//after==0 --> insert at the beginning (but only once, when inc is still 0)
+							if ($after == 0 && $inc == 0) {
+								$inc = 1;
+								$sorting = $a['sorting'];
+							}
+							//Move later entries to the back
+							if ($inc > 0) {
+								db_update_data($table, "WHERE `id` = '" . $a['id'] . "'", array('sorting' => $a['sorting'] + $inc));
+							}
+							if ($a['id'] == $after) {
+								$inc = 1;
+								$sorting = $a['sorting'] + 1;
+							}
+						}
+					}
+					if ($sorting == 0) $sorting = $max + 1;
+
+					$new['sorting'] = $sorting;
+				}
+
+
+				$newId = db_insert_data($table, $new);
+
+				// Allow plugins to respond to changes
+				hook_kota_post($table, array('table' => $table, 'ids' => $newId, 'columns' => array_keys($new), 'old' => NULL, 'do_save' => TRUE));
+
+				ko_log_diff('ft_new_' . $table, $new);
+
+				print 'ft_content_' . $field . '@@@';
+				print kota_ft_get_content($field, $pid);
+
+				$active_module = $KOTA[$ptable]['_access']['module'];
+				print kota_ajax_convert_textareas_to_rte($active_module);
 			}
-			if($sorting == 0) $sorting = $max+1;
-
-			$new['sorting'] = $sorting;
-
-			db_insert_data($table, $new);
-
-			ko_log_diff('ft_new_'.$table, $new);
-
-
-			print 'ft_content_'.$field.'@@@';
-			print kota_ft_get_content($field, $pid);
-
-			$active_module = $KOTA[$ptable]['_access']['module'];
-			print kota_ajax_convert_textareas_to_rte($active_module);
 		break;
 
 
@@ -1242,28 +1215,33 @@ if(isset($_GET) && isset($_GET["action"])) {
 
 			ko_include_kota(array($ptable));
 			$table = $KOTA[$ptable][$col]['form']['table'];
+			ko_include_kota(array($table));
 
-			//Get current entry
-			$old = db_select_data($table, "WHERE `id` = '$id'", '*', '', '', TRUE);
-			if(!$old['id'] || $old['id'] != $id) continue;
+			if (!$KOTA[$ptable][$field]['form']['readonly'] && !$KOTA[$table]['_access']['readonly']) {
+				//Get current entry
+				$old = db_select_data($table, "WHERE `id` = '$id'", '*', '', '', TRUE);
+				if (!$old['id'] || $old['id'] != $id) continue;
 
-			//Update db entry
-			$data = array();
-			foreach($_GET as $k => $v) {
-				if(in_array($k, array('action', 'field', 'pid', 'after', 'sesid'))) continue;
-				$data[$k] = $v;
+				//Update db entry
+				$data = array();
+				foreach ($_GET as $k => $v) {
+					if (in_array($k, array('action', 'field', 'pid', 'after', 'sesid'))) continue;
+					$data[$k] = $v;
+				}
+				kota_process_data($table, $data, 'post', $log, $id);
+				db_update_data($table, "WHERE `id` = '$id'", $data);
+
+				// Allow plugins to respond to changes
+				hook_kota_post($table, array('table' => $table, 'ids' => $id, 'columns' => array_keys($data), 'old' => $old, 'do_save' => TRUE));
+
+				ko_log_diff('ft_edit_' . $table, $data, $old);
+
+				print 'ft_content_' . $field . '@@@';
+				print kota_ft_get_content($field, $pid);
+
+				$active_module = $KOTA[$ptable]['_access']['module'];
+				print kota_ajax_convert_textareas_to_rte($active_module);
 			}
-			kota_process_data($table, $data, 'post', $log, $id);
-			db_update_data($table, "WHERE `id` = '$id'", $data);
-
-			ko_log_diff('ft_edit_'.$table, $data, $old);
-
-
-			print 'ft_content_'.$field.'@@@';
-			print kota_ft_get_content($field, $pid);
-
-			$active_module = $KOTA[$ptable]['_access']['module'];
-			print kota_ajax_convert_textareas_to_rte($active_module);
 		break;
 
 
@@ -1272,23 +1250,26 @@ if(isset($_GET) && isset($_GET["action"])) {
 			$field = format_userinput($_GET['field'], 'js');
 			list($ptable, $col) = explode('.', $field);
 			$id = format_userinput($_GET['id'], 'uint');
-			$pid = format_userinput($_GET['pid'], 'uint');
+			$pid = format_userinput($_GET['pid'], 'alphanum');
 
 			ko_include_kota(array($ptable));
 			$table = $KOTA[$ptable][$col]['form']['table'];
+			ko_include_kota(array($table));
 
-			//Get current entry
-			$old = db_select_data($table, "WHERE `id` = '$id'", '*', '', '', TRUE);
-			if(!$old['id'] || $old['id'] != $id) continue;
+			if (!$KOTA[$ptable][$field]['form']['readonly'] && !$KOTA[$table]['_access']['readonly'] && !$KOTA[$ptable][$field]['form']['nodelete'] && !$KOTA[$table]['_access']['nodelete']) {
+				//Get current entry
+				$old = db_select_data($table, "WHERE `id` = '$id'", '*', '', '', TRUE);
+				if (!$old['id'] || $old['id'] != $id) continue;
 
-			db_delete_data($table, "WHERE `id` = '$id'");
-			ko_log_diff('ft_delete_'.$table, $old);
+				db_delete_data($table, "WHERE `id` = '$id'");
+				ko_log_diff('ft_delete_' . $table, $old);
 
-			print 'ft_content_'.$field.'@@@';
-			print kota_ft_get_content($field, $pid);
+				print 'ft_content_' . $field . '@@@';
+				print kota_ft_get_content($field, $pid);
 
-			$active_module = $KOTA[$ptable]['_access']['module'];
-			print kota_ajax_convert_textareas_to_rte($active_module);
+				$active_module = $KOTA[$ptable]['_access']['module'];
+				print kota_ajax_convert_textareas_to_rte($active_module);
+			}
 		break;
 
 
@@ -1302,27 +1283,29 @@ if(isset($_GET) && isset($_GET["action"])) {
 			ko_include_kota(array($ptable));
 			$table = $KOTA[$ptable][$col]['form']['table'];
 
-			$direction = $_GET['direction'];
-			if(in_array($direction, array('up', 'down'))) {
-				$sort = $direction == 'up' ? 'DESC' : 'ASC';
-				$aa = array_values(db_select_data($table, "WHERE `pid` = '$pid'", '*', 'ORDER BY sorting '.$sort));
-				if(sizeof($aa) > 1) {
-					foreach($aa as $k => $a) {
-						if($a['id'] == $id && isset($aa[$k+1])) {
-							$id1 = $a['id'];
-							$id2 = $aa[$k+1]['id'];
-							$sort1 = $a['sorting'];
-							$sort2 = $aa[$k+1]['sorting'];
-							db_update_data($table, "WHERE `id` = '$id1'", array('sorting' => $sort2));
-							db_update_data($table, "WHERE `id` = '$id2'", array('sorting' => $sort1));
+			if (!$KOTA[$ptable][$field]['form']['readonly'] && !$KOTA[$table]['_access']['readonly']) {
+				$direction = $_GET['direction'];
+				if (in_array($direction, array('up', 'down'))) {
+					$sort = $direction == 'up' ? 'DESC' : 'ASC';
+					$aa = array_values(db_select_data($table, "WHERE `pid` = '$pid'", '*', 'ORDER BY sorting ' . $sort));
+					if (sizeof($aa) > 1) {
+						foreach ($aa as $k => $a) {
+							if ($a['id'] == $id && isset($aa[$k + 1])) {
+								$id1 = $a['id'];
+								$id2 = $aa[$k + 1]['id'];
+								$sort1 = $a['sorting'];
+								$sort2 = $aa[$k + 1]['sorting'];
+								db_update_data($table, "WHERE `id` = '$id1'", array('sorting' => $sort2));
+								db_update_data($table, "WHERE `id` = '$id2'", array('sorting' => $sort1));
+							}
 						}
 					}
-				}
-				print 'ft_content_'.$field.'@@@';
-				print kota_ft_get_content($field, $pid);
+					print 'ft_content_' . $field . '@@@';
+					print kota_ft_get_content($field, $pid);
 
-				$active_module = $KOTA[$ptable]['_access']['module'];
-				print kota_ajax_convert_textareas_to_rte($active_module);
+					$active_module = $KOTA[$ptable]['_access']['module'];
+					print kota_ajax_convert_textareas_to_rte($active_module);
+				}
 			}
 		break;
 
@@ -1374,7 +1357,53 @@ if(isset($_GET) && isset($_GET["action"])) {
 			eval($KOTA[$table]['_inlineform']['redraw']['fcn']);
 		break;
 
+		case 'getcert':
+			ko_get_access('tracking');
+			ko_get_access('admin');
+			if($access['admin']['MAX'] < 5 && $access['tracking']['MAX'] < 1 && !isset($_SESSION['checkin_printer'])) continue;
 
+			header('Content-type: text/plain');
+			echo ko_get_self_signed_cert();
+		break;
+
+		case 'rsasign':
+			ko_get_access('tracking');
+			ko_get_access('admin');
+			if($access['admin']['MAX'] < 5 && $access['tracking']['MAX'] < 1 && !isset($_SESSION['checkin_printer'])) continue;
+
+			$toSign = $_GET['sign'];
+
+			$rsa = new \phpseclib\Crypt\RSA();
+			$rsa->setSignatureMode(\phpseclib\Crypt\RSA::SIGNATURE_PKCS1);
+			$rsa->loadKey(ko_get_private_key());
+
+			header('Content-type: text/plain');
+			echo base64_encode($rsa->sign($toSign));
+		break;
+
+		case 'savecolumnorder':
+			$table = "";
+			foreach($_GET AS $key => $order) {
+				if(stristr($key,":")) {
+					list($table, $column) = explode(":", $key, 2);
+					if (!empty($table) && !empty($column)) {
+						$columns[$order] = $column;
+					}
+				}
+			}
+
+			ksort($columns);
+
+			if(sizeof($columns) > 0) {
+				if($table == "ko_leute") {
+					$_SESSION['show_leute_cols'] = array_values($columns);
+					ko_save_userpref($_SESSION['ses_userid'], 'show_leute_cols', implode(',', $columns));
+				} else {
+					$_SESSION['kota_show_cols_' . $table] = array_values($columns);
+					ko_save_userpref($_SESSION['ses_userid'], 'kota_show_cols_' . $table, implode(',', $columns));
+				}
+			}
+		break;
 	}//switch(action);
 
 	hook_ajax_post($ko_menu_akt, $action);

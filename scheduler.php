@@ -2,7 +2,7 @@
 /***************************************************************
 *  Copyright notice
 *
-*  (c) 2003-2015 Renzo Lauper (renzo@churchtool.org)
+*  (c) 2003-2017 Renzo Lauper (renzo@churchtool.org)
 *  All rights reserved
 *
 *  This script is part of the kOOL project. The kOOL project is
@@ -46,6 +46,11 @@ if(!$slogin['id']) {
 }
 $_SESSION['ses_username'] = $slogin['login'];
 $_SESSION['ses_userid'] = $slogin['id'];
+
+
+//Include all plugins
+$hooks = hook_include_main('_all');
+if(sizeof($hooks) > 0) foreach($hooks as $hook) include_once($hook);
 
 
 //Include tasks from plugins
