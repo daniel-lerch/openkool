@@ -248,8 +248,6 @@ function ko_tools_add_submenu($sm, $users, $module, $pos_="") {
 
 
 function ko_tools_get_submenus($id, $type) {
-	global $db_connection;
-
 	$r = array();
 	$query = "SELECT * FROM `ko_userprefs` WHERE `user_id` = '$id' AND `key` REGEXP 'submenu_$type'";
 	$result = mysqli_query(db_get_link(), $query);

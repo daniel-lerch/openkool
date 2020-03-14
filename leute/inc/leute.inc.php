@@ -3614,8 +3614,6 @@ function ko_leute_chart_age_pie($where_base) {
  * Pie chart showing age distribution
  */
 function ko_leute_chart_age_bar($where_base) {
-	global $db_connection, $ko_path;
-
 	$value = $label = array();
 	/*
 	//No birthday given
@@ -3808,8 +3806,6 @@ function ko_leute_chart_pfarrbook($where_base, $pfarrbook_type) {
  * Generic stats function for pie chart showing the first $max entries for the given $col
  */
 function ko_leute_chart_generic_pie($table, $where_base, $col, $max=12) {
-	global $db_connection, $ko_path;
-
 	$value = $label = array();
 	$query = "SELECT `$col`, COUNT(`id`) AS num FROM `$table` WHERE `$col` != '' $where_base GROUP BY `$col` ORDER BY `num` DESC";
 	$result = mysqli_query(db_get_link(), $query);

@@ -199,7 +199,7 @@ function ko_kg_chart($_type="") {
 
 
 function ko_kg_chart_types() {
-	global $db_connection, $ko_path;
+	global $ko_path;
 
 	$value = $lavel = array();
 	$query = "SELECT `type`, COUNT(`id`) AS num FROM `ko_kleingruppen` GROUP BY `type` ORDER BY `num` DESC";
@@ -224,7 +224,7 @@ function ko_kg_chart_types() {
 
 
 function ko_kg_chart_regions() {
-	global $db_connection, $ko_path;
+	global $ko_path;
 
 	$value = $lavel = array();
 	$query = "SELECT `region`, COUNT(`id`) AS num FROM `ko_kleingruppen` GROUP BY `region` ORDER BY `num` DESC";

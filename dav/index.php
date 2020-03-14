@@ -3,8 +3,8 @@
 *
 *    OpenKool - Online church organization tool
 *
-*    Copyright © 2003-2015 Renzo Lauper (renzo@churchtool.org)
-*    Copyright © 2019      Daniel Lerch
+*    Copyright © 2003-2020 Renzo Lauper (renzo@churchtool.org)
+*    Copyright © 2019-2020 Daniel Lerch
 *
 *    This program is free software; you can redistribute it and/or modify
 *    it under the terms of the GNU General Public License as published by
@@ -34,9 +34,9 @@ set_error_handler('exception_error_handler', E_ERROR);
 
 
 //Backends
-$authBackend      = new OpenKool\DAV\DAVAuthBackend($db_connection);
-$principalBackend = new OpenKool\DAV\DAVACLPrincipalBackend($db_connection);
-$carddavBackend   = new OpenKool\DAV\CardDAVBackend($db_connection);
+$authBackend      = new OpenKool\DAV\DAVAuthBackend(db_get_link());
+$principalBackend = new OpenKool\DAV\DAVACLPrincipalBackend(db_get_link());
+$carddavBackend   = new OpenKool\DAV\CardDAVBackend(db_get_link());
 //$caldavBackend    = new Sabre\CalDAV\Backend\PDO($pdo);
 
 //Setting up the directory tree

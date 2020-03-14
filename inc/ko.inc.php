@@ -28,6 +28,8 @@ use PhpOffice\PhpSpreadsheet\Cell\Coordinate;
 use Mika56\SPFCheck\SPFCheck;
 use Mika56\SPFCheck\DNSRecordGetter;
 
+use OpenKool\koNotifier;
+use OpenKool\Localizer;
 
 define('VERSION', '2.0.0-preview.0');
 
@@ -442,7 +444,6 @@ if(! function_exists("array_key_last")) {
 
 
 if($ko_menu_akt != 'ldap') {
-	require_once($ko_path.'inc/swiftmailer/swift_required.php');
 
 	// Configure autoloading
 	require __DIR__ . '/../vendor/autoload.php';
@@ -455,7 +456,6 @@ if($ko_menu_akt != 'ldap') {
 	});
 
 	//Set default notification levels
-	require($ko_path . "inc/class.koNotifier.php");
 	$NOTIFIER_LEVEL_DISPLAY = koNotifier::ERRS | koNotifier::INFO | koNotifier::WARNING;
 	$NOTIFIER_LEVEL_LOG_TO_DB = koNotifier::ALL ^ koNotifier::DEBUG ^ koNotifier::INFO;
 	$NOTIFIER_LEVEL_LOG_TO_FILE = koNotifier::DEBUG;
@@ -781,8 +781,7 @@ if(!$db_connection && $ko_menu_akt != "install" && $ko_menu_akt != 'ldap') {
 	exit;
 }
 
-include_once($ko_path.'inc/smarty.inc');
-
+include __DIR__ . '/smarty.inc.php';
 
 //Submenus (für alle Module)
 include __DIR__ . '/submenu.inc.php';
@@ -2055,7 +2054,7 @@ function ko_get_checkin_user_id() {
  * @return mixed Value for the specified key
  */
 function ko_get_setting($key, $force=FALSE) {
-	global $db_connection, $LEUTE_NO_FAMILY;
+	global $LEUTE_NO_FAMILY;
 	//Get from cache
 
 	if(!$force && isset($GLOBALS['kOOL']['ko_settings'][$key])) {
@@ -2221,8 +2220,6 @@ function ko_delete_userpref($id, $key, $type="") {
  	* @return bool true if successful
 	*/
 function ko_check_userpref($id, $key, $type="") {
-	global $db_connection;
-
 	$id = format_userinput($id, "int");
 	$key = format_userinput($key, "text");
 	$type = format_userinput($type, "alphanum+");
@@ -4240,7 +4237,7 @@ function ko_add_fam_id(&$fam, $_members="") {
  * inkl. ID
  */
 function ko_get_familien(&$fam) {
-	global $db_connection, $ko_menu_akt;
+	global $ko_menu_akt;
 
 	$fam = array();
 
@@ -4535,8 +4532,6 @@ function ko_get_personen_by_familie($famid, &$p, $function="") {
  * Liefert eine Liste aller (oder wenn id definiert ist nur diesen Eintrag) zu moderierenden Mutationen (aus Tabelle ko_leute_mod)
  */
 function ko_get_mod_leute(&$r, $id="") {
-	global $db_connection;
-
 	$r = array();
 	$z_where  = "WHERE `_leute_id` <> '0' AND `_group_id` = ''";  //don't show web-group-subscriptions
 	$z_where .= ($id != "") ? " AND `_id`='$id'" : "";
@@ -4553,7 +4548,7 @@ function ko_get_mod_leute(&$r, $id="") {
 	* Liefert eine Liste aller (oder wenn id definiert ist nur diesen Eintrag) zu moderierenden Gruppen-Anmeldungen (aus Tabelle ko_leute_mod)
 	*/
 function ko_get_groupsubscriptions(&$r, $gsid='', $uid='', $gid='') {
-	global $db_connection, $access;
+	global $access;
 
 	// Group rights if uid is given
 	if($uid > 0) {
@@ -7845,8 +7840,6 @@ function ko_get_res_by_date($t="", $m, $j, &$r, $show_all = TRUE, $mode = "res",
  * Liefert alle normalen oder moderierten Reservationen
  */
 function ko_get_reservationen(&$r, $z_where, $z_limit='', $type='res', $z_sort='') {
-	global $db_connection;
-
 	$r = array();
 
 	//Sortierung
@@ -7969,7 +7962,6 @@ function ko_get_resitem_name($id) {
 	* Liefert alle Resitems in sortierter Reihenfolge
 	*/
 function ko_get_resitems(&$r, $z_limit="", $z_where="") {
-	global $db_connection;
 	$order = ($_SESSION["sort_group"]) ? (" ORDER BY ".($_SESSION["sort_group"] == "gruppen_id" ? "gruppen_name" : $_SESSION["sort_group"])." ".$_SESSION["sort_group_order"]) : " ORDER BY name ASC ";
 
 	$table = "ko_resitem LEFT JOIN ko_resgruppen ON ko_resitem.gruppen_id = ko_resgruppen.id ";
@@ -12957,7 +12949,7 @@ function db_get_enums_ll($table, $col) {
  * @return array Columns
  */
 function db_get_columns($table, $field="") {
-	global $db_connection, $DEBUG_db;
+	global $DEBUG_db;
 
 	$r = array();
 
@@ -12998,7 +12990,7 @@ function db_get_columns($table, $field="") {
  * @return int Number of different entries
  */
 function db_get_count($table, $field = "id", $z_where = "") {
-	global $db_connection, $DEBUG_db;
+	global $DEBUG_db;
 
 	if($field == '') $field = 'id';
 	$query = "SELECT COUNT(`$field`) as count FROM `$table` ".(($z_where)?" WHERE 1=1 $z_where":"");
@@ -13022,8 +13014,6 @@ function db_get_count($table, $field = "id", $z_where = "") {
  * @return int Next auto_increment value
  */
 function db_get_next_id($table) {
-	global $db_connection;
-
 	$query = "SHOW TABLE STATUS LIKE '$table'";
 	$result = mysqli_query(db_get_link(), $query);
 	if($result === FALSE) trigger_error('DB ERROR (db_get_next_id): '.mysqli_errno(db_get_link()).': '.mysqli_error(db_get_link()).', QUERY: '.$query, E_USER_ERROR);
@@ -13043,7 +13033,7 @@ function db_get_next_id($table) {
  * @return int id of the newly inserted row
  */
 function db_insert_data($table, $data) {
-	global $db_connection, $DEBUG_db;
+	global $DEBUG_db;
 
 	$columnsTemp = db_get_columns($table);
 	$columns = array();
@@ -13126,7 +13116,7 @@ function db_insert_data_multiple($table, $data_array) {
  * @param array Data array with the keys beeing the name of the db columns
  */
 function db_update_data($table, $where, $data) {
-	global $db_connection, $DEBUG_db;
+	global $DEBUG_db;
 
 	$columnsTemp = db_get_columns($table);
 	$columns = array();
@@ -13189,7 +13179,7 @@ function db_update_data($table, $where, $data) {
 	* @param string WHERE statement that defines the rows to be deleted
 	*/
 function db_delete_data($table, $where) {
-	global $db_connection, $DEBUG_db;
+	global $DEBUG_db;
 
 	$query = "DELETE FROM $table $where";
 	if(DEBUG_DELETE) $time_start = microtime(TRUE);
@@ -13267,7 +13257,6 @@ function db_select_data($table, $where="", $columns="*", $order="", $limit="", $
  * @return array: the query result as an array, NULL if there are no matching entries
  */
 function db_query($query, $index = '') {
-	global $db_connection;
 	// TODO: support testing
 	$result = mysqli_query(db_get_link(), $query);
 	if($result === FALSE) trigger_error('DB ERROR (db_select_data): '.mysqli_errno(db_get_link()).': '.mysqli_error(db_get_link()). ' QUERY: '.$query, E_USER_ERROR);
@@ -13329,7 +13318,7 @@ function db_get_column($table, $where, $column, $split=" ") {
 	* @return array All the different values
 	*/
 function db_select_distinct($table, $col, $order_="", $where="", $case_sensitive=FALSE) {
-	global $db_connection, $DEBUG_db;
+	global $DEBUG_db;
 
 	$r = array();
 
@@ -13361,8 +13350,6 @@ function db_select_distinct($table, $col, $order_="", $where="", $case_sensitive
 	* @param string new value
 	*/
 function db_alter_table($table, $change) {
-	global $db_connection;
-
 	$query = "ALTER TABLE `$table` $change";
 	$result = mysqli_query(db_get_link(), $query);
 	if($result === FALSE) trigger_error('DB ERROR (db_alter_table): '.mysqli_errno(db_get_link()).': '.mysqli_error(db_get_link()).', QUERY: '.$query, E_USER_ERROR);
@@ -17632,14 +17619,13 @@ function ko_check_for_pdftk() {
   * Parses a vCard file (.vcf) and assigns the values to an array to be imported into ko_leute
 	*/
 function ko_parse_vcf($content) {
-	global $db_connection;
 
 	$data = array();
 
 	foreach($content as $line) {
 		//Check for encodings
 		$quoted = strstr($line, ";ENCODING=QUOTED-PRINTABLE");
-		$latin1 = strstr($line, ";CHARSET=ISO-8859-1");
+		$latin1 = strstr($line, ";CHARSET=UTF-8");
 
 		$line = preg_replace("/;ENCODING=QUOTED-PRINTABLE/", "", $line);
 		$line = preg_replace("/;CHARSET=ISO-\d{4}-\d{1,2}/", "", $line);
@@ -18832,8 +18818,6 @@ function set_cache_sms_balance($balance) {
  * Holt den gecachten SMS-Balance-Wert
  */
 function get_cache_sms_balance() {
-	global $db_connection;
-
 	$query = "SELECT `value` FROM `ko_settings` WHERE `key` = 'cache_sms_balance'";
 	$result = mysqli_query(db_get_link(), $query);
 	$value = mysqli_fetch_assoc($result);
@@ -22895,24 +22879,10 @@ function ko_include_css($files='') {
 		'inc/jquery-dragtable/dragtable.css',
 		'inc/bootstrap/plugins/bootstrap-slider/dist/css/bootstrap-slider.css',
 		'kOOL.css',
-		'ie6.css',
-		'ie7.css',
 	);
 
 	foreach ($defaultCSSFiles as $defaultCSSFile) {
-		if ($defaultCSSFile == 'ie6.css') {
-			$r .= '<!--[if lte IE 6]>' . "\n";
-			$r .= '<link rel="stylesheet" type="text/css" href="' . $ko_path . $defaultCSSFile . '?' . filemtime($ko_path . $defaultCSSFile) . '" />' . "\n";
-			$r .= '<![endif]-->' . "\n";
-		}
-		else if ($defaultCSSFile == 'ie7.css') {
-			$r .= '<!--[if lte IE 7]>' . "\n";
-			$r .= '<link rel="stylesheet" type="text/css" href="' . $ko_path . $defaultCSSFile . '?' . filemtime($ko_path . $defaultCSSFile) . '" />' . "\n";
-			$r .= '<![endif]-->' . "\n";
-		}
-		else {
-			$r .= '<link rel="stylesheet" type="text/css" href="' . $ko_path . $defaultCSSFile . '?' . filemtime($ko_path . $defaultCSSFile) . '" />' . "\n";
-		}
+		$r .= '<link rel="stylesheet" type="text/css" href="' . $ko_path . $defaultCSSFile . '?' . filemtime($ko_path . $defaultCSSFile) . '" />' . "\n";
 	}
 
 	if(file_exists($ko_path.'ko.css')) {
@@ -23819,7 +23789,7 @@ function ko_check_login() {
 
 	//Login
 	if($_POST['Login'] && (!$_SESSION['ses_username'] || $_SESSION['ses_username'] == 'ko_guest')) {
-		$username = mysqli_real_escape_string($db_connection, $_POST['username']);
+		$username = mysqli_real_escape_string(db_get_link(), $_POST['username']);
 		$login = db_select_data('ko_admin', "WHERE `login` = '".$username."' AND `password` = '".md5($_POST['password'])."'", '*', '', '', TRUE);
 		if($login['id'] > 0 && $login['login'] == $_POST['username']) {  //Valid login
 			//Create new session id after login (to prevent session fixation)
