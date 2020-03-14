@@ -17,7 +17,7 @@
 	<td>{$l.geburtsdatum}</td>
 {else}
 	<td>{$l.deadline}</td>
-	<td><a href="{$l._link}" onmouseover="tooltip.show('{$l._tooltip}','','b','{$ttpos}')" onmouseout="tooltip.hide()">
+	<td><a href="{$l._link}" {$l._tooltip}>
 	{$l.vorname} {$l.nachname}</a>
 	</td>
 {/if}

@@ -152,7 +152,7 @@ switch($action) {
 		$tracking = db_select_data('ko_tracking', "WHERE `id` = '$tid'", '*', '', '', TRUE);
 		if(!$tracking['id'] || $tracking['id'] != $tid) continue;
 
-		$filter = $req['filter'][0];
+		$filter = $tracking['filter'];
 		if(!$filter) continue;
 
 		include($ko_path.'tracking/inc/tracking.inc');
@@ -258,6 +258,7 @@ switch($action) {
 		$sort = $sort ? $sort : "nachname";
 		$sortOrder = $req["sql_sortOrder"][0];
 		$sortOrder = $sortOrder ? $sortOrder : "ASC";
+		$limit = $req['sql_limit'][0] ? 'LIMIT '.$req['sql_limit'][0] : '';
 		if($req["sql_columns"][0]) $columns = explode(",", $req["sql_columns"][0]);
 		else $columns = array();
 
@@ -295,12 +296,12 @@ switch($action) {
 			$sort = array($sort);
 			$sortOrder = array($sortOrder);
 
-			ko_get_leute($all, $where);
+			ko_get_leute($all, $where, $limit);
 			$_persons = ko_leute_sort($all, $sort, $sortOrder, TRUE, $forceDatafields=TRUE);
 		}
 		//sorting done directly in MySQL
 		else {
-			ko_get_leute($_persons, $where, "", "", "ORDER BY $sort $sortOrder");
+			ko_get_leute($_persons, $where, $limit, "", "ORDER BY $sort $sortOrder");
 		}
 
 		foreach($_persons as $_person) {
@@ -310,8 +311,7 @@ switch($action) {
 			if(sizeof($columns) > 0) {
 				if(!in_array("id", $columns)) array_unshift($columns, "id");
 				foreach($columns as $col) {
-					if(FALSE !== strpos($col, ":")) continue;  //Datafields (MODULEgrp000001:000002) are being return with their group (MODULEgrp000001)
-
+					if($col == 'groups') $person[$col.'_raw'] = $_person[$col];
 					$value = map_leute_daten($_person[$col], $col, $_person, $all_datafields, $forceDatafields=TRUE, array('MODULEkg_firstOnly' => TRUE));
 					if(is_array($value)) {  //Group with datafields is returned as array
 						$gid = substr($col, 9);
@@ -508,7 +508,7 @@ function generateXMLResponse($data) {
 
 
 function xmlspecialchars($text) {
-	return str_replace('&#039;', '&apos;', htmlspecialchars($text, ENT_QUOTES));
+	return str_replace('&#039;', '&apos;', htmlspecialchars($text, ENT_QUOTES, 'iso-8859-1'));
 }
 
 

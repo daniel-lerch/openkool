@@ -12,60 +12,65 @@ DONE: handles double (and more) spaces in CREATE TABLE string
 DONE: add filter option (fields: MODIFY, ADD, DROP, tables: CREATE, DROP)
 DONE: make it work also with comments
 DONE: move all options to $this->config
-*/
+ */
 /**
-* The class provides ability to compare 2 database structure dumps and compile a set of sql statements to update
-* one database to make it structure identical to another.
-*
-* @author Kirill Gerasimenko <ger.kirill@gmail.com>
-*
-* The input for the script could be taken from the phpMyAdmin structure dump, or provided by some custom code
-* that uses 'SHOW CREATE TABLE' query to get database structure table by table.
-* The output is either array of sql statements suitable for executions right from php or a string where the
-* statements are placed each at new line and delimited with ';' - suitable for execution from phpMyAdmin SQL
-* page.
-* The resulting sql may contain queries that aim to:
-* Create missing table (CREATE TABLE query)
-* Delete table which should not longer exist (DROP TABLE query)
-* Update, drop or add table field or index definition (ALTER TABLE query)
-*
-* Some features:
-* - AUTO_INCREMENT value is ommited during the comparison and in resulting CREATE TABLE sql
-* - fields with definitions like "(var)char (255) NOT NULL default ''" and "(var)char (255) NOT NULL" are treated
-*   as equal, the same for (big|tiny)int NOT NULL default 0;
-* - IF NOT EXISTS is automatically added to the resulting sql CREATE TABLE statement
-* - fields updating queries always come before key modification ones for each table
-* Not implemented:
-* - The class even does not try to insert or re-order fields in the same order as in the original table.
-*   Does order matter?
-* IMPORTANT!!! Class will not handle a case when the field was renamed. It will generate 2 queries - one to drop
-* the column with the old name and one to create column with the new name, so if there is a data in the dropped
-* column, it will be lost.
-* Usage example:
-  $updater = new dbStructUpdater();
-  $res = $updater->getUpdates($struct1, $struct2);
-  -----
-  $res == array (
-  	[0]=>"ALTER TABLE `b` MODIFY `name` varchar(255) NOT NULL",
-  	...
-  )
-*/
+ * The class provides ability to compare 2 database structure dumps and compile a set of sql statements to update
+ * one database to make it structure identical to another.
+ *
+ * @author Kirill Gerasimenko <ger.kirill@gmail.com>
+ *
+ * The input for the script could be taken from the phpMyAdmin structure dump, or provided by some custom code
+ * that uses 'SHOW CREATE TABLE' query to get database structure table by table.
+ * The output is either array of sql statements suitable for executions right from php or a string where the
+ * statements are placed each at new line and delimited with ';' - suitable for execution from phpMyAdmin SQL
+ * page.
+ * The resulting sql may contain queries that aim to:
+ * Create missing table (CREATE TABLE query)
+ * Delete table which should not longer exist (DROP TABLE query)
+ * Update, drop or add table field or index definition (ALTER TABLE query)
+ *
+ * Some features:
+ * - AUTO_INCREMENT value is ommited during the comparison and in resulting CREATE TABLE sql
+ * - fields with definitions like "(var)char (255) NOT NULL default ''" and "(var)char (255) NOT NULL" are treated
+ *   as equal, the same for (big|tiny)int NOT NULL default 0;
+ * - IF NOT EXISTS is automatically added to the resulting sql CREATE TABLE statement
+ * - fields updating queries always come before key modification ones for each table
+ * Not implemented:
+ * - The class even does not try to insert or re-order fields in the same order as in the original table.
+ *   Does order matter?
+ * IMPORTANT!!! Class will not handle a case when the field was renamed. It will generate 2 queries - one to drop
+ * the column with the old name and one to create column with the new name, so if there is a data in the dropped
+ * column, it will be lost.
+ * Usage example:
+$updater = new dbStructUpdater();
+$res = $updater->getUpdates($struct1, $struct2);
+-----
+$res == array (
+[0]=>"ALTER TABLE `b` MODIFY `name` varchar(255) NOT NULL",
+...
+)
+ */
 class dbStructUpdater
 {
 	var $sourceStruct = '';//structure dump of the reference database
 	var $destStruct = '';//structure dump of database to update
 	var $config = array();//updater configuration
 	var $updateActions = array();//Allowed actions to be performed (set in config)
+	var $typesUpper = array();
+	var $typesLower = array();
+	var $mysqlFunctions = array();
 
 	/**
-	* Constructor
-	* @access public
-	*/
-	function dbStructUpdater($_config) {
+	 * Constructor
+	 * @access public
+	 */
+	function __construct($_config) {
 		$this->init($_config);
 	}
 
 	function init($_config) {
+		global $EXCLUDE_FROM_MOD, $TABLE_KEYS;
+
 		//table operations: create, dropTable; field operations: add, drop, modify
 		$this->config['updateTypes'] = array('create', 'dropTable', 'add', 'drop', 'modify');
 		//ignores default part in cases like (var)char NOT NULL default '' upon the	comparison
@@ -80,6 +85,37 @@ class dbStructUpdater
 		$this->config['ingoreIfNotExists'] = false;
 		//Exclude fields: comma separated table.field
 		$this->config['excludeFields'] = array();
+		//Set default lengths of different field types
+		$this->config['defaultNumberLengths'] = array(
+			'bigint' => '20',
+			'int' => '11',
+			'mediumint' => '8',
+			'smallint' => '6',
+			'tinyint' => '3',
+		);
+		//Define tables that should always contain certain columns of other tables
+		$this->config['modTables'] = array(
+			'ko_leute_mod' => array(
+				'baseTable' => 'ko_leute',
+				'exclude' => array_merge($EXCLUDE_FROM_MOD['ko_leute_mod'], array()),
+			),
+			'ko_reservation_mod' => array(
+				'baseTable' => 'ko_reservation',
+				'exclude' => array_merge($EXCLUDE_FROM_MOD['ko_reservation_mod'], array()),
+			),
+			'ko_event_mod' => array(
+				'baseTable' => 'ko_event',
+				'exclude' => array_merge($EXCLUDE_FROM_MOD['ko_event_mod'], array()),
+			),
+		);
+		//Define keys of insert tables
+		$this->insertTables = $TABLE_KEYS;
+
+		$this->typesUpper = array(' VARCHAR', ' TINYINT', ' SMALLINT', ' MEDIUMINT', ' BIGINT', ' INT', ' ENUM', ' DATE', ' DATETIME', ' DECIMAL');
+		$upperTypes = $this->typesUpper;
+		$this->typesLower = array_map(function($e)use($upperTypes){return strtolower($e);}, $upperTypes);
+
+		$this->mysqlFunctions = array('concat');
 
 
 		$this->setConfig($_config);
@@ -96,9 +132,9 @@ class dbStructUpdater
 	}
 
 	/**
-	* merges current updater config with the given one
-	* @param assoc_array $config new configuration values
-	*/
+	 * merges current updater config with the given one
+	 * @param assoc_array $config new configuration values
+	 */
 	function setConfig($config=array())
 	{
 		if (is_array($config))
@@ -107,14 +143,105 @@ class dbStructUpdater
 		}
 	}
 
+	function getAllSQL($dest) {
+		$this->destStruct = $dest;
+		$destTabNames = $this->getTableList($this->destStruct);
+
+		$src = '';
+		foreach ($destTabNames as $t) $src .= $this->getTableStruct($t) . ";\n";
+
+		return (array('inserts' => $this->getInserts($dest), 'updates' => $this->getUpdates($src, $dest), 'alters' => $this->getAlters($dest)));
+	}
+
+	const UPDATES = 1;
+	const UPDATES_AS_STRING = 2;
+	const TABLE_DEFINITION = 4;
+	function getModTabUpdates($mode=NULL, $useDB=TRUE, $struct=NULL) {
+		if ($mode==NULL) $mode = $this::UPDATES;
+
+		$rv = array();
+		foreach ($this->config['modTables'] as $modTable => $settings) {
+			$t = $useDB ? $this->getTableStruct($settings['baseTable']) : $this->getTabSql($struct, $settings['baseTable']);
+			$tm = $useDB ? $this->getTableStruct($modTable) : $this->getTabSql($struct, $modTable);
+
+			//print($t."\n");
+			//print("-------------->>>>>>>>>>>>>>>>\n");
+			//print($tm."\n");
+			//print("\n\n----------------------------\n\n");
+
+			assert($t != '' && $tm != '');
+			// go through table cols and extract SQL of those that should be present in table_mod
+			$t_cols = array_map(function($el) {$el = trim($el); if (substr($el, -1) == ',') return substr($el, 0, -1); else return $el;}, explode("\n", $t));
+			$new_t_cols = array();
+			foreach ($t_cols as $k => $col) {
+				if ($k == 0 || $k == sizeof($t_cols) - 1) continue;
+				if (substr($col, 0, 3) == "KEY") continue;
+				if (substr($col, 0, 11) == "PRIMARY KEY") continue;
+				if (substr($col, 0, 12) == "FULLTEXT KEY") continue;
+				if (sizeof($settings['exclude']) > 0 && preg_match('/^`('.implode('|', $settings['exclude']).')`/', $col)) continue;
+
+				$match = preg_match('/`([^`]*)`/', $col, $matches);
+				assert($match);
+
+				$new_t_cols[$matches[1]] = $col;
+			}
+			// go through mod cols and seperate normal cols from special cols
+			$tm_cols = array_map(function($el) {$el = trim($el); if (substr($el, -1) == ',') return substr($el, 0, -1); else return $el;}, explode("\n", $tm));
+			$new_tm_cols = array();
+			$new_tm_cols_append = array();
+			foreach ($tm_cols as $k => $col) {
+				if ($k == 0 || $k == sizeof($tm_cols) - 1) continue;
+				if (substr($col, 0, 3) == "KEY") $new_tm_cols_append[] = $col;
+				else if (substr($col, 0, 11) == "PRIMARY KEY") $new_tm_cols_append[] = $col;
+				else if (substr($col, 0, 12) == "FULLTEXT KEY") $new_tm_cols_append[] = $col;
+				//else if (strpos($col, "`_") !== FALSE) $new_tm_cols_append[] = $col;
+				else {
+					$match = preg_match('/`([^`]*)`/', $col, $matches);
+					assert($match);
+					$new_tm_cols[$matches[1]] = $col;
+				}
+			}
+			// merge the cols from table into those of table_mod
+			foreach ($new_t_cols as $k => $col) {
+				$new_tm_cols[$k] = $col;
+			}
+			$new_tm_cols = $new_tm_cols + $new_tm_cols_append;
+			// rebuild create table statement of table_mod and add it to the source code
+			$dest = "\n" . $tm_cols[0] . ",\n  " . implode(",\n  ", $new_tm_cols) . "\n" . $tm_cols[sizeof($tm_cols) - 1] . ";\n";
+			$src = $tm;
+
+			switch ($mode) {
+				case $this::UPDATES:
+					$rv = array_merge($rv, $this->getUpdates($src, $dest, FALSE));
+					break;
+				case $this::UPDATES_AS_STRING:
+					$rv = array_merge($rv, $this->getUpdates($src, $dest, TRUE));
+					break;
+				case $this::TABLE_DEFINITION:
+					$rv[] = $dest;
+			}
+		}
+		return $mode > $this::UPDATES ? implode("\n", $rv) : $rv;
+	}
+
+	function getTableStruct($tableName) {
+		$res = mysqli_query(db_get_link(), 'SHOW CREATE TABLE `'.$tableName.'`');
+		$res = mysqli_fetch_assoc($res);
+		//Remove collation
+		if(FALSE !== strpos($res['Create Table'], 'COLLATE')) {
+			$res['Create Table'] = preg_replace('/ COLLATE\s+\w+/', '', $res['Create Table']);
+		}
+		return $res['Create Table'];
+	}
+
 	/**
-	* Returns array of update SQL with default options, $source, $dest - database structures
-	* @access public
-	* @param string $source structure dump of database to update
-	* @param string $dest structure dump of the reference database
-	* @param bool $asString if true - result will be a string, otherwise - array
-	* @return array|string update sql statements - in array or string (separated with ';')
-	*/
+	 * Returns array of update SQL with default options, $source, $dest - database structures
+	 * @access public
+	 * @param string $source structure dump of database to update
+	 * @param string $dest structure dump of the reference database
+	 * @param bool $asString if true - result will be a string, otherwise - array
+	 * @return array|string update sql statements - in array or string (separated with ';')
+	 */
 	function getUpdates($source, $dest, $asString=false)
 	{
 		$result = $asString?'':array();
@@ -139,49 +266,89 @@ class dbStructUpdater
 
 
 	function getInserts($dest) {
-
-		$this->insertTables = array(
-			'ko_admin' => array(
-				'keys' => array(
-					2 => 'login'
-				)
-			),
-			'ko_help' => array(
-				'keys' => array(
-					1 => 'module',
-					2 => 'type',
-					3 => 'language'
-				)
-			),
-			'ko_scheduler_tasks' => array(
-				'keys' => array(
-					4 => 'call'
-				)
-			),
-			'ko_settings' => array(
-				'keys' => array(
-					0 => 'key'
-				)
-			),
+		$openingBrackets = array(
+			'(',
+			'[',
+			'{',
 		);
-
+		$closingBrackets = array(
+			')',
+			']',
+			'}',
+		);
+		$delimiters = array(
+			'"',
+			"'",
+			'`',
+		);
 		$inserts = array();
 		foreach(explode("\n", $dest) as $line) {
 			if(substr($line, 0, 12) != 'INSERT INTO ') continue;
-
-			if(preg_match('/INSERT INTO `?(\w+)`? VALUES\((.*)\);$/', $line, $m)) {
+			if(preg_match('/INSERT INTO `?(\w+)`?(?:\s*\([^\)]+\))? VALUES ?\((.*)\);$/', $line, $m)) {
 				$table = $m[1];
 				$values = $m[2];
 				if(in_array($table, array_keys($this->insertTables))) {
-					$vals = explode(',', $values);
+					foreach ($this->mysqlFunctions as $fcn) {
+						$offset = 0;
+						while (($pos=strpos(strtolower($values), $fcn, $offset)) !== FALSE) {
+							$pos = $pos + strlen($fcn);
+							$offset = $pos;
+							$start = $pos;
+
+							while (in_array(substr($values, $pos, 1), array(' ', "\n", "\t"))) $pos++;
+							if (substr($values, $pos, 1) !== '(') continue;
+
+							$stack = array('(');
+							$pos++;
+							while (sizeof($stack) > 0 && $pos < strlen($values)) {
+								$char = substr($values, $pos, 1);
+								if (in_array($char, $delimiters)) {
+									if (end($stack) == $char) {
+										array_pop($stack);
+									} else {
+										$stack[] = $char;
+									}
+								} else if (in_array($char, $openingBrackets) && !in_array(end($stack), $delimiters)) {
+									$stack[] = $char;
+								} else if (in_array($char, $closingBrackets) && !in_array(end($stack), $delimiters)) {
+									$index = array_search($char, $closingBrackets);
+									if (end($stack) == $openingBrackets[$index]) {
+										array_pop($stack);
+									} else {
+										throw new Exception("Could not parse insert statement: {$line}");
+									}
+								}
+								$pos++;
+							}
+							$stop = $pos;
+
+							$values = substr($values, 0, $start) . str_replace(',', "im_am_an_escaped_comma_yey", substr($values, $start, $stop - $start)) . substr($values, $stop);
+						}
+					}
+					$vals = array_map(function($el){return str_replace("im_am_an_escaped_comma_yey", ',', $el);}, explode(',', $values));
+
+					// create a map from column names to values (for identity check below)
+					if (preg_match('/INSERT INTO `?(\w+)`?\s*\((.+)\)\s*VALUES\s*\((.*)\);$/', $line, $m)) {
+						$keys = array_map(function($e){return substr(trim($e), 1, -1);}, explode(',', $m[2]));
+					} else {
+						$keys = array();
+						$fields = db_get_columns($table);
+						foreach ($fields as $field) {
+							$keys[] = $field['Field'];
+						}
+					}
+					$map = array();
+					foreach ($vals as $k => $v) {
+						$map[$keys[$k]] = $v;
+					}
 
 					$q = '';
-					foreach($this->insertTables[$table]['keys'] as $k => $v) {
-						$q .= " AND `$v` = '".trim(str_replace("'", '', $vals[$k]))."' ";
+					foreach($this->insertTables[$table]['keys'] as $v) {
+						$q .= " AND `$v` = '".trim(str_replace("'", '', $map[$v]))."' ";
 					}
 					$checkQuery = "SELECT * FROM `$table` WHERE ".substr($q, 4);
-					$resultCheck = mysql_query($checkQuery);
-					if(mysql_num_rows($resultCheck) == 0) {
+					$resultCheck = mysqli_query(db_get_link(), $checkQuery);
+					if(mysqli_num_rows($resultCheck) == 0) {
 						$inserts[] = $line;
 					}
 				}
@@ -191,9 +358,93 @@ class dbStructUpdater
 	}//getInserts()
 
 
+	function getAlters($dest) {
+		$alters = array();
+		foreach(explode("\n", $dest) as $line) {//
+			if(substr($line, 0, 12) != 'ALTER TABLE ') continue;
+
+
+			if(preg_match('/ALTER TABLE `?(\w+)`? (ADD|ADD COLUMN) `?(\w+)`? (.*);$/', $line, $m)) {
+				$line = substr($line, 12);
+
+				list($all, $table, $mode, $col, $dummy) = $m;
+				switch ($mode) {
+					case 'ADD':
+					case 'ADD COLUMN':
+						if ($col == 'KEY') $type = 'KEY';
+						else if ($col == 'PRIMARY KEY') $type = 'PRIMARY KEY';
+						else if ($col == 'FULLTEXT KEY') $type = 'FULLTEXT KEY';
+						else $type = 'FIELD';
+
+						$orig = $this->getTableStruct($table);
+						$orig_ = explode("\n", "{$orig};\n");
+						$orig = array();
+						$lastCol = '';
+						$origAfter = '';
+						foreach ($orig_ as $l) {
+							$l = trim($l);
+							if (substr($l, 0, 1) != "`") {
+								$orig[] = $l;
+							} else {
+								$orig[] = (substr($l,-1)==','?substr($l,0,-1):$l) . ($lastCol?" AFTER `{$lastCol}`":'') . (substr($l,-1)==','?',':'');
+								$currentCol = preg_replace('/^`(\w+)` .*$/', '$1', $l);
+								if ($currentCol == $col) $origAfter = $lastCol;
+								$lastCol = $currentCol;
+							}
+						}
+						$orig = implode("\n", $orig);
+
+						if ($type == 'FIELD') {
+							$line = "`{$col}` $dummy";
+							if (strpos($line, 'AFTER') === FALSE && $origAfter) {
+								$line .= " AFTER `{$origAfter}`";
+							}
+						} else {
+							$line = "{$col} $dummy";
+						}
+						$line = $this->processLine($line);
+
+						$new_ = explode("\n", $orig);
+						$new = array();
+						$found = FALSE;
+						foreach ($new_ as $k => $l) {
+							if (substr($l, 0, 1) == ')' && !$found) {
+								$new[sizeof($new)-1] .= ',';
+								$new[] = $line['line'];
+							}
+							if (substr($l, 0, 3) == "KEY" || substr($l, 0, 11) == "PRIMARY KEY" || substr($l, 0, 12) == "FULLTEXT KEY") {
+								if (!$found && $type == 'FIELD') {
+									$new[] = $line['line'].',';
+									$found = TRUE;
+									$new[] = $l;
+								} else if (!$found && $type != 'FIELD' && strtolower(substr($l, 0, strlen($line['key']))) == $line['key']) {
+									$new[] = $line['line'] . (substr($l, -1)==','?',':'');
+									$found = TRUE;
+								} else {
+									$new[] = $l;
+								}
+							} else if ($type == 'FIELD' && substr($l, 0, strlen("`{$col}`")) == "`{$col}`") {
+								$new[] = $line['line'] . (substr($l, -1)==','?',':'');
+								$found = TRUE;
+							} else {
+								$new[] = $l;
+							}
+						}
+						$new = implode("\n", $new);
+
+						$alters = array_merge($alters, $this->getUpdates($orig, $new));
+
+						break;
+				}
+			}
+		}
+		return $alters;
+	}
+
+
 	/**
-	* Filters comparison result and lefts only sync actions allowed by 'updateTypes' option
-	*/
+	 * Filters comparison result and lefts only sync actions allowed by 'updateTypes' option
+	 */
 	function filterDiffs($compRes)
 	{
 		$result = array();
@@ -256,13 +507,13 @@ class dbStructUpdater
 		}
 		return $result;
 	}
-	
+
 	/**
-	* Gets structured general info about the databases diff :
-	* array(sourceOrphans=>array(...), destOrphans=>array(...), different=>array(...))
-	*/
+	 * Gets structured general info about the databases diff :
+	 * array(sourceOrphans=>array(...), destOrphans=>array(...), different=>array(...))
+	 */
 	function getDiffInfo($compRes)
-	{		
+	{
 		if (!is_array($compRes))
 		{
 			return false;
@@ -287,19 +538,19 @@ class dbStructUpdater
 	}
 
 	/**
-	* Makes comparison of the given database structures, support some options
-	* @access private
-	* @param string $source and $dest are strings - database tables structures
-	* @return array
-	* - table (array)
-	*		- destOrphan (boolean)
-	*		- sourceOrphan (boolean)
-	*		- differs (array) OR (boolean) false if no diffs
-	*			- [0](array)
-	*				- source (string) structure definition line in the out-of-date table
-	*				- dest (string) structure definition line in the reference table
-	*			- [1](array) ...
-	*/
+	 * Makes comparison of the given database structures, support some options
+	 * @access private
+	 * @param string $source and $dest are strings - database tables structures
+	 * @return array
+	 * - table (array)
+	 *		- destOrphan (boolean)
+	 *		- sourceOrphan (boolean)
+	 *		- differs (array) OR (boolean) false if no diffs
+	 *			- [0](array)
+	 *				- source (string) structure definition line in the out-of-date table
+	 *				- dest (string) structure definition line in the reference table
+	 *			- [1](array) ...
+	 */
 	function compare($source, $dest)
 	{
 		$this->sourceStruct = $source;
@@ -326,10 +577,10 @@ class dbStructUpdater
 				$info['sourceOrphan'] = true;
 			}
 			else
-			{				
+			{
 				$destSql = $this->getTabSql($this->destStruct, $tab, true);
 				$sourceSql = $this->getTabSql($this->sourceStruct, $tab, true);
-				$diffs = $this->compareSql($sourceSql, $destSql);				
+				$diffs = $this->compareSql($sourceSql, $destSql);
 				if ($diffs===false)
 				{
 					trigger_error('[WARNING] error parsing definition of table "'.$tab.'" - skipped');
@@ -337,8 +588,8 @@ class dbStructUpdater
 				}
 				elseif (!empty($diffs))//not empty array
 				{
-					$info['differs'] = $diffs;					
-				}				
+					$info['differs'] = $diffs;
+				}
 				else continue;//empty array
 			}
 			$result[$tab] = $info;
@@ -347,10 +598,10 @@ class dbStructUpdater
 	}
 
 	/**
-	* Retrieves list of table names from the database structure dump
-	* @access private
-	* @param string $struct database structure listing
-	*/
+	 * Retrieves list of table names from the database structure dump
+	 * @access private
+	 * @param string $struct database structure listing
+	 */
 	function getTableList($struct)
 	{
 		$result = array();
@@ -365,19 +616,19 @@ class dbStructUpdater
 	}
 
 	/**
-	* Retrieves table structure definition from the database structure dump
-	* @access private
-	* @param string $struct database structure listing
-	* @param string $tab table name
-	* @param bool $removeDatabase - either to remove database name in "CREATE TABLE database.tab"-like declarations
-	* @return string table structure definition
-	*/
+	 * Retrieves table structure definition from the database structure dump
+	 * @access private
+	 * @param string $struct database structure listing
+	 * @param string $tab table name
+	 * @param bool $removeDatabase - either to remove database name in "CREATE TABLE database.tab"-like declarations
+	 * @return string table structure definition
+	 */
 	function getTabSql($struct, $tab, $removeDatabase=true)
 	{
 		$result = '';
 		/* create table should be single line in this case*/
 		//1 - part before database, 2-database name, 3 - part after database
-		if (preg_match('/(CREATE(?:\s*TEMPORARY)?\s*TABLE\s*(?:IF NOT EXISTS\s*)?)(?:`?(\w+)`?\.)?(`?('.$tab.')`?(\W|$))/i', $struct, $m, PREG_OFFSET_CAPTURE))		
+		if (preg_match('/(CREATE(?:\s*TEMPORARY)?\s*TABLE\s*(?:IF NOT EXISTS\s*)?)(?:`?(\w+)`?\.)?(`?('.$tab.')`?(\W|$))/i', $struct, $m, PREG_OFFSET_CAPTURE))
 		{
 			$tableDef = $m[0][0];
 			$start = $m[0][1];
@@ -397,14 +648,14 @@ class dbStructUpdater
 		if ($database && $removeDatabase)
 		{
 			$result = str_replace($tableDef, $m[1][0].$m[3][0], $result);
-		}		
+		}
 		return $result;
 	}
-	
+
 	/**
-	* Splits table sql into indexed array
-	* 
-	*/
+	 * Splits table sql into indexed array
+	 *
+	 */
 	function splitTabSql($sql)
 	{
 		$result = array();
@@ -449,20 +700,20 @@ class dbStructUpdater
 	}
 
 	/**
-	* returns array of fields or keys definitions that differs in the given tables structure
-	* @access private
-	* @param sring $sourceSql table structure
-	* @param sring $destSql right table structure
-	* supports some $options
-	* @return array
-	* 	- [0]
-	* 		- source (string) out-of-date table field definition
-	* 		- dest (string) reference table field definition
-	* 	- [1]...
-	*/
+	 * returns array of fields or keys definitions that differs in the given tables structure
+	 * @access private
+	 * @param sring $sourceSql table structure
+	 * @param sring $destSql right table structure
+	 * supports some $options
+	 * @return array
+	 * 	- [0]
+	 * 		- source (string) out-of-date table field definition
+	 * 		- dest (string) reference table field definition
+	 * 	- [1]...
+	 */
 	function compareSql($sourceSql, $destSql)//$sourceSql, $destSql
 	{
-		$result = array();		
+		$result = array();
 		//split with comma delimiter, not line breaks
 		$sourceParts =  $this->splitTabSql($sourceSql);
 		if ($sourceParts===false)//error parsing sql
@@ -479,13 +730,13 @@ class dbStructUpdater
 		$sourcePartsIndexed = array();
 		$destPartsIndexed = array();
 		foreach($sourceParts as $line)
-		{			
+		{
 			$lineInfo = $this->processLine($line);
 			if (!$lineInfo) continue;
 			$sourcePartsIndexed[$lineInfo['key']] = $lineInfo['line'];
 		}
 		foreach($destParts as $line)
-		{			
+		{
 			$lineInfo = $this->processLine($line);
 			if (!$lineInfo) continue;
 			$destPartsIndexed[$lineInfo['key']] = $lineInfo['line'];
@@ -502,8 +753,8 @@ class dbStructUpdater
 			$inDest= in_array($key, $destKeys);
 			$sourceOrphan = $inSource && !$inDest;
 			$destOrphan = $inDest && !$inSource;
-			$different =  $inSource && $inDest && 
-			strcasecmp($this->normalizeString($destPartsIndexed[$key]), $this->normalizeString($sourcePartsIndexed[$key]));
+			$different =  $inSource && $inDest &&
+				strcasecmp($this->normalizeString($destPartsIndexed[$key]), $this->normalizeString($sourcePartsIndexed[$key]));
 			if ($sourceOrphan)
 			{
 				$info['source'] = $sourcePartsIndexed[$key];
@@ -524,18 +775,18 @@ class dbStructUpdater
 	}
 
 	/**
-	* Transforms table structure defnition line into key=>value pair where the key is a string that uniquely
-	* defines field or key desribed
-	* @access private
-	* @param string $line field definition string
-	* @return array array with single key=>value pair as described in the description
-	* implements some options
-	*/
+	 * Transforms table structure defnition line into key=>value pair where the key is a string that uniquely
+	 * defines field or key desribed
+	 * @access private
+	 * @param string $line field definition string
+	 * @return array array with single key=>value pair as described in the description
+	 * implements some options
+	 */
 	function processLine($line)
 	{
 		$options = $this->config;
 		$result = array('key'=>'', 'line'=>'');
-		$line = rtrim(trim($line), ',');
+		$line = rtrim(trim($line), ", \t\n\r\0\x0B");
 		if (preg_match('/^(CREATE\s+TABLE)|(\) ENGINE=)/i', $line))//first or last table definition line
 		{
 			return false;
@@ -553,6 +804,14 @@ class dbStructUpdater
 		{
 			return false;//line has no valuable info (empty or comment)
 		}
+
+		$line = str_replace($this->typesUpper, $this->typesLower, $line);
+		foreach ($options['defaultNumberLengths'] as $numberType => $length) {
+			if (!preg_match("/ {$numberType} *\(/", $line)) $line = preg_replace("/ {$numberType}(\s|$)/", " {$numberType}({$length})$1", $line);
+		}
+		$line = preg_replace("/'\s*,\s*'/", "','", $line);
+		$line = preg_replace("/([^\s])\s+([,\)])/", '$1$2', $line);
+		$line = preg_replace("/([,\(])\s+([^\s])/", '$1$2', $line);
 		//$key = str_replace('`', '', $key);
 		if (!empty($options['varcharDefaultIgnore']))
 		{
@@ -572,13 +831,13 @@ class dbStructUpdater
 	}
 
 	/**
-	* Takes an output of compare() method to generate the set of sql needed to update source table to make it
-	* look as a destination one
-	* @access private
-	* @param array $diff compare() method output
-	* @return array list of sql statements
-	* supports query generation options
-	*/
+	 * Takes an output of compare() method to generate the set of sql needed to update source table to make it
+	 * look as a destination one
+	 * @access private
+	 * @param array $diff compare() method output
+	 * @return array list of sql statements
+	 * supports query generation options
+	 */
 	function getDiffSql($diff)//maybe add option to ommit or force 'IF NOT EXISTS', skip autoincrement
 	{
 		$options = $this->config;
@@ -643,13 +902,13 @@ class dbStructUpdater
 	}
 
 	/**
-	* Compiles update sql
-	* @access private
-	* @param string $action - 'drop', 'add' or 'modify'
-	* @param string $tab table name
-	* @param string $sql definition of the element to change
-	* @return string update sql
-	*/
+	 * Compiles update sql
+	 * @access private
+	 * @param string $action - 'drop', 'add' or 'modify'
+	 * @param string $tab table name
+	 * @param string $sql definition of the element to change
+	 * @return string update sql
+	 */
 	function getActionSql($action, $tab, $sql)
 	{
 		$result = 'ALTER TABLE `'.$tab.'` ';
@@ -672,7 +931,7 @@ class dbStructUpdater
 					{
 						$result.= 'DROP INDEX `'.$name.'`';
 					}
-				break;
+					break;
 				case 'add':
 					if ($type=='primary')
 					{
@@ -686,7 +945,7 @@ class dbStructUpdater
 					{
 						$result .='ADD '.strtoupper($type).' `'.$name.'` '.$fields;//fulltext or unique
 					}
-				break;
+					break;
 				case 'modify':
 					if ($type=='primary')
 					{
@@ -700,7 +959,7 @@ class dbStructUpdater
 					{
 						$result.='DROP INDEX `'.$name.'`, ADD '.strtoupper($type).' `'.$name.'` '.$fields;//fulltext or unique
 					}
-				break;
+					break;
 
 			}
 		}
@@ -722,23 +981,23 @@ class dbStructUpdater
 	}
 
 	/**
-	* Searches for the position of the next delimiter which is not inside string literal like 'this ; ' or
-	* like "this ; ".
-	*
-	* Handles escaped \" and \'. Also handles sql comments.
-	* Actualy it is regex-based Finit State Machine (FSN)
-	*/
+	 * Searches for the position of the next delimiter which is not inside string literal like 'this ; ' or
+	 * like "this ; ".
+	 *
+	 * Handles escaped \" and \'. Also handles sql comments.
+	 * Actualy it is regex-based Finit State Machine (FSN)
+	 */
 	function getDelimPos($string, $offset=0, $delim=';', $skipInBrackets=false)
 	{
 		$stack = array();
 		$rbs = '\\\\';	//reg - escaped backslash
 		$regPrefix = "(?<!$rbs)(?:$rbs{2})*";
 		$reg = $regPrefix.'("|\')|(/\\*)|(\\*/)|(-- )|(\r\n|\r|\n)|';
-		if ($skipInBrackets) 
+		if ($skipInBrackets)
 		{
 			$reg.='(\(|\))|';
 		}
-		else 
+		else
 		{
 			$reg.='()';
 		}
@@ -807,11 +1066,11 @@ class dbStructUpdater
 		}
 		return false;
 	}
-	
+
 	/**
-	* works the same as getDelimPos except returns position of the first occurence of the delimiter starting from
-	* the end of the string
-	*/
+	 * works the same as getDelimPos except returns position of the first occurence of the delimiter starting from
+	 * the end of the string
+	 */
 	function getDelimRpos($string, $offset=0, $delim=';', $skipInBrackets=false)
 	{
 		$pos = $this->getDelimPos($string, $offset, $delim, $skipInBrackets);

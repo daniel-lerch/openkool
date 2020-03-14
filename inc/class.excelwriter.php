@@ -40,7 +40,7 @@ class writeexcel_biffwriter {
     /*
      * Constructor
      */
-    function writeexcel_biffwriter() {
+    function __construct() {
 
         $this->byte_order   = '';
         $this->BIFF_version = 0x0500;
@@ -255,7 +255,7 @@ class writeexcel_format {
     /*
      * Constructor
      */
-    function writeexcel_format() {
+    function __construct() {
         $_=func_get_args();
 
         $this->_xf_index       = (sizeof($_)>0) ? array_shift($_) : 0;
@@ -957,7 +957,7 @@ var $_formula;
 #
 # Constructor
 #
-function writeexcel_formula($byte_order) {
+function __construct($byte_order) {
 
     $this->parser          = false;
     $this->ptg             = array();
@@ -2496,7 +2496,7 @@ class writeexcel_olewriter {
     /*
      * Constructor
      */
-    function writeexcel_olewriter($filename) {
+    function __construct($filename) {
 
         $this->_OLEfilename  = $filename;
         $this->_filehandle   = false;
@@ -2837,9 +2837,9 @@ class writeexcel_workbook extends writeexcel_biffwriter {
 #
 # Constructor. Creates a new Workbook object from a BIFFwriter object.
 #
-function writeexcel_workbook($filename) {
+function __construct($filename) {
 
-    $this->writeexcel_biffwriter();
+    parent::__construct();
 
     $tmp_format  = new writeexcel_format();
     $byte_order  = $this->_byte_order;
@@ -4011,10 +4011,10 @@ class writeexcel_worksheet extends writeexcel_biffwriter {
     /*
      * Constructor. Creates a new Worksheet object from a BIFFwriter object
      */
-    function writeexcel_worksheet($name, $index, &$activesheet, &$firstsheet,
+    function __construct($name, $index, &$activesheet, &$firstsheet,
                                   &$url_format, &$parser, $tempdir) {
 
-        $this->writeexcel_biffwriter();
+        parent::__construct();
 
         $rowmax                   = 65536; // 16384 in Excel 5
         $colmax                   = 256;

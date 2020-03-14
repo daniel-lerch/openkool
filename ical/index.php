@@ -29,15 +29,14 @@ $ko_menu_akt = "ical";
 
 include($ko_path."inc/ko.inc");
 include($ko_path."daten/inc/daten.inc");
-ko_include_kota(array('ko_event'));
 
 //Include plugins
 $hooks = hook_include_main('daten');
 if(sizeof($hooks) > 0) foreach($hooks as $hook) include_once($hook);
 
 
-$mapping = array(';' => '\;', ',' => '\,', "\n" => "\\n\n ", "\r" => '');
-define('CRLF', chr(10));
+$mapping = array(';' => '\;', ',' => '\,', "\r" => '', "\n" => "\r\n ");
+define('CRLF', chr(13).chr(10));
 
 
 $auth = FALSE;
@@ -69,9 +68,9 @@ else {
 	} else {
 		$user = format_userinput($_SERVER["PHP_AUTH_USER"], "text", TRUE, 32);
 		$pw = md5($_SERVER["PHP_AUTH_PW"]);
-		$result = mysql_query("SELECT id,login FROM ko_admin WHERE `login` = '$user' AND `password` = '$pw'");
-		if(mysql_num_rows($result) == 1) {
-			$row = mysql_fetch_assoc($result);
+		$result = mysqli_query(db_get_link(), "SELECT id,login FROM ko_admin WHERE `login` = '$user' AND `password` = '$pw'");
+		if(mysqli_num_rows($result) == 1) {
+			$row = mysqli_fetch_assoc($result);
 			if($row["login"] == $user) {
 				$auth = TRUE;
 				$_SESSION["ses_username"] = $row["login"];
@@ -96,6 +95,7 @@ if(!ko_module_installed("daten")) {
 
 //Get access rights
 ko_get_access('daten', $_SESSION['ses_userid'], TRUE);
+ko_include_kota(array('ko_event'));
 
 //Set event groups to be shown set by GET or preset named ical
 $use_itemset = FALSE;
@@ -207,10 +207,7 @@ foreach($events as $event) {
 	$titles = ko_daten_get_event_title($event, $eventgroups[$event['eventgruppen_id']], ko_get_userpref($_SESSION['ses_userid'], 'daten_monthly_title'));
 	$ical .= 'SUMMARY:'.strtr(trim($titles['text']), $mapping).CRLF;
 
-	//Description: Use kommentar2 (internal comments) and optionally other fields
 	$description = '';
-	if($_SESSION['ses_username'] != 'ko_guest') $description .= trim($event['kommentar2']);
-
 	//Add other event fields
 	$_desc_fields = ko_get_userpref($_SESSION['ses_userid'], 'daten_ical_description_fields');
 	if($_desc_fields != '') {
@@ -227,7 +224,10 @@ foreach($events as $event) {
 		}
 		kota_process_data('ko_event', $event2, 'list', $log, $event2['id']);
 		foreach($desc_fields as $dk) {
-			if($dk && $event2[$dk]) $description .= "\n".getLL('kota_ko_event_'.$dk).': '.strip_tags($event2[$dk]);
+			//Description: Use kommentar2 (internal comments) only for non-guest users
+			if($dk == 'kommentar2' && $_SESSION['ses_username'] == 'ko_guest') continue;
+
+			if($dk && $event2[$dk]) $description .= '\n'.getLL('kota_ko_event_'.$dk).': '.ko_unhtml(strip_tags($event2[$dk]));
 		}
 	}
 	$ical .= 'DESCRIPTION:'.strtr(trim($description), $mapping).CRLF;

@@ -103,7 +103,7 @@ class Html
         // Node mapping table
         $nodes = array(
                               // $method        $node   $element    $styles     $data   $argument1      $argument2
-            'p'         => array('Paragraph',   $node,  $element,   $styles,    null,   null,           null),
+            'p'         => array('Paragraph',   $node,  $element,   $styles,    $data,  null,           null), // TODO: Changed by Andreas Hess, orig line: 'p'         => array('Paragraph',   $node,  $element,   $styles,    null,   null,           null),
             'h1'        => array('Heading',     null,   $element,   $styles,    null,   'Heading1',     null),
             'h2'        => array('Heading',     null,   $element,   $styles,    null,   'Heading2',     null),
             'h3'        => array('Heading',     null,   $element,   $styles,    null,   'Heading3',     null),
@@ -118,8 +118,9 @@ class Html
             'table'     => array('Table',       $node,  $element,   $styles,    null,   'addTable',     true),
             'tr'        => array('Table',       $node,  $element,   $styles,    null,   'addRow',       true),
             'td'        => array('Table',       $node,  $element,   $styles,    null,   'addCell',      true),
-            'ul'        => array('List',        null,   null,       $styles,    $data,  3,              null),
-            'ol'        => array('List',        null,   null,       $styles,    $data,  7,              null),
+            'ul'        => array('List',        null,   $element,   $styles,    $data,  3,              null), // TODO: Changed by Andreas Hess, orig line: 'ul'        => array('List',        null,   $element,       $styles,    $data,  3,              null),
+            'ol'        => array('List',        null,   $element,   $styles,    $data,  7,              null), // TODO: Changed by Andreas Hess, orig line: 'ol'        => array('List',        null,   $element,       $styles,    $data,  3,              null),
+            'nl'        => array('List',        null,   $element,   $styles,    $data,  10,             null), // TODO: Added by Andreas Hess
             'li'        => array('ListItem',    $node,  $element,   $styles,    $data,  null,           null),
         );
 
@@ -186,13 +187,32 @@ class Html
      * @param array $styles
      * @return \PhpOffice\PhpWord\Element\TextRun
      */
-    private static function parseParagraph($node, $element, &$styles)
+    private static function parseParagraph($node, $element, &$styles, $data)
     {
+        // Added by Andreas Hess
+        if ($data['inRun']) return null;
+
         $styles['paragraph'] = self::parseInlineStyle($node, $styles['paragraph']);
+        if ($styles['paragraph']['color']) $styles['font']['color'] = $styles['paragraph']['color']; // Added by Andreas Hess @ Lauper Computing
+
         $newElement = $element->addTextRun($styles['paragraph']);
 
         return $newElement;
     }
+
+    // Start Original Code
+    /*private static function parseParagraph($node, $element, &$styles, $data)
+    {
+        if ($data['inRun']) return $element;
+
+        $styles['paragraph'] = self::parseInlineStyle($node, $styles['paragraph']);
+        if ($styles['paragraph']['color']) $styles['font']['color'] = $styles['paragraph']['color']; // Added by Andreas Hess @ Lauper Computing
+
+        $newElement = $element->addTextRun($styles['paragraph']);
+
+        return $newElement;
+    }*/
+    // End Original Code
 
     /**
      * Parse heading node
@@ -289,17 +309,36 @@ class Html
      * @param string $argument1 List type
      * @return null
      */
-    private static function parseList(&$styles, &$data, $argument1)
+    // Added by Andreas Hess @ Lauper Computing
+    private static function parseList($element, &$styles, &$data, $argument1)
     {
         if (isset($data['listdepth'])) {
             $data['listdepth']++;
         } else {
             $data['listdepth'] = 0;
         }
+        if (get_class($element) != 'PhpOffice\PhpWord\Element\ListItemRun') {
+            $data['listParentElement'] = &$element;
+        }
         $styles['list']['listType'] = $argument1;
 
         return null;
     }
+
+    // Start Original Code
+    /*private static function parseList(&$styles, &$data, $argument1)
+    {
+        if (isset($data['listdepth'])) {
+            $data['listdepth']++;
+        } else {
+            $data['listdepth'] = 0;
+        }
+        $data['listParent'] = &
+        $styles['list']['listType'] = $argument1;
+
+        return null;
+    }*/
+    // End Original Code
 
     /**
      * Parse list item node
@@ -315,7 +354,26 @@ class Html
      */
     private static function parseListItem($node, $element, &$styles, $data)
     {
+        // Added by Andreas Hess @ Lauper Computing
+        $data['inRun'] = TRUE;
+        $styles['list'] = self::parseInlineStyle($node, $styles['list']);
+        if ($styles['list']['color']) $styles['font']['color'] = $styles['list']['color'];
         $cNodes = $node->childNodes;
+        $first = TRUE;
+        if (count($cNodes) > 0) {
+            foreach ($cNodes as $cNode) {
+                if (!in_array($cNode->nodeName, array('ul', 'ol', 'nl')) && (get_class($element) != 'PhpOffice\PhpWord\Element\ListItemRun' || $first)) {
+                    $element = $data['listParentElement']->addListItemRun($data['listdepth'], $styles['list'], $styles['paragraph']);
+                }
+                self::parseNode($cNode, $element, $styles, $data);
+                $first = FALSE;
+            }
+        }
+
+        return null;
+
+        // Start Original Code
+        /*$cNodes = $node->childNodes;
         if (count($cNodes) > 0) {
             $text = '';
             foreach ($cNodes as $cNode) {
@@ -326,7 +384,8 @@ class Html
             $element->addListItem($text, $data['listdepth'], $styles['font'], $styles['list'], $styles['paragraph']);
         }
 
-        return null;
+        return null;*/
+        // End Original Code
     }
 
     /**

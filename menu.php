@@ -1,89 +1,49 @@
 <?php
 /***************************************************************
-*  Copyright notice
-*
-*  (c) 2003-2015 Renzo Lauper (renzo@churchtool.org)
-*  All rights reserved
-*
-*  This script is part of the kOOL project. The kOOL project is
-*  free software; you can redistribute it and/or modify
-*  it under the terms of the GNU General Public License as published by
-*  the Free Software Foundation; either version 2 of the License, or
-*  (at your option) any later version.
-*
-*  The GNU General Public License can be found at
-*  http://www.gnu.org/copyleft/gpl.html.
-*  A copy is found in the textfile GPL.txt and important notices to the license
-*  from the author is found in LICENSE.txt distributed with these scripts.
-*
-*  kOOL is distributed in the hope that it will be useful,
-*  but WITHOUT ANY WARRANTY; without even the implied warranty of
-*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-*  GNU General Public License for more details.
-*
-*  This copyright notice MUST APPEAR in all copies of the script!
-***************************************************************/
-?>
-<!-- Message-Box for ajax-requests -->
-<!-- position:fixed IE-Hack von annevankesteren.nl/test/examples/ie/position-fixed.html -->
-<div style="display:none;padding:10px;margin:5px 180px 10px 10px;background-color:#ddd;border:2px solid #3586bd;position:fixed;_position:absolute;right:0;top:0;_top:expression(eval(document.body.scrollTop));z-index:900;width:125px;text-align:center;" name="wait_message" id="wait_message"><img src="<?php print $ko_path; ?>images/load_anim.gif" /></div>
-<!-- Session timeout warning -->
-<div style="visibility:hidden;display:none;padding:6px;margin:5px 180px 10px 10px;background-color:#ffff00;border:3px solid #c80202;position:fixed;_position:absolute;right:0;top:0;_top:expression(eval(document.body.scrollTop));z-index:900;width:180px;text-align:center;" name="session_timeout" id="session_timeout"><?php print getLL("session_timeout"); ?></div>
+ *  Copyright notice
+ *
+ *  (c) 2003-2015 Renzo Lauper (renzo@churchtool.org)
+ *  All rights reserved
+ *
+ *  This script is part of the kOOL project. The kOOL project is
+ *  free software; you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation; either version 2 of the License, or
+ *  (at your option) any later version.
+ *
+ *  The GNU General Public License can be found at
+ *  http://www.gnu.org/copyleft/gpl.html.
+ *  A copy is found in the textfile GPL.txt and important notices to the license
+ *  from the author is found in LICENSE.txt distributed with these scripts.
+ *
+ *  kOOL is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  This copyright notice MUST APPEAR in all copies of the script!
+ ***************************************************************/
 
-<div id="login">
-<table cellpadding="0" cellspacing="0" style="padding: 0px; margin: 0px;" border="0"><tr><td height="50px" style="vertical-align:bottom;">
-<?php
-//Show login fields if not logged in yet
-if(!$_SESSION["ses_username"] || $_SESSION["ses_username"] == "ko_guest") {
-	print '<form method="post" action="'.$ko_path.'index.php"><div style="white-space:nowrap;">';
-  print '<div>'.getLL("login_username").'<br /><input type="text" name="username" size="10" /></div>';
-  print '<div>'.getLL("login_password").'<br /><input type="password" name="password" size="10" /></div>';
-  print '<div><br /><input type="submit" value="'.getLL("login").'" name="Login" /></div>';
-  print '</div></form>';
+if (sizeof($USER_MENU) > 0) {
+	$USER_MENU[] = ko_get_menuitem_seperator();
 }
-//Otherwise show logout link
-else {
-  print '<b>[ ' . $_SESSION['ses_username'] . ' ]</b>';
-  print '&nbsp;&nbsp;<a href="'.$ko_path.'index.php?action=logout">';
-	print '<i>'.getLL('login_logout').'</i></a>';
-	$do_guest = FALSE;
-}
-?>
-</td></tr></table>
-</div>
-
-<div id="kool-text">
-<a href="http://www.churchtool.org">
-<img src="<?php print $ko_path.$FILE_LOGO_SMALL; ?>" border="0" alt="kOOL" title="kOOL" />
-</a>
-</div>
+$USER_MENU[] = ko_get_menuitem_link('', '', '', $ko_path.'index.php?action=logout', false, getLL('login_logout'));
 
 
-<div id="lang-select">
-<table cellpadding="0" cellspacing="0" style="padding: 0px; margin: 0px;" border="0"><tr><td height="50px" style="vertical-align:bottom;">
-<?php
-//Lang-Selection
-if(sizeof($LANGS) > 1) {
-	$lang_code =  '[&nbsp;';
-	foreach($LANGS as $lang) {
-		$pre  = ($lang == $_SESSION["lang"]) ? '<b>' : '';
-		$post = ($lang == $_SESSION["lang"]) ? '</b>' : '';
-		$lang_code .= '<a href="index.php?set_lang='.$lang.'">'.$pre.strtoupper($lang).$post.'</a>&nbsp;';
-	}
-	$lang_code .= ']';
-	print $lang_code;
-}//if(sizeof(LANGS) > 1)
-?>
-</td></tr></table>
-</div>
+$do_guest = $_SESSION["ses_username"] && $_SESSION["ses_username"] != "ko_guest";
 
+$smarty->assign("user_menu", $USER_MENU);
+$smarty->assign("ses_lang", $_SESSION['lang']);
+$smarty->assign("langs", $LANGS);
+$smarty->assign("file_logo_small", $FILE_LOGO_SMALL);
+$smarty->assign("pre", $pre);
+$smarty->assign("post", $post);
+$smarty->assign("ses_username", $_SESSION["ses_username"]);
 
-<div id="header">
-<?php include($ko_path."header.php"); ?>
-</div>
-
-<?php
-$do_dropdown = ko_get_userpref($_SESSION["ses_userid"], "modules_dropdown");
+// include header
+ob_start();
+include $ko_path.'header.php';
+$smarty->assign("header_code", ob_get_clean());
 
 $user_menu_ = explode(",", ko_get_userpref($_SESSION["ses_userid"], "menu_order"));
 $user_menu = array_merge($user_menu_, array_diff($MODULES, $user_menu_));
@@ -91,7 +51,7 @@ $user_menu = array_merge($user_menu_, array_diff($MODULES, $user_menu_));
 $menu_counter = 0;
 foreach($user_menu as $m) {
 	if(!in_array($m, $MODULES)) continue;
-	if(in_array($m, array('sms', 'kg', 'mailing')) || trim($m) == '') continue;
+	if(in_array($m, array('sms', 'kg', 'mailing', 'vesr')) || trim($m) == '') continue;
 	if(substr($m, 0, 3) == 'my_') continue;  //Don't show menus from plugins in main navigation (yet)
 	if($m == 'tools' && $_SESSION['ses_userid'] != ko_get_root_id()) continue;
 	if(ko_module_installed($m)) {
@@ -105,45 +65,92 @@ foreach($user_menu as $m) {
 				case "webfolder":
 					$menu[$menu_counter]["link"] = "";
 					$menu[$menu_counter]["link_param"] = 'FOLDER="'.$BASE_URL.str_replace($BASE_PATH, "", $WEBFOLDERS_BASE).'" style="behavior: url(#default#AnchorClick);"';
-				break;
+					break;
 			}
 		} else {
 			$menu[$menu_counter]["link"] = $ko_path.$m."/index.php?action=$action";
 		}
 
 		//Dropdown-Menu
-		if($do_dropdown == "ja") {
-			$sm = NULL;
-			//Get submenu-array
-			if(function_exists('submenu_'.$m)) {
-				eval(("\$dd_sm = submenu_".$m.'("'.implode(",", ko_get_submenus(($m."_dropdown"))).'", "", "open", 3);'));
-				//Get open user-submenus in the right order
-				$user_sm = array_merge(explode(",", ko_get_userpref($_SESSION["ses_userid"], "submenu_".$m."_left")), explode(",", ko_get_userpref($_SESSION["ses_userid"], "submenu_".$m."_right")));
-				//Each entry is single submenu
-				foreach($user_sm as $usm) {
-					$entry = NULL;
-					foreach($dd_sm as $dd) if($usm == $dd["id"]) $entry = $dd;
-					if(!$entry) continue;
+		$sm = NULL;
+		//Get submenu-array
+		if(function_exists('submenu_'.$m)) {
+			$dd_sm = call_user_func_array('submenu_' . $m, array(implode(",", ko_get_submenus(($m."_dropdown"))), 'open', 3, false));
+			// get user pref order for submenus
+			$user_sm = unserialize(ko_get_userpref($_SESSION['ses_userid'], 'submenu_' . $m));
+			//Each entry is single submenu
+			foreach($user_sm as $usmName => $usmData) {
+				$entry = NULL;
+				foreach($dd_sm as $dd) if($usmName == $dd["id"]) $entry = $dd;
+				if(!$entry) continue;
 
-					$sm[] = array("name" => $entry["titel"], "link" => "");
-					//Each non-empty output-element ist one entry from the submenu with a corresponding link-entry
-					foreach($entry["output"] as $e_i => $e) {
-						if($e) $sm[] = array("name" => $e, "link" => $entry["link"][$e_i]);
+				$sm[] = array("title" => $entry["titel"]);
+				//Each non-empty output-element ist one entry from the submenu with a corresponding link-entry
+				foreach($entry["items"] as $e) {
+					if($e && $e['type'] == 'link') {
+						$sm[] = $e;
 					}
 				}
-				$menu[$menu_counter]["menu"] = $sm;
 			}
-		}//if(do_dropdown == "ja")
+			$menu[$menu_counter]["menu"] = $sm;
+		}
 	}//if(ko_module_installed(m)
 
 	$menu_counter++;
 }//foreach(MODULES as m)
 
-$menu[] = "";
+// Settings page
+$settingsPage = $MODULE_SETTINGS_ACTION[$ko_menu_akt];
+if (!$settingsPage) {
+	$settingsLL = getLL($ko_menu_akt . '_settings');
+	if ($settingsLL) $settingsPage = $ko_menu_akt . '_settings';
+}
+$smarty->assign('settings_page', $settingsPage);
 
+$module_settings_action = array();
+foreach ($MODULE_SETTINGS_ACTION as $k => $v) {
+	switch ($k) {
+		case 'donations':
+			$all_rights = ko_get_access_all('donations_admin', '', $max_rights);
+			if ($max_rights < 1) continue;
+			break;
+		case 'daten':
+			$all_rights = ko_get_access_all('event_admin', '', $max_rights);
+			if ($max_rights < 1 || $_SESSION['ses_userid'] == ko_get_guest_id()) continue;
+			break;
+		case 'reservation':
+			$all_rights = ko_get_access_all('res_admin', '', $max_rights);
+			if ($max_rights < 1 || $_SESSION['ses_userid'] == ko_get_guest_id()) continue;
+			break;
+		case 'tracking':
+			$all_rights = ko_get_access_all('tracking_admin', '', $max_rights);
+			if ($max_rights < 1 || $_SESSION['ses_userid'] == ko_get_guest_id()) continue;
+			break;
+		case 'rota':
+			if($_SESSION['ses_userid'] == ko_get_guest_id()) continue;
+			break;
+	}
+	$module_settings_action[$k] = $v;
+}
+$smarty->assign('module_settings_action', $module_settings_action);
+
+$searchbox = ko_get_searchbox($ko_menu_akt);
+$smarty->assign('searchbox', $searchbox);
+
+$menubarLinks = ko_get_secmenu_links($ko_menu_akt, $do_action);
+$smarty->assign("tpl_menubar_links", $menubarLinks);
+
+$state = ko_get_userpref($_SESSION["ses_userid"], 'sidebar_state');
+if ($state != 'closed') $sidebarActive = true;
+else $sidebarActive = false;
+$smarty->assign('tpl_sidebar_active', $sidebarActive);
 $smarty->assign("ko_path", $ko_path);
 $smarty->assign("tpl_menu", $menu);
 $smarty->assign("tpl_menu_akt", $ko_menu_akt);
+$smarty->assign('tpl_ses_show', $_SESSION['show']);
+$smarty->assign("tpl_action", $do_action);
 
 $smarty->display("ko_menu.tpl");
+
+
 ?>

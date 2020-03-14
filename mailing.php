@@ -25,21 +25,40 @@
  ***************************************************************/
 
 // return warning if called from console
-if(isset($argc) && $argc >= 1) {
-	die("This script can't be executed from console anylonger. You have to create a scheduler-task which calls the function 'ko_mailing_main' \n");
+if (isset($argc) && $argc >= 1) {
+	if ($argv[1] == '-t') {
+		$mail_id_in = trim($argv[2]);
+		$recipient_in = trim($argv[3]);
+		if (!$mail_id_in || !$recipient_in || !is_numeric($mail_id_in)) {
+			die("This script can only be called from console for testing purposes. Usage >> php mailing.php -t <mail_id> <recipient_mail|recipient_id> \n");
+		} else {
+			$ko_path = './';
+			require_once('inc/ko.inc');
+			print (ko_mailing_main (true, $mail_id_in, $recipient_in)."\n");
+			exit;
+		}
+	} else {
+		die("This script can only be called from console for testing purposes. Usage >> php mailing.php -t <mail_id> <recipient_mail|recipient_id> \n");
+	}
 }
 
+// Constants: Mailing status
+define('MAILING_STATUS_OPEN', 1);
+define('MAILING_STATUS_CONFIRMED', 2);
+define('MAILING_STATUS_SENT', 3);
+
+
 function ko_mailing_main ($test = false, $mail_id_in = null, $recipient_in = null) {
-	global 		$MODULES,$MAILING_PARAMETER, $BASE_PATH,
-				  $db_user,$login_id,$access,
-				  $domain,$edit_base_link,
-				  $done_error_mails,$return_path,$imap,$max_recipients,$sender_email;
+	global 	$MODULES,$MAILING_PARAMETER, $BASE_PATH, $MAIL_TRANSPORT,
+				  $access,$domain,$edit_base_link,
+				  $done_error_mails,$return_path,$imap,$max_recipients,$sender_email,
+				  $RECTYPES;
 
 	error_reporting(E_ALL);
 	define ('CRLF', "\r\n");
 
 
-//Get ko_path from server settings
+	//Get ko_path from server settings
 	$ko_path = $BASE_PATH;
 
 	if(isset($_POST['GLOBALS']) || isset($_GET['GLOBALS'])) {
@@ -87,11 +106,6 @@ function ko_mailing_main ($test = false, $mail_id_in = null, $recipient_in = nul
 	}
 
 
-	// Constants: Mailing status
-	define('MAILING_STATUS_OPEN', 1);
-	define('MAILING_STATUS_CONFIRMED', 2);
-	define('MAILING_STATUS_SENT', 3);
-
 	//Contants: Errors
 	define('ERROR_INVALID_GROUP_ID', 1);
 	define('ERROR_INVALID_SMALLGROUP_ID', 2);
@@ -116,6 +130,9 @@ function ko_mailing_main ($test = false, $mail_id_in = null, $recipient_in = nul
 	define('ERROR_NO_RECIPIENTS', 21);
 
 
+	require($ko_path . 'inc/class.rawSmtpMailer.php');
+	$mailer = new RawSmtpMailer(true);
+
 
 	/** TESTING
 	 * Allows to send a stored mailing email to a specified recipient
@@ -125,6 +142,18 @@ function ko_mailing_main ($test = false, $mail_id_in = null, $recipient_in = nul
 	if($test) {
 		$mail_id = $mail_id_in;
 		$recipient = $recipient_in;
+
+		if (is_numeric($recipient)) {
+			$rec = db_select_data('ko_leute', "WHERE `id` = '{$recipient}'", '*', '', '', TRUE, TRUE);
+			if (!$rec ) {
+				return "ERROR: Invalid recipient ID: {$recipient}.\n";
+			}
+			$recipient = $rec ['email'];
+			$recipient_id = $rec ['id'];
+		} else {
+			$rec = FALSE;
+			$recipient_id = 1;
+		}
 
 		if(!$mail_id || !$recipient || !check_email($recipient)) {
 			return "ERROR: Invalid mailID or recipient.\nCall as follows: php5 mailing.php test ID RECIPIENT.\n";
@@ -143,18 +172,29 @@ function ko_mailing_main ($test = false, $mail_id_in = null, $recipient_in = nul
 		//if(FALSE !== strpos(strtolower($mail['header']), 'charset=utf-8')) $utf8 = TRUE;
 		//else $utf8 = FALSE;
 
-		//Set return path to sender's email
-		$_return_path = ($return_path == 'USER') ? '-f'.$mail['from'] : $return_path;
+		if (trim(ko_get_setting('mailing_from_email'))) {
+			$sender = trim(ko_get_setting('mailing_from_email'));
+		} else {
+			$sender = $mail['from'];
+		}
 
-		$to = '=?ISO-8859-1?Q?'.imap_8bit('Test User').'?='.' <'.$recipient.'>';
-		$sent = mail($to,
-			ko_mailing_markers($mail['subject'], 1, $recipient),
-			'',
-			ko_emailtext($mail['header']).ko_emailtext(ko_mailing_markers($mail['body'], 1, $recipient, $qp)),
-			$_return_path
-		);
+		$to = "To: ".mb_encode_mimeheader($rec['name'], 'UTF-8', 'Q')." <".$recipient.">" . CRLF;
 
-		return print_r($sent, true);
+		$subject = "Subject: " . ko_mailing_markers($mail['subject'], $recipient_id, $recipient) . CRLF;
+		$message = ko_emailtext(trim($mail['header'])).$to.$subject.CRLF.ko_emailtext(ko_mailing_markers($mail['body'], $recipient_id, $recipient, $qp));
+
+		$mailer->removeAddresses();
+
+		$mailer->setSender($sender);
+		$mailer->addAddress($recipient);
+		$mailer->setMessage($message);
+		try {
+			$mailer->send();
+		} catch (Exception $e) {
+			return('ERROR: mailing_smtp_error: '. $e->getMessage());
+		}
+
+		return "okay";
 	}//if(TEST)
 
 
@@ -222,7 +262,7 @@ function ko_mailing_main ($test = false, $mail_id_in = null, $recipient_in = nul
 			//Check sender email and find corresponding kOOL login
 			$login_id = ko_mailing_get_sender_login($mail['from']);
 			if($login_id) {
-				ko_get_login($login_id, $db_user);
+				ko_get_login($login_id, $login);
 				$no_access = FALSE;
 
 				//Check access rights for found user
@@ -238,6 +278,7 @@ function ko_mailing_main ($test = false, $mail_id_in = null, $recipient_in = nul
 				}
 				// unset login_id, so that the following test will only consider the sender_email
 				if ($no_access) {
+					unset($login);
 					unset($login_id);
 				}
 				//Access rights for groups and smallgroups, check will be done further down
@@ -251,6 +292,17 @@ function ko_mailing_main ($test = false, $mail_id_in = null, $recipient_in = nul
 			foreach($mail_recipients as $mail_recipient) {
 				$error = 0;
 				$to = str_replace('@'.$domain, '', $mail_recipient);
+				$unsetLogin = FALSE;
+
+				// check if a rectype was specified in receiver address
+				$recType = '';
+				if (preg_match('/^.*\+[a-z]$/', $to)) {
+					$x = explode('+', $to);
+					$recType = array_pop($x);
+					$to = implode('+', $x);
+
+					if (!is_array($RECTYPES[$recType])) $recType = '';
+				}
 
 				//Check for automatically authorized emails
 				$auto_confirmed = FALSE;
@@ -274,9 +326,9 @@ function ko_mailing_main ($test = false, $mail_id_in = null, $recipient_in = nul
 					$error = ko_mailing_check_code($code, $mail2);
 
 					if($error) {
-						ko_mailing_error($error, (is_array($mail2) ? $mail2 : $mail), $to);
+						ko_mailing_error($login, $error, (is_array($mail2) ? $mail2 : $mail), $to);
 					} else {
-						ko_mailing_mail_confirmed($code);
+						ko_mailing_mail_confirmed($login, $code);
 					}
 					$found = TRUE;
 
@@ -286,19 +338,29 @@ function ko_mailing_main ($test = false, $mail_id_in = null, $recipient_in = nul
 					list($all, $data) = $m;
 
 					list($gid, $rid) = explode('.', $data);
-					$error = ko_mailing_check_group($gid, $rid, $no_mod);
+					$error = ko_mailing_check_group($login, $gid, $rid, $no_mod, $unsetLogin);
 
 					//Don't allow sender if setting prohibits addresses with no alias
 					if(ko_get_setting('mailing_only_alias')) $error = ERROR_ONLY_ALIAS;
 
 					if($error) {
-						ko_mailing_error($error, $mail, $to);
+						ko_mailing_error($login, $error, $mail, $to);
 					} else {
 						$mail['_recipient'] = 'gr'.$gid.($rid ? '.'.$rid : '');
 						$use_group = db_select_data('ko_groups', "WHERE `id` = '$gid'", '*', '', '', TRUE);
+
+						// apply rectype of group if no recype was specified in receiver address
+						if (!$recType) $recType = $use_group['mailing_rectype'];
+						if (!is_array($RECTYPES[$recType])) $recType = '';
+						$mail['_rectype'] = $recType;
+
 						$mail['_reply_to'] = $use_group['mailing_reply_to'];
 						$modifyRcpts = $use_group['mailing_modify_rcpts'];
-						$mail['_to'] = $to.'@'.$domain;
+						$mail['_to'] = ($recType ? $recType . '+' : '') . $to.'@'.$domain;
+						// add prefix to email subject
+						$prefix = trim($use_group['mailing_prefix']);
+						if ($prefix != '' && strpos($mail['subject'], $prefix) === false)
+							$mail['subject'] = $prefix . ' ' . trim($mail['subject']);
 						list($new_id, $new_code) = ko_mailing_store_moderation($imap, $mail, $modifyRcpts);
 						$found = TRUE;
 					}
@@ -307,27 +369,29 @@ function ko_mailing_main ($test = false, $mail_id_in = null, $recipient_in = nul
 				else if(1 == preg_match('/^sg([0-9]{4})([a-zA-Z.]*)$/', $to, $m)) {
 					list($all, $sgid, $rid) = $m;
 
-					$error = ko_mailing_check_smallgroup($sgid, $rid);
+					$error = ko_mailing_check_smallgroup($login, $sgid, $rid, $unsetLogin);
 
 					//Don't allow sender if setting prohibits addresses with no alias
 					if(ko_get_setting('mailing_only_alias')) $error = ERROR_ONLY_ALIAS;
 
 					if($error) {
-						ko_mailing_error($error, $mail, $to);
+						ko_mailing_error($login, $error, $mail, $to);
 					} else {
 						$mail['_recipient'] = 'sg'.$sgid.($rid?'.'.$rid:'');
+						$mail['_rectype'] = $recType;
 						list($new_id, $new_code) = ko_mailing_store_moderation($imap, $mail);
 						$found = TRUE;
 					}
 				}
 				//My List
 				else if($to == 'ml') {
-					$error = ko_mailing_check_mylist();
+					$error = ko_mailing_check_mylist($login, $unsetLogin);
 
 					if($error) {
-						ko_mailing_error($error, $mail, $to);
+						ko_mailing_error($login, $error, $mail, $to);
 					} else {
 						$mail['_recipient'] = 'ml';
+						$mail['_rectype'] = $recType;
 						list($new_id, $new_code) = ko_mailing_store_moderation($imap, $mail);
 						$found = TRUE;
 					}
@@ -337,14 +401,15 @@ function ko_mailing_main ($test = false, $mail_id_in = null, $recipient_in = nul
 					list($all, $data) = $m;
 
 					$fid = intval($data);
-					$error = ko_mailing_check_filter($fid);
+					$error = ko_mailing_check_filter($login, $fid, $unsetLogin);
 
 					//Don't allow sender if setting prohibits addresses with no alias
 					if(ko_get_setting('mailing_only_alias')) $error = ERROR_ONLY_ALIAS;
 
 					if($error) {
-						ko_mailing_error($error, $mail, $to);
+						ko_mailing_error($login, $error, $mail, $to);
 					} else {
+						$mail['_rectype'] = $recType;
 						$mail['_recipient'] = 'fp'.$fid;
 						list($new_id, $new_code) = ko_mailing_store_moderation($imap, $mail);
 						$found = TRUE;
@@ -353,45 +418,56 @@ function ko_mailing_main ($test = false, $mail_id_in = null, $recipient_in = nul
 				//Find mailing alias
 				else {
 					//Find group or small group with this alias
-					$groups = db_select_data('ko_groups', "WHERE LOWER(`mailing_alias`) = '".mysql_real_escape_string(strtolower($to))."'");
-					$smallgroups = db_select_data('ko_kleingruppen', "WHERE LOWER(`mailing_alias`) = '".mysql_real_escape_string(strtolower($to))."'");
-					$filters = db_select_data('ko_userprefs', "WHERE LOWER(`mailing_alias`) = '".mysql_real_escape_string(strtolower($to))."'");
+					$groups = db_select_data('ko_groups', "WHERE LOWER(`mailing_alias`) = '".mysqli_real_escape_string(db_get_link(), strtolower($to))."'");
+					$smallgroups = db_select_data('ko_kleingruppen', "WHERE LOWER(`mailing_alias`) = '".mysqli_real_escape_string(db_get_link(), strtolower($to))."'");
+					$filters = db_select_data('ko_userprefs', "WHERE LOWER(`mailing_alias`) = '".mysqli_real_escape_string(db_get_link(), strtolower($to))."'");
 
 					$num_found = sizeof($groups)+sizeof($smallgroups)+sizeof($filters);
 					if($num_found == 0) {
-						ko_mailing_error(ERROR_NO_ALIAS_FOUND, $mail, $to);
+						ko_mailing_error($login, ERROR_NO_ALIAS_FOUND, $mail, $to);
 					} else if($num_found > 1) {
-						ko_mailing_error(ERROR_NON_UNIQUE_ALIAS, $mail, $to);
+						ko_mailing_error($login, ERROR_NON_UNIQUE_ALIAS, $mail, $to);
 					} else {
 						if(sizeof($groups) == 1) {
 							$group = array_shift($groups);
-							$error = ko_mailing_check_group($group['id'], '', $no_mod);
+							$error = ko_mailing_check_group($login, $group['id'], '', $no_mod, $unsetLogin);
 							if($error) {
-								ko_mailing_error($error, $mail, $to);
+								ko_mailing_error($login, $error, $mail, $to);
 							} else {
+								// apply rectype of group if no recype was specified in receiver address
+								if (!$recType) $recType = $group['mailing_rectype'];
+								if (!is_array($RECTYPES[$recType])) $recType = '';
+								$mail['_rectype'] = $recType;
+
 								$mail['_recipient'] = 'gr'.$group['id'];
 								$mail['_reply_to'] = $group['mailing_reply_to'];
-								$mail['_to'] = $to.'@'.$domain;
+								$mail['_to'] = ($recType ? $recType . '+' : '') . $to.'@'.$domain;
+								// add prefix to email subject
+								$prefix = trim($group['mailing_prefix']);
+								if ($prefix != '' && strpos($mail['subject'], $prefix) === false)
+									$mail['subject'] = $prefix . ' ' . trim($mail['subject']);
 								$modifyRcpts = $group['mailing_modify_rcpts'];
 								list($new_id, $new_code) = ko_mailing_store_moderation($imap, $mail, $modifyRcpts);
 								$found = TRUE;
 							}
 						} else if(sizeof($smallgroups) == 1) {
 							$sg = array_shift($smallgroups);
-							$error = ko_mailing_check_smallgroup($sg['id']);
+							$error = ko_mailing_check_smallgroup($login, $sg['id'], NULL, $unsetLogin);
 							if($error) {
-								ko_mailing_error($error, $mail, $to);
+								ko_mailing_error($login, $error, $mail, $to);
 							} else {
+								$mail['_rectype'] = $recType;
 								$mail['_recipient'] = 'sg'.$sg['id'];
 								list($new_id, $new_code) = ko_mailing_store_moderation($imap, $mail);
 								$found = TRUE;
 							}
 						} else if(sizeof($filters) == 1) {
 							$fp = array_shift($filters);
-							$error = ko_mailing_check_filter($fp['id']);
+							$error = ko_mailing_check_filter($login, $fp['id'], $unsetLogin);
 							if($error) {
-								ko_mailing_error($error, $mail, $to);
+								ko_mailing_error($login, $error, $mail, $to);
 							} else {
+								$mail['_rectype'] = $recType;
 								$mail['_recipient'] = 'fp'.$fp['id'];
 								list($new_id, $new_code) = ko_mailing_store_moderation($imap, $mail);
 								$found = TRUE;
@@ -403,10 +479,10 @@ function ko_mailing_main ($test = false, $mail_id_in = null, $recipient_in = nul
 				if($found) {
 					//Auto confirm email if auth check above passed
 					if(($auto_confirmed && $new_code) || $no_mod) {
-						ko_mailing_mail_confirmed($new_code);
+						ko_mailing_mail_confirmed($unsetLogin?NULL:$login, $new_code);
 					} else if($new_code) {
-						$error = ko_mailing_send_moderation_mail($new_id, $mail, $db_user, $sender_email);
-						if($error) ko_mailing_error($error, $mail, $to);
+						$error = ko_mailing_send_moderation_mail($unsetLogin?NULL:$login, $new_id, $mail, $sender_email);
+						if($error) ko_mailing_error($login, $error, $mail, $to);
 					}
 				}
 
@@ -414,7 +490,7 @@ function ko_mailing_main ($test = false, $mail_id_in = null, $recipient_in = nul
 
 			//None of the email addresses with $domain have been recognized and processed: Return failure notice
 			if(!$found) {
-				ko_mailing_error(ERROR_INVALID_RECIPIENT, $mail);
+				ko_mailing_error($login, ERROR_INVALID_RECIPIENT, $mail);
 			}
 
 			//Delete message after it has been processed
@@ -426,19 +502,16 @@ function ko_mailing_main ($test = false, $mail_id_in = null, $recipient_in = nul
 		}//foreach(mails as mail)
 	}
 
-//Close connection and expunge
+	//Close connection and expunge
 	imap_close($imap, CL_EXPUNGE);
 
 
-	require($ko_path . 'inc/class.rawSmtpMailer.php');
-	$mailer = new RawSmtpMailer(true);
-
-
 	//Check db for mails to be sent
-
+	$sent_mails = 0;
 	$mails = db_select_data('ko_mailing_mails', "WHERE `status` = '".MAILING_STATUS_CONFIRMED."'");
 	foreach($mails as $mail) {
-		$done = $done_names = array();
+		$done = $done_names = $doneLeuteIds = array();
+		if ($sent_mails == $mails_per_cycle) break;
 
 		//Find quoted-printable in header
 		if(FALSE !== strpos(strtolower($mail['header']), 'content-transfer-encoding: quoted-printable')) $qp = TRUE;
@@ -448,12 +521,14 @@ function ko_mailing_main ($test = false, $mail_id_in = null, $recipient_in = nul
 		//else $utf8 = FALSE;
 
 		//Get next recipients and send emails
-		$recipients = db_select_data('ko_mailing_recipients', "WHERE `mail_id` = '".$mail['id']."'", '*', '', 'LIMIT 0,'.$mails_per_cycle);
+		$recipients = db_select_data('ko_mailing_recipients', "WHERE `mail_id` = '".$mail['id']."'", '*', '', 'LIMIT 0,'.($mails_per_cycle - $sent_mails > 0 ? ($mails_per_cycle - $sent_mails) : 0));
 
 		//Set return path to sender's email
 		$_return_path = ($return_path == 'USER') ? '-f'.$mail['from'] : $return_path;
 
+
 		foreach($recipients as $rec) {
+			if ($sent_mails == $mails_per_cycle) break;
 			if(!$rec['id']) continue;
 			if ($mail['modify_rcpts']) {
 				$to = "To: ".mb_encode_mimeheader($rec['name'], 'UTF-8', 'Q')." <".$rec['email'].">" . CRLF;
@@ -464,9 +539,13 @@ function ko_mailing_main ($test = false, $mail_id_in = null, $recipient_in = nul
 			$subject = "Subject: " . ko_mailing_markers($mail['subject'], $rec['leute_id'], $rec['email']) . CRLF;
 			$bulkHeader = ($bulk_header === true ? 'Precedence: bulk' . CRLF : '');
 			$log_to = $rec['name']." (".$rec['email'].")";
+			if (trim(ko_get_setting('mailing_from_email'))) {
+				$sender = trim(ko_get_setting('mailing_from_email'));
+			} else {
+				$sender = $mail['from'];
+			}
 			$rcpt = $rec['email'];
 			$message = ko_emailtext(trim($mail['header'])).$to.$bulkHeader.$subject.CRLF.ko_emailtext(ko_mailing_markers($mail['body'], $rec['leute_id'], $rec['email'], $qp));
-			$sender = $mail['from'];
 
 			$mailer->removeAddresses();
 
@@ -475,17 +554,43 @@ function ko_mailing_main ($test = false, $mail_id_in = null, $recipient_in = nul
 			$mailer->setMessage($message);
 			try {
 				$mailer->send();
+				db_delete_data('ko_mailing_recipients', "WHERE `id` = '" . $rec['id'] . "'");
 				$done[] = $rec['id'];
+				$doneLeuteIds[] = $rec['leute_id'];
 				$done_names[] = $log_to;
-
+				$sent_mails++;
 			} catch (Exception $e) {
 				ko_log('mailing_smtp_error', $e->getMessage());
 			}
 
 		}
+		// create crm contact entry (or add recipients to crm contact entry)
+		if (in_array('crm', $MODULES)) {
+			$projectId = ko_get_setting('crm_group_email_project_id');
+			if ($projectId) {
+				ko_get_crm_contacts($contact, " AND `reference` = 'ko_mailing_mails:".$mail['id']."'", '', '', TRUE, TRUE);
+				if (!$contact) {
+					$entry = array(
+						'title' => utf8_decode(mb_decode_mimeheader($mail['subject'])),
+						'cruser' => ko_get_guest_id(),
+						'type' => 'mailing',
+						'date' => date('Y-m-d H:i:s'),
+						'reference' => 'ko_mailing_mails:'.$mail['id'],
+						'project_id' => $projectId,
+						'description' => sprintf(getLL('mailing_crm_description_from'), $mail['from'])."\n".sprintf(getLL('mailing_crm_description_to'), $mail['recipient']),
+						// TODO: attachment as file?
+					);
+					$cid = db_insert_data('ko_crm_contacts', $entry);
+				} else {
+					$cid = $contact['id'];
+				}
+				$doneLeuteIds = array_unique($doneLeuteIds);
+				foreach ($doneLeuteIds as $lid) {
+					db_insert_data('ko_crm_mapping', array('contact_id' => $cid, 'leute_id' => $lid));
+				}
+			}
+		}
 
-		//Delete done recipients
-		if(sizeof($done) > 0) db_delete_data('ko_mailing_recipients', "WHERE `id` IN ('".implode("','", $done)."')");
 
 		//Create log entry with all recipients
 		db_insert_data('ko_log', array('type' => 'mailing_sent', 'comment' => $mail['id'].': '.implode(', ', $done_names), 'user_id' => $mail['user_id'], 'date' => date('Y-m-d H:i:s')));
@@ -514,7 +619,7 @@ function ko_mailing_main ($test = false, $mail_id_in = null, $recipient_in = nul
 		db_delete_data('ko_mailing_mails', "WHERE `id` = '".$mail['id']."'");
 	}
 
-}
+}//ko_mailing_main()
 
 
 
@@ -541,7 +646,7 @@ function ko_mailing_get_sender_login(&$from) {
 	}
 
 	$logins = db_select_data("ko_admin AS a LEFT JOIN ko_leute as l ON a.leute_id = l.id",
-		"WHERE ($where_email LOWER(a.email) = '".mysql_real_escape_string($from)."') AND (a.disabled = '0' OR a.disabled = '')",
+		"WHERE ($where_email LOWER(a.email) = '".mysqli_real_escape_string(db_get_link(), $from)."') AND (a.disabled = '0' OR a.disabled = '')",
 		"a.id AS id");
 	$login = array_shift($logins);
 	return $login['id'];
@@ -554,18 +659,24 @@ function ko_mailing_get_sender_login(&$from) {
  * Mark mail as confirmed and create recipient entries for all recipients in queue
  * @param $code code of th email that was confirmed
  */
-function ko_mailing_mail_confirmed($code) {
-	global $db_user;
-
+function ko_mailing_mail_confirmed($login, $code) {
 	$mail = db_select_data('ko_mailing_mails', "WHERE `code` = '$code' AND `status` = '".MAILING_STATUS_OPEN."'", '*', '', '', TRUE);
 
 	//Get recipients
-	$recipients = ko_mailing_get_recipients($mail['recipient']);
+	$recipients = ko_mailing_get_recipients($login, $mail['recipient'], $dummy);
 
 	//Create db entries
 	$done_emails = array();
 	foreach($recipients as $r) {
-		ko_get_leute_email($r, $emails);
+		$emails = NULL;
+
+		// apply rectype if specified
+		if ($mail['rectype']) {
+			$p = ko_apply_rectype($r, $mail['rectype']);
+			if ($p['email']) $emails = array($p['email']);
+		}
+
+		if (!is_array($emails)) ko_get_leute_email($r, $emails);
 		foreach($emails as $email) {  //Include all email addresses, if several are set as preferred
 			$email = trim($email);
 			if(!check_email($email)) continue;
@@ -582,8 +693,8 @@ function ko_mailing_mail_confirmed($code) {
 	db_update_data('ko_mailing_mails', "WHERE `id` = '".$mail['id']."'", array('status' => MAILING_STATUS_CONFIRMED));
 
 	//Create log entry
-	$log = $mail['id'].': '.'Subject: '.$mail['subject'].', From: '.$mail['from'].', To: '.$mail['recipient'].', Recipients: '.sizeof($recipients);
-	db_insert_data('ko_log', array('type' => 'mailing_confirmed', 'comment' => $log, 'user_id' => $db_user['id'], 'date' => date('Y-m-d H:i:s')));
+	$log = $mail['id'].': '.'Subject: '.$mail['subject'].', From: '.$mail['from'].', To: '.$mail['recipient'].', Recipients: '.sizeof($recipients).', Modify Recipients: ' . $mail['modify_recipients'] . ', RecType: ' . $mail['rectype'];
+	db_insert_data('ko_log', array('type' => 'mailing_confirmed', 'comment' => $log, 'user_id' => $login['id'], 'date' => date('Y-m-d H:i:s')));
 }//ko_mailing_mail_confirmed()
 
 
@@ -593,20 +704,21 @@ function ko_mailing_mail_confirmed($code) {
  * Return a list of entries from ko_leute who are recipients of the given mailinglist
  * @param $rec sgXXXX[.Y], grXXXXXX.YYYYYY, fpX or ml
  */
-function ko_mailing_get_recipients($rec) {
-	global $access, $login_id, $sender_email;
+function ko_mailing_get_recipients($login, $rec, &$accessError) {
+	global $access, $sender_email;
 
 	$mode = substr($rec, 0, 2);
 	$data = substr($rec, 2);
 	$_recipients = array();
 	$allow = false;
+	$accessError = FALSE;
 
 	switch($mode) {
 		case 'gr':
 			$parts = explode('.', $data);
 			$gid = array_shift($parts);
 			$rid = array_shift($parts);
-			$group = 'g'.$gid.($rid ? ':r'.$rid : '');
+			$group = 'g'.$gid.($rid ? '[g:0-9]*r'.$rid : '');
 			$where = "WHERE `groups` REGEXP '$group' AND `deleted` = '0' AND `hidden` = '0'";
 			$_recipients = db_select_data('ko_leute', $where);
 			$g = db_select_data('ko_groups', 'where id = ' . $gid, '*', '', '', TRUE, TRUE);
@@ -614,9 +726,9 @@ function ko_mailing_get_recipients($rec) {
 		break;
 
 		case 'ml':
-			$ids = unserialize(ko_get_userpref($login_id, 'leute_my_list'));
+			$ids = unserialize(ko_get_userpref($login['id'], 'leute_my_list'));
 			if(sizeof($ids) > 0) {
-				$_recipients = db_select_data('ko_leute', "WHERE `id` IN ('".implode("','", $ids)."') AND `deleted` = '0' AND `hidden` = '0'");
+				$_recipients = db_select_data('ko_leute', "WHERE `id` IN ('".implode("','", $ids)."') AND `deleted` = '0' ".ko_get_leute_hidden_sql($login['id']));
 			}
 		break;
 
@@ -643,7 +755,10 @@ function ko_mailing_get_recipients($rec) {
 	$recipients = array();
 	foreach($_recipients as $r) {
 		//Check for access to this single address
-		if($login_id > 0 && $access['leute']['ALL'] < 1 && $access['leute'][$r['id']] < 1 && !$allow) continue;
+		if($login['id'] > 0 && $access['leute']['ALL'] < 1 && $access['leute'][$r['id']] < 1) {
+			$accessError = TRUE;
+			if (!$allow) continue;
+		}
 		//Check for valid email
 		if(FALSE === ko_get_leute_email($r, $emails)) continue;
 
@@ -659,8 +774,8 @@ function ko_mailing_get_recipients($rec) {
 /**
  * Retrieve a human readable name of a given recipient (gr000001, sg000001, ml)
  */
-function ko_mailing_get_rec_name($rec) {
-	global $all_groups, $db_user;
+function ko_mailing_get_rec_name($login, $rec) {
+	global $all_groups;
 
 	$mode = substr($rec, 0, 2);
 	$data = substr($rec, 2);
@@ -693,7 +808,7 @@ function ko_mailing_get_rec_name($rec) {
 		break;
 
 		case 'ml':
-			return $db_user['login']."'s ".getLL('mailing_mylist');
+			return $login['login']."'s ".getLL('mailing_mylist');
 		break;
 	}
 }//ko_mailing_get_rec_name()
@@ -708,8 +823,8 @@ function ko_mailing_get_rec_name($rec) {
  * @param $mail: Mail array that caused the error
  * @param $to: If given, contains the current recipient that caused the problem
  */
-function ko_mailing_error($error, $mail, $to='') {
-	global $domain, $db_user, $done_error_mails, $max_recipients, $return_path;
+function ko_mailing_error($login, $error, $mail, $to='') {
+	global $domain, $done_error_mails, $max_recipients, $return_path;
 
 	//Only send one error message for each mail
 	if(in_array($mail['id'], $done_error_mails)) return;
@@ -728,7 +843,7 @@ function ko_mailing_error($error, $mail, $to='') {
 		//Send error email
 		$message  = getLL('mailing_errormail_text_intro');
 		$message .= strtr(getLL('mailing_errormail_text_'.$error), $map);
-		$message .= "\n\n".ko_mailing_summary($mail);
+		$message .= "\n\n".ko_mailing_summary($login, $mail);
 
 		ko_send_mail('noreply@'.$domain, $mail['from'], getLL('mailing_errormail_subject'), $message);
 	}//if(check_email(from))
@@ -740,7 +855,7 @@ function ko_mailing_error($error, $mail, $to='') {
 		if($k && $v) $log .= $k.': '.$v.', ';
 	}
 	if(substr($log, 0, -2) == ', ') $log = substr($log, 0, -2);
-	db_insert_data('ko_log', array('type' => 'mailing_error', 'comment' => $log, 'user_id' => $db_user['id'], 'date' => date('Y-m-d H:i:s')));
+	db_insert_data('ko_log', array('type' => 'mailing_error', 'comment' => $log, 'user_id' => $login['id'], 'date' => date('Y-m-d H:i:s')));
 }//ko_mailing_error()
 
 
@@ -763,6 +878,9 @@ function ko_mailing_store_moderation($imap, $mail, $modifyRcpts = true) {
 	$header = preg_replace('/(\n|^)Bcc: (.*)(\n\s+(.*))*\n/i', '$1', $header);
 	$header = preg_replace('/(\n|^)Subject: (.*)(\n\s+(.*))*\n/i', '$1', $header);
 	$header = preg_replace('/(\n|^)Delivered-To: (.*)(\n\s+(.*))*\n/i', '$1', $header);
+	$header = preg_replace('/(\n|^)X-Spam-Score: (.*)(\n\s+(.*))*\n/i', '$1', $header);
+	$header = preg_replace('/(\n|^)X-Spam-Flag: (.*)(\n\s+(.*))*\n/i', '$1', $header);
+	$header = preg_replace('/(\n|^)X-Spam-Report: (.*)(\n\s+(.*))*\n/i', '$1', $header);
 	if($mail['_reply_to']) {
 		//Remove Reply-To
 		$header = preg_replace('/(\n|^)Reply-To: (.*)(\n\s+(.*))*\n/i', '$1', $header);
@@ -776,7 +894,7 @@ function ko_mailing_store_moderation($imap, $mail, $modifyRcpts = true) {
 				$replyTo = $mail['from'];
 			break;
 		}
-		$header .= 'Reply-To: '.$replyTo."\n";
+		$header = trim($header)."\nReply-To: ".$replyTo."\n";
 	}
 
 	//Create db entry for email
@@ -792,10 +910,11 @@ function ko_mailing_store_moderation($imap, $mail, $modifyRcpts = true) {
 	$entry['sender_email'] = $sender_email;
 	$entry['recipient'] = $mail['_recipient'];
 	$entry['modify_rcpts'] = $modifyRcpts;
+	$entry['rectype'] = $mail['_rectype'];
 	$new_id = db_insert_data('ko_mailing_mails', $entry);
 
 	//Create log entry
-	$log = $new_id.': Subject: '.$mail['subject'].', From: '.$mail['from'].', To: '.$mail['to'].', Size: '.$mail['size']. ', ModifyRecipients: ' . $modifyRcpts;
+	$log = $new_id.': Subject: '.$mail['subject'].', From: '.$mail['from'].', To: '.$mail['to'].', Size: '.$mail['size']. ', ModifyRecipients: ' . $modifyRcpts . ', RecType: ' . $mail['rectype'];
 	db_insert_data('ko_log', array('type' => 'mailing_new', 'comment' => $log, 'user_id' => $db_user['id'], 'date' => date('Y-m-d H:i:s')));
 
 	return array($new_id, $code);
@@ -816,7 +935,7 @@ function ko_mailing_store_moderation($imap, $mail, $modifyRcpts = true) {
  * @access public
  * @return int Errorcode or 0 if no error
  */
-function ko_mailing_send_moderation_mail($mid, $mail, $db_user, $sender_email) {
+function ko_mailing_send_moderation_mail($login, $mid, $mail, $sender_email) {
 	global $domain, $return_path;
 
 	if(!$mid) return ERROR_MODERATION_EMAIL;
@@ -825,8 +944,8 @@ function ko_mailing_send_moderation_mail($mid, $mail, $db_user, $sender_email) {
 	if(!$mailing['id'] || $mailing['id'] != $mid || $mailing['status'] != MAILING_STATUS_OPEN) return ERROR_MODERATION_EMAIL;
 
 	//Get email of logged in user (for moderation email)
-	if($db_user['id']) {
-		$person = ko_get_logged_in_person($db_user['id']);
+	if($login['id']) {
+		$person = ko_get_logged_in_person($login['id']);
 		if(check_email($person['email'])) $to = array($person['email']);
 	}
 	//If sender_email given then get moderators for the recipient group
@@ -851,7 +970,7 @@ function ko_mailing_send_moderation_mail($mid, $mail, $db_user, $sender_email) {
 	$from = array('confirm-'.$mailing['code'].'@'.$domain => '');
 	$from_email = 'confirm-'.$mailing['code'].'@'.$domain;
 	$subject = getLL('mailing_confirm_subject').': '.$mail['subject'];
-	$message = sprintf(getLL('mailing_confirm_text'), $from_email)."\n\n".ko_mailing_summary($mail, $mailing['body']);
+	$message = sprintf(getLL('mailing_confirm_text'), $from_email)."\n\n".ko_mailing_summary($login, $mail, $mailing['body']);
 	foreach($to as $t) {
 		if(!check_email($t)) continue;
 		ko_send_mail($from, $t, $subject, $message);
@@ -863,18 +982,18 @@ function ko_mailing_send_moderation_mail($mid, $mail, $db_user, $sender_email) {
 
 
 
-function ko_mailing_summary($mail, $body='') {
+function ko_mailing_summary($login, $mail, $body='') {
 	global $imap;
 
 	$summary = '';
 
 
 	//Get name of recipient (group or other) for a nicer display
-	$rec_name = ko_mailing_get_rec_name($mail['_recipient']);
+	$rec_name = ko_mailing_get_rec_name($login, $mail['_recipient']);
 	if($rec_name) $summary .= getLL('mailing_rec_name').': '.$rec_name."\n";
 
 	//Add number of recipients
-	$recipients = ko_mailing_get_recipients($mail['_recipient']);
+	$recipients = ko_mailing_get_recipients($login, $mail['_recipient']);
 	$summary .= getLL('mailing_number_of_recipients').': '.sizeof($recipients)."\n";
 
 	//Show parts of the header
@@ -911,8 +1030,8 @@ function ko_mailing_summary($mail, $body='') {
  *
  * returns 0 if OK or error code if not OK
  */
-function ko_mailing_check_group($gid, $rid, &$no_mod) {
-	global $max_recipients, $access, $login_id, $sender_email;
+function ko_mailing_check_group($login, $gid, $rid, &$no_mod, &$unsetLogin) {
+	global $max_recipients, $access, $sender_email;
 
 	//Default to moderation
 	$no_mod = FALSE;
@@ -942,8 +1061,11 @@ function ko_mailing_check_group($gid, $rid, &$no_mod) {
 	$no_group_access_error_s = FALSE;
 
 	//Check for access by login
-	if($login_id > 0) {
-		if($access['groups']['ALL'] < 1 && $access['groups'][$gid] < 1) $no_group_access_error_l = TRUE;
+	if($login['id'] > 0) {
+		if(!ko_module_installed('groups', $login['id']) || ($access['groups']['ALL'] < 1 && $access['groups'][$gid] < 1)) {
+			$no_group_access_error_l = TRUE;
+			$unsetLogin1 = TRUE;
+		}
 
 		if($group['mailing_mod_logins'] > 0) $no_mod_l = TRUE;
 	}
@@ -969,9 +1091,11 @@ function ko_mailing_check_group($gid, $rid, &$no_mod) {
 	}
 
 	//Check for recipients
-	$recipients = ko_mailing_get_recipients('gr'.$gid.($rid ? '.'.$rid : ''));
+	$recipients = ko_mailing_get_recipients($login, 'gr'.$gid.($rid ? '.'.$rid : ''), $unsetLogin2);
 	if(sizeof($recipients) <= 0) return ERROR_NO_RECIPIENTS;
 	if($max_recipients > 0 && sizeof($recipients) > $max_recipients) return ERROR_TOO_MANY_RECIPIENTS;
+
+	$unsetLogin = $unsetLogin1 || $unsetLogin2;
 
 	return 0;
 }//ko_mailing_check_group()
@@ -1028,7 +1152,7 @@ function ko_mailing_get_sender_roles(&$group, $sender_email) {
 
 	$where = '';
 	foreach($LEUTE_EMAIL_FIELDS as $field) {
-		$where[] = " `$field` = '".mysql_real_escape_string($sender_email)."' ";
+		$where[] = " `$field` = '".mysqli_real_escape_string(db_get_link(), $sender_email)."' ";
 	}
 
 	$people = db_select_data('ko_leute', "WHERE 1 AND (".implode(' OR ', $where).") AND `deleted` = '0' AND `hidden` = '0'");
@@ -1097,14 +1221,14 @@ function ko_mailing_get_moderators_by_group(&$group) {
  *
  * returns 0 if OK or error code if not OK
  */
-function ko_mailing_check_mylist() {
+function ko_mailing_check_mylist($login, &$unsetLogin) {
 	global $max_recipients, $access;
 
 	//Check for access
 	if($access['leute']['MAX'] < 1) return ERROR_MYLIST_NO_ACCESS;
 
 	//Check for recipients
-	$recipients = ko_mailing_get_recipients('ml');
+	$recipients = ko_mailing_get_recipients($login, 'ml', $unsetLogin);
 	if(sizeof($recipients) <= 0) return ERROR_MYLIST_EMPTY;
 	if($max_recipients > 0 && sizeof($recipients) > $max_recipients) return ERROR_TOO_MANY_RECIPIENTS;
 
@@ -1123,14 +1247,14 @@ function ko_mailing_check_mylist() {
  *
  * returns 0 if OK or error code if not OK
  */
-function ko_mailing_check_filter($fid) {
+function ko_mailing_check_filter($login, $fid, &$unsetLogin) {
 	global $max_recipients, $access;
 
 	//Check for access
-	if($access['leute']['MAX'] < 1) return ERROR_MYLIST_NO_ACCESS;
+	if($access['leute']['MAX'] < 1) return ERROR_LEUTE_NO_ACCESS;
 
 	//Check for recipients
-	$recipients = ko_mailing_get_recipients('fp'.$fid);
+	$recipients = ko_mailing_get_recipients($login, 'fp'.$fid, $unsetLogin);
 	if(sizeof($recipients) <= 0) return ERROR_FILTER_EMPTY;
 	if($max_recipients > 0 && sizeof($recipients) > $max_recipients) return ERROR_TOO_MANY_RECIPIENTS;
 
@@ -1149,8 +1273,8 @@ function ko_mailing_check_filter($fid) {
  *
  * returns 0 if OK or error code if not OK
  */
-function ko_mailing_check_smallgroup($sgid, $rid) {
-	global $SMALLGROUPS_ROLES, $max_recipients, $access, $login_id;
+function ko_mailing_check_smallgroup($login, $sgid, $rid, &$unsetLogin) {
+	global $SMALLGROUPS_ROLES, $max_recipients, $access;
 
 	//Check for correct sgid
 	if(!$sgid || strlen($sgid) != 4) return ERROR_INVALID_SMALLGROUP_ID;
@@ -1159,7 +1283,7 @@ function ko_mailing_check_smallgroup($sgid, $rid) {
 	}
 
 	//Check for access
-	if($access['kg']['ALL'] < 1 || ($access['kg']['ALL'] < 2 && !in_array($sgid, kg_get_users_kgid($login_id)))) return ERROR_SMALLGROUP_NO_ACCESS;
+	if($access['kg']['ALL'] < 1 || ($access['kg']['ALL'] < 2 && !in_array($sgid, kg_get_users_kgid($login['id'])))) return ERROR_SMALLGROUP_NO_ACCESS;
 
 	//Check role id if given
 	if($rid) {
@@ -1172,7 +1296,7 @@ function ko_mailing_check_smallgroup($sgid, $rid) {
 	if(!$sg['id'] || $sg['id'] != $sgid) return ERROR_INVALID_SMALLGROUP_ID;
 
 	//Check for recipients
-	$recipients = ko_mailing_get_recipients('sg'.$sgid.($rid?'.'.$rid:''));
+	$recipients = ko_mailing_get_recipients($login, 'sg'.$sgid.($rid?'.'.$rid:''), $unsetLogin);
 	if(sizeof($recipients) <= 0) return ERROR_INVALID_SMALLGROUP_ID;
 	if($max_recipients > 0 && sizeof($recipients) > $max_recipients) return ERROR_TOO_MANY_RECIPIENTS;
 

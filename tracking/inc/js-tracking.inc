@@ -1,20 +1,26 @@
 <script language="javascript" type="text/javascript">
 <!--
 function tracking_entered_simple(data) {
-	split = data.split('@@@');
-	$("#"+split[0]).html(split[1]).fadeTo(500, 1).delay(2000).fadeTo(500, 0);
+	var split = data.split('@@@');
+	$('[id="'+split[0]+'"]').addClass(split[1]);
+	setTimeout(function() {
+		$('[id="'+split[0]+'"]').removeClass(split[1]);
+	}, 600);
 
 	//Change the value of the checkbox
-	if($("#"+split[0].replace('tstate', 'chk')).val() == 1) {
-		$("#"+split[0].replace('tstate', 'chk')).val(0);
+	if($('[id="'+split[0].replace('tstate', 'chk')+'"]').val() == 1) {
+		$('[id="'+split[0].replace('tstate', 'chk')+'"]').val(0);
 	} else {
-		$("#"+split[0].replace('tstate', 'chk')).val(1);
+		$('[id="'+split[0].replace('tstate', 'chk')+'"]').val(1);
 	}
 }
 
 function tracking_entered_value(data) {
-	split = data.split('@@@');
-	$("#"+split[0]).html(split[1]).fadeTo(500, 1).delay(2000).fadeTo(500, 0);
+	var split = data.split('@@@');
+	$("#"+split[0]).addClass(split[1]);
+	setTimeout(function() {
+		$("#"+split[0]).removeClass(split[1]);
+	}, 600);
 }
 
 function tracking_entered_value_type(data) {
@@ -30,6 +36,8 @@ function tracking_ds_filter(text, value, name, hid_name) {
 
 
 $(document).ready(function() {
+
+
 	//Add link to zip export icons which will get all selected trackings
 	$("#export_tracking_xls_zip, #export_tracking_pdf_zip").click(function(event) {
 		var ids = '';
@@ -41,13 +49,13 @@ $(document).ready(function() {
 	});
 
 	//Add link to all add icons to show the select and input for "type mode"
-	$("a[id^='addlink_'], img[id^='addlink_']").live('click', function() {
+	$('body').on('click', "a[id^='addlink_'], img[id^='addlink_'], i[id^='addlink_']", function() {
 		$("#"+$(this).attr('id').replace('addlink_', 'adddiv_')).slideToggle(200);
 		$("#"+$(this).attr('id').replace('addlink_', 'adddiv_')+" select").focus();
 	});
 
 	//Button to activate all entries for one date (simple)
-	$("#main_content").on("click", "img.tracking_set_simple_for_all", function() {
+	$("#main_content").on("click", ".tracking_set_simple_for_all", function() {
 		c = confirm('<?php print getLL('tracking_confirm_set_for_all'); ?>');
 		if(c) {
 			temp = $(this).attr('id').split('_');
@@ -58,7 +66,7 @@ $(document).ready(function() {
 	});
 
 	//Button to activate all entries for one date (value, valueNonNum)
-	$("#main_content").on("keydown", "input.tracking_set_value_for_all", function(e) {
+	$("#main_content").on("keydown", ".tracking_set_value_for_all", function(e) {
 		if(e.which == 13) {
 			c = confirm('<?php print getLL('tracking_confirm_set_for_all'); ?>');
 			if(c) {
@@ -76,7 +84,7 @@ $(document).ready(function() {
 	});
 
 	//Button to activate all entries for one date (typecheck)
-	$("#main_content").on("click", "img.tracking_set_typecheck_for_all, span.tracking_set_typecheck_for_all", function() {
+	$("#main_content").on("click", ".tracking_set_typecheck_for_all, .tracking_set_typecheck_for_all", function() {
 		c = confirm('<?php print getLL('tracking_confirm_set_for_all'); ?>');
 		if(c) {
 			temp = $(this).attr('id').split('_');
@@ -89,7 +97,7 @@ $(document).ready(function() {
 	});
 
 	//Button to clear all entries for one date
-	$("#main_content").on("click", "img.tracking_del_for_all", function() {
+	$("#main_content").on("click", ".tracking_del_for_all", function() {
 		c = confirm('<?php print getLL('tracking_confirm_del_for_all'); ?>');
 		if(c) {
 			temp = $(this).attr('id').split('_');
@@ -102,7 +110,7 @@ $(document).ready(function() {
 	});
 
 	//Set default values for a person
-	$("#main_content").on("click", "img.tracking_default", function() {
+	$("#main_content").on("click", ".tracking_default", function() {
 		c = confirm('<?php print getLL('tracking_confirm_default'); ?>');
 		if(c) {
 			temp = $(this).attr('id').split('_');

@@ -63,6 +63,7 @@ function ko_list_trackings($output=TRUE) {
 	$list->setActions(array('edit' => array('action' => 'edit_tracking'),
 													'delete' => array('action' => 'delete_tracking', 'confirm' => TRUE))
 										);
+	if ($access['tracking']['MAX'] > 3) $list->setActionNew('new_tracking');
 	$list->setSort(TRUE, 'setsort', $_SESSION['sort_trackings'], $_SESSION['sort_trackings_order']);
 	$list->setStats($rows);
 	$list->setColumnLink('name', 'index.php?action=enter_tracking&amp;id=ID');
@@ -96,14 +97,28 @@ function ko_list_tracking_mod_entries($output=TRUE) {
 	}
 	$es = db_select_data('ko_tracking_entries', "WHERE `status` = '1' $z_where", '*', $order, $z_limit);
 
+	$manualAccess = array('edit' => array());
+	foreach ($es as $k => $te) {
+		$t = db_select_data('ko_tracking', "WHERE `id` = {$te['tid']}", '*', '', '', TRUE);
+		if ($t['id'] != $te['tid'] || $t['mode'] != 'type') {
+			$edit = FALSE;
+		} else {
+			$edit = TRUE;
+		}
+		$manualAccess['edit'][$te['id']] = $edit;
+	}
+
 	$list = new kOOL_listview();
 
-	$list->init('tracking', 'ko_tracking_entries', array('chk', 'check', 'delete'), $_SESSION['show_start'], $_SESSION['show_limit']);
+	$list->init('tracking', 'ko_tracking_entries', array('chk', 'edit', 'check', 'delete'), $_SESSION['show_start'], $_SESSION['show_limit']);
 	$list->setTitle(getLL('tracking_entries_list_title'));
-	$list->setAccessRights(array('check' => 2, 'delete' => 2), $access['tracking']);
-	$list->setActions(array('check' => array('action' => 'confirm_tracking_entry'),
-													'delete' => array('action' => 'delete_tracking_entry', 'confirm' => TRUE))
-										);
+	$list->setAccessRights(array('check' => 2, 'edit' => 2, 'delete' => 2), $access['tracking']);
+	$list->setActions(array(
+		'edit' => array('action' => 'edit_tracking_mod'),
+		'check' => array('action' => 'confirm_tracking_entry'),
+		'delete' => array('action' => 'delete_tracking_entry', 'confirm' => TRUE),
+	));
+	$list->setManualAccess('edit', $manualAccess['edit']);
 	$list->setSort(TRUE, 'setsortmod', $_SESSION['sort_modtrackings'], $_SESSION['sort_modtrackings_order']);
 	$list->setStats($rows);
 
@@ -117,6 +132,54 @@ function ko_list_tracking_mod_entries($output=TRUE) {
 		print $list->render($es);
 	}
 }//ko_list_tracking_mod_entries()
+
+
+
+
+
+function ko_formular_tracking_entry_mod($id) {
+	global $KOTA;
+
+	unset ($KOTA['ko_tracking_entries']['status']);
+
+	$te = db_select_data('ko_tracking_entries', "WHERE `id` = {$id}", '*', '', '', TRUE);
+	if ($te['id'] != $id) return FALSE;
+	$tracking = db_select_data('ko_tracking', "WHERE `id` = {$te['tid']}", '*', '', '', TRUE);
+	if ($tracking['id'] != $te['tid']) return FALSE;
+	if ($tracking['mode'] != 'type') return FALSE;
+
+	$values = array();
+	foreach (explode("\n", $tracking['types']) as $type) {
+		$type = trim($type);
+		if (!$type) continue;
+		$values[] = $type;
+	}
+	$KOTA['ko_tracking_entries']['type']['form']['values'] = $values;
+	$KOTA['ko_tracking_entries']['type']['form']['descs'] = $values;
+
+	$KOTA['ko_tracking_entries']['tid']['form']['type'] = 'html';
+	//$KOTA['ko_tracking_entries']['tid']['form']['dontsave'] = TRUE;
+	$KOTA['ko_tracking_entries']['tid']['form']['ignore_test'] = TRUE;
+	$KOTA['ko_tracking_entries']['tid']['pre'] = 'db_get_column("ko_tracking", @VALUE@, "name")';
+
+	$dates = array();
+	$peopleIds = ko_tracking_get_people($tracking['filter'], $dates, $tracking['id']);
+	if (sizeof($peopleIds) > 0) {
+		$KOTA['ko_tracking_entries']['lid']['form']['exclude_sql'] = "(`id` IN (".implode(',', array_map(function($el){return $el['id'];}, $peopleIds))."))";
+	} else {
+		$KOTA['ko_tracking_entries']['lid']['form']['exclude_sql'] = "(0=1)";
+	}
+
+	$form_data['title'] =  getLL('tracking_form_title_edit_mod');
+	$form_data['submit_value'] = getLL('save');
+	$form_data['action'] = 'submit_edit_tracking_mod';
+
+	$form_data['action_as_new'] = 'submit_edit_approve_tracking_mod';
+	$form_data['label_as_new'] = getLL('tracking_form_submit_edit_approve_mod');
+	$form_data['cancel'] = 'list_trackings';
+
+	ko_multiedit_formular('ko_tracking_entries', '', $id, '', $form_data);
+}
 
 
 
@@ -463,6 +526,8 @@ function ko_tracking_enter_form($output=TRUE) {
 	$smarty->assign('label_prev1', getLL('tracking_paging_prev_day'));
 	$smarty->assign('label_today', getLL('tracking_paging_today'));
 
+	$smarty->assign('tracking_order_people', ko_get_userpref($_SESSION['ses_userid'], 'tracking_order_people'));
+
 	//Output the list
 	if($output) {
 		$smarty->display('ko_formular_tracking.tpl');
@@ -495,7 +560,7 @@ function ko_tracking_get_dates($tracking, $_start='', $_limit='', &$prev, &$next
 	$limit = $_limit ? $_limit : $_SESSION['date_limit'];
 
 	$dates = array();
-	$_dates = $neg_dates = array();
+	$_dates = $neg_dates = $_dates_subtitles = array();
 
 	if($tracking['date_eventgroup']) {
 		//TODO: More than one event on a date?
@@ -529,16 +594,20 @@ function ko_tracking_get_dates($tracking, $_start='', $_limit='', &$prev, &$next
 						$cd = $d['startdatum'];
 						while($cd != $d['enddatum']) {
 							$_dates[] = $cd;
+							$_dates_subtitles[$cd] = $d['title'];
 							$cd = add2date($cd, 'day', 1, TRUE);
 						}
 						$_dates[] = $d['enddatum'];
+						$_dates_subtitles[$d['enddatum']] = $d['title'];
 					} else {
 						$_dates[] = $d['startdatum'];
+						$_dates_subtitles[$d['startdatum']] = $d['title'];
 					}
 				}
 			}
 		}
 	}
+
 
 	if($tracking['date_weekdays'] != '') {
 		//Get limit dates forward from start
@@ -573,14 +642,26 @@ function ko_tracking_get_dates($tracking, $_start='', $_limit='', &$prev, &$next
 		}
 	}
 
+
 	if($tracking['dates'] != '') {
 		$_dates = array_merge($_dates, explode(',', $tracking['dates']));
 	}
 
 
+
 	//Remove negative dates
 	foreach($_dates as $k => $v) {
 		if(in_array($v, $neg_dates)) unset($_dates[$k]);
+	}
+
+
+	//Remove double dates (may come from eventgroups)
+	$checked = array();
+	foreach($_dates as $k => $v) {
+		if(in_array($v, $checked)) {
+			unset($_dates[$k]);
+		}
+		$checked[] = $v;
 	}
 
 
@@ -619,7 +700,11 @@ function ko_tracking_get_dates($tracking, $_start='', $_limit='', &$prev, &$next
 		if(!$date) continue;
 		if((int)str_replace('-', '', $date) >= (int)str_replace('-', '', $start)) {
 			if($num_dates < $limit) {
-				$dates[] = array('date' => $date, 'title' => strftime($DATETIME[$dateformat], strtotime($date)), 'timestamp' => strtotime($date));
+				$dates[] = array('date' => $date,
+												 'title' => strftime($DATETIME[$dateformat], strtotime($date)),
+												 'subtitle' => $_dates_subtitles[$date],
+												 'timestamp' => strtotime($date),
+												 );
 				$num_dates++;
 			} else if(!$next) {
 				$next = $date;
@@ -711,6 +796,26 @@ function ko_tracking_get_people($filters, &$dates, $tid, $apply_filters=FALSE) {
 		}
 	}//foreach(filters as filter)
 
+	if (isset($_SESSION['tracking_filter']['peoplesearch'])) {
+		$search = format_userinput($_SESSION['tracking_filter']['peoplesearch'], 'text');
+
+		$tokens = explode(' ', $search);
+		$fields = array('vorname', 'nachname', 'firm');
+
+		$w = array();
+		foreach ($tokens as $token) {
+			if (!$token) continue;
+			$ww = array();
+			foreach ($fields as $field) {
+				$ww[] = "`{$field}` like '%{$token}%'";
+			}
+			$w[] = implode(' OR ', $ww);
+		}
+		if (sizeof($w) > 0) {
+			$where .= " AND (" . implode(') AND (', $w) . ") ";
+		}
+	}
+
 	if($filter_where != '') $where = $where.' AND ('.substr($filter_where, 0, -3).')';
 	else return array();
 
@@ -779,6 +884,7 @@ function ko_tracking_settings() {
 	$gc = 0;
 	$rowcounter = 0;
 	$frmgroup[$gc]['titel'] = getLL('settings_title_user');
+	$frmgroup[$gc]['tab'] = True;
 
 	//Limits
 	$frmgroup[$gc]['row'][$rowcounter]['inputs'][0] = array('desc' => getLL('admin_settings_limits_numberof_trackings'),
@@ -846,6 +952,7 @@ function ko_tracking_settings() {
 		$gc++;
 		$rowcounter = 0;
 		$frmgroup[$gc]['titel'] = getLL('settings_title_global');
+		$frmgroup[$gc]['tab'] = True;
 
 		$value = ko_get_setting('tracking_add_roles');
 		$frmgroup[$gc]['row'][$rowcounter]['inputs'][1] = array('desc' => getLL('tracking_settings_add_roles'),
@@ -857,6 +964,10 @@ function ko_tracking_settings() {
 		);
 		$rowcounter++;
 	}
+
+
+	//Allow plugins to add further settings
+	hook_form('tracking_settings', $frmgroup, '', '');
 
 
 	//display the form
@@ -887,9 +998,10 @@ function ko_tracking_settings() {
  * @param string address_columns: Default to 'name' which just exports first and last name. May also be a column preset
  * @param string dates: May be current, filter or all and defines which dates should be used for the export
  * @param boolean combine_families: If set to TRUE family members' tracking data will be combined into one entry
+ * @param int addsums: 0 (default): Don't show sums, 1: Add sums, 2: Only show sums
  * @return int error: If there is an error during the LaTeX conversion to PDF an error code will be returned
  */
-function ko_tracking_export($mode, $filename, $id, $address_columns='name', $dates='current', $layout='L', $addrows=0, $combine_families=FALSE, $addsums=FALSE) {
+function ko_tracking_export($mode, $filename, $id, $address_columns='name', $dates='current', $layout='L', $addrows=0, $combine_families=FALSE, $addsums=0) {
 	global $ko_path, $BASE_PATH, $BASE_URL, $DATETIME;
 
 	//Get tracking, dates and people
@@ -937,10 +1049,10 @@ function ko_tracking_export($mode, $filename, $id, $address_columns='name', $dat
 	//Get tracking entries
 	$entries = array();
 	$where = "WHERE `tid` = '".$tracking['id']."' AND `lid` IN ('".implode("','", array_keys($people))."')";
-	if($tracking['mode'] != 'type') $where .= " AND `type` = '' ";
+	if($tracking['mode'] != 'type' && $tracking['mode'] != 'typecheck') $where .= " AND `type` = '' ";
 	$rows = db_select_data('ko_tracking_entries', $where, '*', 'ORDER BY lid,date ASC');
 	foreach($rows as $row) {
-		if($tracking['mode'] == 'type') {
+		if($tracking['mode'] == 'type' || $tracking['mode'] == 'typecheck') {
 			$entries[$row['lid']][$row['date']][$row['type']] += $row['value'];
 		} else {
 			$entries[$row['lid']][$row['date']] = $row['value'];
@@ -991,7 +1103,7 @@ function ko_tracking_export($mode, $filename, $id, $address_columns='name', $dat
 					} else if($tracking['mode'] == 'valueNonNum') {
 						$value = $entries[$p['id']][$date['date']];
 						if($value) $sums['string'][] = $value;
-					} else if($tracking['mode'] == 'type') {
+					} else if($tracking['mode'] == 'type' || $tracking['mode'] == 'typecheck') {
 						$value = '';
 						foreach($entries[$p['id']][$date['date']] as $t => $v) {
 							if(!$v || !$t) continue;
@@ -999,21 +1111,28 @@ function ko_tracking_export($mode, $filename, $id, $address_columns='name', $dat
 							(float)$famSums[$t] += (float)$v;
 							(float)$sums['v'] += (float)$v;
 						}
-					}
-					$data[$row][] = trim($value);
-				}
-				if($mode == 'xls') {
-					if($tracking['mode'] == 'type') {
-						foreach ($famSumCols as $fsc) {
-							$data[$row][] = ($famSums[$fsc] == '' || !isset($famSums[$fsc])) ? 0 : $famSums[$fsc];
+					} else if(substr($tracking['mode'], 0, 8) == 'bitmask_') {
+						if(function_exists('my_'.$tracking['mode'].'_psum')) {
+							$oneNum = call_user_func('my_'.$tracking['mode'].'_psum', array('value' => $entries[$p['id']][$date['date']]));
+							$sums['v'] += $oneNum;
+							$value = $oneNum > 0 ? $oneNum : '';
 						}
 					}
+
+					if($addsums != 2) $data[$row][] = trim($value);
 				}
+				//if($mode == 'xls') {
+					if($tracking['mode'] == 'type' || $tracking['mode'] == 'typecheck') {
+						foreach ($famSumCols as $fsc) {
+							if($addsums != 2) $data[$row][] = ($famSums[$fsc] == '' || !isset($famSums[$fsc])) ? 0 : $famSums[$fsc];
+						}
+					}
+				//}
 				//Add sum column
 				$value = array();
 				if($sums['v']) $value[] = $sums['v'];
 				if(sizeof($sums['string']) > 0) $value[] = implode(', ', $sums['string']);
-				if ($addsums) {
+				if ($addsums > 0) {
 					$data[$row][] = implode(', ', $value);
 				}
 
@@ -1117,6 +1236,7 @@ function ko_tracking_export($mode, $filename, $id, $address_columns='name', $dat
 						}
 					break;
 					case 'type':
+					case 'typecheck':
 						foreach($famdata[$p['famid']][$date['date']] as $dd) {
 							foreach($dd['value'] as $t => $d) {
 								$values[$t] += $d;
@@ -1129,17 +1249,31 @@ function ko_tracking_export($mode, $filename, $id, $address_columns='name', $dat
 						}
 					break;
 
-					//TODO: case bitmask
+					default:
+						if(substr($tracking['mode'], 0, 8) == 'bitmask_') {
+							$oneValue = 0;
+							foreach($famdata[$p['famid']][$date['date']] as $d) {
+								$class = salta_lunch_get_class($p['groups']);
+								$factor = $class['salta_lunch_meal_factor'];
+								if($factor == 0) $factor = 1;
+
+								$oneNum = call_user_func('my_'.$tracking['mode'].'_psum', array('value' => $d['value']));
+								if($oneNum > 0)  {
+									$sums['p'] += $factor * $oneNum;
+									$oneValue += $oneNum;
+								}
+							}
+							$value[] = $oneValue > 0 ? $oneValue : '';
+						}
+
 				}
-				$data[$row][] = implode(', ', $value);
+				if($addsums != 2) $data[$row][] = implode(', ', $value);
 			}
 
 			//Add personal sums by 'type'
-			if($mode == 'xls') {
-				if($tracking['mode'] == 'type') {
-					foreach ($famSumCols as $fsc) {
-						$data[$row][] = ($famSums[$fsc] == '' || !isset($famSums[$fsc])) ? 0 : $famSums[$fsc];
-					}
+			if($tracking['mode'] == 'type' || $tracking['mode'] == 'typecheck') {
+				foreach ($famSumCols as $fsc) {
+					$data[$row][] = ($famSums[$fsc] == '' || !isset($famSums[$fsc])) ? 0 : $famSums[$fsc];
 				}
 			}
 
@@ -1157,13 +1291,15 @@ function ko_tracking_export($mode, $filename, $id, $address_columns='name', $dat
 						}
 					}
 				}
-			} else if($tracking['mode'] == 'type') {  //Don't include p/c for type sums
+			} else if($tracking['mode'] == 'type' || $tracking['mode'] == 'typecheck') {  //Don't include p/c for type sums
+				if($sums['p']) $sum[] = $sums['p'];
+			} else if(substr($tracking['mode'], 0, 8) == 'bitmask_') {
 				if($sums['p']) $sum[] = $sums['p'];
 			} else {
 				if($sums['p']) $sum[] = $sums['p'].getLL('tracking_export_family_parents_short');
 				if($sums['c']) $sum[] = $sums['c'].getLL('tracking_export_family_children_short');
 			}
-			if ($addsums) {
+			if ($addsums > 0) {
 				$data[$row][] = implode(', ', $sum);
 			}
 
@@ -1202,6 +1338,7 @@ function ko_tracking_export($mode, $filename, $id, $address_columns='name', $dat
 						if($value) $sums[$value] += 1;
 					break;
 					case 'type':
+					case 'typecheck':
 						$value = '';
 						foreach($entries[$p['id']][$date['date']] as $t => $v) {
 							if(!$v || !$t) continue;
@@ -1218,18 +1355,17 @@ function ko_tracking_export($mode, $filename, $id, $address_columns='name', $dat
 							}
 						}
 				}
-				$data[$row][] = trim($value);
+				if($addsums != 2) $data[$row][] = trim($value);
 			}
-			//Add personal sums by 'type'
-			if($mode == 'xls') {
-				if($tracking['mode'] == 'type') {
+			//Add sum column
+			if($addsums > 0) {
+				//Add personal sums by 'type'
+				if($tracking['mode'] == 'type' || $tracking['mode'] == 'typecheck') {
 					foreach ($famSumCols as $fsc) {
 						$data[$row][] = ($famSums[$fsc] == '' || !isset($famSums[$fsc])) ? 0 : $famSums[$fsc];
 					}
 				}
-			}
-			//Add sum column
-			if($addsums) {
+
 				if($tracking['mode'] == 'value' || $tracking['mode'] == 'valueNonNum') {
 					$sum = '';
 					if($sums['numeric'] > 0) $sum = $sums['numeric'];
@@ -1257,22 +1393,26 @@ function ko_tracking_export($mode, $filename, $id, $address_columns='name', $dat
 		foreach($columns as $col) {
 			$col_headers[] = $colnames[$col] ? $colnames[$col] : $col;
 		}
-		foreach($dates as $date) {
-			$col_headers[] = $date['title'];
-		}
-		if ($mode == 'xls' && $tracking['mode'] == 'type') {
-			foreach($famSumCols as $fsc) {
-				$col_headers[] = $fsc;
+		if($addsums != 2) {
+			foreach($dates as $date) {
+				$col_headers[] = $date['title'];
 			}
 		}
-		if($addsums) $col_headers[] = getLL('tracking_list_total');
+		if($addsums > 0) {
+			if ($tracking['mode'] == 'type' || $tracking['mode'] == 'typecheck') {
+				foreach($famSumCols as $fsc) {
+					$col_headers[] = $fsc;
+				}
+			}
+			$col_headers[] = getLL('tracking_list_total');
+		}
 
 		//Create subtitles (only use first entry for title)
 		$subtitles = array();
 		list($first_filter) = explode(',', $tracking['filter']);
 		if(substr($first_filter, 0, 1) == 'g' && strlen($first_filter) >= 7) {
 			$group = db_select_data('ko_groups', "WHERE `id` = '".substr($first_filter, 1)."'", '*', '', '', TRUE);
-			$subtitles[getLL('groups_listheader_name')] = $group['name'];
+			$subtitles[getLL('groups_groups')] = $group['name'];
 		} else if(strlen($first_filter) == 4) {
 			ko_get_kleingruppen($_kg, '', $first_filter);
 			$kg = $_kg[$first_filter];
@@ -1383,7 +1523,7 @@ function ko_tracking_export($mode, $filename, $id, $address_columns='name', $dat
 		$pdf->AddPage();
 
 		//Set a minimum and maximum width of the data fields, depending on the type of field
-		if(substr($tracking['mode'], 0, 7) == 'bitmask' || $tracking['mode'] == 'type') {
+		if(substr($tracking['mode'], 0, 7) == 'bitmask' || $tracking['mode'] == 'type' || $tracking['mode'] == 'typecheck') {
 			$data_width_min = 35;
 			$data_width_max = 50;
 		}
@@ -1393,18 +1533,29 @@ function ko_tracking_export($mode, $filename, $id, $address_columns='name', $dat
 		}
 
 		$num_cols = sizeof($columns);
-		$num_dates = sizeof($dates);
+		if($addsums != 2) {
+			$num_dates = sizeof($dates);
+		} else {
+			$num_dates = 0;
+		}
 
 		//Define the width of column-headers and of the sum-header
 		$col_width = 30;
 		$sum_width = 25;
+		$num_sum_cols = 1;
+		if($addsums > 0 && ($tracking['mode'] == 'type' || $tracking['mode'] == 'typecheck')) $num_sum_cols += sizeof($famSumCols);
 
 		//Determine how many data-columns will fit on a page
 		$cols_fitting = floor((float)($pdf->layout['page_width_usable'] - $num_cols * $col_width) / (float)$data_width_min);
-		$cols_fitting_with_sum = floor((float)($pdf->layout['page_width_usable'] - $num_cols * $col_width - $sum_width) / (float)$data_width_min);
+		$cols_fitting_with_sum = floor((float)($pdf->layout['page_width_usable'] - $num_cols * $col_width - $num_sum_cols*$sum_width) / (float)$data_width_min);
+
+		if($cols_fitting < 1) {
+			koNotifier::Instance()->addError(5);
+			return FALSE;
+		}
 
 		//Determine how many tables will be needed to show all columns
-		if ($addsums) {
+		if ($addsums > 0) {
 			if ($num_dates >= $cols_fitting) {
 				$tables = ceil((float)$num_dates/(float)$cols_fitting);
 				$data_width = ((float)($pdf->layout['page_width_usable'] - $num_cols * $col_width) / (float)$cols_fitting);
@@ -1423,7 +1574,7 @@ function ko_tracking_export($mode, $filename, $id, $address_columns='name', $dat
 					}
 				}
 				else {
-					$data_width = ((float)($pdf->layout['page_width_usable'] - $num_cols * $col_width - $sum_width) / (float)$num_dates);
+					$data_width = ((float)($pdf->layout['page_width_usable'] - $num_cols * $col_width - $num_sum_cols*$sum_width) / (float)$num_dates);
 					if ($data_width > $data_width_max) {
 						$data_width = $data_width_max;
 					}
@@ -1471,8 +1622,13 @@ function ko_tracking_export($mode, $filename, $id, $address_columns='name', $dat
 					$ldata[$key][] = $row[$i];
 				}
 				//Add sum for last table
-				if($t == $tables && $addsums) {
-					$ldata[$key][] = $row[$num_cols+$stop];
+				if($t == $tables && $addsums > 0) {
+					$sumCounter = 0;
+					foreach($famSumCols as $sumCol) {
+						$ldata[$key][] = $row[$num_cols+$stop+$sumCounter];
+						$sumCounter++;
+					}
+					$ldata[$key][] = $row[$num_cols+$stop+$sumCounter];
 				}
 			}
 			//Create table header
@@ -1487,7 +1643,13 @@ function ko_tracking_export($mode, $filename, $id, $address_columns='name', $dat
 				$table_header[] = $date;
 			}
 			//Add sum column header for last table
-			if($t == $tables && $addsums) {
+			if($t == $tables && $addsums > 0) {
+				if($tracking['mode'] == 'type' || $tracking['mode'] == 'typecheck') {
+					foreach($famSumCols as $sumCol) {
+						$table_cols[] = $sum_width;
+						$table_header[] = $sumCol;
+					}
+				}
 				$table_cols[] = $sum_width;
 				$table_header[] = $pdf->data['label_sum'];
 			}
@@ -1537,7 +1699,7 @@ function ko_tracking_export($mode, $filename, $id, $address_columns='name', $dat
 		$pdf->Output($filename, false);
 
 	}
-}//ko_tracking_export_excel()
+}//ko_tracking_export()
 
 
 
@@ -1622,24 +1784,33 @@ function apply_tracking_entries_filter(&$z_where) {
  * @param filter mixed: groupID, smallgroupID or serialized filter preset
  * @returns string Name of the group, smallgroup of filter preset
  */
-function ko_tracking_get_filter_name($filter) {
+function ko_tracking_get_filter_name($filter, $returnTitle=FALSE) {
 	//Group id
 	if(substr($filter, 0, 1) == 'g' && strlen($filter) >= 7) {
-		$group = db_select_data('ko_groups', "WHERE `id` = '".substr($filter, 1)."'", '*', '', '', TRUE);
-		return $group['name'];
+		$name = $title = ko_groups_decode($filter, 'group_desc_full');
+		if ($returnTitle) {
+			$all = ko_groups_decode($filter, 'full_gid');
+			$title = ko_groups_decode($all, 'group_desc_full');
+			return array($name, $title);
+		}
+		else return $name;
 	}
 	//Small group id
 	else if(strlen($filter) == 4) {
 		ko_get_kleingruppen($_kg, '', $filter);
 		$sg = db_select_data('ko_kleingruppen', "WHERE `id` = '".substr($filter, 1)."'", '*', '', '', TRUE);
-		return $sg['name'];
+		if ($returnTitle) return array($sg['name'], $sg['name']);
+		else return $sg['name'];
 	}
 	//Filter preset
 	else if(substr($filter, 0, 1) == 'F') {
 		$filterset = array_merge((array)ko_get_userpref('-1', '', 'filterset', 'ORDER BY `key` ASC'), (array)ko_get_userpref($_SESSION['ses_userid'], '', 'filterset', 'ORDER BY `key` ASC'));
 
 		foreach($filterset as $f) {
-			if($f['value'] == base64_decode(substr($filter, 1))) return $f['key'];
+			if($f['value'] == base64_decode(substr($filter, 1))) {
+				if ($returnTitle) return array($f['key'], $f['key']);
+				else return $f['key'];
+			}
 		}
 	}
 }//ko_tracking_get_filter_name()

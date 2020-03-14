@@ -27,9 +27,11 @@
 //Set timeout from php.ini if not set manually in ko-config.php
 if(!defined('SESSION_TIMEOUT')) {
 	define('SESSION_TIMEOUT', ini_get('session.gc_maxlifetime'));
-} else {
-	session_set_cookie_params(SESSION_TIMEOUT);
 }
+ini_set('session.gc_probability', 1);
+ini_set('session.gc_divisor', 100);
+ini_set('session.gc_maxlifetime', SESSION_TIMEOUT);
+session_set_cookie_params(SESSION_TIMEOUT);
 
 //Set session save path if set. If not set the system's default path will be used
 if(defined('SESSION_SAVE_PATH')) session_save_path(SESSION_SAVE_PATH);
@@ -43,4 +45,21 @@ header("Pragma: no-cache");
 
 //Start session
 if(FALSE === session_start()) exit;
+
+/*
+if(isset($_SESSION['LAST_ACTIVITY']) && (time() - $_SESSION['LAST_ACTIVITY'] > SESSION_TIMEOUT)) {
+  // last request was more than timeout ago
+  //session_unset();     // unset $_SESSION variable for the run-time 
+  //session_destroy();   // destroy session data in storage
+}
+$_SESSION['LAST_ACTIVITY'] = time(); // update last activity time stamp
+
+if (!isset($_SESSION['CREATED'])) {
+  $_SESSION['CREATED'] = time();
+} else if (time() - $_SESSION['CREATED'] > 1800) {
+  // session started more than 30 minutes ago
+  session_regenerate_id(true);    // change session ID for the current session and invalidate old session ID
+  $_SESSION['CREATED'] = time();  // update creation time
+}
+*/
 ?>

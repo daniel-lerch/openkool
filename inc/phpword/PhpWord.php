@@ -350,4 +350,21 @@ class PhpWord
     {
         return $this->addSection($settings);
     }
+
+    /**
+     * Function inserted by Andreas Hess @ Lauper Computing
+     *
+     * Changes made:
+     * - Html.php:192: Added new line to handle font colors specified in paragraph tag
+     *
+     * @param string $key specify a property name to check whether it has been adapted
+     */
+    public function personalisedEditionLPC($key) {
+        switch ($key) {
+            case 'parseParagraphFont':
+                return true;
+            default:
+                return false;
+        }
+    }
 }

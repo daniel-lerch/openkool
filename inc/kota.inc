@@ -45,7 +45,11 @@ if(in_array('ko_event', $KOTA_TABLES)) {
 			),
 			'module' => 'daten',
 		),
+		'_special_cols' => array(
+			'lastchange' => 'last_change',
+		),
 		"_listview" => array(
+			1 => array("name" => "eg_color", "sort" => FALSE, "multiedit" => FALSE),
 			10 => array("name" => "startdatum", "sort" => "startdatum", "multiedit" => "startdatum,enddatum"),
 			20 => array("name" => "eventgruppen_id", "sort" => "eventgruppen_id"),
 			25 => array('name' => 'title', 'sort' => 'title', 'filter' => TRUE),
@@ -55,7 +59,10 @@ if(in_array('ko_event', $KOTA_TABLES)) {
 			50 => array("name" => "room", "sort" => "room", 'filter' => TRUE),
 			//60 is reserved for rota (set further down) only if rota module is installed
 			//70 is reserved for reservations (set further down) only if res module is installed
-			80 => array("name" => "registrations", "sort" => "registrations", "filter" => TRUE),
+			80 => array("name" => "registrations", "sort" => FALSE, "filter" => TRUE),
+			90 => array("name" => "do_notify", "sort" => FALSE, "filter" => TRUE),
+			100 => array("name" => "cdate", "sort" => 'cdate', "filter" => TRUE),
+			110 => array("name" => "user_id", "sort" => 'user_id', "filter" => TRUE),
 		),
 		'_listview_default' => array('startdatum', 'eventgruppen_id', 'title', 'startzeit', 'room', 'rota', 'reservationen'),
 
@@ -66,9 +73,15 @@ if(in_array('ko_event', $KOTA_TABLES)) {
 				"type" => "dynselect",
 				"js_func_add" => "event_cal_select_add",
 				"params" => 'size="5"',
-				'new_row' => true,
 			), kota_get_form("ko_event", "eventgruppen_id")),
 		),  //eventgruppen_id
+		"do_notify" => array(
+			'list' => 'FCN:kota_listview_boolyesno',
+			'form' => array(
+				'type' => 'switch',
+				'default' => 1,
+			),
+		), //do_notify
 		'title' => array(
 			'list' => 'ko_html',
 			'pre' => 'ko_html',
@@ -108,6 +121,10 @@ if(in_array('ko_event', $KOTA_TABLES)) {
 			"form" => array(
 				"type" => "text",
 				"params" => 'size="11" maxlength="11"',
+				"descicon" => array(
+					'icon' => "star",
+					'context' => 'highlight',
+				),
 			),
 		),  //startzeit
 		"endzeit" => array(
@@ -116,6 +133,10 @@ if(in_array('ko_event', $KOTA_TABLES)) {
 			"form" => array(
 				"type" => "text",
 				"params" => 'size="11" maxlength="11"',
+				"descicon" => array(
+					'icon' => "star",
+					'context' => 'highlight',
+				),
 			),
 		),  //endzeit
 		"room" => array(
@@ -123,7 +144,7 @@ if(in_array('ko_event', $KOTA_TABLES)) {
 			"form" => array(
 				"type" => "textplus",
 				"params" => 'size="0"',
-				"params_PLUS" => 'size="50" maxlength="50"',
+				"params_PLUS" => 'size="50" maxlength="200"',
 				'where' => "WHERE `import_id` = ''",
 			),
 		),  //room
@@ -145,20 +166,56 @@ if(in_array('ko_event', $KOTA_TABLES)) {
 		),  //kommentar2
 		"registrations" => array(
 			"list" => "FCN:kota_listview_ko_event_registrations",
+			'exclude_from_access' => 1,
 		),  //registrations
+		"eg_color" => array(
+			"list" => "FCN:kota_listview_eventgroup_color",
+			'exclude_from_access' => 1,
+		), //eg_color
+		"cdate" => array(
+			'list' => 'FCN:kota_listview_datetimecol',
+			'filter' => array(
+				'type' => 'jsdate',
+			),
+		), //cdate
+		"user_id" => array(
+			'list' => 'FCN:kota_listview_login',
+		),//user_id
 	);
 
 	if(ko_get_userpref($_SESSION['ses_userid'], 'daten_rooms_only_future') == 1) {
 		$KOTA['ko_event']['room']['form']['where'] .= " AND `startdatum` >= '".date('Y-m-d')."'";
 	}
 
+	if(ko_module_installed('reservation')) {
+		if (!isset($access['reservation'])) ko_get_access('reservation');
+		$resItemns = db_select_data("ko_resitem", "WHERE 1=1");
+		$showRes = FALSE;
+		foreach($resItemns as $iid => $item) {
+			if ($access['reservation'][$iid] >= 1) {
+				$showRes = TRUE;
+				break;
+			}
+		}
+
+		if ($showRes) {
+			$KOTA['ko_event']['_listview'][70] = array('name' => 'reservationen', 'sort' => "(ROUND(LENGTH(`reservationen`)-LENGTH(REPLACE(`reservationen`,',',''))))", 'multiedit' => FALSE);
+
+			$KOTA['ko_event']['reservationen'] = array(
+				'list' => 'FCN:kota_listview_event_reservations'
+			);
+		}
+	}
+
 	if(ko_module_installed('rota')) {
-		$KOTA['ko_event']['rota']['form'] = array('type' => 'checkbox');
+		$KOTA['ko_event']['rota']['form'] = array('type' => 'switch');
 		$KOTA['ko_event']['rota']['list'] = 'FCN:kota_listview_boolyesno';
 		$KOTA['ko_event']['_listview'][60] = array('name' => 'rota', 'sort' => 'rota', 'filter' => TRUE);
 
 		ko_get_access('rota');
-		$rota_teams = db_select_data('ko_rota_teams', "WHERE 1", '*', 'ORDER BY name ASC');
+		$order = 'ORDER BY name ASC';
+		if(ko_get_setting('rota_manual_ordering')) $order = 'ORDER BY sort ASC';
+		$rota_teams = db_select_data('ko_rota_teams', "WHERE 1", '*', $order);
 		$tc = 10010;
 		//Add divider before all rota teams
 		if(sizeof($rota_teams) > 0 && $access['rota']['MAX'] > 0) {
@@ -179,11 +236,6 @@ if(in_array('ko_event', $KOTA_TABLES)) {
 				}
 			}
 		}
-	}
-
-	if(ko_module_installed('reservation')) {
-		$KOTA['ko_event']['reservationen']['list'] = 'FCN:kota_listview_event_reservations';
-		$KOTA['ko_event']['_listview'][70] = array('name' => 'reservationen', 'sort' => FALSE, 'multiedit' => FALSE);
 	}
 
 	// set event program kota
@@ -219,10 +271,15 @@ if(in_array('ko_event', $KOTA_TABLES)) {
 				'crdate' => 'crdate',
 				'cruser' => 'cruser',
 			),
-			"_listview" => array(),
+			"_listview" => array(
+				10 => array('name' => 'time'),
+				20 => array('name' => 'title'),
+				30 => array('name' => 'team'),
+			),
 			'_listview_default' => array(),
 
 			"time" => array(
+				"list" => "sql_zeit('@VALUE@')",
 				"pre" => "sql_zeit('@VALUE@')",
 				"post" => "sql_zeit('@VALUE@')",
 				"form" => array(
@@ -231,6 +288,7 @@ if(in_array('ko_event', $KOTA_TABLES)) {
 				),
 			),  //time
 			"team" => array(
+				'list' => 'FCN:kota_listview_rota_team',
 				"form" => array_merge(array(
 					'type' => 'select',
 					'params' => 'size="0"'
@@ -244,6 +302,16 @@ if(in_array('ko_event', $KOTA_TABLES)) {
 				),
 			),  //title
 		);
+	}
+
+	$markFields = ko_array_column($EVENT_PROPAGATE_FIELDS, 'from');
+	foreach ($KOTA['ko_event'] as $field => &$def) {
+		if (in_array($field, $markFields)) {
+			$def['form']['descicon'] = array(
+				'icon' => "star",
+				'context' => 'highlight',
+			);
+		}
 	}
 }
 
@@ -281,18 +349,6 @@ if(in_array('ko_eventgruppen', $KOTA_TABLES)) {
 			'field' => 'type',
 			'default' => 0,
 			'types' => array(
-				1 => array(  //Google calendar
-					'use_fields' => array('calendar_id', 'name', 'shortname', 'farbe', 'gcal_url'),
-					'add_fields' => array(
-						'gcal_url' => array(
-							'post' => 'strtr("@VALUE@", array("/ical/" => "/feeds/", ".ics" => ""));',
-							'form' => array(
-								'type' => 'text',
-								'params' => 'size="60" maxlength="255"',
-							),
-						),
-					),
-				),
 				2 => array(  //Rota week team
 					'use_fields' => array('name', 'shortname', 'farbe'),
 				),
@@ -302,7 +358,11 @@ if(in_array('ko_eventgruppen', $KOTA_TABLES)) {
 						'ical_url' => array(
 							'form' => array(
 								'type' => 'text',
-								'params' => 'size="60" maxlength="255"',
+							),
+						),
+						'ical_title' => array(
+							'form' => array(
+								'type' => 'text',
 							),
 						),
 						'update' => array(
@@ -327,6 +387,13 @@ if(in_array('ko_eventgruppen', $KOTA_TABLES)) {
 			),
 		),
 
+		"name" => array(
+			'list' => 'FCN:kota_listview_ko_eventgruppen_name',
+			"form" => array(
+				"type" => "text",
+				"params" => 'size="60" maxlength="100"'
+			),
+		),  //name
 		"calendar_id" => array(
 			"post" => 'uint',
 			"list" => 'db_get_column("ko_event_calendar", @VALUE@, "name")',
@@ -335,19 +402,6 @@ if(in_array('ko_eventgruppen', $KOTA_TABLES)) {
 				"params_PLUS" => 'size="60" maxlength="200"',
 			), kota_get_form("ko_eventgruppen", "calendar_id")),
 		),  //gruppen_id
-		"name" => array(
-			'list' => 'FCN:kota_listview_ko_eventgruppen_name',
-			"form" => array(
-				"type" => "text",
-				"params" => 'size="60" maxlength="100"'
-			),
-		),  //name
-		"url" => array(
-			"form" => array(
-				"type" => "text",
-				"params" => 'size="60" maxlength="255"'
-			),
-		),  //url
 		"shortname" => array(
 			"list" => "ko_html",
 			"form" => array(
@@ -355,6 +409,69 @@ if(in_array('ko_eventgruppen', $KOTA_TABLES)) {
 				"params" => 'size="10" maxlength="5"'
 			),
 		),  //shortname
+		"url" => array(
+			"form" => array(
+				"type" => "text",
+				"params" => 'size="60" maxlength="255"'
+			),
+		),  //url
+		"room" => array(
+			"list" => "ko_html",
+			"form" => array(
+				"type" => "textplus",
+				"params" => 'size="0"',
+				"params_PLUS" => 'size="50" maxlength="200"',
+			),
+		),  //room
+		'title' => array(
+			'list' => 'ko_html',
+			'pre' => 'ko_html',
+			'form' => array(
+				'type' => 'text',
+				'params' => 'size="60" maxlength="255"',
+			),
+		),  //title
+		"startzeit" => array(
+			"list" => 'FCN:kota_listview_time',
+			"pre" => "sql_zeit('@VALUE@')",
+			"post" => "sql_zeit('@VALUE@')",
+			"form" => array(
+				"type" => "text",
+				"params" => 'size="11" maxlength="11"',
+				"descicon" => array(
+					'icon' => "star",
+					'context' => 'highlight',
+				),
+			),
+		),  //startzeit
+		"endzeit" => array(
+			"pre" => "sql_zeit('@VALUE@')",
+			"post" => "sql_zeit('@VALUE@')",
+			"form" => array(
+				"type" => "text",
+				"params" => 'size="11" maxlength="11"',
+				"descicon" => array(
+					'icon' => "star",
+					'context' => 'highlight',
+				),
+			),
+		),  //endzeit
+		"kommentar" => array(
+			"list" => "ko_html",
+			"form" => array(
+				"type" => "textarea",
+				"params" => 'cols="50" rows="4"',
+				'new_row' => TRUE,
+			),
+		),  //kommentar
+		"farbe" => array(
+			'list' => 'FCN:kota_listview_color',
+			"post" => 'str_replace("#", "", format_userinput("@VALUE@", "alphanum"))',
+			"form" => array(
+				"type" => "color",
+				"params" => 'size="10" maxlength="7"',
+			),
+		),
 		"moderation" => array(
 			"pre" => "ko_html",
 			"post" => 'uint',
@@ -364,64 +481,12 @@ if(in_array('ko_eventgruppen', $KOTA_TABLES)) {
 				"params" => 'size="0"',
 			), kota_get_form("ko_eventgruppen", "moderation")),
 		),  //moderation
-		"room" => array(
-			"list" => "ko_html",
-			"form" => array(
-				"type" => "textplus",
-				"params" => 'size="0"',
-				"params_PLUS" => 'size="50" maxlength="50"',
-				"descimg" => "bullet_star.png",
-			),
-		),  //room
-		"startzeit" => array(
-			"list" => 'FCN:kota_listview_time',
-			"pre" => "sql_zeit('@VALUE@')",
-			"post" => "sql_zeit('@VALUE@')",
-			"form" => array(
-				"type" => "text",
-				"params" => 'size="11" maxlength="11"',
-				"descimg" => "bullet_star.png",
-			),
-		),  //startzeit
-		"endzeit" => array(
-			"pre" => "sql_zeit('@VALUE@')",
-			"post" => "sql_zeit('@VALUE@')",
-			"form" => array(
-				"type" => "text",
-				"params" => 'size="11" maxlength="11"',
-				"descimg" => "bullet_star.png",
-			),
-		),  //endzeit
-		'title' => array(
-			'list' => 'ko_html',
-			'pre' => 'ko_html',
-			'form' => array(
-				'type' => 'text',
-				'params' => 'size="60" maxlength="255"',
-				'descimg' => 'bullet_star.png',
-			),
-		),  //title
-		"farbe" => array(
-			'list' => 'FCN:kota_listview_color',
-			"post" => 'str_replace("#", "", format_userinput("@VALUE@", "alphanum"))',
-			"form" => array(
-				"type" => "color",
-				"params" => 'size="10" maxlength="7"',
-			),
-		),
-		"kommentar" => array(
-			"list" => "ko_html",
-			"form" => array(
-				"type" => "textarea",
-				"params" => 'cols="50" rows="4"',
-				"descimg" => "bullet_star.png",
-				'new_row' => TRUE,
-			),
-		),  //kommentar
 	);
 
 	if(ko_module_installed('rota')) {
-		$KOTA['ko_eventgruppen']['rota']['form'] = array('type' => 'checkbox', 'descimg' => 'bullet_star.png');
+		$KOTA['ko_eventgruppen']['rota']['form'] = array(
+			'type' => 'switch',
+		);
 		$KOTA['ko_eventgruppen']['_listview'][50] = array('name' => 'rota', 'sort' => 'rota', 'filter' => TRUE);
 		$KOTA['ko_eventgruppen']['rota']['list'] = 'FCN:kota_listview_boolyesno';
 
@@ -438,7 +503,7 @@ if(in_array('ko_eventgruppen', $KOTA_TABLES)) {
 	}//if(ko_module_installed(rota))
 
 	if(ko_module_installed('tapes')) {
-		$KOTA['ko_eventgruppen']['tapes']['form'] = array('type' => 'checkbox', 'new_row' => TRUE);
+		$KOTA['ko_eventgruppen']['tapes']['form'] = array('type' => 'switch', 'new_row' => TRUE);
 		$KOTA['ko_eventgruppen']['_listview'][60] = array('name' => 'tapes', 'sort' => 'tapes', 'filter' => TRUE);
 		$KOTA['ko_eventgruppen']['tapes']['list'] = 'FCN:kota_listview_boolyesno';
 	}//if(ko_module_installed(tapes))
@@ -448,15 +513,19 @@ if(in_array('ko_eventgruppen', $KOTA_TABLES)) {
 		$KOTA['ko_eventgruppen']['resitems'] = array(
 			'post' => 'intlist',
 			'form' => array( 'type' => 'dyndoubleselect',
-											 'js_func_add' => 'resgroup_doubleselect_add',
-											 'values' => $res_values,
-											 'descs' => $res_output,
-											 'params' => 'size="7"',
-											 'descimg' => 'bullet_star.png',)
+											'js_func_add' => 'resgroup_doubleselect_add',
+											'values' => $res_values,
+											'descs' => $res_output,
+											'params' => 'size="7"',
+											"descicon" => array(
+												'icon' => "star",
+												'context' => 'highlight',
+											),
+			)
 		);
 		$KOTA['ko_eventgruppen']['res_combined'] = array(
 			'post' => 'uint',
-			'form' => array('type' => 'checkbox')
+			'form' => array('type' => 'switch')
 		);
 		$KOTA['ko_eventgruppen']['res_startzeit'] = array(
 			'pre' => "sql_zeit('@VALUE@')",
@@ -474,16 +543,20 @@ if(in_array('ko_eventgruppen', $KOTA_TABLES)) {
 		);
 		$KOTA['ko_eventgruppen']['_listview'][70] = array('name' => 'res_combined', 'sort' => 'res_combined', 'filter' => TRUE);
 		$KOTA['ko_eventgruppen']['res_combined']['list'] = 'FCN:kota_listview_boolyesno';
+		$KOTA['ko_eventgruppen']['responsible_for_res'] = array(
+			'form' => array_merge(array(
+				'type' => 'select',
+			), kota_get_form('ko_eventgruppen', 'responsible_for_res'))
+		);
 	}//if(ko_module_installed(reservation))
 
 	if(ko_module_installed('groups')) {
 		//Add group select to event group (notify)
 		$KOTA['ko_eventgruppen']['notify'] = array('post' => 'format_userinput("@VALUE@", "alphanumlist")',
-																							 'form' => array_merge(array(
-																								'type' => 'doubleselect',
-																								'params' => 'size="7"',
-																							), kota_get_form('ko_eventgruppen', 'notify')),
-																							);
+			'form' => array(
+				'type' => 'groupsearch',
+			),
+		);
 	}//if(ko_module_installed(groups))
 
 
@@ -540,6 +613,15 @@ if(in_array('ko_eventgruppen', $KOTA_TABLES)) {
 		);
 	}
 
+	$markFields = ko_array_column($EVENT_PROPAGATE_FIELDS, 'from');
+	foreach ($KOTA['ko_eventgruppen'] as $field => &$def) {
+		if (in_array($field, $markFields)) {
+			$def['form']['descicon'] = array(
+				'icon' => "star",
+				'context' => 'highlight',
+			);
+		}
+	}
 }
 
 
@@ -613,7 +695,36 @@ if(in_array('ko_rota_teams', $KOTA_TABLES)) {
 				'noinline' => TRUE,
 			), $data_eg_id),
 		),
-
+		// Consensus
+		'allow_consensus' => array(
+			'list' => 'FCN:kota_listview_boolyesno',
+			'form' => array(
+				'type' => 'switch',
+				'label_0' => getLL('no'),
+				'label_1' => getLL('yes'),
+				'value' => '0',
+			),
+		),
+		'consensus_description' => array(
+			'post' => "format_userinput('@VALUE@', 'text')",
+			'form' => array(
+				'type' => 'textarea',
+				'params' => 'rows="5" cols="50"',
+			),
+		),
+		'consensus_disable_maybe_option' => array(
+			'list' => 'FCN:kota_listview_boolyesno',
+			'post' => "format_userinput('@VALUE@', 'uint')",
+			'form' => array(
+				'type' => 'switch',
+			),
+		),
+		'consensus_max_promises' => array(
+			'post' => "format_userinput('@VALUE@', 'uint')",
+			'form' => array(
+				'type' => 'text',
+			),
+		),
 	);
 
 	//Manual ordering
@@ -626,30 +737,14 @@ if(in_array('ko_rota_teams', $KOTA_TABLES)) {
 
 	if(ko_module_installed('groups')) {
 		//Add group select to rota team form
-		$KOTA['ko_rota_teams']['group_id'] = array('post' => 'format_userinput("@VALUE@", "group_role")',
-																							 'form' => array_merge(array(
-																								 'type' => 'doubleselect',
-																								 'params' => 'size="7"',
-																							 ), kota_get_form('ko_rota_teams', 'groupid')),
-																							);
+		$KOTA['ko_rota_teams']['group_id'] = array(
+			'post' => 'format_userinput("@VALUE@", "group_role")',
+			'form' => array(
+				'type' => 'groupsearch',
+				'include_roles' => ko_get_setting('rota_showroles') == 1 ? TRUE : FALSE,
+			),
+		);
 	}
-
-	$KOTA['ko_rota_teams']['allow_consensus'] = array(
-		'list' => 'FCN:kota_listview_boolyesno',
-		'form' => array(
-			'type' => 'switch',
-			'label_0' => getLL('no'),
-			'label_1' => getLL('yes'),
-			'value' => '0',
-		),
-	);
-	$KOTA['ko_rota_teams']['consensus_description'] = array(
-		'post' => "format_userinput('@VALUE@', 'text')",
-		'form' => array(
-			'type' => 'textarea',
-			'params' => 'rows="5" cols="50"',
-		),
-	);
 }
 
 
@@ -673,6 +768,7 @@ if(in_array('ko_donations', $KOTA_TABLES)) {
 			50 => array("name" => "person", "sort" => "person", 'filter' => TRUE),
 			60 => array("name" => "source", "sort" => "source", 'filter' => TRUE),
 			70 => array("name" => "comment", "sort" => "comment", 'filter' => TRUE),
+			80 => array("name" => "thanked", "sort" => "thanked", 'filter' => TRUE),
 		),
 		'_inlineform' => array(
 			'redraw' => array(
@@ -730,6 +826,7 @@ if(in_array('ko_donations', $KOTA_TABLES)) {
 			"post" => 'uint',
 			"form" => array(
 				"type" => "peoplesearch",
+				'single' => TRUE,
 				'noinline' => TRUE,
 			),
 		),  //person
@@ -749,6 +846,40 @@ if(in_array('ko_donations', $KOTA_TABLES)) {
 				"params" => 'size="0"',
 			), kota_get_form("ko_donations", "reoccuring")),
 		),  //reoccuring
+		"thanked" => array(
+			"list" => 'FCN:kota_listview_boolyesno',
+			"form" => array(
+				"type" => "switch",
+			),
+		),  //comment
+		/*	'_form_layout' => array(
+		10 => array(
+			'rows' => array(
+				10 => array('title' => 2, 'group_id' => 2),
+				20 => array('status' => 2, 'account_id' => 2),
+				30 => array('layout' => 2, 'description' => 2),
+			),
+		),
+		20 => array(
+			'title' => 'email', // fetches title from LL: kota_layout_group_ko_billing_dossiers_email
+			'appearance' => 'default', // choose between 'primary', 'default', 'success', 'warning', 'danger', 'info'
+			'rows' => array(
+				10 => array('email_subject' => 2, 'email_text' => 2), // 2 means 2 cols per row
+				20 => array('email_admonition_subject' => 2, 'email_admonition_text' => 2),
+				30 => array('send_email' => 2),
+			),
+		),
+		30 => array(
+			'rows' => array(
+				10 => array('due_days' => 2, 'due_date' => 2),
+				20 => array('admonition_due_days' => 2, 'account_id' => 2),
+				30 => array('article_ids' => 2, 'target' => 2),
+				40 => array('group_ids' => 2, 'multiple_billings_per_person' => 2),
+			),
+		),
+		'_default_cols' => 6,
+		'_default_width' => 6,
+	),*/
 	);
 }
 
@@ -769,6 +900,7 @@ if(in_array('ko_donations_accounts', $KOTA_TABLES)) {
 			10 => array("name" => "number"),
 			20 => array("name" => "name"),
 			30 => array("name" => "comment"),
+			40 => array("name" => "archived"),
 		),
 		'_inlineform' => array(
 			'redraw' => array(
@@ -777,6 +909,12 @@ if(in_array('ko_donations_accounts', $KOTA_TABLES)) {
 			),
 			'module' => 'donations',
 		),
+		"name" => array(
+			"form" => array(
+				"type" => "text",
+				"params" => 'size="60"',
+			),
+		),  //name
 		"number" => array(
 			'list' => 'ko_html;FCN:kota_listview_rootid',
 			"form" => array(
@@ -784,19 +922,29 @@ if(in_array('ko_donations_accounts', $KOTA_TABLES)) {
 				"params" => 'size="60"',
 			),
 		),  //number
-		"name" => array(
-			"form" => array(
-				"type" => "text",
-				"params" => 'size="60"',
-			),
-		),  //name
 		"comment" => array(
 			"form" => array(
 				"type" => "textarea",
 				"params" => 'cols="40" rows="3"',
 			),
 		),  //comment
+		"archived" => array(
+			'list' => 'FCN:kota_listview_boolyesno',
+			'form' => array(
+				'type' => 'switch',
+			),
+		), // archived
 	);
+
+	if(ko_module_installed('groups')) {
+		//Add group select to rota team form
+		$KOTA['ko_donations_accounts']['group_id'] = array('post' => 'format_userinput("@VALUE@", "group_role")',
+			'form' => array(
+				'type' => 'groupsearch',
+				'include_roles' => TRUE,
+			),
+		);
+	}
 }
 
 
@@ -819,6 +967,9 @@ if(in_array('ko_leute', $KOTA_TABLES)) {
 			),
 			'module' => 'leute',
 		),
+		'_special_cols' => array(
+			'lastchange' => 'lastchange',
+		),
 		"anrede" => array(
 			"form" => array(
 				"type" => "select",
@@ -830,7 +981,7 @@ if(in_array('ko_leute', $KOTA_TABLES)) {
 		'hidden' => array(
 			'list' => 'FCN:kota_listview_boolx',
 			'form' => array(
-				'type' => 'checkbox',
+				'type' => 'switch',
 			),
 		),
 		"firm" => array(
@@ -915,6 +1066,7 @@ if(in_array('ko_leute', $KOTA_TABLES)) {
 			"form" => array(
 				"descimg" => (in_array("telp", $GLOBALS['COLS_LEUTE_UND_FAMILIE']) ? "icon_familie.png" : ""),
 				"type" => "text",
+				"html_type" => "tel",
 				"params" => 'size="30" maxlength="30"',
 			),
 		),  //telp
@@ -922,6 +1074,7 @@ if(in_array('ko_leute', $KOTA_TABLES)) {
 			"pre" => "ko_html",
 			"form" => array(
 				"type" => "text",
+				"html_type" => "tel",
 				"params" => 'size="30" maxlength="30"',
 			),
 		),  //telg
@@ -929,6 +1082,7 @@ if(in_array('ko_leute', $KOTA_TABLES)) {
 			"pre" => "ko_html",
 			"form" => array(
 				"type" => "text",
+				"html_type" => "tel",
 				"params" => 'size="30" maxlength="30"',
 			),
 		),  //natel
@@ -936,6 +1090,7 @@ if(in_array('ko_leute', $KOTA_TABLES)) {
 			"pre" => "ko_html",
 			"form" => array(
 				"type" => "text",
+				"html_type" => "tel",
 				"params" => 'size="30" maxlength="30"',
 			),
 		),  //fax
@@ -943,6 +1098,7 @@ if(in_array('ko_leute', $KOTA_TABLES)) {
 			"pre" => "ko_html",
 			"form" => array(
 				"type" => "text",
+				"html_type" => "email",
 				"params" => 'size="100" maxlength="100"',
 			),
 		),  //email
@@ -950,6 +1106,7 @@ if(in_array('ko_leute', $KOTA_TABLES)) {
 			"pre" => "ko_html",
 			"form" => array(
 				"type" => "text",
+				"html_type" => "url",
 				"params" => 'size="50" maxlength="50"',
 			),
 		),  //web
@@ -1006,6 +1163,18 @@ if(in_array('ko_leute', $KOTA_TABLES)) {
 				"descs" => db_get_enums_ll("ko_leute", "famfunction"),
 			),
 		),  //famfunction
+		"father" => array(
+			'allow_html' => TRUE,
+			'list' => "FCN:kota_listview_people_link",
+		), //father
+		"mother" => array(
+			'allow_html' => TRUE,
+			'list' => "FCN:kota_listview_people_link",
+		), //mother
+		"spouse" => array(
+			'allow_html' => TRUE,
+			'list' => "FCN:kota_listview_people_link",
+		), //spouse
 		"picture" => array(
 			"form" => array(
 				"type" => "file",
@@ -1020,6 +1189,12 @@ if(in_array('ko_leute', $KOTA_TABLES)) {
 				'type' => 'select',
 				'params' => 'size="0"',
 			), kota_get_form('ko_leute', 'rectype')),
+		),
+		'MODULEsalutation_formal' => array(
+			'list' => 'FCN:kota_listview_salutation_formal',
+		),
+		'MODULEsalutation_informal' => array(
+			'list' => 'FCN:kota_listview_salutation_informal',
 		),
 	);
 
@@ -1039,16 +1214,18 @@ if(in_array('ko_leute', $KOTA_TABLES)) {
 		ko_get_groups($groups, $z_where);
 		ko_get_grouproles($roles);
 		foreach($groups as $group) {
-			if(($access['groups']['ALL'] > 1 || $access['groups'][$group['id']] > 1) && $group['type'] != 1) {
-				list($values, $descs, $all_descs) = ko_groups_get_group_id_names($group['id'], $groups, $roles);
-				$KOTA['ko_leute']['MODULEgrp'.$group['id']] = array('form' => array('desc' => $group['name'],
-																																						'type' => 'doubleselect',
-																																						'params' => 'size="4"',
-																																						'values' => $values,
-																																						'descs' => $descs,
-																																						'all_descs' => $all_descs),
-																														'list' => 'FCN:kota_map_leute_daten',
-				);
+			if($access['groups']['ALL'] > 1 || $access['groups'][$group['id']] > 1) {
+				if($group['type'] != 1) {  //Dummy groups
+					list($values, $descs, $all_descs) = ko_groups_get_group_id_names($group['id'], $groups, $roles);
+					$KOTA['ko_leute']['MODULEgrp'.$group['id']] = array('form' => array('desc' => $group['name'],
+																																							'type' => 'doubleselect',
+																																							'params' => 'size="4"',
+																																							'values' => $values,
+																																							'descs' => $descs,
+																																							'all_descs' => $all_descs),
+																															'list' => 'FCN:kota_map_leute_daten',
+					);
+				}
 				//Datafields for multiedit
 				foreach(explode(',', $group['datafields']) as $df) {
 					if(!$df) continue;
@@ -1079,6 +1256,7 @@ if(in_array('ko_kleingruppen', $KOTA_TABLES)) {
 			),
 			'module' => 'leute|kg',
 		),
+		'_supermodule' => 'leute',
 		"_listview" => array(
 			10 => array('name' => 'name', 'sort' => 'name', 'multiedit' => 'name', 'filter' => TRUE),
 			20 => array('name' => 'alter', 'sort' => 'alter', 'multiedit' => 'alter', 'filter' => TRUE),
@@ -1101,13 +1279,6 @@ if(in_array('ko_kleingruppen', $KOTA_TABLES)) {
 		),
 		'_listview_default' => array('name'),
 
-		"type" => array(
-			"form" => array(
-				"type" => "textplus",
-				"params" => 'size="30"',
-				"select_case_sensitive" => TRUE,
-			),
-		),  //type
 		"name" => array(
 			'list' => 'FCN:kota_listview_ko_kleingruppen_name',
 			"pre" => "ko_html",
@@ -1116,6 +1287,13 @@ if(in_array('ko_kleingruppen', $KOTA_TABLES)) {
 				"params" => 'size="30"',
 			),
 		),  //name
+		"type" => array(
+			"form" => array(
+				"type" => "textplus",
+				"params" => 'size="30"',
+				"select_case_sensitive" => TRUE,
+			),
+		),  //type
 		"alter" => array(
 			"pre" => "ko_html",
 			"post" => 'int',
@@ -1268,9 +1446,17 @@ if(in_array('ko_reservation', $KOTA_TABLES)) {
 			10 => array('name' => 'item_id', 'sort' => 'item_id'),
 			20 => array('name' => 'startdatum', 'sort' => 'startdatum', 'multiedit' => 'startdatum,enddatum'),
 			30 => array('name' => 'startzeit', 'sort' => 'startzeit', 'multiedit' => 'startzeit,endzeit', 'filter' => TRUE),
+			40 => array('name' => 'zweck', 'sort' => 'zweck', 'multiedit' => 'zweck,comments', 'filter' => TRUE),
+			50 => array('name' => 'name', 'sort' => 'name', 'multiedit' => 'name', 'filter' => TRUE),
+			51 => array('name' => 'email', 'sort' => 'email', 'multiedit' => 'email', 'filter' => TRUE),
+			52 => array('name' => 'telefon', 'sort' => 'telefon', 'multiedit' => 'telefon', 'filter' => TRUE),
+			60 => array('name' => 'comments', 'sort' => 'comments', 'multiedit' => 'comments', 'filter' => TRUE),
 			//40 is reserved for purpose (see below)
 			//50 is reserved for name with email and telephone (see below)
 			//60 is reserved for comments (see below)
+			//70 is reserved for event_id (see below)
+			80 => array("name" => "cdate", "sort" => 'cdate', "filter" => TRUE),
+			90 => array("name" => "user_id", "sort" => 'user_id', "filter" => TRUE),
 		),
 		'_listview_default' => array('item_id', 'startdatum', 'startzeit', 'zweck', 'name'),
 		'_inlineform' => array(
@@ -1344,6 +1530,7 @@ if(in_array('ko_reservation', $KOTA_TABLES)) {
 			"post" => 'email',
 			"form" => array(
 				"type" => "text",
+				"html_type" => "email",
 				"params" => 'size="60" maxlength="255"',
 			),
 		),  //email
@@ -1352,6 +1539,7 @@ if(in_array('ko_reservation', $KOTA_TABLES)) {
 			"post" => 'alphanum++',
 			"form" => array(
 				"type" => "text",
+				"html_type" => "tel",
 				"params" => 'size="60" maxlength="255"',
 			),
 		),  //telefon
@@ -1362,24 +1550,79 @@ if(in_array('ko_reservation', $KOTA_TABLES)) {
 				"params" => 'rows="3" cols="50"',
 			),
 		),  //comments
+		"cdate" => array(
+			'list' => 'FCN:kota_listview_datetimecol',
+			'filter' => array(
+				'type' => 'jsdate',
+			),
+		), //cdate
+		"user_id" => array(
+			'list' => 'FCN:kota_listview_login',
+		),//user_id
 	);
 
-	//Only add column with purpose if settings allow it
-	$show_purpose = ($_SESSION['ses_userid'] != ko_get_guest_id() || ko_get_setting('res_show_purpose'));
-	if($show_purpose) {
-		$KOTA['ko_reservation']['_listview'][40] = array('name' => 'zweck', 'sort' => 'zweck', 'multiedit' => 'zweck,comments', 'filter' => TRUE);
+	if (ko_module_installed('daten')) {
+		$KOTA['ko_reservation']['_listview'][70] = array('name' => 'event_id', 'sort' => FALSE, 'multiedit' => FALSE);
+		$KOTA['ko_reservation']['event_id'] = array(
+			'list' => 'FCN:kota_listview_reservation_event_id',
+		);
 	}
-	//Only add column with info about owner of reservation if settings allow it
-	$show_persondata = ($_SESSION['ses_userid'] != ko_get_guest_id() || ko_get_setting('res_show_persondata'));
-	if($show_persondata) {
-		$KOTA['ko_reservation']['_listview'][50] = array('name' => 'name', 'sort' => 'name', 'multiedit' => 'name', 'filter' => TRUE);
-		$KOTA['ko_reservation']['_listview'][51] = array('name' => 'email', 'sort' => 'email', 'multiedit' => 'email', 'filter' => TRUE);
-		$KOTA['ko_reservation']['_listview'][52] = array('name' => 'telefon', 'sort' => 'telefon', 'multiedit' => 'telefon', 'filter' => TRUE);
+
+	//Remove columns for guest according to setting
+	if ($_SESSION['ses_userid'] == ko_get_guest_id()) {
+		$guest_fields = array_merge(explode(',', ko_get_setting('res_show_fields_to_guest')), $RES_GUEST_FIELDS_FORCE);
+		foreach ($KOTA['ko_reservation']['_listview'] as $k => $v) {
+			if (!in_array($v['name'], $guest_fields)) unset($KOTA['ko_reservation']['_listview'][$k]);
+		}
 	}
-	//Only add column comments if not guest
-	$show_comments = $_SESSION['ses_userid'] != ko_get_guest_id();
-	if($show_comments) {
-		$KOTA['ko_reservation']['_listview'][60] = array('name' => 'comments', 'sort' => 'comments', 'multiedit' => 'comments', 'filter' => TRUE);
+
+}
+
+
+if(in_array('ko_reservation_mod', $KOTA_TABLES)) {
+	$KOTA['ko_reservation_mod'] = array(
+		'_access' => array(
+			'module' => 'reservation',
+			'chk_col' => 'id',
+			'level' => 4,
+		),
+		'_multititle' => array(
+			'item_id' => "ko_get_resitem_name('@VALUE@')",
+			'startdatum' => "sql2datum('@VALUE@')",
+			'zweck' => '',
+		),
+		'_special_cols' => array(
+			'lastchange' => 'last_change',
+		),
+		'_listview' => array(
+			10 => array('name' => 'item_id', 'sort' => FALSE, 'multiedit' => 'item_id', 'filter' => TRUE),
+			20 => array('name' => 'startdatum', 'sort' => 'startdatum', 'multiedit' => 'startdatum,enddatum', 'filter' => FALSE),
+			30 => array('name' => 'startzeit', 'sort' => 'startzeit', 'multiedit' => 'startzeit,endzeit', 'filter' => FALSE),
+			40 => array('name' => 'zweck', 'sort' => 'zweck', 'multiedit' => 'zweck,comments', 'filter' => TRUE),
+			50 => array('name' => 'name', 'sort' => 'name', 'multiedit' => 'name,email,telefon', 'filter' => TRUE),
+			60 => array('name' => 'comments', 'sort' => 'comments', 'multiedit' => 'comments', 'filter' => TRUE),
+			// 70 => array('name' => 'event_id', 'sort' => FALSE, 'multiedit' => FALSE),
+		),
+
+		'item_id' => array(
+			'list' => "FCN:kota_listview_ko_reservation_mod_item_id",
+		),
+		'startdatum' => array(
+			'list' => 'FCN:kota_listview_datespan',
+		),
+		'startzeit' => array(
+			'list' => 'FCN:kota_listview_time',
+		),
+		'name' => array(
+			'list' => 'FCN:kota_listview_ko_reservation_mod_name',
+		),
+	);
+
+	if (ko_module_installed('daten')) {
+		$KOTA['ko_reservation_mod']['_listview'][70] = array('name' => 'event_id', 'sort' => FALSE, 'multiedit' => FALSE);
+		$KOTA['ko_reservation_mod']['event_id'] = array(
+			'fill' => 'FCN:kota_listview_reservation_event_id',
+		);
 	}
 }
 
@@ -1410,14 +1653,6 @@ if(in_array('ko_resitem', $KOTA_TABLES)) {
 			),
 			'module' => 'reservation',
 		),
-		"gruppen_id" => array(
-			"post" => 'uint',
-			'list' => 'db_get_column("ko_resgruppen", @VALUE@, "name")',
-			"form" => array_merge(array(
-				"type" => "textplus",
-				"params_PLUS" => 'size="60" maxlength="100"',
-			), kota_get_form("ko_resitem", "gruppen_id")),
-		),  //gruppen_id
 		"name" => array(
 			'list' => 'FCN:kota_listview_ko_resitem_name;FCN:kota_listview_rootid',
 			"pre" => "ko_html",
@@ -1427,29 +1662,28 @@ if(in_array('ko_resitem', $KOTA_TABLES)) {
 				"params" => 'size="60" maxlength="100"',
 			),
 		),  //name
+		"gruppen_id" => array(
+			"post" => 'FCN:ko_multiedit_resitem_group',
+			'list' => 'db_get_column("ko_resgruppen", @VALUE@, "name")',
+			"form" => array_merge(array(
+				"type" => "textplus",
+				"params_PLUS" => 'size="60" maxlength="100"',
+			), kota_get_form("ko_resitem", "gruppen_id")),
+		),  //gruppen_id
+		"beschreibung" => array(
+			"pre" => 'FCN:kota_sanitize_html',
+			"list" => 'FCN:kota_listview_html',
+			"xls" => 'FCN:kota_html_to_text',
+			"form" => array(
+				"type" => "richtexteditor",
+			),
+		),  //beschreibung
 		"bild" => array(
 			"form" => array(
 				"type" => "file",
 				"params" => 'size="60"',
 			),
 		),  //name
-		"beschreibung" => array(
-			'list' => 'str_replace("<br />", "\n", '."'@VALUE@'".')',
-			"pre" => 'str_replace("<br />", "\n", '."'@VALUE@'".')',
-			"post" => 'htmlentities(format_userinput("@VALUE@", "text"))',
-			"form" => array(
-				"type" => "textarea",
-				"params" => 'cols="60" rows="5"',
-			),
-		),  //beschreibung
-		"linked_items" => array(
-			"post" => 'intlist',
-			"form" => array(
-				"type" => "dyndoubleselect",
-				"js_func_add" => "resgroup_doubleselect_add_no_linked",
-				"params" => 'size="7"',
-			),
-		),  //linked_items
 		"farbe" => array(
 			'list' => 'FCN:kota_listview_color',
 			"post" => 'str_replace("#", "", format_userinput("@VALUE@", "alphanum"))',
@@ -1467,6 +1701,15 @@ if(in_array('ko_resitem', $KOTA_TABLES)) {
 				"params" => 'size="0"',
 			), kota_get_form("ko_resitem", "moderation")),
 		),  //moderation
+		"linked_items" => array(
+			"post" => 'intlist',
+			"form" => array(
+				"type" => "dyndoubleselect",
+				"js_func_add" => "resgroup_doubleselect_add_no_linked",
+				"params" => 'size="7"',
+				'new_row' => TRUE,
+			),
+		),  //linked_items
 		'email_recipient' => array(
 			'list' => 'str_replace(",", ", ", '."'@VALUE@'".')',
 			'pre' => 'ko_html',
@@ -1477,7 +1720,7 @@ if(in_array('ko_resitem', $KOTA_TABLES)) {
 		),
 		'email_text' => array(
 			'list' => 'nl2br('."'@VALUE@'".')',
-			'post' => 'htmlentities(format_userinput("@VALUE@", "text"))',
+			'post' => 'htmlentities(format_userinput("@VALUE@", "text"), ENT_COMPAT | ENT_HTML401, "ISO-8859-1")',
 			'form' => array(
 				'type' => 'textarea',
 				'params' => 'cols="60" rows="5"',
@@ -1559,7 +1802,7 @@ if(in_array('ko_groups', $KOTA_TABLES)) {
 		'type' => array(
 			'list' => 'FCN:kota_listview_boolx',
 			'form' => array(
-				'type' => 'checkbox',
+				'type' => 'switch',
 			),
 		),  //type
 		'count_role' => array(
@@ -1572,6 +1815,7 @@ if(in_array('ko_groups', $KOTA_TABLES)) {
 			'post' => 'uint',
 			'form' => array(
 				'type' => 'text',
+				'html_type' => 'number',
 				'params' => 'size="5" maxlength="200"'
 			),
 		),  //name
@@ -1665,21 +1909,21 @@ if(in_array('ko_groups_datafields', $KOTA_TABLES)) {
 			'post' => 'uint',
 			'list' => 'FCN:kota_listview_boolyesno',
 			'filter' => array(
-				'type' => 'checkbox',
+				'type' => 'switch',
 			),
 		),
 		'private' => array(
 			'post' => 'uint',
 			'list' => 'FCN:kota_listview_boolyesno',
 			'form' => array(
-				'type' => 'checkbox',
+				'type' => 'switch',
 			),
 		),
 		'reusable' => array(
 			'post' => 'uint',
 			'list' => 'FCN:kota_listview_boolyesno',
 			'form' => array(
-				'type' => 'checkbox',
+				'type' => 'switch',
 			),
 		),
 		'type' => array(
@@ -1767,12 +2011,14 @@ if(in_array('ko_tapes', $KOTA_TABLES)) {
 			"pre" => "ko_html",
 			"form" => array(
 				"type" => "text",
+				"html_type" => "number",
 				"params" => 'size="60" maxlength="200"',
 			),
 		),  //item_number
 		"price" => array(
 			"form" => array(
 				"type" => "text",
+				"html_type" => "number",
 				"params" => 'size="10" maxlength="20"',
 			),
 		),  //item_number
@@ -1864,6 +2110,203 @@ if(in_array('ko_pdf_layout', $KOTA_TABLES)) {
 }
 
 
+
+if(in_array('ko_vesr', $KOTA_TABLES)) {
+	$KOTA['ko_vesr'] = array(
+		'_inlineform' => array(
+			'module' => 'admin',
+		),
+		'_listview' => array(
+			10 => array('name' => 'type', 'sort' => FALSE, 'filter' => FALSE),
+			20 => array('name' => 'reason', 'sort' => FALSE, 'filter' => FALSE),
+			30 => array('name' => 'transaction', 'sort' => FALSE, 'filter' => FALSE),
+			40 => array('name' => 'account', 'sort' => FALSE, 'filter' => FALSE),
+			50 => array('name' => 'refnumber', 'sort' => FALSE, 'filter' => FALSE),
+			60 => array('name' => 'amount', 'sort' => FALSE, 'filter' => FALSE),
+			70 => array('name' => 'paydate', 'sort' => FALSE, 'filter' => FALSE),
+			80 => array('name' => 'valutadate', 'sort' => FALSE, 'filter' => FALSE),
+			90 => array('name' => 'misc', 'sort' => FALSE, 'filter' => FALSE),
+		),
+		'_listview_default' => array('type', 'reason', 'transaction', 'account', 'refnumber', 'amount', 'paydate', 'valutadate', 'misc'),
+		'type' => array(
+			'list' => 'FCN:kota_listview_ll',
+		),
+		'reason' => array(
+			'list' => 'FCN:kota_listview_vesr_reason',
+		),
+		'transaction' => array(
+			'list' => 'FCN:kota_listview_ll',
+		),
+		'account' => array(),
+		'refnumber' => array(
+			'list' => 'FCN:kota_listview_refnr',
+		),
+		'amount' => array(
+			'list' => 'FCN:kota_listview_money',
+		),
+		'paydate' => array(
+			'list' => 'FCN:kota_listview_datecol_right',
+		),
+		'valutadate' => array(
+			'list' => 'FCN:kota_listview_datecol_right',
+		),
+	);
+}
+
+
+
+if(in_array('ko_labels', $KOTA_TABLES)) {
+	$KOTA['ko_labels'] = array(
+		'_special_cols' => array(
+			'crdate' => 'crdate',
+			'cruser' => 'cruser',
+		),
+		'_listview' => array(
+			10 => array('name' => 'name'),
+			20 => array('name' => 'page_format'),
+			30 => array('name' => 'per_col'),
+		),
+		'_listview_default' => array('name', 'page_format', 'per_col'),
+		'name' => array(
+			'form' => array(
+				'type' => 'text',
+				'new_row' => true,
+			),
+		),
+		'page_format' => array(
+			'list' => 'ko_html',
+			'form' => array_merge(array(
+				'type' => 'select',
+			), kota_get_form('ko_labels', 'page_format')),
+		),
+		'page_orientation' => array(
+			"list" => "FCN:kota_listview_ll",
+			'form' => array_merge(array(
+				'type' => 'select',
+			), kota_get_form('ko_labels', 'page_orientation')),
+		),
+		'per_row' => array(
+			'form' => array(
+				'type' => 'text',
+				"html_type" => "number",
+			),
+		),
+		'per_col' => array(
+			'form' => array(
+				'type' => 'text',
+				"html_type" => "number",
+			),
+		),
+		'border_top' => array(
+			'form' => array(
+				'type' => 'text',
+				"html_type" => "number",
+			),
+		),
+		'border_right' => array(
+			'form' => array(
+				'type' => 'text',
+				"html_type" => "number",
+			),
+		),
+		'border_bottom' => array(
+			'form' => array(
+				'type' => 'text',
+				"html_type" => "number",
+			),
+		),
+		'border_left' => array(
+			'form' => array(
+				'type' => 'text',
+				"html_type" => "number",
+			),
+		),
+		'spacing_horiz' => array(
+			'form' => array(
+				'type' => 'text',
+				"html_type" => "number",
+			),
+		),
+		'spacing_vert' => array(
+			'form' => array(
+				'type' => 'text',
+				"html_type" => "number",
+			),
+		),
+		'align_horiz' => array(
+			"list" => "FCN:kota_listview_ll",
+			'form' => array_merge(array(
+				'type' => 'select',
+			), kota_get_form('ko_labels', 'align_horiz')),
+		),
+		'align_vert' => array(
+			"list" => "FCN:kota_listview_ll",
+			'form' => array_merge(array(
+				'type' => 'select',
+			), kota_get_form('ko_labels', 'align_vert')),
+		),
+		'font' => array(
+			"list" => "FCN:kota_font_name",
+			'form' => array_merge(array(
+				'type' => 'select',
+			), kota_get_form('ko_labels', 'font')),
+		),
+		'textsize' => array(
+			'form' => array_merge(array(
+				'type' => 'select',
+			), kota_get_form('ko_labels', 'textsize')),
+		),
+		'ra_margin_top' => array(
+			'form' => array(
+				'type' => 'text',
+				"html_type" => "number",
+			),
+		),
+		'ra_margin_left' => array(
+			'form' => array(
+				'type' => 'text',
+				"html_type" => "number",
+			),
+		),
+		'ra_font' => array(
+			"list" => "FCN:kota_font_name",
+			'form' => array_merge(array(
+				'type' => 'select',
+			), kota_get_form('ko_labels', 'ra_font')),
+		),
+		'ra_textsize' => array(
+			'form' => array_merge(array(
+				'type' => 'select',
+			), kota_get_form('ko_labels', 'ra_textsize')),
+		),
+		'pic_file' => array(
+			'form' => array(
+				'type' => 'file',
+			),
+		),
+		'pic_w' => array(
+			'form' => array(
+				'type' => 'text',
+				"html_type" => "number",
+			),
+		),
+		'pic_x' => array(
+			'form' => array(
+				'type' => 'text',
+				"html_type" => "number",
+			),
+		),
+		'pic_y' => array(
+			'form' => array(
+				'type' => 'text',
+				"html_type" => "number",
+			),
+		),
+	);
+}
+
+
+
 if(in_array('ko_tracking', $KOTA_TABLES)) {
 	$KOTA['ko_tracking'] = array(
 		'_access' => array(
@@ -1889,14 +2332,6 @@ if(in_array('ko_tracking', $KOTA_TABLES)) {
 			),
 			'module' => 'tracking',
 		),
-		'group_id' => array(
-			"post" => "FCN:ko_multiedit_tracking_group",
-			'list' => 'db_get_column("ko_tracking_groups", @VALUE@, "name")',
-			'form' => array_merge(array(
-				'type' => 'textplus',
-				'params_PLUS' => 'size="60" maxlength="200"',
-			), kota_get_form('ko_tracking', 'group_id')),
-		),  //group_id
 		'name' => array(
 			'pre' => 'ko_html',
 			'list' => 'ko_html;FCN:kota_listview_rootid',
@@ -1905,17 +2340,31 @@ if(in_array('ko_tracking', $KOTA_TABLES)) {
 				'params' => 'size="60" maxlength="200"',
 			),
 		),
-		'hidden' => array(
-			'list' => 'FCN:kota_listview_boolx',
-			'form' => array(
-				'type' => 'checkbox',
-			),
-		),
+		'group_id' => array(
+			"post" => "FCN:ko_multiedit_tracking_group",
+			'list' => 'db_get_column("ko_tracking_groups", @VALUE@, "name")',
+			'form' => array_merge(array(
+				'type' => 'textplus',
+				'params_PLUS' => 'size="60" maxlength="200"',
+			), kota_get_form('ko_tracking', 'group_id')),
+		),  //group_id
 		'mode' => array(
 			"list" => "FCN:kota_listview_ll",
 			'form' => array_merge(array(
 				'type' => 'select',
 			), kota_get_form('ko_tracking', 'mode')),
+		),
+		'hidden' => array(
+			'list' => 'FCN:kota_listview_boolx',
+			'form' => array(
+				'type' => 'switch',
+			),
+		),
+		'types' => array(
+			'form' => array(
+				'type' => 'textarea',
+				'params' => 'cols="50" rows="4"',
+			),
 		),
 		'label_value' => array(
 			'pre' => 'ko_html',
@@ -1932,15 +2381,10 @@ if(in_array('ko_tracking', $KOTA_TABLES)) {
 				"js_func_add" => "tracking_ds_filter",
 			), kota_get_form('ko_tracking', 'filter')),
 		),
-		'types' => array(
-			'form' => array(
-				'type' => 'textarea',
-				'params' => 'cols="50" rows="4"',
-			),
-		),
 		'date_eventgroup' => array(
 			'form' => array_merge(array(
-				'type' => 'select',
+				'type' => 'doubleselect',
+				'params' => 'size="7"',
 			), kota_get_form('ko_tracking', 'date_eventgroup')),
 		),
 		'dates' => array(
@@ -1966,7 +2410,7 @@ if(in_array('ko_tracking', $KOTA_TABLES)) {
 			'list' => 'FCN:kota_listview_boolyesno',
 			'post' => 'uint',
 			'form' => array(
-				'type' => 'checkbox',
+				'type' => 'switch',
 			),
 		),
 	);
@@ -2044,6 +2488,7 @@ if(in_array('ko_tracking_entries', $KOTA_TABLES)) {
 			'post' => 'uint',
 			'form' => array(
 				'type' => 'peoplesearch',
+				'single' => TRUE,
 				'params' => 'size="7" style="width:150px;"',
 				'noinline' => TRUE,
 			),
@@ -2120,16 +2565,15 @@ if(in_array('ko_news', $KOTA_TABLES)) {
 			),
 		),
 		'text' => array(
-			'pre' => 'ko_html',
 			'form' => array(
-				'type' => 'textarea',
-				'params' => 'cols="50" rows="8"',
+				'type' => 'richtexteditor',
 			),
 		),
 		'link' => array(
 			'pre' => 'ko_html',
 			'form' => array(
 				'type' => 'text',
+				"html_type" => "url",
 				'params' => 'size="60" maxlength="255"',
 			),
 		),
@@ -2208,7 +2652,7 @@ if(in_array('ko_scheduler_tasks', $KOTA_TABLES)) {
 		'status' => array(
 			'list' => 'FCN:kota_listview_boolyesno',
 			'form' => array(
-				'type' => 'checkbox',
+				'type' => 'switch',
 			),
 		),
 		'crontime' => array(
@@ -2235,8 +2679,56 @@ if(in_array('ko_scheduler_tasks', $KOTA_TABLES)) {
 
 
 
+if(in_array('ko_mailing_mails', $KOTA_TABLES)) {
+  $KOTA['ko_mailing_mails'] = array(
+    '_access' => array(
+      'module' => 'tools',
+      'chk_col' => '',
+      'level' => 0,
+    ),
+    '_multititle' => array(
+      'subject' => '',
+    ),
+    '_listview' => array(
+      10 => array('name' => 'crdate', 'sort' => FALSE, 'multiedit' => FALSE),
+      20 => array('name' => 'recipient', 'sort' => FALSE, 'multiedit' => FALSE),
+      30 => array('name' => 'from', 'sort' => FALSE, 'multiedit' => FALSE),
+      40 => array('name' => 'subject', 'sort' => FALSE, 'multiedit' => FALSE),
+      50 => array('name' => 'status', 'sort' => FALSE, 'multiedit' => FALSE),
+      60 => array('name' => 'user_id', 'sort' => FALSE, 'multiedit' => FALSE),
+			70 => array('name' => 'body', 'sort' => FALSE, 'multiedit' => FALSE),
+    ),
+    'status' => array(
+      'list' => 'FCN:kota_listview_ll',
+    ),
+    'user_id' => array(
+      'list' => 'FCN:kota_listview_login',
+    ),
+    'crdate' => array(
+      'list' => 'FCN:kota_listview_datetimecol',
+    ),
+    'recipient' => array(
+    ),
+    'from' => array(
+    ),
+    'subject' => array(
+      'list' => 'str_replace("_"," ", mb_decode_mimeheader('."'@VALUE@'".'))',
+    ),
+		'body' => array(
+      'list' => 'FCN:kota_listview_ko_mailing_mails_body',
+    ),
+
+  );
+}
+
+
+
+
 
 if(in_array('ko_log', $KOTA_TABLES)) {
+	$user_id_data_ = kota_get_form('ko_log', 'user_id');
+	$user_id_data = array_combine($user_id_data_['values'], $user_id_data_['descs']);
+
 	$KOTA['ko_log'] = array(
 		'_access' => array(
 			'module' => 'admin',
@@ -2274,17 +2766,90 @@ if(in_array('ko_log', $KOTA_TABLES)) {
 		'user_id' => array(
 			'list' => 'FCN:kota_listview_login',
 			'filter' => array(
-				'type' => 'text',
-				'params' => 'size="20"',
+				'type' => 'select',
+				'data' => $user_id_data,
 			),
 		),
 		'comment' => array(
+			'list' => 'ko_html',
 			'filter' => array(
 				'type' => 'textarea',
 			),
 		),
 	);
 }
+
+
+
+if(in_array('ko_admin', $KOTA_TABLES)) {
+	$ag_values = $ag_descs = array();
+	$admingroups = db_select_data('ko_admingroups', 'WHERE 1', '*', 'ORDER BY `name` ASC');
+	foreach($admingroups as $ag) {
+		$ag_values[] = $ag['id'];
+		$ag_descs[] = $ag['name'];
+	}
+
+	$mod_values = $mod_descs = array();
+	foreach($MODULES as $mod) {
+		$mod_values[] = $mod;
+		$mod_descs[] = getLL('module_'.$mod);
+	}
+
+	$KOTA['ko_admin'] = array(
+		'_access' => array(
+			'module' => 'admin',
+			'chk_col' => '',
+			'level' => 5,
+		),
+		'_multititle' => array(
+			'name' => '',
+		),
+		'_inlineform' => array(
+			'redraw' => array(
+				'sort' => 'sort_logins',
+				'fcn' => 'ko_set_logins_list(FALSE);'
+			),
+			'module' => 'admin',
+		),
+		'_listview' => array(
+			10 => array('name' => 'login', 'sort' => 'login', 'multiedit' => FALSE, 'filter' => TRUE),
+			20 => array('name' => 'disabled', 'sort' => 'disabled', 'multiedit' => FALSE, 'filter' => FALSE),
+			30 => array('name' => 'modules', 'sort' => FALSE, 'multiedit' => FALSE, 'filter' => TRUE),
+			40 => array('name' => 'admingroups', 'sort' => 'admingroups', 'multiedit' => FALSE, 'filter' => TRUE),
+			50 => array('name' => 'leute_id', 'sort' => 'leute_id', 'multiedit' => FALSE, 'filter' => FALSE),
+		),
+		'login' => array(
+			'form' => array(
+				'type' => 'text',
+			),
+		),
+		'disabled' => array(
+			'list' => 'FCN:kota_listview_login_status',
+		),
+		'modules' => array(
+			'list' => 'FCN:kota_listview_modules',
+			'form' => array(
+				'type' => 'select',
+				'params' => 'size="0"',
+				'values' => $mod_values,
+				'descs' => $mod_descs,
+			),
+		),
+		'admingroups' => array(
+			'list' => 'FCN:kota_listview_admingroups4login',
+			'form' => array(
+				'type' => 'select',
+				'params' => 'size="0"',
+				'values' => $ag_values,
+				'descs' => $ag_descs,
+			),
+		),
+		'leute_id' => array(
+			'list' => 'FCN:kota_listview_person4login',
+		),
+	);
+}
+
 
 
 
@@ -2421,10 +2986,10 @@ if(in_array('ko_reminder', $KOTA_TABLES)) {
 			),
 		),
 		'recipients_groups' => array(
-			'form' => array_merge(array(
-				'type' => 'doubleselect',
-				'params' => 'size="7"',
-			), kota_get_form('ko_reminder', 'recipients_groups')),
+			'form' => array(
+				'type' => 'groupsearch',
+				'include_roles' => TRUE,
+			),
 		),
 		'recipients_mails' => array(
 			'list' => 'FCN:kota_reminder_get_recipients',
@@ -2455,8 +3020,255 @@ if(in_array('ko_reminder', $KOTA_TABLES)) {
 }
 
 
+if(in_array('ko_crm_projects', $KOTA_TABLES)) {
+	$KOTA['ko_crm_projects'] = array(
+		'_access' => array(
+			'module' => 'crm',
+			'chk_col' => '', // TODO : Access
+			'level' => 1,
+		),
+		"_multititle" => array(
+			"title" => "",
+		),
+		'_inlineform' => array(
+			'redraw' => array(
+				'fcn' => 'ko_list_crm_projects();'
+			),
+			'module' => 'crm',
+		),
+		'_special_cols' => array(
+			'crdate' => 'crdate',
+			'cruser' => 'cruser',
+		),
+		'_listview' => array(
+			10 => array('name' => 'title', 'sort' => 'title', 'multiedit' => 'title', 'filter' => FALSE),
+			20 => array('name' => 'stopdate', 'sort' => 'stopdate', 'multiedit' => 'stopdate', 'filter' => FALSE),
+			30 => array('name' => 'status_ids', 'sort' => 'status_ids', 'multiedit' => 'status_ids', 'filter' => 'status_ids'),
+		),
+		"title" => array(
+			'list' => 'ko_html',
+			"pre" => "ko_html",
+			"form" => array(
+				"type" => "text",
+			),
+		),
+		"stopdate" => array(
+			'list' => "sql2datum('@VALUE@')",
+			"pre" => "sql2datum('@VALUE@')",
+			"post" => "sql_datum('@VALUE@')",
+			"form" => array(
+				"type" => "jsdate",
+			),
+		),
+		"status_ids" => array(
+			'list' => 'FCN:kota_listview_crm_project_status_ids',
+			'form' => array_merge(array(
+				'type' => 'doubleselect',
+			), kota_get_form('ko_crm_projects', 'status_ids')),
+		),
+	);
+}
+
+
+if(in_array('ko_crm_status', $KOTA_TABLES)) {
+	$KOTA['ko_crm_status'] = array(
+		'_access' => array(
+			'module' => 'crm',
+			'chk_col' => '', // TODO : Access
+			'level' => 1,
+		),
+		"_multititle" => array(
+			"title" => "",
+		),
+		'_inlineform' => array(
+			'redraw' => array(
+				'fcn' => 'ko_list_crm_status();'
+			),
+			'module' => 'crm',
+		),
+		'_special_cols' => array(
+			'crdate' => 'crdate',
+			'cruser' => 'cruser',
+		),
+		'_listview' => array(
+			10 => array('name' => 'title', 'sort' => 'title', 'multiedit' => 'title', 'filter' => FALSE),
+			20 => array('name' => 'default_deadline', 'sort' => 'default_deadline', 'multiedit' => 'default_deadline', 'filter' => FALSE),
+		),
+		"title" => array(
+			'list' => 'ko_html',
+			"pre" => "ko_html",
+			"form" => array(
+				"type" => "text",
+			),
+		),
+		"default_deadline" => array(
+			'list' => "sql2datum('@VALUE@')",
+			"pre" => "sql2datum('@VALUE@')",
+			"post" => "sql_datum('@VALUE@')",
+			"form" => array(
+				"type" => "jsdate",
+			),
+		),
+	);
+}
+
+
+if(in_array('ko_crm_contacts', $KOTA_TABLES)) {
+	$KOTA['ko_crm_contacts'] = array(
+		'_access' => array(
+			'module' => 'crm',
+			'chk_col' => '', // TODO : Access
+			'level' => 1,
+		),
+		"_multititle" => array(
+			"title" => "",
+		),
+		'_inlineform' => array(
+			'redraw' => array(
+				'fcn' => 'ko_list_crm_contacts();'
+			),
+			'module' => 'crm',
+		),
+		'_special_cols' => array(
+			'crdate' => 'crdate',
+			'cruser' => 'cruser',
+		),
+		'_listview' => array(
+			10 => array('name' => 'type', 'sort' => 'type', 'multiedit' => 'type', 'filter' => 'type'),
+			20 => array('name' => 'date', 'sort' => 'date', 'multiedit' => 'date', 'filter' => FALSE),
+			30 => array('name' => 'title', 'sort' => 'title', 'multiedit' => 'title', 'filter' => FALSE),
+			40 => array('name' => 'project_id', 'sort' => 'project_id', 'multiedit' => 'project_id', 'filter' => 'project_id'),
+			50 => array('name' => 'status_id', 'sort' => 'status_id', 'multiedit' => 'status_id', 'filter' => 'status_id'),
+			60 => array('name' => 'reference', 'sort' => FALSE, 'multiedit' => FALSE, 'filter' => FALSE),
+			70 => array('name' => 'cruser', 'sort' => 'cruser', 'multiedit' => FALSE, 'filter' => 'cruser'),
+			80 => array('name' => 'file', 'sort' => FALSE, 'multiedit' => FALSE, 'filter' => FALSE),
+			90 => array('name' => 'description', 'sort' => FALSE, 'multiedit' => FALSE, 'filter' => FALSE),
+		),
+		"type" => array(
+			"list" => 'FCN:kota_listview_ll',
+			"form" => array_merge(array(
+				"type" => "select",
+			), kota_get_form('ko_crm_contacts', 'type')),
+		),
+		"date" => array(
+			'list' => "sql2datetime('@VALUE@')",
+			"pre" => "sql2datetime('@VALUE@')",
+			"post" => "sql_datetime('@VALUE@', 'now')",
+			"form" => array(
+				"type" => "jsdate",
+				"picker_mode" => "datetime",
+			),
+		),
+		"title" => array(
+			'list' => 'ko_html',
+			"pre" => "ko_html",
+			"form" => array(
+				"type" => "text",
+			),
+		),
+		"description" => array(
+			"list" => "kota_no_fcn_listview_description('@VALUE@', 25)",
+			"pre" => "ko_html",
+			"form" => array(
+				"type" => "textarea",
+			),
+		),
+		"project_id" => array(
+			'list' => "db_get_column('ko_crm_projects', @VALUE@, 'title')",
+			'form' => array_merge(array(
+				'type' => 'select',
+				'params' => 'onchange="javascript:selProject(this.value);"',
+			), kota_get_form('ko_crm_contacts', 'project_id')),
+		),
+		"status_id" => array(
+			'list' => "db_get_column('ko_crm_status', @VALUE@, 'title')",
+			'form' => array(
+				'type' => 'select',
+				'data_func' => 'kota_form_data_crm_contacts_status_id',
+			),
+			'filter' => array(
+				'type' => 'select',
+			),
+		),
+		"leute_ids" => array(
+			'pre' => 'FCN:kota_pre_crm_contacts_leute_ids',
+			'post' => 'FCN:kota_post_crm_contacts_leute_ids',
+			'form' => array(
+				'type' => 'peoplesearch',
+				'dontsave' => TRUE,
+				'ignore_test' => TRUE,
+			)
+		),
+		"cruser" => array(
+			'pre' => "FCN:kota_listview_login",
+			'list' => "FCN:kota_listview_login",
+			'form' => array(
+				'type' => 'html',
+				'ignore_test' => TRUE,
+			),
+		),
+		"file" => array(
+			'list' => 'FCN:kota_listview_file',
+			'form' => array(
+				'type' => 'file',
+			)
+		),
+		"reference" => array(
+			'list' => 'FCN:kota_listview_crm_contacts_leute_ids',
+		)
+	);
+	$x = kota_get_form('ko_crm_projects', 'status_ids');
+	$statusData = array();
+	foreach ($x['values'] as $k => $v) {
+		$statusData[$x['values'][$k]] = $x['descs'][$k];
+	}
+	$KOTA['ko_crm_contacts']['status_id']['filter']['data'] = $statusData;
+}
+
+
+
+
+if(in_array('ko_plugins', $KOTA_TABLES)) {
+	$KOTA['ko_plugins'] = array(
+		'_listview' => array(
+			0 => array('name' => 'sql_diffs'),
+			10 => array('name' => 'key'),
+			20 => array('name' => 'title'),
+			30 => array('name' => 'description'),
+			40 => array('name' => 'dependencies'),
+			50 => array('name' => 'version'),
+			60 => array('name' => 'status'),
+		),
+	);
+}
+
+
+
+
+
 //Add definition for ko_reservation_mod only used for multiedit of open reservations
-if(in_array('ko_reservation', $KOTA_TABLES)) $KOTA["ko_reservation_mod"] = $KOTA["ko_reservation"];
+if(in_array('ko_reservation', $KOTA_TABLES)) {
+	$new = array();
+	foreach ($KOTA["ko_reservation_mod"] as $k => $v) {
+		if (substr($k, 0, 1) == '_') $new[$k] = $v;
+	}
+	foreach ($KOTA["ko_reservation"] as $k => $v) {
+		if (substr($k, 0, 1) != '_') {
+			if (!is_array($KOTA["ko_reservation_mod"][$k])) {
+				$new[$k] = $v;
+			} else {
+				$new[$k] = $KOTA["ko_reservation_mod"][$k];
+				foreach ($v as $kk => $vv) {
+					if (!isset($new[$k][$kk])) {
+						$new[$k][$kk] = $vv;
+					}
+				}
+			}
+		}
+	}
+	$KOTA["ko_reservation_mod"] = $new;
+}
+
 
 
 //Only show kommentar2 for events to logged in users
@@ -2467,8 +3279,13 @@ if(in_array('ko_event', $KOTA_TABLES) && $_SESSION['ses_userid'] != ko_get_guest
 //KOTA for ko_event_mod as a copy from ko_event
 if(in_array('ko_event', $KOTA_TABLES)) {
 	$KOTA["ko_event_mod"] = $KOTA["ko_event"];
-	$KOTA["ko_event_mod"]["_listview"][70] = array("name" => "_user_id", "sort" => "_user_id");
-	$KOTA["ko_event_mod"]["_user_id"] = array("list" => "FCN:kota_listview_login");
+
+	$KOTA['ko_event_mod']['_listview'][756] = array('name' => '_user_id', 'sort' => '_user_id');
+	$KOTA['ko_event_mod']['_user_id'] = array('list' => 'FCN:kota_listview_login');
+	$KOTA['ko_event_mod']['_listview_default'][] = '_user_id';
+
+	$KOTA['ko_event_mod']['reservationen']['list'] = 'FCN:kota_listview_event_mod_res';
+
 	unset($KOTA['ko_event_mod']['_access']['condition']);
 }
 

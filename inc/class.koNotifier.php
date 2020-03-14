@@ -24,6 +24,15 @@ class koNotifier {
 		LOGTOFILE = 4,
 		NOTIFYALL = 7;
 
+	private $levelNamesToAlertNames = array(
+		'error' => 'danger',
+		'info' => 'success',
+		'warning' => 'warning',
+		'notice' => 'info',
+		'critical' => 'danger',
+		'emergency' => 'danger',
+	);
+
 	private $levelCodesToNames = array();
 
 	private $logToDBLevel = self::ALL;
@@ -47,7 +56,7 @@ class koNotifier {
 		$reflector = new ReflectionClass('koNotifier');
 
 		foreach($reflector->getConstants() as $constantKey => $constantValue) {
-			if ($constantValue != 'ALL' && $constantValue != 'NONE' && $constantValue != 'ERRORS') {
+			if ($constantValue != self::ALL && $constantValue != self::NONE && $constantValue != self::ERRS) {
 				$this->notifications[$constantValue] = array();
 			}
 			$this->levelCodesToNames[$constantValue] = $constantKey;
@@ -224,11 +233,17 @@ class koNotifier {
 							$moduleLabel = $not['activeModule'];
 						}
 						$LLLabel = vsprintf(getLL(strtolower($this->levelCodesToNames[$notLevel]) . '_' . $moduleLabel . $not['underline'] . $not['notNumber']), $not['parameters']);
-						print '<div class="notification notification_'.strtolower($this->levelCodesToNames[$notLevel]).'">' . $LLLabel . '</div><br />';
 					}
 					else {
-						print '<div class="notification notification_'.strtolower($this->levelCodesToNames[$notLevel]).'">'.$not['notText'].'</div><br />';
+						$LLLabel = $not['notText'];
 					}
+					$type = $this->levelNamesToAlertNames[strtolower($this->levelCodesToNames[$notLevel])];
+					$print =
+'<div class="alert alert-' . $type . ' alert-dismissible" role="alert">
+	<button type="button" class="close" data-dismiss="alert"><span>&times;</span></button>
+	' . $LLLabel . '
+</div>';
+					print $print;
 				}
 			}
 		}
@@ -341,6 +356,8 @@ class koNotifier {
 	}
 
 	public function dropNotifications ($notLevel) {
-		$this->notifications[$notLevel] = array();
+		foreach ($this->notifications as $lvl => $nots) {
+			if ($lvl & $notLevel) $this->notifications[$lvl] = array();
+		}
 	}
 }

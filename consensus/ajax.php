@@ -24,6 +24,8 @@
  *  This copyright notice MUST APPEAR in all copies of the script!
  ***************************************************************/
 
+error_reporting(0);
+
 
 $ko_path = '../';
 
@@ -47,7 +49,13 @@ if(isset($_POST) && isset($_POST["action"])) {
 			$personId = format_userinput($_POST["personid"], "alphanum");
 			$answer = format_userinput($_POST["answer"], "alphanum");
 
-			ko_consensus_update_cell($eventId, $teamId, $personId, $answer);
+			if (ko_rota_person_is_scheduled($teamId, $eventId, $personId)) continue;
+
+			$error = ko_consensus_update_cell($eventId, $teamId, $personId, $answer);
+			if ($error) {
+				$rv['status'] = 0;
+				$rv['message'] = getLL('error_consensus_' . $error);
+			}
 
 			$contentHashMap = ko_consensus_get_cell_contents_inner ($mode, $eventId, $teamId, $personId);
 			$content = array();
@@ -56,6 +64,8 @@ if(isset($_POST) && isset($_POST["action"])) {
 
 			$rv['contents'] = $content;
 			$rv['ids'] = array('#container_person_' . $eventId . '_' . $teamId . '_' . $personId, '#container_team_' . $eventId . '_' . $teamId . '_' . $personId);
+
+			array_walk_recursive($rv, "utf8_encode_array");
 
 			print json_encode($rv);
 		break;

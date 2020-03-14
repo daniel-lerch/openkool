@@ -406,7 +406,7 @@ function ko_tapes_formular_tape($mode, $id=0) {
 		$minus = ko_get_setting("tapes_new_minus");
 		$plus = ko_get_setting("tapes_new_plus");
 		$query = "SELECT ko_event.*, ko_eventgruppen.name as eventgruppe FROM `ko_event`, `ko_eventgruppen` WHERE ko_event.eventgruppen_id = ko_eventgruppen.id AND ko_eventgruppen.tapes = '1' AND TO_DAYS(CURDATE())-TO_DAYS(ko_event.startdatum) < '$minus' AND TO_DAYS(ko_event.startdatum)-TO_DAYS(CURDATE()) < '$plus' ORDER BY ko_event.startdatum DESC";
-		$result = mysql_query($query);
+		$result = mysqli_query(db_get_link(), $query);
 
 
 		$counter = 0;
@@ -414,7 +414,7 @@ function ko_tapes_formular_tape($mode, $id=0) {
 		ko_get_tapeseries($series);
 		ko_get_preachers($preachers);
 
-		while($row = mysql_fetch_assoc($result)) {
+		while($row = mysqli_fetch_assoc($result)) {
 			$list_data[$counter]["id"] = $row["id"];
 
 			//Gruppe erraten

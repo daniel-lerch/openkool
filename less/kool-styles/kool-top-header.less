@@ -1,0 +1,38 @@
+#top-header {
+
+    height: @top-header-height;
+
+    .navbar-btn {
+        .top-header-vertical-align(@input-height-base);
+
+        &.btn-sm {
+            .top-header-vertical-align(@input-height-small);
+        }
+        &.btn-xs {
+            .top-header-vertical-align(22);
+        }
+    }
+
+    #kool-text {
+        height:50px;
+        .top-header-vertical-align(50px);
+    }
+
+    .dropdown-menu {
+        z-index:1001;
+    }
+}
+
+#wait_message {
+    display:none;
+    .top-header-vertical-align(31px);
+    margin-right: 180px;
+    position:fixed;
+    right:0;
+    top:0;
+    z-index:2000;
+
+    i.fa {
+        font-size: 1.4em;
+    }
+}

@@ -103,7 +103,19 @@ class iCalReader {
 		$arr = explode('BEGIN:VEVENT',$str);
 		for($x=1;$x<sizeof($arr);$x++) {
 			$arr2 = explode("\n",$arr[$x]);
+
+			$ignore = FALSE;
 			for($y=1;$y<sizeof($arr2);$y++) {
+				//Ignore alarm entries
+				if(trim($arr2[$y]) == 'BEGIN:VALARM') {
+					$ignore = TRUE;
+				}
+				if(trim($arr2[$y]) == 'END:VALARM') {
+					$ignore = FALSE;
+					continue;
+				}
+				if($ignore) continue;
+
 				$mas = explode(':',$arr2[$y]);
 				$mas_ = explode(';',$mas[0]);
 				if(isset($mas_[0])){
@@ -227,7 +239,7 @@ class iCalReader {
 	 * @param $egid int: Event group id to assign the events to
 	 * @returns $events array: An array of events extracted from the ics string, ready to be inserted into ko_event
 	 */
-	function getEvents($str, $egid) {
+	function getEvents($str, $egid, $static_title='') {
 		if(strpos($str, 'BEGIN:VCALENDAR') === false) {
 			$str = file_get_contents($str);
 		}
@@ -240,8 +252,16 @@ class iCalReader {
 			$e['eventgruppen_id'] = $egid;
 			$e['last_change'] = date('Y-m-d H:i:s');
 			$e['import_id'] = 'eventgroup'.$egid.':'.$d['event_id'];
-			if(isset($d['text'])) $e['title'] = stripslashes(utf8_decode($d['text']));
-			if(isset($d['description'])) $e['kommentar'] = stripslashes(utf8_decode($d['description']));
+			//Use rec_id (from RECURRENCE-ID) as additional field for uid, as uid is not always unique for Google Calendar
+      if($d['rec_id']) $e['import_id'] .= $d['rec_id'];
+
+			if($static_title) {
+				$e['title'] = $static_title;
+				$e['kommentar'] = '';
+			} else {
+				if(isset($d['text'])) $e['title'] = stripslashes(utf8_decode($d['text']));
+				if(isset($d['description'])) $e['kommentar'] = stripslashes(utf8_decode($d['description']));
+			}
 			if(isset($d['location'])) $e['room'] = stripslashes(utf8_decode($d['location']));
 			if(isset($d['url'])) $e['url'] = $d['url'];
 
@@ -291,6 +311,8 @@ class iCalReader {
 	 * @param &$events array: Array of imported events, to which new recurring events will be added (passed by reference)
 	 */
 	function getRecurringEvents($d, $e, &$events) {
+		$recurrenceLimit = 2000;  //To prevent endless loops
+
 		if(!$d['interval']) $d['interval'] = 1;
 
 		if($d['until']) {
@@ -312,7 +334,9 @@ class iCalReader {
 		}
 
 		$ts = strtotime($e['startdatum']);
-		while($ts < strtotime($until)) {
+		$counter = 0;
+		while($ts < strtotime($until) && $counter < $recurrenceLimit) {
+			$counter++;
 			if(!in_array(date('Y-m-d', $ts), $exdates)) {
 				$re = $e;
 				$re['startdatum'] = date('Y-m-d', $ts);

@@ -24,6 +24,8 @@
 *  This copyright notice MUST APPEAR in all copies of the script!
 ***************************************************************/
 
+header('Content-Type: text/html; charset=ISO-8859-1');
+
 ob_start();  //Ausgabe-Pufferung starten
 
 //check for disabled install tool
@@ -125,11 +127,16 @@ switch($do_action) {
 		//Paths
 		$html_title = format_userinput($_POST["txt_html_title"], "text");
 		if($html_title) ko_update_ko_config("html_title", ('$HTML_TITLE = "'.$html_title.'";'."\n"));
+
 		$base_url = format_userinput($_POST["txt_base_url"], "text");
 		if($base_url) ko_update_ko_config("base_url", ('$BASE_URL = "'.$base_url.'";'."\n"));
+
 		$base_path = format_userinput($_POST["txt_base_path"], "text");
 		if(substr($base_path, -1) != "/") $base_path .= "/";
 		if($base_path) ko_update_ko_config("base_path", ('$BASE_PATH = "'.$base_path.'";'."\n"));
+
+		$leute_no_family = format_userinput($_POST["chk_leute_no_family"], "uint");
+		ko_update_ko_config("leute_no_family", ('$LEUTE_NO_FAMILY = '.($leute_no_family?'TRUE':'FALSE').';'."\n"));
 
 		//modules
 		$sel_modules = explode(",", $_POST["sel_modules"]);
@@ -169,10 +176,11 @@ switch($do_action) {
 		ko_update_ko_config("get_lang_from_browser", $data);
 
 		//SMS parameters
-		$sms_api_id = format_userinput($_POST["txt_sms_api_id"], "uint");
+		$sms_provider = format_userinput($_POST["txt_sms_provider"], "text");
+		if (!in_array($sms_provider, array('', 'clickatell', 'aspsms'))) $sms_provider = '';
 		$sms_user = format_userinput($_POST["txt_sms_user"], "text");
 		$sms_pass = format_userinput($_POST["txt_sms_pass"], "text");
-		$data  = sprintf('$SMS_PARAMETER = array("user" => "%s", "pass" => "%s", "api_id" => "%s");', $sms_user, $sms_pass, $sms_api_id)."\n";
+		$data  = sprintf('$SMS_PARAMETER = array("provider" => "%s", "user" => "%s", "pass" => "%s");', $sms_provider, $sms_user, $sms_pass)."\n";
 		ko_update_ko_config("sms", $data);
 
 		//warranty
@@ -180,14 +188,19 @@ switch($do_action) {
 		$warranty_url = $_POST["txt_warranty_url"];
 		$warranty_email = $_POST["txt_warranty_email"];
 		if(substr($warranty_url, 0, 7) != "http://") $warranty_url = "http://".$warranty_url;
-		$data  = sprintf('@define("WARRANTY_GIVER", "%s");', $warranty_giver)."\n";
-		$data .= sprintf('@define("WARRANTY_EMAIL", "%s");', $warranty_email)."\n";
-		$data .= sprintf('@define("WARRANTY_URL", "%s");', $warranty_url)."\n";
+		$data  = sprintf("@define('WARRANTY_GIVER', '%s');", $warranty_giver)."\n";
+		$data .= sprintf("@define('WARRANTY_EMAIL', '%s');", $warranty_email)."\n";
+		$data .= sprintf("@define('WARRANTY_URL', '%s');", $warranty_url)."\n";
 		ko_update_ko_config("warranty", $data);
+
+		//force_ssl
+		$force_ssl = $_POST["chk_force_ssl"] ? "TRUE" : "FALSE";
+		$data = sprintf("@define('FORCE_SSL', %s);", $force_ssl)."\n";
+		ko_update_ko_config("force_ssl", $data);
 
 		//webfolders
 		$use_webfolders = $_POST["chk_webfolders"] ? "TRUE" : "FALSE";
-		$data = sprintf('@define("WEBFOLDERS", %s);', $use_webfolders)."\n";
+		$data = sprintf("@define('WEBFOLDERS', %s);", $use_webfolders)."\n";
 		ko_update_ko_config("webfolders", $data);
 
 
@@ -264,17 +277,16 @@ require("$ko_path/inc/smarty.inc");
 
 
 ?>
-<!DOCTYPE html 
-  PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
-  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<!DOCTYPE html>
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="<?php print $_SESSION["lang"]; ?>" lang="<?php print $_SESSION["lang"]; ?>">
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1" />
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
 <title><?php print getLL("install_welcome"); ?></title>
 <?php
 print ko_include_css();
 
-print ko_include_js(array($ko_path.'inc/jquery/jquery.js', $ko_path.'inc/kOOL.js'));
+print ko_include_js();
 
 include($ko_path.'inc/js-sessiontimeout.inc');
 ?>
@@ -290,26 +302,22 @@ include($ko_path.'inc/js-sessiontimeout.inc');
 <div style="visibility:hidden;display:none;padding:10px;margin:5px 170px 10px 10px;background-color:#ddd;border:2px solid #3586bd;position:fixed;_position:absolute;right:0;top:0;_top:expression(eval(document.body.scrollTop));z-index:900;width:125px;text-align:center;" name="wait_message" id="wait_message"><img src="<?php print $ko_path; ?>images/load_anim.gif" /></div>
 
 <div id="kool-text">
-<a href="http://www.churchtool.org">
-<img src="<?php print $ko_path.$FILE_LOGO_SMALL; ?>" border="0" alt="kOOL" title="kOOL" />
-</a>
+	<a href="http://www.churchtool.org" style="display:inline-block;">
+		<img src="<?php print $ko_path.$FILE_LOGO_SMALL; ?>" border="0" alt="kOOL" title="kOOL" />
+	</a>
 </div>
 
-<div class="menu">
-<ul id="nav"><li><a class="first"><?php print getLL("install_title"); ?></a></li></ul>
-</div>
-<br clear="all" />
+<h1 style="text-align:center;margin:5px;"><?php print getLL("install_title"); ?></h1>
+
 
 
 <form action="index.php" method="post" name="formular">  <!-- Hauptformular -->
 <input type="hidden" name="action" id="action" value="" />
 <input type="hidden" name="id" id="id" value="" />
 
-<table width="100%">
-<tr> 
 
 <!-- Hauptbereich -->
-<td class="main" name="main_content" id="main_content">
+<main class="main" name="main_content" id="main_content">
 <?php
 $states = array(
 	array("id" => 1, "name" => "lang"),
@@ -319,7 +327,7 @@ $states = array(
 	array("id" => 5, "name" => "done")
 	);
 
-print '<div class="install_progress">';
+print '<div class="install_progress full-width">';
 foreach($states as $state) {
 	$active = ($state["id"] <= $cur_state);
 	print '<img src="'.$ko_path.'images/install_state'.($active?'':'_disabled').'.gif" border="0" />';
@@ -329,7 +337,7 @@ print '</div><br />';
 
 switch($_SESSION["show"]) {
 	case "select_language":
-		print getLL("install_lang_header").'<br />';
+		print '<h3>'.getLL("install_lang_header").'</h3>';
 		//Lang-Selection
 		if(sizeof($LIB_LANGS) > 1) {
 			$lang_code = "";
@@ -344,7 +352,7 @@ switch($_SESSION["show"]) {
 
 
 	case "checks":
-		print '<h1>'.getLL("install_checks_header").'</h1>';
+		print '<h3>'.getLL("install_checks_header").'</h3>';
 
 		//Check for smarty
 		print '<div>'.getLL("install_checks_smarty")."</div>";
@@ -382,7 +390,7 @@ switch($_SESSION["show"]) {
 
 		if(!$notifier->hasErrors()) {
 			print '<br /><div align="center">';
-			print '<input type="submit" name="submit" onclick="set_action(\'set_db\');" value="'.getLL("next").'" />';
+			print '<button class="btn btn-primary" type="submit" name="submit" onclick="set_action(\'set_db\');" value="'.getLL("next").'">'.getLL("next").'</button>';
 			print '</div>';
 		}
 
@@ -392,14 +400,14 @@ switch($_SESSION["show"]) {
 	case "set_db":
 		//Try to connect to MySQL-Server
 		if($mysql_user && $mysql_pass && $mysql_server) {
-			$d = mysql_connect($mysql_server, $mysql_user, $mysql_pass);
+			$d = mysqli_connect($mysql_server, $mysql_user, $mysql_pass);
 			if(!$d) {
-				$error_txt_add .= mysql_error();
+				$error_txt_add .= mysqli_error($d);
 				$notifier->addError(1, $do_action, array($error_txt_add));
 			} else {
-				$result = mysql_query("SHOW DATABASES");
+				$result = mysqli_query($d, "SHOW DATABASES");
 				$databases = NULL;
-				while($row = mysql_fetch_array($result)) {
+				while($row = mysqli_fetch_array($result)) {
 					$databases[] = $row[0];
 				}
 			}
@@ -447,10 +455,10 @@ switch($_SESSION["show"]) {
 		//Display Button to continue if db connection can be established
 		if(!$notifier->hasErrors() && $mysql_db) {
 			$ok  = '<b>'.getLL("install_db_ok").'</b>';
-			$ok .= '<br /><br />'.sprintf(getLL("install_db_import_text"), $mysql_db);
-			$ok .= '<br />'.getLL("install_db_import_text_2");
-			$ok .= '<br /><br /><input type="submit" value="'.getLL("install_db_import_button").'" name="submit_db_import" onclick="set_action(\'submit_db_import\');this.submit;" style="font-weight: 900;" />';
-			$ok .= '&nbsp;&nbsp;&nbsp;<input type="submit" value="'.getLL("install_db_import_button_2").'" name="submit_db_import_skip" onclick="set_action(\'submit_db_import_skip\');this.submit;" />';
+			$ok .= '<br><br>'.sprintf(getLL("install_db_import_text"), $mysql_db);
+			$ok .= '<br>'.getLL("install_db_import_text_2");
+			$ok .= '<br><br><button class="btn btn-success" type="submit" value="'.getLL("install_db_import_button").'" name="submit_db_import" onclick="set_action(\'submit_db_import\');this.submit;">'.getLL("install_db_import_button").'</button>';
+			$ok .= '&nbsp;&nbsp;&nbsp;<button class="btn btn-warning" type="submit" value="'.getLL("install_db_import_button_2").'" name="submit_db_import_skip" onclick="set_action(\'submit_db_import_skip\');this.submit;">'.getLL("install_db_import_button_2").'</button>';
 			$frmgroup[$gc]["row"][$rowcounter++]["inputs"][0] = array("type" => "   ");
 			$frmgroup[$gc]["row"][$rowcounter]["inputs"][0] = array("desc" => getLL("install_db_ok_header"),
 																	 "type" => "html",
@@ -570,19 +578,19 @@ switch($_SESSION["show"]) {
 															 'params' => 'size="5"'
 															 );
 		$frmgroup[$gc]["row"][$rowcounter++]["inputs"][1] = array("desc" => getLL("install_settings_lang_from_browser"),
-															 "type" => "checkbox",
+															 "type" => "switch",
 															 "name" => "chk_lang_from_browser",
-															 "value" => "1",
-															 "params" => $GET_LANG_FROM_BROWSER ? 'checked="checked"' : '',
+															 "value" => $GET_LANG_FROM_BROWSER ? 1 : 0,
 															 );
 
 		//sms
 		$frmgroup[$gc]["row"][$rowcounter++]["inputs"][0] = array("type" => "   ");
-		$frmgroup[$gc]["row"][$rowcounter]["inputs"][0] = array("desc" => getLL("install_settings_sms_apiid"),
-																 "type" => "text",
-																 "name" => "txt_sms_api_id",
-																 "value" => $SMS_PARAMETER["api_id"],
-																 "params" => 'size="40"',
+		$frmgroup[$gc]["row"][$rowcounter]["inputs"][0] = array("desc" => getLL("install_settings_sms_provider"),
+																 "type" => "select",
+																 "values" => array('', 'aspsms', 'clickatell'),
+																 "descs" => array('', 'aspsms', 'Clickatell'),
+																 "name" => "txt_sms_provider",
+																 "value" => $SMS_PARAMETER["provider"],
 																 );
 		$frmgroup[$gc]["row"][$rowcounter++]["inputs"][1] = array("desc" => getLL("install_settings_sms_user"),
 																 "type" => "text",
@@ -599,11 +607,25 @@ switch($_SESSION["show"]) {
 		//webfolders
 		$frmgroup[$gc]["row"][$rowcounter++]["inputs"][0] = array("type" => "   ");
 		$frmgroup[$gc]["row"][$rowcounter++]["inputs"][0] = array("desc" => getLL("install_settings_use_webfolders"),
-																 "type" => "checkbox",
+																 "type" => "switch",
 																 "name" => "chk_webfolders",
-																 "value" => 1,
-																 "params" => WEBFOLDERS ? 'checked="checked"' : '',
+																 "value" => WEBFOLDERS ? 1 : 0,
 																 );
+
+		// force ssl
+		$frmgroup[$gc]["row"][$rowcounter++]["inputs"][0] = array("type" => "   ");
+		$frmgroup[$gc]["row"][$rowcounter]["inputs"][0] = array("desc" => getLL("install_settings_force_ssl"),
+			"type" => "switch",
+			"name" => "chk_force_ssl",
+			"value" => FORCE_SSL ? 1 : 0,
+		);
+
+		// leute no family
+		$frmgroup[$gc]["row"][$rowcounter++]["inputs"][1] = array("desc" => getLL("install_settings_leute_no_family"),
+			"type" => "switch",
+			"name" => "chk_leute_no_family",
+			"value" => $LEUTE_NO_FAMILY ? 1 : 0,
+		);
 
 		//warranty
 		$frmgroup[$gc]["row"][$rowcounter++]["inputs"][0] = array("type" => "   ");
@@ -639,24 +661,24 @@ switch($_SESSION["show"]) {
 
 
 	case "done":
-		print '<h2>'.getLL("install_done_header").'</h2>';
+		print '<h3>'.getLL("install_done_header").'</h3>';
 		print '<b>'.sprintf(getLL("install_done_warning"), ($BASE_PATH."install/")).'</b><br /><br />';
 		print getLL("install_done_text");
 		print '<br /><br />';
-		print '<a href="'.$BASE_URL.'">'.getLL("install_done_link").'</a>';
+		print '<a class="btn btn-primary" href="'.$BASE_URL.'">'.getLL("install_done_link").'</a>';
 	break;
 
 }//switch(show)
 ?>
 &nbsp;
-</td>
+	<br clear="all">
+</main>
 
-</tr>
 
 <?php
 //--- copyright notice on frontpage:
 //--- Obstructing the appearance of this notice is prohibited by law.
-print '<tr><td colspan="3" class="copyright">';
+print '<div class="copyright">';
 print '<a href="https://sourceforge.net/projects/kool"><b>'.getLL("kool").'</b></a> '.sprintf(getLL("copyright_notice"), VERSION).'<br />';
 if(defined("WARRANTY_GIVER")) {
 	print sprintf(getLL("copyright_warranty"), '<a href="'.WARRANTY_URL.'">'.WARRANTY_GIVER.'</a> ');
@@ -665,11 +687,10 @@ if(defined("WARRANTY_GIVER")) {
 }
 print sprintf(getLL("copyright_free_software"), '<a href="http://www.fsf.org/licensing/licenses/gpl.html">', '</a>')."<br />";
 print getLL("copyright_obstruction");
-print '</td></tr>';
+print '</div>';
 //--- end of copyright notice
 ?>
 
-</table>
 </form> <!-- //Hauptformular -->
 
 </body>

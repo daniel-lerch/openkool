@@ -24,19 +24,23 @@
 *  This copyright notice MUST APPEAR in all copies of the script!
 ***************************************************************/
 
+error_reporting(0);
 
 //Set session id from GET (session will be started in ko.inc)
-if(!isset($_GET['sesid'])) exit;
-if(FALSE === session_id($_GET['sesid'])) exit;
+if(!isset($_GET["sesid"]) && !isset($_POST["sesid"])) exit;
+if (isset($_GET["sesid"])) $sesid = $_GET["sesid"];
+if (!$sesid && isset($_POST["sesid"])) $sesid = $_POST["sesid"];
+if(FALSE === session_id($sesid)) exit;
 
 //Send headers to ensure latin1 charset
 header('Content-Type: text/html; charset=ISO-8859-1');
- 
-error_reporting(0);
+
 $ko_menu_akt = 'rota';
 $ko_path = '../../';
 require_once($ko_path.'inc/ko.inc');
 $ko_path = '../';
+
+array_walk_recursive($_GET,'utf8_decode_array');
 
 //Rechte auslesen
 ko_get_access('daten');
@@ -58,9 +62,10 @@ if(sizeof($hooks) > 0) foreach($hooks as $hook) include($hook);
 
 hook_show_case_pre($_SESSION['show']);
 
- 
-if(isset($_GET) && isset($_GET['action'])) {
- 	$action = format_userinput($_GET['action'], 'alphanum');
+
+if((isset($_GET) && isset($_GET["action"])) || (isset($_POST) && isset($_POST["action"]))) {
+	$action = format_userinput($_GET["action"], "alphanum");
+	if (!$action) $action = format_userinput($_POST["action"], "alphanum");
 
 	hook_ajax_pre($ko_menu_akt, $action);
 
@@ -92,17 +97,18 @@ if(isset($_GET) && isset($_GET['action'])) {
 				$mul = $action == 'timeplus' ? 1 : -1;
 			}
 
-			switch($_SESSION['rota_timespan']) {
-				case '1d':
-					$new = add2date($_SESSION['rota_timestart'], 'day', $mul, TRUE);
+			switch(substr($_SESSION['rota_timespan'], -1)) {
+				case 'd':
+					$inc = substr($_SESSION['rota_timespan'], 0, -1);
+					$new = add2date($_SESSION['rota_timestart'], 'day', $mul*$inc, TRUE);
 				break;
 
-				case '1w': case '2w':
+				case 'w':
 					$inc = substr($_SESSION['rota_timespan'], 0, -1);
 					$new = add2date(date_find_last_monday($_SESSION['rota_timestart']), 'week', $mul*$inc, TRUE);
 				break;
 
-				case '1m': case '2m': case '3m': case '6m': case '12m':
+				case 'm':
 					$inc = substr($_SESSION['rota_timespan'], 0, -1);
 					$new = add2date(substr($_SESSION['rota_timestart'], 0, -2).'01', 'month', $mul*$inc, TRUE);
 				break;
@@ -134,12 +140,12 @@ if(isset($_GET) && isset($_GET['action'])) {
 			ko_save_userpref($_SESSION['ses_userid'], 'rota_timespan', $_SESSION['rota_timespan']);
 
 			//Correct timestart
-			switch($_SESSION['rota_timespan']) {
-				case '1w': case '2w':
+			switch(substr($_SESSION['rota_timespan'], -1)) {
+				case 'w':
 					$_SESSION['rota_timestart'] = date_find_last_monday($_SESSION['rota_timestart']);
 				break;
 
-				case '1m': case '2m': case '3m': case '6m': case '12m':
+				case 'm':
 					$_SESSION['rota_timestart'] = substr($_SESSION['rota_timestart'], 0, -2).'01';
 				break;
 			}
@@ -168,6 +174,32 @@ if(isset($_GET) && isset($_GET['action'])) {
 			ko_get_events($event, "AND ko_event.id = '$id'");
 			$event = array_shift($event);
 			ko_log('rota_event_status', 'Status: '.$status.': '.$event['id'].': '.$event['eventgruppen_name'].', '.$event['startdatum'].', '.$event['startzeit']);
+
+			print 'main_content@@@'.ko_rota_schedule(FALSE);
+		break;
+
+
+
+		case 'seteventteamstatus':
+			if($access['rota']['MAX'] < 5) continue;
+
+			$teamId = format_userinput($_GET['teamid'], 'uint');
+			$eventId = format_userinput($_GET['eventid'], 'js');
+			$status = format_userinput($_GET['status'], 'uint');
+			if(!in_array($status, array(0,1))) continue;
+			if(!$teamId || !$eventId) continue;
+
+			if ($status == 1) {
+				ko_rota_disable_scheduling($eventId, $teamId);
+			} else if ($status == 0) {
+				ko_rota_enable_scheduling($eventId, $teamId);
+			}
+
+			$statusText = $status ? 'disabled' : 'enabled';
+			ko_get_events($event, "AND ko_event.id = '{$eventId}'");
+			$event = array_shift($event);
+			$team = db_select_data('ko_rota_teams', "WHERE `id` = {$teamId}", '*', '', '', TRUE);
+			ko_log('rota_event_team_status', "Status: {$statusText}, Event: (id: {$event['id']}, eg_name: {$event['eventgruppen_name']}, startdatum: {$event['startdatum']}, startzeit: {$event['startzeit']}), Team: (id: {$teamId}, name: {$team['name']}, rotatype: {$team['rotatype']})");
 
 			print 'main_content@@@'.ko_rota_schedule(FALSE);
 		break;
@@ -288,11 +320,11 @@ if(isset($_GET) && isset($_GET['action'])) {
 			if($mode == 'event') $event = ko_rota_get_events('', $event_id);
 			else $event = ko_rota_get_weeks('', $event_id);
 			if($event['_stats']['total'] == $event['_stats']['done']) {
-				$class = 'rota-stats-done';
+				$class = 'success';
 			} else if($event['_stats']['done'] == 0) {
-				$class = 'rota-stats-empty';
+				$class = 'danger';
 			} else {
-				$class = 'rota-stats-half';
+				$class = 'warning';
 			}
 
 
@@ -300,7 +332,8 @@ if(isset($_GET) && isset($_GET['action'])) {
 			$team = db_select_data('ko_rota_teams', "WHERE `id` = '$team_id'", '*', '', '', TRUE);
 			ko_log('rota_schedule', $mode.($_GET['module'] == 'daten' ? ' (from event)' : '').': '.$event_id.($mode == 'event' ? (', '.$event['eventgruppen_name'].' '.$event['_date']) : '').', Team: '.$team['name'].' ('.$team_id.'), Schedule: '.$schedule.': '.implode(', ', ko_rota_schedulled_text($schedule)));
 
-			print '@@@rota_stats_'.$event['id'].'@@@<div class="'.$class.'">'.$event['_stats']['done'].'/'.$event['_stats']['total'].'</div>';
+			print '<script>$(".selectpicker").selectpicker();</script>';
+			print '@@@rota_stats_'.$event['id'].'@@@<button class="btn btn-'.$class.'" disabled>'.$event['_stats']['done'].'/'.$event['_stats']['total'].'</button>';
 		break;
 
 
@@ -352,11 +385,11 @@ if(isset($_GET) && isset($_GET['action'])) {
 			if($mode == 'event') $event = ko_rota_get_events('', $event_id);
 			else $event = ko_rota_get_weeks('', $event_id);
 			if($event['_stats']['total'] == $event['_stats']['done']) {
-				$class = 'rota-stats-done';
+				$class = 'success';
 			} else if($event['_stats']['done'] == 0) {
-				$class = 'rota-stats-empty';
+				$class = 'danger';
 			} else {
-				$class = 'rota-stats-half';
+				$class = 'warning';
 			}
 
 
@@ -364,7 +397,8 @@ if(isset($_GET) && isset($_GET['action'])) {
 			$team = db_select_data('ko_rota_teams', "WHERE `id` = '$team_id'", '*', '', '', TRUE);
 			ko_log('rota_del_schedule', $mode.($_GET['module'] == 'daten' ? ' (from event)' : '').': '.$event_id.($mode == 'event' ? (', '.$event['eventgruppen_name'].' '.$event['_date']) : '').', Team: '.$team['name'].' ('.$team_id.'), Schedule: '.$schedule.': '.implode(', ', ko_rota_schedulled_text($schedule)));
 
-			print '@@@rota_stats_'.$event['id'].'@@@<div class="'.$class.'">'.$event['_stats']['done'].'/'.$event['_stats']['total'].'</div>';
+			print '<script>$(".selectpicker").selectpicker();</script>';
+			print '@@@rota_stats_'.$event['id'].'@@@<button class="btn btn-'.$class.'" disabled>'.$event['_stats']['done'].'/'.$event['_stats']['total'].'</button>';
 		break;
 
 
@@ -432,26 +466,40 @@ if(isset($_GET) && isset($_GET['action'])) {
 
 
 		case 'itemlistsaveteams':
-			//Find position of submenu for redraw
-			if(in_array('itemlist_teams', explode(',', $_SESSION['submenu_left']))) $pos = 'left';
-			else $pos = 'right';
-
 			//save new value
 			if($_GET['name'] == '') continue;
 			foreach($_SESSION['rota_teams'] as $k => $v) if($v == '') unset($_SESSION['rota_teams'][$k]);
 			$new_value = implode(',', $_SESSION['rota_teams']);
 			$user_id = ($access['rota']['MAX'] > 4 && $_GET['global'] == 'true') ? '-1' : $_SESSION['ses_userid'];
-			ko_save_userpref($user_id, format_userinput($_GET['name'], 'js', FALSE, 0, array('allquotes')), $new_value, 'rota_itemset');
+			$name = format_userinput($_GET['name'], 'js', FALSE, 0, array('allquotes'));
+			ko_save_userpref($user_id, $name, $new_value, 'rota_itemset');
 
-			print submenu_rota('itemlist_teams', $pos, 'open', 2);
+			ko_get_login($_SESSION['ses_userid'], $loggedIn);
+			$nameForOthers = "{$name} ({$loggedIn['login']})";
+
+			$logins = trim($_GET['logins']);
+			if ($logins) {
+				$logins = explode(',', $logins);
+				foreach ($logins as $lid) {
+					$lid = format_userinput($lid, 'uint');
+					if (!$lid) continue;
+					if ($lid == ko_get_root_id() || $lid == $_SESSION['ses_userid']) continue;
+
+					$n = $nameForOthers;
+					$c = 0;
+					while (ko_get_userpref($lid, $n, 'rota_itemset')) {
+						$c++;
+						$n = "{$nameForOthers} - {$c}";
+					}
+					ko_save_userpref($lid, $n, $new_value, 'rota_itemset');
+				}
+			}
+
+			print submenu_rota('itemlist_teams', 'open', 2);
 		break;
 
 
 		case 'itemlistopenteams':
-			//Find position of submenu for redraw
-			if(in_array('itemlist_teams', explode(',', $_SESSION['submenu_left']))) $pos = 'left';
-			else $pos = 'right';
-
 			//save new value
 			$name = format_userinput($_GET['name'], 'js', FALSE, 0, array(), '@');
 			if($name == '') continue;
@@ -476,15 +524,11 @@ if(isset($_GET) && isset($_GET['action'])) {
 				break;
 			}
 			print '@@@';
-			print submenu_rota('itemlist_teams', $pos, 'open', 2);
+			print submenu_rota('itemlist_teams', 'open', 2);
 		break;
 
 
 		case 'itemlistdeleteteams':
-			//Find position of submenu for redraw
-			if(in_array('itemlist_teams', explode(',', $_SESSION['submenu_left']))) $pos = 'left';
-			else $pos = 'right';
-
 			//save new value
 			$name = format_userinput($_GET['name'], 'js', FALSE, 0, array(), '@');
 			if($name == '') continue;
@@ -493,7 +537,7 @@ if(isset($_GET) && isset($_GET['action'])) {
 				if($access['rota']['MAX'] > 4) ko_delete_userpref('-1', substr($name, 3), 'rota_itemset');
 			} else ko_delete_userpref($_SESSION['ses_userid'], $name, 'rota_itemset');
 
-			print submenu_rota('itemlist_teams', $pos, 'open', 2);
+			print submenu_rota('itemlist_teams', 'open', 2);
 		break;
 
 
@@ -543,9 +587,7 @@ if(isset($_GET) && isset($_GET['action'])) {
 			}
 
 			if($action == 'itemlistgroup') {
-				if(in_array('itemlist_eventgroups', explode(',', $_SESSION['submenu_left']))) $pos = 'left';
-				else $pos = 'right';
-				print '@@@'.submenu_rota('itemlist_eventgroups', $pos, 'open', 2);
+				print '@@@'.submenu_rota('itemlist_eventgroups', 'open', 2);
 			}
 		break;
 
@@ -564,25 +606,17 @@ if(isset($_GET) && isset($_GET['action'])) {
 
 
 		case 'itemlistsaveegs':
-			//Find position of submenu for redraw
-			if(in_array('itemlist_eventgroups', explode(',', $_SESSION['submenu_left']))) $pos = 'left';
-			else $pos = 'right';
-
 			//save new value
 			if($_GET['name'] == '') continue;
 			$new_value = implode(',', $_SESSION['rota_egs']);
 			$user_id = ($access['daten']['MAX'] > 3 && $_GET['global'] == 'true') ? '-1' : $_SESSION['ses_userid'];
 			ko_save_userpref($user_id, format_userinput($_GET['name'], 'js', FALSE, 0, array('allquotes')), $new_value, 'daten_itemset');
 
-			print submenu_rota('itemlist_eventgroups', $pos, 'open', 2);
+			print submenu_rota('itemlist_eventgroups', 'open', 2);
 		break;
 
 
 		case 'itemlistopenegs':
-			//Find position of submenu for redraw
-			if(in_array('itemlist_eventgroups', explode(',', $_SESSION['submenu_left']))) $pos = 'left';
-			else $pos = 'right';
-
 			//save new value
 			$name = format_userinput($_GET['name'], 'js', FALSE, 0, array(), '@');
 			if($name == '') continue;
@@ -606,15 +640,11 @@ if(isset($_GET) && isset($_GET['action'])) {
 				break;
 			}
 			print '@@@';
-			print submenu_rota('itemlist_eventgroups', $pos, 'open', 2);
+			print submenu_rota('itemlist_eventgroups', 'open', 2);
 		break;
 
 
 		case 'itemlistdeleteegs':
-			//Find position of submenu for redraw
-			if(in_array('itemlist_eventgroups', explode(',', $_SESSION['submenu_left']))) $pos = 'left';
-			else $pos = 'right';
-
 			//save new value
 			$name = format_userinput($_GET['name'], 'js', FALSE, 0, array(), '@');
 			if($name == '') continue;
@@ -623,7 +653,7 @@ if(isset($_GET) && isset($_GET['action'])) {
 				if($access['daten']['MAX'] > 3) ko_delete_userpref('-1', substr($name, 3), 'daten_itemset');
 			} else ko_delete_userpref($_SESSION['ses_userid'], $name, 'daten_itemset');
 
-			print submenu_rota('itemlist_eventgroups', $pos, 'open', 2);
+			print submenu_rota('itemlist_eventgroups', 'open', 2);
 		break;
 
 
@@ -660,6 +690,13 @@ if(isset($_GET) && isset($_GET['action'])) {
 				case 'pdftable':
 					$filename = 'pdf/'.ko_rota_export_landscape_pdf($_SESSION['rota_timestart']);
 					$filetype = 'landscape';
+				break;
+
+				case 'helperoverviewp':
+				case 'helperoverviewl':
+					$orientation = substr($mode, -1, 1) == 'l' ? 'landscape' : 'portrait';
+					$filename = 'excel/'.ko_rota_export_helper_overview($orientation);
+					$filetype = $orientation;
 				break;
 
 				default:
@@ -722,7 +759,6 @@ if(isset($_GET) && isset($_GET['action'])) {
 			$id = substr($id, 7);
 			$presets = array_merge((array)ko_get_userpref('-1', '', 'rota_emailtext_presets', 'ORDER by `key` ASC'), (array)ko_get_userpref($_SESSION['ses_userid'], '', 'rota_emailtext_presets', 'ORDER by `key` ASC'));
 
-			$c .= '<select name="preset" size="0" id="preset" style="width: 680px; float: left;" onchange="textarea_insert_text(\'emailtext\', this.value);">';
 			$c .= '<option value="">'.getLL('download_send_insert_preset').'</option>';
 			$c .= '<option value="" disabled="disabled">-------------------------</option>';
 			foreach($presets as $preset) {
@@ -738,26 +774,82 @@ if(isset($_GET) && isset($_GET['action'])) {
 					$c .= '<option id="preset_'.$preset['id'].'" value="'.ko_js_escape($preset['value']).'">'.$prefix.$preset['key'].'</option>';
 				}
 			}
-			$c .= '</select>';
 
-			print 'text_presets@@@'.$c;
+			print 'preset@@@'.$c;
 		break;
 
 
 		case 'savepreset':
 			$text = $_GET['text'];
 			$global = format_userinput($_GET['global'], 'uint');
-			$name = format_userinput($_GET['name'], 'js');
+			$name = format_userinput($_GET['name'], 'text');
 			$uid = $global ? -1 : $_SESSION['ses_userid'];
 
 			ko_save_userpref($uid, $name, $text, 'rota_emailtext_presets');
+
+			$presets = array_merge((array)ko_get_userpref('-1', '', 'rota_emailtext_presets', 'ORDER by `key` ASC'), (array)ko_get_userpref($_SESSION['ses_userid'], '', 'rota_emailtext_presets', 'ORDER by `key` ASC'));
+
+			$c .= '<option value="">'.getLL('download_send_insert_preset').'</option>';
+			$c .= '<option value="" disabled="disabled">-------------------------</option>';
+			foreach($presets as $preset) {
+				$prefix = $preset['user_id'] == -1 ? getLL('itemlist_global_short').' ' : '';
+				$c .= '<option id="preset_'.$preset['id'].'" value="'.ko_js_escape($preset['value']).'">'.$prefix.$preset['key'].'</option>';
+			}
+
+			print 'preset@@@'.$c.'@@@';
+
 			print 'INFO@@@'.getLL('info_rota_5');
+		break;
+
+
+		case 'filesendpreviewrecs':
+			array_walk_recursive($_POST, 'utf8_decode_array');
+			ko_rota_filesend_parse_post('PREVIEW', $text, $subject, $recipients, $eventid, $restrict_to_teams, $from, $send_files);
+			$mailOK = $mailNOK = array();
+			foreach ($recipients as $r) {
+				if ($r['_has_mail']) $mailOK[] = $r;
+				else $mailNOK[] = $r;
+			}
+			$html = '';
+			if (!empty($mailNOK)) {
+				$np = array();
+				foreach ($mailNOK as $p) {
+					$np[] = '<div class="col-md-6">'.$p['vorname'] . ' ' . $p['nachname'].'</div>';
+				}
+				$html .= sprintf('<div class="panel panel-warning"><div class="panel-heading"><h4 class="panel-title">%s</h4></div><div class="panel-body" style="max-height:400px;overflow-y:auto;"><div class="row">%s</div></div></div>', getLL('rota_send_preview_mail_nok'), implode('', $np));
+			}
+			if (!empty($mailOK)) {
+				$np = array();
+				foreach ($mailOK as $p) {
+					$np[] = '<div class="col-md-6 rota-filesend-person-preview cursor_pointer" data-html="true" data-container="body" data-placement="auto" data-utd="false" data-toggle="tooltip" data-id="'.$p['id'].'" title="<i class=&quot;fa fa-spinner fa-pulse&quot;></i>">'.$p['vorname'] . ' ' . $p['nachname'].'</div>';
+				}
+				$html .= sprintf('<div class="panel panel-warning"><div class="panel-heading"><h4 class="panel-title">%s</h4></div><div class="panel-body" style="max-height:400px;overflow-y:auto;"><div class="row">%s</div></div></div>', getLL('rota_send_preview_mail_ok'), implode('', $np));
+			}
+			print $html;
+		break;
+
+
+		case 'filesendpreview':
+			array_walk_recursive($_POST, 'utf8_decode_array');
+			ko_rota_filesend_parse_post('PREVIEW', $text, $subject, $recipients, $eventid, $restrict_to_teams, $from, $send_files);
+			$recipient = NULL;
+			foreach ($recipients as $r) {
+				if ($r['id'] == $_POST['recipient_id']) $recipient = $r;
+			}
+			if ($recipient && ($ok = ko_rota_filesend_send_mail('PREVIEW', $text, $subject, $recipient, $send_files, $eventid, $from, $restrict_to_teams))) {
+				printf ("<b>%s&nbsp;</b>%s<br><b>%s&nbsp;</b>%s<br><b>%s</b><br>%s", getLL('leute_email_to'), $ok['email'], getLL('leute_email_subject'), $ok['emailSubject'], getLL('leute_email_text'), $ok['emailText']);
+			};
+		break;
+
+
+		//Default:
+		default:
+			if(!hook_action_handler($do_action))
+				include($ko_path.'inc/abuse.inc');
 		break;
 
 	}//switch(action);
 
 	hook_ajax_post($ko_menu_akt, $action);
-
-	if(!$no_post) print '@@@POST@@@rota_init_jsdate();';
 }//if(GET[action])
 ?>

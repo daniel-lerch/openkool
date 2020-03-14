@@ -24,6 +24,8 @@
 *  This copyright notice MUST APPEAR in all copies of the script!
 ***************************************************************/
 
+header('Content-Type: text/html; charset=ISO-8859-1');
+
 ob_start();  //Ausgabe-Pufferung starten
 
 $ko_path = '../';
@@ -247,7 +249,7 @@ switch($do_action) {
 				$filenames = array();
 				foreach($tid as $id) {
 					$file = $ko_path.'download/'.$folder.'/'.getLL('tracking_export_filename').$id.'_'.strftime('%d%m%Y_%H%M%S', time()).'.'.$mode;
-					ko_tracking_export($mode, $file, $id, $_POST['sel_cols'], $_POST['sel_dates'], $_POST['sel_layout'], $_POST['sel_addrows'], $_POST['chk_family'], $_POST['chk_sums']);
+					ko_tracking_export($mode, $file, $id, $_POST['sel_cols'], $_POST['sel_dates'], $_POST['sel_layout'], $_POST['sel_addrows'], $_POST['chk_family'], $_POST['sel_sums']);
 					$filenames[] = basename($file);
 				}
 				$filename = getLL('tracking_export_filename').strftime('%d%m%Y_%H%M%S', time()).'.'.$mode;
@@ -263,22 +265,26 @@ switch($do_action) {
 				$format = ko_get_userpref($_SESSION['ses_userid'], 'export_table_format');
 				if(!$format) $format = 'xlsx';
 				$filename = $ko_path.'download/'.$folder.'/'.getLL('tracking_export_filename').strftime('%d%m%Y_%H%M%S', time()).'.'. ($mode == 'xls' ? $format : $mode);
-				ko_tracking_export($mode, $filename, $tid[0], $_POST['sel_cols'], $_POST['sel_dates'], $_POST['sel_layout'], $_POST['sel_addrows'], $_POST['chk_family'], $_POST['chk_sums']);
+				ko_tracking_export($mode, $filename, $tid[0], $_POST['sel_cols'], $_POST['sel_dates'], $_POST['sel_layout'], $_POST['sel_addrows'], $_POST['chk_family'], $_POST['sel_sums']);
 			}
 		} else {
 			//Only one selected so just create this and return it
 			$format = ko_get_userpref($_SESSION['ses_userid'], 'export_table_format');
 			if(!$format) $format = 'xlsx';
 			$filename = $ko_path.'download/'.$folder.'/'.getLL('tracking_export_filename').strftime('%d%m%Y_%H%M%S', time()).'.'. ($mode == 'xls' ? $format : $mode);
-			ko_tracking_export($mode, $filename, $tid, $_POST['sel_cols'], $_POST['sel_dates'], $_POST['sel_layout'], $_POST['sel_addrows'], $_POST['chk_family'], $_POST['chk_sums']);
+			ko_tracking_export($mode, $filename, $tid, $_POST['sel_cols'], $_POST['sel_dates'], $_POST['sel_layout'], $_POST['sel_addrows'], $_POST['chk_family'], $_POST['sel_sums']);
 		}
-		$onload_code = "ko_popup('".$ko_path.'download.php?action=file&amp;file='.substr($filename, 3)."');";
+
+		if(!$notifier->hasErrors()) {
+			$onload_code = "ko_popup('".$ko_path.'download.php?action=file&amp;file='.substr($filename, 3)."');";
+		}
+
 		//Set userprefs with current selections
 		ko_save_userpref($_SESSION['ses_userid'], 'tracking_export_cols', $_POST['sel_cols']);
 		ko_save_userpref($_SESSION['ses_userid'], 'tracking_export_layout', $_POST['sel_layout']);
 		ko_save_userpref($_SESSION['ses_userid'], 'tracking_export_addrows', $_POST['sel_addrows']);
 		ko_save_userpref($_SESSION['ses_userid'], 'tracking_export_family', $_POST['chk_family']);
-		ko_save_userpref($_SESSION['ses_userid'], 'tracking_export_sums', $_POST['chk_sums']);
+		ko_save_userpref($_SESSION['ses_userid'], 'tracking_export_sums', $_POST['sel_sums']);
 	break;
 
 
@@ -319,7 +325,7 @@ switch($do_action) {
 				$format = ko_get_userpref($_SESSION['ses_userid'], 'export_table_format');
 				if(!$format) $format = 'xlsx';
 				$filename = $ko_path.'download/'.$folder.'/'.getLL('tracking_export_filename').strftime('%d%m%Y_%H%M%S', time()).'_'.$id.'.'. ($mode == 'xls' ? $format : $mode);
-				ko_tracking_export($mode, $filename, $id, $_POST['sel_cols'], $date_mode, $_POST['sel_layout'], $_POST['sel_addrows'], $_POST['chk_family'], $_POST['chk_sums']);
+				ko_tracking_export($mode, $filename, $id, $_POST['sel_cols'], $date_mode, $_POST['sel_layout'], $_POST['sel_addrows'], $_POST['chk_family'], $_POST['sel_sums']);
 				$zip->addFile($filename, getLL('tracking_export_filename').$tracking['name'].'.'. ($mode == 'xls' ? $format : $mode));
 				//Reset filter
 				if($reset_filter) $_SESSION['tracking_filter'] = $orig_filter;
@@ -361,11 +367,57 @@ switch($do_action) {
 	break;
 
 
+	// Mod
 	case 'mod_entries':
 		if($access['tracking']['MAX'] < 2) continue;
 
 		$_SESSION['show'] = 'mod_entries';
 	break;
+
+	case 'edit_tracking_mod':
+		$id = format_userinput($_POST['id'], 'uint');
+		if (!$id) $id = format_userinput($_GET['id'], 'uint');
+		if (!$id) continue;
+
+		$trackingMod = db_select_data('ko_tracking_entries', "WHERE `id` = '{$id}'", 'id,tid,cruser', '', '', TRUE, TRUE);
+		if ($trackingMod['id'] != $id) continue;
+
+		if($access['tracking']['ALL'] < 2 && $access['tracking'][$trackingMod['tid']] < 2) continue;
+
+		$edit_id = $id;
+
+		if(!is_array($KOTA['ko_tracking_entries'])) ko_include_kota(array('ko_tracking_entries'));
+
+		$_SESSION['show_back'] = $_SESSION['show'];
+		$_SESSION['show'] = 'edit_tracking_mod';
+	break;
+
+	case 'submit_edit_tracking_mod':
+	case 'submit_edit_approve_tracking_mod':
+		if($access['tracking']['MAX'] < 2) continue;
+
+		kota_submit_multiedit('', 'edit_tracking_mod');
+
+		if ($do_action == 'submit_edit_approve_tracking_mod') {
+			list($table, $col, $id, $hash) = explode('@', $_POST['id']);
+			$id = format_userinput($id, 'uint');
+			if(!$id) continue;
+
+			$tentry = db_select_data('ko_tracking_entries', "WHERE `id` = '$id'", '*', '', '', TRUE);
+			if(!$tentry['id'] || $tentry['id'] != $id || $tentry['status'] == 0) continue;
+			if($access['tracking']['ALL'] < 2 && $access['tracking'][$tentry['tid']] < 2) continue;
+
+			db_update_data('ko_tracking_entries', "WHERE `id` = '$id'", array('status' => 0, 'last_change' => date('Y-m-d H:i:s')));
+			ko_log_diff('confirm_entered_tracking', $tentry);
+			$notifier->addInfo(1, $do_action);
+		}
+
+		if(!$notifier->hasErrors()) {
+			$_SESSION['show'] = 'mod_entries';
+		}
+	break;
+
+
 
 
 	//Multiedit
@@ -450,17 +502,6 @@ switch($do_action) {
 	break;
 
 
-
-
-
-
-	//Submenus
-  case 'move_sm_left':
-  case 'move_sm_right':
-    ko_submenu_actions('tracking', $do_action);
-  break;
-
-
 	//Default:
   default:
 		if(!hook_action_handler($do_action))
@@ -522,15 +563,16 @@ ko_set_submenues();
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="<?php print $_SESSION['lang']; ?>" lang="<?php print $_SESSION['lang']; ?>">
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1" />
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1" />
 <title><?php print $HTML_TITLE.': '.getLL('module_'.$ko_menu_akt); ?></title>
 <?php
 print ko_include_css();
 
-print ko_include_js(array($ko_path.'inc/jquery/jquery.js', $ko_path.'inc/kOOL.js'));
+print ko_include_js();
 
 include($ko_path.'inc/js-sessiontimeout.inc');
 include('inc/js-tracking.inc');
-$js_calendar->load_files();
 ?>
 </head>
 
@@ -540,21 +582,12 @@ $js_calendar->load_files();
 /*
  * Gibt bei erfolgreichem Login das Menü aus, sonst einfach die Loginfelder
  */
-include($ko_path.'menu.php');
+include($ko_path . "menu.php");
+ko_get_outer_submenu_code('tracking');
+
 ?>
 
-
-<table width="100%">
-<tr>
-
-<td class="main_left" name="main_left" id="main_left">
-<?php
-print ko_get_submenu_code('tracking', 'left');
-?>
-</td>
-
-
-<td class="main">
+<main class="main">
 <form action="index.php" method="post" name="formular" enctype="multipart/form-data">
 <input type="hidden" name="action" id="action" value="" />
 <input type="hidden" name="id" id="id" value="" />
@@ -600,6 +633,10 @@ switch($_SESSION['show']) {
 		ko_list_tracking_mod_entries();
 	break;
 
+	case 'edit_tracking_mod':
+		ko_formular_tracking_entry_mod($edit_id);
+	break;
+
 
 	default:
 		//HOOK: Plugins erlauben, neue Show-Cases zu definieren
@@ -613,20 +650,11 @@ hook_show_case_add($_SESSION['show']);
 ?>
 </div>
 </form>
-</td>
+</main>
 
-<td class="main_right" name="main_right" id="main_right">
+</div>
 
-<?php
-print ko_get_submenu_code('tracking', 'right');
-?>
-
-</td>
-</tr>
-
-<?php include($ko_path.'footer.php'); ?>
-
-</table>
+<?php include($ko_path . "footer.php"); ?>
 
 </body>
 </html>

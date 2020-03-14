@@ -3,39 +3,51 @@
  * For licensing, see LICENSE.html or http://ckeditor.com/license
  */
 
+CKEDITOR.stylesSet.add( 'my_styles', [
+	{ name: 'Marker', element: 'mark'}
+] );
+
 CKEDITOR.editorConfig = function( config ) {
-	
-	// %REMOVE_START%
-	// The configuration options below are needed when running CKEditor from source files.
-	config.plugins = 'dialogui,dialog,basicstyles,clipboard,button,toolbar,enterkey,entities,floatingspace,wysiwygarea,indent,indentlist,fakeobjects,list,undo,link';
-	config.skin = 'moono';
-	// %REMOVE_END%
+	config.language = kOOL.language;
+	config.toolbar = 'RotaToolbar';
 
-	// Define changes to default configuration here.
-	// For complete reference see:
-	// http://docs.ckeditor.com/#!/api/CKEDITOR.config
+	config.extraPlugins = 'richcombo,listblock,floatpanel,panel,stylescombo';
 
-	// The toolbar groups arrangement, optimized for a single toolbar row.
-	config.toolbarGroups = [
-		{ name: 'document',	   groups: [ 'mode', 'document', 'doctools' ] },
-		{ name: 'clipboard',   groups: [ 'clipboard', 'undo' ] },
-		{ name: 'editing',     groups: [ 'find', 'selection', 'spellchecker' ] },
-		{ name: 'forms' },
-		{ name: 'basicstyles', groups: [ 'basicstyles', 'cleanup' ] },
-		{ name: 'paragraph',   groups: [ 'list', 'indent', 'blocks', 'align', 'bidi' ] },
-		{ name: 'links' , groups: [ 'link' ] },
-		{ name: 'insert' },
-		{ name: 'styles' },
-		{ name: 'colors' },
-		{ name: 'tools' },
-		{ name: 'others' },
-	];
+	config.toolbar_RotaToolbar =
+		[
+			{ name: 'clipboard', items : [ 'Cut','Copy','Paste','PasteText','PasteFromWord','-','Undo','Redo' ] },
+			{ name: 'basicstyles', items : [ 'Bold','Italic','Underline','Strike','-','RemoveFormat' ] },
+			{ name: 'paragraph', items : [ 'NumberedList','BulletedList','-','Outdent','Indent','-','Blockquote' ] },
+			{ name: 'links', items : [ 'Link','Unlink','Anchor' ] },
+			{ name: 'styles', items: [ 'Styles' ] }
+		];
 
-	// The default plugins included in the basic setup define some buttons that
-	// are not needed in a basic editor. They are removed here.
-	//config.removeButtons = 'Cut,Copy,Paste,Undo,Redo,Anchor,Underline,Strike,Subscript,Superscript';
-	config.removeButtons = 'Anchor';
-
-	// Dialog windows are also simplified.
 	config.removeDialogTabs = 'link:advanced';
+
+	config.stylesSet = 'my_styles';
 };
+
+
+CKEDITOR.on('dialogDefinition', function(ev) {
+	var c = ev.editor.lang.common;
+	var b = ev.editor.lang.link;
+
+	var dialogName = ev.data.name;
+	var dialogDefinition = ev.data.definition;
+
+	if (dialogName == 'link') {
+		//REMOVE NOT REQUIRED TABS
+
+		var targetTab = dialogDefinition.getContents('target');
+		var targetTabLt = targetTab.elements[0].children[0];
+		targetTabLt['items']=[[c.notSet,"notSet"],[c.targetNew,"_blank"]];
+
+		var infoTab = dialogDefinition.getContents('info');
+		var infoTabLt = infoTab.elements[0];
+		infoTabLt['items']=[[b.toUrl,"url"],[b.toEmail,"email"]];
+
+		//Remove anchor link and only keep url and email
+		var linkOptions = infoTab.get('linkType');
+    linkOptions['items'] = [['URL', 'url'], ['E-Mail', 'email']];
+	}
+});

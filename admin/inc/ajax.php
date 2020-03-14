@@ -37,11 +37,13 @@ $ko_path = "../../";
 require($ko_path."inc/ko.inc");
 $ko_path = "../";
 
+array_walk_recursive($_GET,'utf8_decode_array');
+
 //Get access rights
 ko_get_access('admin');
 
 //Include KOTA for sms log
-ko_include_kota(array('_ko_sms_log', 'ko_log'));
+ko_include_kota(array('_ko_sms_log', 'ko_log', 'ko_admin', 'ko_labels', 'ko_pdf_layout', 'ko_vesr'));
 
 // Plugins einlesen:
 $hooks = hook_include_main("admin");

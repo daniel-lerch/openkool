@@ -79,19 +79,19 @@ if(!$_SESSION['lang2']) {
 	}
 }
 
-setlocale(LC_ALL, ($_SESSION["lang"]."_".$_SESSION["lang2"].'.ISO-8859-1'));
-
+//Second one if for FreeBSD systems
+setlocale(LC_ALL, ($_SESSION['lang'].'_'.$_SESSION['lang2'].'.ISO-8859-1'), ($_SESSION['lang'].'_'.$_SESSION['lang2'].'.ISO8859-1'));
 
 //Include locallang-files to the current language
 $LOCAL_LANG = NULL;
 include($ko_path."locallang/locallang.".$_SESSION["lang"].".php");
+
 //Include locallang file for regional changes according to lang2 if region is not default as set in LIB_LANGS2
 if(strtoupper($_SESSION['lang2']) != strtoupper($LIB_LANGS2[$_SESSION['lang']][0])) {
 	if(file_exists($ko_path.'locallang/locallang.'.$_SESSION['lang'].'_'.$_SESSION['lang2'].'.php')) {
 		include($ko_path.'locallang/locallang.'.$_SESSION['lang'].'_'.$_SESSION['lang2'].'.php');
 	}
 }
-
 
 if($_SESSION["lang"] != $LIB_LANGS[0]) {
 	//Include default-language if this is not the used language

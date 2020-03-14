@@ -28,170 +28,6 @@
 require_once($BASE_PATH.'inc/class.kOOL_listview.php');
 
 
-/**
-  * Jahres-Kalender
-	*/
-function ko_res_cal_jahr($num=6, $start=1, $output=TRUE) {
-	global $smarty, $ko_path;
-	global $access;
-
-	//Heute
-  get_heute($h_tag, $h_monat, $h_jahr);
-  $j = $_SESSION["cal_jahr_jahr"] ? $_SESSION["cal_jahr_jahr"] : $h_jahr;
-  $t = 1;
-  $m = $start;
-  unset($day);
-
-	//Monate
-  unset($cal_month);
-  for($i = $start; $i < ($start+$num); $i++) {
-		$ii = $i > 12 ? ($i-12) : $i;
-		$jj = ($ii != $i) ? ($j+1) : $j;
-    $cal_month[] = array("code" => (str_to_2($ii)."-".$jj), "name" => strftime("%B", mktime(1,1,1, $ii, 1, $jj)));
-  }
-  $next = add2date("$t.$m.$j", "monat", $num);
-  $prev = add2date("$t.$m.$j", "monat", "-$num");
-  $today_start = 1;
-  while( ((int)$today_start+$num-1) < $h_monat) {
-    $today_start += $num;
-  }
-
-  $end_code = $next[2].str_to_2($next[1]).str_to_2($next[0]);
-
-	$tpl_prev_link = "javascript:sendReq('../reservation/inc/ajax.php', 'action,set_year,set_start,sesid', 'setjahr,".$prev[2].",".(int)$prev[1].",".session_id()."', do_element);";
-	$tpl_next_link = "javascript:sendReq('../reservation/inc/ajax.php', 'action,set_year,set_start,sesid', 'setjahr,".$next[2].",".(int)$next[1].",".session_id()."', do_element);";
-	$tpl_today_link = "javascript:sendReq('../reservation/inc/ajax.php', 'action,set_year,set_start,sesid', 'setjahr,$h_jahr,$today_start,".session_id()."', do_element);";
-
-
-  $smarty->assign("tpl_cal_month", $cal_month);
-  $smarty->assign("tpl_cal_month_width", (int)(90/$num));
-  $smarty->assign("tpl_cal_titel", strftime("%Y", mktime(1,1,1, 1,1,$j)));
-
-  $smarty->assign("tpl_prev_link", $tpl_prev_link);
-  $smarty->assign("tpl_next_link", $tpl_next_link);
-  $smarty->assign("tpl_today_link", $tpl_today_link);
-
-
-	//Reservations-Gruppen Namen
-	ko_get_resitems($_gruppen);
-	$gruppen = array();
-	foreach($_gruppen as $g) {
-		if($access['reservation'][$g['id']] > 0 && in_array($g['id'], $_SESSION['show_items'])) $gruppen[$g['id']] = $g;
-	}
-	foreach($gruppen as $g_i => $g) {
-    $day[$g_i]["name"] = ko_html($g["name"]);
-    $day[$g_i]["tip"] = ko_html2($g["name"]);
-  }
-
-	//Personen-Daten anzeigen oder nicht
-	$show_persondata = ($_SESSION["ses_userid"] != ko_get_guest_id() || ko_get_setting("res_show_persondata"));
-
-	//Permanente Filter anwenden
-	$z_where = "";
-	$perm_filter_start = ko_get_setting("res_perm_filter_start");
-	$perm_filter_ende  = ko_get_setting("res_perm_filter_ende");
-
-	$forceGlobalTimeFilter = ko_get_force_global_time_filter("reservation", $_SESSION['ses_userid']);
-	if($forceGlobalTimeFilter || $access['reservation']['MAX'] < 4) {
-		if($perm_filter_start != "") {
-			$z_where .= " AND startdatum >= '".$perm_filter_start."' ";
-		}
-		if($perm_filter_ende != "") {
-			$z_where .= " AND startdatum <= '".$perm_filter_ende."' ";
-		}
-	}
-
-	//Set filters from KOTA
-	$kota_where = kota_apply_filter('ko_reservation');
-	if($kota_where != '') $z_where .= " AND ($kota_where) ";
-
-	//Reservationen einfüllen
-  $day_code = $j.str_to_2($m).str_to_2($t);
-  while($day_code < $end_code) {
-	  //Wochentag vorausfüllen
-    $wt = strftime("%w", mktime(1,1,1, $m, $t, $j));
-    if($wt == 0) $style = "background:#cccccc;";
-    else if($wt == 6) $style = "background:#dddddd;";
-    else $style = "";
-    foreach($gruppen as $g_i => $g) {
-      $day[(int)$g_i]["events"][$m]["days"][$t]["style"] = $style;
-    }
-
-		//Termine einfüllen
-    ko_get_res_by_date($t, $m, $j, $dates, TRUE, "res", $z_where);
-    if(sizeof($dates) > 0) {
-			foreach($gruppen as $g_i => $g) {
-				$day_text = "";
-				foreach($dates as $date) {
-					if((int)$date["item_id"] == (int)$g_i) {
-
-						$desc = "";
-						if($date["startzeit"] == "00:00:00" && $date["endzeit"] == "00:00:00") {
-              $desc .= getLL("time_all_day");
-						} else if($date["startdatum"] != $date["enddatum"]) {  //Mehrtägige Termine
-              if($t == substr($date["startdatum"], 8, 2) && $m == substr($date["startdatum"], 5, 2))
-                $desc .= getLL("time_from")." ".substr($date["startzeit"], 0, -3);
-              else if($t == substr($date["enddatum"], 8, 2) && $m == substr($date["enddatum"], 5, 2))
-                $desc .= getLL("time_to")." ".substr($date["endzeit"], 0, -3);
-              else
-                $desc .= getLL("time_all_day");
-            } else {  //eintägig
-              $desc .= ($date["startzeit"] != "00:00:00" ? substr($date["startzeit"], 0, -3) : "") . (($date["endzeit"] != "00:00:00") ? ("-" . substr($date["endzeit"], 0, -3)) : "");
-            }
-            $day_text .= ($desc != "") ? "<br /><b>- ".$desc."</b>" : "<br />";
-
-
-						if($show_persondata) $day_text .= ": ".($date["name"] ? (ko_html2($date["name"]).", ") : "");
-						$day_text .= ($date["zweck"] ? "&quot;".ko_html2($date["zweck"])."&quot;" : "");
-          }
-	      }//foreach(dates)
-				if($day_text) {
-					$day[(int)$g_i]["events"][$m]["days"][$t]["tip"]  = "<b>".strftime($GLOBALS["DATETIME"]["DdMY"], mktime(1,1,1, $m,$t,$j))."</b><br />";
-					$day[(int)$g_i]["events"][$m]["days"][$t]["tip"] .= ko_html2($g["name"]).$day_text;
-          $day[(int)$g_i]["events"][$m]["days"][$t]["style"] = "background:#".$g["farbe"];
-				}
-      }//foreach(gruppen)
-    }
-    unset($dates);
-
-    //Tag inkrementieren
-    $datum = add2date("$t.$m.$j", "tag", 1);
-    $t = (int)$datum[0];
-    $m = (int)$datum[1];
-		$j = (int)$datum[2];
-    $day_code = $j.str_to_2($m).str_to_2($t);
-  }
-
-	//LL-Values
-	$smarty->assign("label_cal_year", getLL("res_cal_year"));
-	$smarty->assign("label_cal_month", getLL("res_cal_month"));
-	$smarty->assign("label_cal_week", getLL("res_cal_week"));
-	$smarty->assign("label_item", getLL("res_cal_object"));
-	$smarty->assign("label_today", getLL("time_today"));
-
-	//PDF-Export-Link anzeigen:
-	$button_code  = '&nbsp;<a href="" onclick="sendReq(\'../reservation/inc/ajax.php\', \'action\', \'pdfcalendar\', show_box); return false;">';
-	$button_code .= '<img src="'.$ko_path.'images/create_pdf.png" border="0" />&nbsp;'.getLL("res_list_footer_pdf_label").'</a>';
-	$button_code .= '<span name="res_pdf_link" id="res_pdf_link">&nbsp;</span>';
-	$list_footer = $smarty->get_template_vars('list_footer');
-	$list_footer[] = array("label" => "", "button" => $button_code);
-	$smarty->assign("show_list_footer", TRUE);
-	$smarty->assign("list_footer", $list_footer);
-
-	$smarty->assign('warning', kota_filter_get_warntext('ko_reservation'));
-
-	$smarty->assign("tpl_day", $day);
-	if($output) {
-	  $smarty->display('ko_cal_jahr.tpl');
-	} else {
-	  print $smarty->fetch('ko_cal_jahr.tpl');
-	}
-}//ko_res_cal_jahr()
-
-
-
-
-
 function ko_list_reservations($output=TRUE) {
 	global $smarty, $access;
 
@@ -235,6 +71,7 @@ function ko_list_reservations($output=TRUE) {
 																						'additional_row_js' => "if(###SERIE_ID### > 0) {c2 = confirm('".getLL("res_delete_serie_confirm")."');set_hidden_value('mod_confirm', c2);}"),
 																						)
 										);
+	if ($access['reservation']['MAX'] > 1 && db_get_count('ko_resitem', 'id') > 0) $list->setActionNew('neue_reservation');
 	$list->setSort(TRUE, 'setsort', $_SESSION['sort_item'], $_SESSION['sort_item_order']);
 	$list->setStats($rows);
 
@@ -265,8 +102,8 @@ function ko_list_reservations($output=TRUE) {
 //Type ist entweder "res" für eine Liste der normalen Reservationen
 // oder "mod" für eine Liste der zu moderierenden Reservationen
 function ko_show_res_liste($type="res", $output=TRUE) {
-	global $smarty, $DATETIME;
-	global $access;
+	global $smarty, $DATETIME, $RES_GUEST_FIELDS_FORCE;
+	global $access, $KOTA;
 		
 	if($access['reservation']['MAX'] < 1) return;
 
@@ -275,267 +112,140 @@ function ko_show_res_liste($type="res", $output=TRUE) {
 		//Call new function to render list of reservations using KOTA listview
 		ko_list_reservations();
 		return;
-		apply_res_filter($z_where, $z_limit);
 	}
-	else if($type=='mod') {
-		$z_limit = '';
-		if($_SESSION['ses_userid'] != ko_get_guest_id()) {
-			if($access['reservation']['ALL'] > 4) {  //Moderator for all groups
-				$z_where = ' AND 1=1 ';
-			} else if($access['reservation']['MAX'] > 4) {  //Moderator for only a few groups/items
-				$mod_items = array();
-				foreach($access['reservation'] as $k => $v) {
-					if(!intval($k) || $v < 5) continue;
-					$mod_items[] = $k;
-				}
-				$z_where = " AND `user_id` = '".$_SESSION['ses_userid']."' OR `item_id` IN ('".implode("','", $mod_items)."') ";
-			} else if($access['reservation']['MAX'] > 1) {  //No moderator but new rights, so show his own moderations
-				$z_where = ' AND user_id = \''.$_SESSION['ses_userid'].'\' ';
-			} else {  //No right to create new reservations, so don't show anything
-				$z_where = ' AND 1=2 ';
+
+	$z_limit = '';
+	if($_SESSION['ses_userid'] != ko_get_guest_id()) {
+		if($access['reservation']['ALL'] > 4) {  //Moderator for all groups
+			$z_where = ' AND 1=1 ';
+		} else if($access['reservation']['MAX'] > 4) {  //Moderator for only a few groups/items
+			$mod_items = array();
+			foreach($access['reservation'] as $k => $v) {
+				if(!intval($k) || $v < 5) continue;
+				$mod_items[] = $k;
 			}
-		} else {
+			$z_where = " AND `user_id` = '".$_SESSION['ses_userid']."' OR `item_id` IN ('".implode("','", $mod_items)."') ";
+		} else if($access['reservation']['MAX'] > 1) {  //No moderator but new rights, so show his own moderations
+			$z_where = ' AND user_id = \''.$_SESSION['ses_userid'].'\' ';
+		} else {  //No right to create new reservations, so don't show anything
 			$z_where = ' AND 1=2 ';
 		}
+	} else {
+		$z_where = ' AND 1=2 ';
 	}
+	$z_where .= kota_apply_filter('ko_reservation_mod');
 
 	//Personen-Daten anzeigen oder nicht
-	$show_persondata = ($_SESSION["ses_userid"] != ko_get_guest_id() || ko_get_setting("res_show_persondata"));
-
-	$rows = db_get_count( (($type=="res")?"ko_reservation":"ko_reservation_mod"), "id", $z_where);
-	unset($es);
-	if($_SESSION['show_start'] > $rows) {
-		$_SESSION['show_start'] = 1;
-		$z_limit = 'LIMIT '.($_SESSION['show_start']-1).', '.$_SESSION['show_limit'];
-	}
-	ko_get_reservationen($es, $z_where, $z_limit, $type);
-
-	//Statistik über Suchergebnisse und Anzeige
-	if($type == 'mod') {
-	  $stats_end = $rows;
-	} else {
-	  $stats_end = ($_SESSION["show_limit"]+$_SESSION["show_start"]-1 > $rows) ? $rows : ($_SESSION["show_limit"]+$_SESSION["show_start"]-1);
-	}
-  $smarty->assign('tpl_stats', $_SESSION["show_start"]." - ".$stats_end." ".getLL("list_oftotal")." ".$rows);
-
-	//Links für Prev und Next-Page vorbereiten
-	if($_SESSION["show_start"] > 1 && $type != 'mod') {
-		$smarty->assign("tpl_prevlink_link", "javascript:sendReq('../reservation/inc/ajax.php', 'action,set_start,sesid', 'setstart,".(($_SESSION["show_start"]-$_SESSION["show_limit"] < 1) ? 1 : ($_SESSION["show_start"]-$_SESSION["show_limit"])).",".session_id()."', do_element);");
-	} else {
-    $smarty->assign('tpl_prevlink_link', '');
-  }
-  if(($_SESSION["show_start"]+$_SESSION["show_limit"]-1) < $rows && $type != 'mod') {
-		$smarty->assign("tpl_nextlink_link", "javascript:sendReq('../reservation/inc/ajax.php', 'action,set_start,sesid', 'setstart,".($_SESSION["show_limit"]+$_SESSION["show_start"]).",".session_id()."', do_element);");
-  } else {
-    $smarty->assign('tpl_nextlink_link', '');
-  }
-	if($type == 'mod') {
-		$smarty->assign('hide_listlimiticons', TRUE);
-	} else {
-		$smarty->assign('limitM', $_SESSION['show_limit'] >= 100 ? $_SESSION['show_limit']-50 : max(10, $_SESSION['show_limit']-10));
-		$smarty->assign('limitP', $_SESSION['show_limit'] >= 50 ? $_SESSION['show_limit']+50 : $_SESSION['show_limit']+10);
-	}
-
-
-	//Header-Daten
-	if($show_persondata) {
-		$num_cols = 6;
-		$show_cols = array(getLL('kota_listview_ko_reservation_item_id'), getLL('kota_listview_ko_reservation_startdatum'), getLL('kota_listview_ko_reservation_startzeit'), getLL('kota_listview_ko_reservation_zweck'), getLL('kota_listview_ko_reservation_name'), getLL('kota_listview_ko_reservation_comments'));
-		$show_sort = array('item_id', 'startdatum', 'startzeit', 'zweck', 'name', 'comments');
-	} else {
-		$num_cols = 4;
-		$show_cols = array(getLL("kota_listview_ko_reservation_item_id"), getLL("kota_listview_ko_reservation_startdatum"), getLL("kota_listview_ko_reservation_startzeit"), getLL("kota_listview_ko_reservation_zweck"));
-		$show_sort = array("item_id", "startdatum", "startzeit", "zweck");
-	}
-	for($i=0; $i<$num_cols;$i++) {
-		$tpl_table_header[$i]["sort"] = $show_sort[$i];
-		$tpl_table_header[$i]["name"] = $show_cols[$i];
-  }
-  $smarty->assign("tpl_table_header", $tpl_table_header);
-	$smarty->assign("tpl_show_3cols", TRUE);
-  $smarty->assign("sort", array("show" => TRUE,
-																"action" => "setsort",
-																"akt" => $_SESSION["sort_item"],
-																"akt_order" => $_SESSION["sort_item_order"])
-	);
-	$smarty->assign("module", "reservation");
-	$smarty->assign("sesid", session_id());
-
-
-	//Multiedit-Spalten definieren
-	if(($type == 'res' && $access['reservation']['MAX'] > 3) || ($type == 'mod' && $access['reservation']['MAX'] > 4)) {
-		$smarty->assign("tpl_show_editrow", TRUE);
-		if($show_persondata) {
-			$edit_columns = array('item_id', 'startdatum,enddatum', 'startzeit,endzeit', 'zweck,comments', 'name,email,telefon', 'comments');
-		} else {
-			$edit_columns = array('item_id', 'startdatum,enddatum', 'startzeit,endzeit', 'zweck,comments');
+	$guest_fields = array_merge(ko_get_setting("res_show_fields_to_guest"), $RES_GUEST_FIELDS_FORCE);
+	if ($_SESSION["ses_userid"] == ko_get_guest_id()) {
+		foreach ($KOTA['ko_reservation_mod']['_listview'] as $k => $v) {
+			if (!in_array($v['name'], $guest_fields)) unset ($KOTA['ko_reservation_mod']['_listview'][$k]);
 		}
-		$smarty->assign("tpl_edit_columns", $edit_columns);
-	} else {
-		$smarty->assign("tpl_show_editrow", FALSE);
 	}
 
-
-	$guest_id = ko_get_guest_id();
-	if(is_array($es)) {
-		foreach($es as $e_i => $e) {
-
-			if($type=="mod") {
-				//Auf Doppelbelegung testen:
-				if(!ko_res_check_double($e["item_id"], $e["startdatum"], $e["enddatum"], $e["startzeit"], $e["endzeit"], $error_txt)) {
-					$double = TRUE;
-					$double_error = $error_txt;
-				} else {
-					$double = FALSE;
-				}
-			}
-
-			//Checkbox
-			$tpl_list_data[$e_i]["show_checkbox"] = TRUE;
-
-			//Für Reservationen Edit- und Delete-Button ausgeben
-			if($type=="res") {
-				//Edit-Button
-				if($access['reservation'][$e['item_id']] > 3 || ($e['user_id'] == $_SESSION['ses_userid'] && $_SESSION['ses_userid'] != ko_get_guest_id() && $access['reservation'][$e['item_id']] > 2)) {
-					$tpl_list_data[$e_i]["show_edit_button"] = TRUE;
-					$tpl_list_data[$e_i]["alt_edit"] = getLL("res_edit_reservation");
-
-					$tpl_list_data[$e_i]["onclick_edit"] = "javascript:set_action('edit_reservation');set_hidden_value('id', '$e_i');this.submit";
-				}
-
-				//Delete-Button
-				if($access['reservation'][$e['item_id']] > 3 || ($e['user_id'] == $_SESSION['ses_userid'] && $_SESSION['ses_userid'] != ko_get_guest_id() && $access['reservation'][$e['item_id']] > 2)) {
-					$tpl_list_data[$e_i]["show_delete_button"] = TRUE;
-					$tpl_list_data[$e_i]["alt_delete"] = getLL("res_delete_res");
-					$del_link  = "javascript:c = confirm('".getLL("res_delete_res_confirm")."');if(!c) return false;";
-					if($e["serie_id"]) $del_link .= "c2 = confirm('".getLL("res_delete_serie_confirm")."');set_hidden_value('mod_confirm', c2);";
-					$del_link .= "set_action('delete_res');set_hidden_value('id', '$e_i');";
-					$tpl_list_data[$e_i]["onclick_delete"] = $del_link;
-				}
-
-				//Mark sundays
-				if(ko_get_userpref($_SESSION['ses_userid'], "res_mark_sunday") && strftime("%w", strtotime($e["startdatum"])) == 0) {
-					$tpl_list_data[$e_i]["rowclass"] = "ko_list_sunday";
-				} else {
-					$tpl_list_data[$e_i]["rowclass"] = "";
-				}
-
-
-			} elseif($type=="mod") { //Für Mod-Liste einen Bestätigungs- und einen Delete-Button ausgeben
-				//Check-Button
-				if($access['reservation'][$e['item_id']] > 4 && !$double) {  //Bei Doppelbelegung kein Check-Button anzeigen
-					$tpl_list_data[$e_i]["show_check_button"] = TRUE;
-					$tpl_list_data[$e_i]["alt_edit"] = getLL("res_mod_confirm");
-					$tpl_list_data[$e_i]["onclick_edit"] = "javascript:c1 = confirm('".getLL("res_mod_confirm_confirm")."');if(!c1) return false;c = confirm('".getLL("res_mod_confirm_confirm2")."');set_hidden_value('mod_confirm', c);set_action('res_mod_approve');set_hidden_value('id', '$e_i');this.submit";
-				}
-
-				//Delete-Button
-				if($access['reservation'][$e['item_id']] > 4 || ($_SESSION["ses_userid"] != ko_get_guest_id() && $e["user_id"] == $_SESSION["ses_userid"])) {
-					$tpl_list_data[$e_i]["show_delete_button"] = TRUE;
-					$tpl_list_data[$e_i]["alt_delete"] = getLL("res_mod_decline");
-					$tpl_list_data[$e_i]["onclick_delete"] = "javascript:c1 = confirm('".getLL("res_mod_decline_confirm")."');if(!c1) return false;";
-					if($access['reservation'][$e['item_id']] > 4) $tpl_list_data[$e_i]["onclick_delete"] .= "c = confirm('".getLL("res_mod_decline_confirm2")."');set_hidden_value('mod_confirm', c);";
-					$tpl_list_data[$e_i]["onclick_delete"] .= "set_action('res_mod_delete');set_hidden_value('id', '$e_i');";
-				}
-
-			}//if(type==res)..elseif(type==mod)
-
-
-			//Index
-	    $tpl_list_data[$e_i]["id"] = $e_i;
-
-
-			//Objekt
-			if(!$double) {  //Falls keine Doppelbelegung vorliegt
-				$tpl_list_data[$e_i][0] = ko_html($e["item_name"]);
-			} else {  //Bei Doppelbelegung Meldung anzeigen
-				$tpl_list_data[$e_i][0]  = '<a href="#" onmouseover="tooltip.show(\'&lt;b&gt;'.getLL("res_collision_text").'&lt;/b&gt;&lt;br /&gt;&lt;br /&gt;';
-				$tpl_list_data[$e_i][0] .= ko_html2($double_error).'\')" OnMouseOut="tooltip.hide()">';
-				$tpl_list_data[$e_i][0] .= "<b> ! ".ko_html($e["item_name"])." ! </b></a>";;
-			}
-
-
-			//Datum
-			if($e["startdatum"] != $e["enddatum"]) {
-				$datum = strftime($DATETIME["ddmy"], strtotime($e["startdatum"])) . "-" . strftime($DATETIME["ddmy"], strtotime($e["enddatum"]));
-			} else {
-				$datum = strftime($DATETIME["ddmy"], strtotime($e["startdatum"]));
-			}
-			$tpl_list_data[$e_i][1] = $datum;
-
-
-			//Zeit
-			if($e["startzeit"] == "00:00:00") {
-				$zeit = getLL("time_all_day");
-			} else if($e["endzeit"] != "" && $e["endzeit"] != "00:00:00") {
-				$zeit = substr($e["startzeit"], 0, -3) . " - " . substr($e["endzeit"], 0, -3);
-			} else {
-				$zeit = substr($e["startzeit"], 0, -3);
-			}
-			$tpl_list_data[$e_i][2] = $zeit;
-
-
-			//Zweck
-			$tpl_list_data[$e_i][3] = ko_html($e["zweck"]);
-
-
-
-			//Wer
-			if($show_persondata) {
-				if($e["telefon"] || $e["email"]) {
-					$tpl_list_data[$e_i][4] = "<a href=\"#\" onmouseover=\"return tooltip.show('".format_email(ko_html2($e["email"]))."&lt;br /&gt;".ko_html2($e["telefon"])."');\" onmouseout=\"return tooltip.hide();\">".ko_html($e["name"])."</a>";
-				} else {
-					$tpl_list_data[$e_i][4] = ko_html($e["name"]);
-				}
-			}
-
-
-			//Comments
-			$tpl_list_data[$e_i][5] = ko_html($e['comments']);
-
-
-		}//foreach(es)
-	}//if..else(is_array(es))
-
-	if($show_persondata) {
-		$smarty->assign('tpl_list_cols', array(0, 1, 2, 3, 4, 5));
+	$z_sort = '';
+	if ($_SESSION['sort_item']) {
+		$z_sort = ' ORDER BY `'.$_SESSION['sort_item'].'` ';
+		if ($_SESSION['sort_item_order']) {
+			$z_sort .= $_SESSION['sort_item_order'] . ' ';
+		} else {
+			$z_sort .= 'ASC ';
+		}
 	} else {
-		$smarty->assign('tpl_list_cols', array(0, 1, 2, 3));
+		$z_sort = ' ORDER BY `startdatum` ASC ';
+	}
+
+	$rows = db_get_count("ko_reservation_mod", 'id', $z_where);
+	$z_limit = "LIMIT " . ($_SESSION["show_start"]-1) . ", " . $_SESSION["show_limit"];
+	ko_get_reservationen($es, $z_where, $z_limit, 'mod', $z_sort);
+
+	$manual_access = array('check' => array(), 'delete' => array());
+	foreach($es as $e_i => $e) {
+
+		//Auf Doppelbelegung testen:
+		if(!ko_res_check_double($e["item_id"], $e["startdatum"], $e["enddatum"], $e["startzeit"], $e["endzeit"], $error_txt)) {
+			$double = TRUE;
+		} else {
+			$double = FALSE;
+		}
+
+		//Check-Button
+		if($access['reservation'][$e['item_id']] > 4 && !$double) {  //Bei Doppelbelegung kein Check-Button anzeigen
+			$manual_access['check'][$e_i] = TRUE;
+			$tpl_list_data[$e_i]["show_check_button"] = TRUE;
+			$tpl_list_data[$e_i]["alt_edit"] = getLL("res_mod_confirm");
+			$tpl_list_data[$e_i]["onclick_edit"] = "javascript:c1 = confirm('".getLL("res_mod_confirm_confirm")."');if(!c1) return false;c = confirm('".getLL("res_mod_confirm_confirm2")."');set_hidden_value('mod_confirm', c);set_action('res_mod_approve');set_hidden_value('id', '$e_i');this.submit";
+		} else {
+			$manual_access['check'][$e_i] = FALSE;
+		}
+
+		// edit button
+		if($access['reservation'][$e['item_id']] > 4 || ($_SESSION["ses_userid"] != ko_get_guest_id() && $e["user_id"] == $_SESSION["ses_userid"])) {
+			$manual_access['edit'][$e_i] = TRUE;
+			$tpl_list_data[$e_i]["show_check_button"] = TRUE;
+			$tpl_list_data[$e_i]["alt_edit"] = getLL("res_mod_confirm");
+			$tpl_list_data[$e_i]["onclick_edit"] = "javascript:c1 = confirm('".getLL("res_mod_confirm_confirm")."');if(!c1) return false;c = confirm('".getLL("res_mod_confirm_confirm2")."');set_hidden_value('mod_confirm', c);set_action('res_mod_approve');set_hidden_value('id', '$e_i');this.submit";
+		} else {
+			$manual_access['edit'][$e_i] = FALSE;
+		}
+
+		//Delete-Button
+		if($access['reservation'][$e['item_id']] > 4 || ($_SESSION["ses_userid"] != ko_get_guest_id() && $e["user_id"] == $_SESSION["ses_userid"])) {
+			$manual_access['delete'][$e_i] = TRUE;
+			$tpl_list_data[$e_i]["show_delete_button"] = TRUE;
+			$tpl_list_data[$e_i]["alt_delete"] = getLL("res_mod_decline");
+			$tpl_list_data[$e_i]["onclick_delete"] = "javascript:c1 = confirm('".getLL("res_mod_decline_confirm")."');if(!c1) return false;";
+			if($access['reservation'][$e['item_id']] > 4) $tpl_list_data[$e_i]["onclick_delete"] .= "c = confirm('".getLL("res_mod_decline_confirm2")."');set_hidden_value('mod_confirm', c);";
+			$tpl_list_data[$e_i]["onclick_delete"] .= "set_action('res_mod_delete');set_hidden_value('id', '$e_i');";
+		} else {
+			$manual_access['delete'][$e_i] = FALSE;
+		}
+	}//foreach(es)
+
+	$list = new kOOL_listview();
+	$list->init('reservation', 'ko_reservation_mod', array('chk', 'check', 'edit', 'delete'), $_SESSION['show_start'], $_SESSION['show_limit']);
+	$list->setTitle(getLL('res_mod_list_title'));
+	$list->setAccessRights(array('check' => 4, 'edit' => 4, 'delete' => 4), $access['reservation']);
+	$list->setManualAccess('check', $manual_access['check']);
+	$list->setManualAccess('edit', $manual_access['edit']);
+	$list->setManualAccess('delete', $manual_access['delete']);
+	$list->setActions(
+		array(
+			'check' => array('action' => 'res_mod_approve', 'confirm' => TRUE, 'additional_js' => "c = confirm('".getLL("res_mod_confirm_confirm2")."');set_hidden_value('mod_confirm', c);"),
+			'edit' => array('action' => 'res_mod_edit'),
+			'delete' => array('action' => 'res_mod_delete', 'confirm' => TRUE, 'additional_js' => "c = confirm('".getLL("res_mod_decline_confirm2")."');set_hidden_value('mod_confirm', c);"),
+		)
+	);
+	$list->setSort(TRUE, 'setsort', $_SESSION['sort_item'], $_SESSION['sort_item_order']);
+	$list->setStats($rows);
+	if ($access['reservation']['MAX'] <= 4) {
+		$list->disableMultiedit();
 	}
 
 	//Footer
 	$list_footer = $smarty->get_template_vars('list_footer');
-	if($type == 'res' && $access['reservation']['MAX'] > 3) {
-		$list_footer[] = array("label" => getLL("res_list_footer_del_label"),
-													 "button" => '<input type="submit" onclick="c=confirm('."'".getLL("res_list_footer_del_button_confirm")."'".');if(!c) return false;set_action(\'del_selected\');" value="'.getLL("res_list_footer_del_button").'" />');
-		$smarty->assign("show_list_footer", TRUE);
-		$smarty->assign("list_footer", $list_footer);
-	}
-	else if($type == "mod") {
-		if($access['reservation']['MAX'] > 1) {
-			$list_footer[] = array("label" => getLL("res_list_footer_del_label"),
-														 "button" => '<input type="submit" onclick="c1 = confirm(\''.getLL("res_mod_decline_confirm").'\');if(!c1) return false;'.($access['reservation']['MAX'] > 4 ? 'c = confirm(\''.getLL("res_mod_decline_confirm2").'\');set_hidden_value(\'mod_confirm\', c);' : '').'set_action(\'res_mod_delete_multi\');" value="'.getLL("res_list_footer_del_button").'" />');
-		}
-		if($access['reservation']['MAX'] > 4) {
-			$list_footer[] = array("label" => getLL("res_list_footer_confirm_label"),
-														 "button" => '<input type="submit" onclick="c=confirm('."'".getLL("res_mod_confirm_confirm2")."'".');set_hidden_value(\'mod_confirm\', c);set_action(\'res_mod_approve_multi\');" value="'.getLL("ok").'" />');
-		}
-		$smarty->assign("show_list_footer", TRUE);
-		$smarty->assign("list_footer", $list_footer);
-	}
-
 	if($type == "mod") {
+		if ($access['reservation']['MAX'] > 1) {
+			$list_footer[] = array("label" => getLL("res_list_footer_del_label"),
+				"button" => '<input type="submit" onclick="c1 = confirm(\'' . getLL("res_mod_decline_confirm") . '\');if(!c1) return false;' . ($access['reservation']['MAX'] > 4 ? 'c = confirm(\'' . getLL("res_mod_decline_confirm2") . '\');set_hidden_value(\'mod_confirm\', c);' : '') . 'set_action(\'res_mod_delete_multi\');" value="' . getLL("res_list_footer_del_button") . '" />');
+		}
+		if ($access['reservation']['MAX'] > 4) {
+			$list_footer[] = array("label" => getLL("res_list_footer_confirm_label"),
+				"button" => '<input type="submit" onclick="c=confirm(' . "'" . getLL("res_mod_confirm_confirm2") . "'" . ');set_hidden_value(\'mod_confirm\', c);set_action(\'res_mod_approve_multi\');" value="' . getLL("ok") . '" />');
+		}
+		$smarty->assign("show_list_footer", TRUE);
+		$smarty->assign("list_footer", $list_footer);
+
 		$smarty->assign("help", ko_get_help("reservation", "show_mod_res"));
 		$smarty->assign('tpl_list_title', getLL("res_mod_list_title"));
-	} else {
-		$smarty->assign('tpl_list_title', getLL("res_list_title"));
 	}
+	$list->setFooter($list_footer);
 
-	$smarty->assign('tpl_list_data', $tpl_list_data);
+	//Output the list
 	if($output) {
-		$smarty->display('ko_list.tpl');
+		$list->render($es);
 	} else {
-		print $smarty->fetch('ko_list.tpl');
+		print $list->render($es);
 	}
 }//ko_show_res_liste()
 
@@ -563,6 +273,7 @@ function ko_show_items_liste($output=TRUE) {
 	$list->setActions(array('edit' => array('action' => 'edit_item'),
 		'delete' => array('action' => 'delete_item', 'confirm' => TRUE))
 		);
+	if ($access['reservation']['MAX'] > 3) $list->setActionNew('new_item');
 	$list->setSort(TRUE, 'setsortresgroups', $_SESSION['sort_group'], $_SESSION['sort_group_order']);
 	$list->setStats($rows);
 	
@@ -582,15 +293,17 @@ function ko_show_items_liste($output=TRUE) {
   * Erstellt das Formular zum Bearbeiten und Hinzufügen von Reservationen
 	*/
 function ko_formular_reservation($mode, $id, $data=array()) {
-	global $smarty, $KOTA;
+	global $smarty, $KOTA, $HOLIDAYS;
 	global $access;
 
+	// table on which to operate. either ko_reservation or ko_reservation_mod
+	$table = 'ko_reservation';
 	//Falls eine Reservation editiert werden soll, diese auslesen und die Felder mit seinen Details füllen
 	if($mode=="edit" && $id != 0) {
 		if($access['reservation']['MAX'] < 2) return;
 
-	  ko_get_res_by_id($id, $r_);
-	  $r = $r_[$id];
+		ko_get_res_by_id($id, $r_);
+		$r = $r_[$id];
 
 		//Info über Reservation für Moderator
 		if($access['reservation']['MAX'] > 3) {
@@ -601,6 +314,24 @@ function ko_formular_reservation($mode, $id, $data=array()) {
 			//$res_info .= '<br />'.getLL('res_info_code').': <b>'.$r['code'].'</b>';
 		}
 	}//if(mode==edit && id)
+	else if ($mode == 'edit_mod' && $id) {
+		$r = db_select_data('ko_reservation_mod', "WHERE `id` = '{$id}'", '*', '', '', TRUE, TRUE);
+
+		if($access['reservation']['ALL'] < 4 && $access['reservation'][$r['item_id']] < 4 && ($_SESSION['ses_userid'] == ko_get_guest_id() || $r['user_id'] != $_SESSION['ses_userid'])) return;
+
+		unset($r['_event_id']); // TODO: what to do with _event_id?
+
+		//Info über Reservation für Moderator
+		if($access['reservation']['MAX'] > 3) {
+			ko_get_login($r['user_id'], $res_login);
+			$res_info  = getLL('res_info_cdate').': <b>'.sqldatetime2datum($r['cdate']).'</b>';
+			$res_info .= '<br />'.getLL('res_info_user').': <b>'.$res_login['login'].' ('.$r['user_id'].')</b>';
+			$res_info .= '<br />'.getLL('res_info_mdate').': <b>'.sqldatetime2datum($r['last_change']).'</b>';
+			//$res_info .= '<br />'.getLL('res_info_code').': <b>'.$r['code'].'</b>';
+		}
+
+		$table = 'ko_reservation_mod';
+	}//if(mode==edit_mod && id)
 	else if($mode == "neu") {
 		if($access['reservation']['MAX'] < 2) return;
 
@@ -618,12 +349,16 @@ function ko_formular_reservation($mode, $id, $data=array()) {
 		} else {
 			$p = ko_get_logged_in_person();
 			if($p['id'] || $p['email']) {
+				$email = ko_get_userpref($_SESSION['ses_userid'], 'res_prefill_email');
+				if (!$email) $email = 'email';
+				$phone = ko_get_userpref($_SESSION['ses_userid'], 'res_prefill_tel');
+				if (!$phone) $phone = $p['telg']?'telg':'telp';
 				kota_assign_values(
 					'ko_reservation',
 					array(
 						'name' => $p['vorname'].' '.$p['nachname'],
-						'email' => $p['email'],
-						'telefon' => ($p['telg']?$p['telg']:$p['telp'])
+						'email' => $p[$email],
+						'telefon' => $p[$phone]
 					)
 				);
 			}
@@ -644,9 +379,10 @@ function ko_formular_reservation($mode, $id, $data=array()) {
 		case "woechentlich": $true = 2; break;
 		case "monatlich1": $true = 3; break;
 		case "monatlich2": $true = 4; break;
+		case "holidays": $true = 5; break;
 		default: $true = 0;
 	}
-	for($i=0; $i<5; $i++) {
+	for($i=0; $i<6; $i++) {
 		$rd_wiederholung_checked[$i] = ($true == $i) ? 'checked="checked"' : "";
 	}
 	$smarty->assign("rd_wiederholung_checked", $rd_wiederholung_checked);
@@ -675,11 +411,22 @@ function ko_formular_reservation($mode, $id, $data=array()) {
 		$sel2_code .= '<option value="'.$v.'"'.$sel.' label="'.$output[$i].'">'.$output[$i].'</option>';
 	}
 
+	$sel_code_holidays = '';
+	$value = format_userinput($_POST["sel_repeat_holidays"], "alphanum");
+	foreach ($HOLIDAYS as $name => $holiday) {
+		$sel_code_holidays .= '<option value="'.$name.'"'.($value==$name?' selected="selected"':'').'>'.getLL('holiday_'.$name).'</option>';
+	}
+	$sel_code_holidays_offset = '';
+	for ($i = -21; $i < 22; $i++) {
+		$sel_code_holidays_offset .= '<option value="'.sprintf("%+d", $i).'"'.($i == 0?' selected="selected"':'').'>'.sprintf("%+d", $i).'</option>';
+	}
+
 	$repeat_descs[] = getLL("daten_repeat_none");
 	$repeat_descs[] = sprintf(getLL("daten_repeat_daily"), ' </label><input type="text" name="txt_repeat_tag" value="'.$txt_repeat_tag.'" size="2" /> ', '<label>');
 	$repeat_descs[] = sprintf(getLL("daten_repeat_weekly"), ' </label><input type="text" name="txt_repeat_woche" value="'.$txt_repeat_woche.'" size="2" /> ', '<label>');
 	$repeat_descs[] = sprintf(getLL("daten_repeat_monthly1"), ' </label><select name="sel_monat1_nr" size="0">'.$sel1_code.'</select><select name="sel_monat1_tag" size="0">'.$sel2_code.'</select><label>');
 	$repeat_descs[] = sprintf(getLL("daten_repeat_monthly2"), ' </label><input type="text" name="txt_repeat_monat2" value="'.$txt_repeat_monat2.'" size="2" /> ', '<label>');
+	$repeat_descs[] = sprintf(getLL("daten_repeat_holidays"), ' </label><select name="sel_repeat_holidays">'.$sel_code_holidays.'</select><select name="sel_repeat_holidays_offset">'.$sel_code_holidays_offset.'</select>'.getLL('days').' <label>');
 
 
 	//Repeat-Stop
@@ -713,10 +460,24 @@ function ko_formular_reservation($mode, $id, $data=array()) {
 		$sel_year_code .= '<option value="'.$v.'"'.$sel.' label="'.$v.'">'.$v.'</option>';
 	}
 
+	//Eventgroup select to exclude holidays
+	$holiday_code = '<select name="sel_repeat_eg" size="0"><option value=""></option>';
+	$value = $_POST['sel_repeat_eg'] ? format_userinput($_POST['sel_repeat_eg'], 'uint') : '';
+	foreach(ko_get_eventgruppen_for_select() as $entry) {
+		$sel = $value == $entry['value'] && !$entry['disabled'] ? ' selected="selected"' : '';
+		$dis = $entry['disabled'] ? ' disabled="disabled"' : '';
+		$holiday_code .= '<option value="'.$entry['value'].'"'.$sel.$dis.'>';
+		$holiday_code .= $entry['desc'];
+		$holiday_code .= '</option>';
+	}
+	$holiday_code .= '</select>';
+
 	$repeat_stop  = '<select name="sel_bis_tag" size="0">'.$sel_day_code.'</select>&nbsp;&nbsp;';
 	$repeat_stop .= '<select name="sel_bis_monat" size="0">'.$sel_month_code.'</select>&nbsp;&nbsp;';
 	$repeat_stop .= '<select name="sel_bis_jahr" size="0">'.$sel_year_code.'</select>';
-	$repeat_stop .= '<br />'.getLL("daten_repeat_or").'<br /><input type="text" name="txt_num_repeats" size="4" maxlength="3" onkeyup="repeat_disable(this.value);" />&nbsp;'.getLL("daten_repeat_iterations");
+	$repeat_stop .= '<br />'.getLL("daten_repeat_or").'<br /><input type="text" name="txt_num_repeats" size="4" maxlength="3" value="'.($_POST['txt_num_repeats'] ? $_POST['txt_num_repeats'] : '').'" onkeyup="repeat_disable(this.value);" />&nbsp;'.getLL("daten_repeat_iterations").' <a href="#" onclick="return false;" '.ko_get_tooltip_code(getLL('res_repeat_iterations_help')).'><i class="fa fa-question-circle"></i></a>';
+	$repeat_stop .= '<script>repeat_disable($(\'[name="txt_num_repeats"]\')[0].value);</script>';
+	$repeat_stop .= '<br /><br />'.getLL('daten_repeat_eg').'<br />'.$holiday_code;
 
 
 
@@ -724,31 +485,38 @@ function ko_formular_reservation($mode, $id, $data=array()) {
 	$mandatory = explode(",", ko_get_setting("res_mandatory"));
 	$gc = 0;
 
-	//add mandatory-flags
-	foreach($KOTA["ko_reservation"] as $key => $kota_field) {
-		if(in_array($key, $mandatory)) $KOTA["ko_reservation"][$key]["form"]["desc"] = getLL("kota_ko_reservation_".$key)." *";
+	// add default fields to mandatory fields
+	if (!in_array('item_id', $mandatory)) $mandatory[] = 'item_id';
+	if (!in_array('startdatum', $mandatory)) $mandatory[] = 'startdatum';
+
+	//add mandatory-flags and mandatory class
+	foreach($KOTA[$table] as $key => $kota_field) {
+		if(in_array($key, $mandatory)) {
+			$KOTA[$table][$key]["form"]["desc"] = getLL("kota_ko_reservation_".$key)." *";
+			$KOTA[$table][$key]["form"]["add_class"] .= ' mandatory';
+		}
 	}
 
 	//allow multiple objects to be reserved at once
 	if($mode == "neu" && ($_SESSION["ses_userid"] != ko_get_guest_id() || ko_get_setting("res_allow_multires_for_guest")) ) {
-		$KOTA["ko_reservation"]["item_id"]["form"]["type"] = "dyndoubleselect";
-		$KOTA["ko_reservation"]["item_id"]["form"]["js_func_add"] = "resgroup_doubleselect_add";
+		$KOTA[$table]["item_id"]["form"]["type"] = "dyndoubleselect";
+		$KOTA[$table]["item_id"]["form"]["js_func_add"] = "resgroup_doubleselect_add";
 	}
-	$KOTA["ko_reservation"]["item_id"]["form"]["params"] = 'size="5" onchange="javascript:changeResItem(this.value);"';
+	$KOTA[$table]["item_id"]["form"]["params"] = "size=\"5\" onchange=\"javascript:changeResItem($(this).data('value'));\"";
 
 	//get first part of form from kota
-	$group = ko_multiedit_formular("ko_reservation", "", $id, "", "", TRUE);
+	$group = ko_multiedit_formular($table, "", $id, "", "", TRUE);
 	$group[$gc]["titel"] = "";
 	$rowcounter = sizeof($group[$gc]["row"])+1;
 	
 
 	//Wiederholungen (nur bei Neu)
 	if($mode == "neu") {
-		$group[++$gc] = array("titel" => getLL("daten_repeat"), "state" => "closed", "colspan" => 'colspan="2"');
+		$group[++$gc] = array("titel" => getLL("daten_repeat"), "state" => $true == 0 ? "closed" : "open", "colspan" => 'colspan="2"');
 		$group[$gc]["row"][$rowcounter]["inputs"][0] = array("desc" => getLL("daten_repeat_title1"),
 																 "type" => "radio",
 																 "name" => "rd_wiederholung",
-																 "values" => array("keine", "taeglich", "woechentlich", "monatlich1", "monatlich2"),
+																 "values" => array("keine", "taeglich", "woechentlich", "monatlich1", "monatlich2", "holidays"),
 																 "descs" => $repeat_descs,
 																 "separator" => "<br />",
 																 "value" => isset($_POST["rd_wiederholung"]) ? $_POST["rd_wiederholung"] : "keine"
@@ -758,17 +526,17 @@ function ko_formular_reservation($mode, $id, $data=array()) {
 																 "value" => $repeat_stop
 																 );
 	}
-	if($mode == "edit" && $r["serie_id"]) {
+	if(in_array($mode, array("edit", 'edit_mod')) && $r["serie_id"]) {
 		$group[$gc]["row"][$rowcounter++]["inputs"][0] = array("type" => "   ");
 		$group[$gc]["row"][$rowcounter++]["inputs"][0] = array("desc" => getLL("res_serie_title"),
 																 "type" => "checkbox",
 																 "name" => "chk_serie",
 																 "value" => "1",
-																 "desc2" => getLL("res_serie_apply")." (".db_get_count("ko_reservation", "id", "AND `serie_id` = '".$r["serie_id"]."'").")",
+																 "desc2" => getLL("res_serie_apply")." (".db_get_count($table, "id", "AND `serie_id` = '".$r["serie_id"]."'").")",
 																 "colspan" => 'colspan="2"',
 																 );
 	}
-	if($access['reservation']['MAX'] > 3 && $mode == "edit") {
+	if($access['reservation']['MAX'] > 3 && in_array($mode, array("edit", 'edit_mod'))) {
 		$group[$gc]["row"][$rowcounter++]["inputs"][0] = array("type" => "   ");
 		$group[$gc]["row"][$rowcounter++]["inputs"][0] = array("desc" => getLL("res_info_title"),
 																 "type" => "html",
@@ -777,22 +545,41 @@ function ko_formular_reservation($mode, $id, $data=array()) {
 																 );
 	}
 
+	switch ($mode) {
+		case 'edit':
+			$smarty->assign("tpl_titel", getLL("res_edit_reservation"));
+			$smarty->assign("tpl_action", "submit_edit_reservation");
 
+			$smarty->assign("tpl_submit_as_new", getLL('res_submit_as_new'));
+			$smarty->assign("tpl_action_as_new", "submit_neue_reservation");
+		break;
+		case 'edit_mod':
+			$smarty->assign("tpl_titel", getLL("res_edit_mod"));
 
-
-	$smarty->assign("tpl_titel", ( ($mode == "neu") ? getLL("res_new_res") : getLL("res_edit_reservation")) );
-  $smarty->assign("tpl_submit_value", getLL("save"));
-  $smarty->assign("tpl_id", $id);
-  $smarty->assign("tpl_action", ( ($mode == "neu") ? "submit_neue_reservation" : "submit_edit_reservation") );
-	//Add button "save as new"
-	if($mode == 'edit') {
-		$smarty->assign("tpl_submit_as_new", getLL('res_submit_as_new'));
-		$smarty->assign("tpl_action_as_new", "submit_neue_reservation");
+			$specialSubmit =
+'<button type="submit" class="btn btn-primary" name="submit" class="ko_form_submit" value="'.getLL("res_edit_mod").'" onclick="var ok = check_mandatory_fields($(this).closest(\'form\')); if (ok) {set_action(\'submit_edit_res_mod\', this)} else return false;">
+	'.getLL("save").' <i class="fa fa-save"></i>
+</button>';
+			if ($access['reservation']['ALL'] > 3 || $access['reservation'][$r['item_id']] > 3) {
+				$specialSubmit .=
+'<button type="submit" class="btn btn-success" name="submit" class="ko_form_submit" value="'.getLL("res_edit_and_approve_mod").'" onclick="var ok = check_mandatory_fields($(this).closest(\'form\')); if (ok) {set_action(\'submit_approve_edit_res_mod\', this)} else return false;">
+	'.getLL("res_edit_and_approve_mod").' <i class="fa fa-check"></i>
+</button>';
+			}
+			$smarty->assign("tpl_special_submit", $specialSubmit);
+		break;
+		case 'neu':
+			$smarty->assign("tpl_titel", getLL("res_new_res"));
+			$smarty->assign("tpl_action", "submit_neue_reservation");
+		break;
 	}
+	$smarty->assign("tpl_submit_value", getLL("save"));
+	$smarty->assign("tpl_id", $id);
+
 	$cancel = $_SESSION['show_back'] ? $_SESSION['show_back'] : ko_get_userpref($_SESSION["ses_userid"], "default_view_reservation");
 	if(!$cancel) $cancel = "show_cal_monat";
-  $smarty->assign("tpl_cancel", $cancel);
-  $smarty->assign("tpl_groups", $group);
+	$smarty->assign("tpl_cancel", $cancel);
+	$smarty->assign("tpl_groups", $group);
 
 	$smarty->assign("help", ko_get_help("reservation", "neue_reservation"));
 
@@ -830,6 +617,8 @@ function ko_formular_item($mode, $id) {
 		$KOTA["ko_resitem"]["gruppen_id"]["form"]["type"] = "select";
 		$KOTA["ko_resitem"]["gruppen_id"]["form"]["params"] = 'size="0"';
 		$KOTA["ko_resitem"]["gruppen_id"]["form"]["new_line"] = TRUE;
+		//Use descs as values so code for storing will work, as this expects the name of the group and not the id
+		$KOTA["ko_resitem"]["gruppen_id"]["form"]["values"] = $KOTA["ko_resitem"]["gruppen_id"]["form"]["descs"];
 	}
 
 
@@ -921,10 +710,86 @@ function ko_get_mod_links(&$res, $id) {
 
 
 
+function ko_res_mod_approve($ids, $notification=TRUE) {
+	global $do_action, $access, $smarty;
+
+	$items = db_select_data("ko_resitem", "WHERE 1=1", "*");
+
+	$res_text = '';
+	$email_rec = $noemail_rec = array();
+	$res_data = array();
+	foreach($ids as $id) {
+		//Get mod entry
+		ko_get_res_mod_by_id($res, $id);
+		$r = $res[$id];
+		if(!$r["item_id"]) continue;
+
+		$res_backup[] = $r;
+
+		//Access check for this item
+		if($access['reservation']['ALL'] < 5 && $access['reservation'][$r['item_id']] < 5) continue;
+
+		//Neue Reservation speichern
+		$r["last_change"] = strftime("%Y-%m-%d %H:%M:%S", time());
+		unset($r['_orig_res_id']);
+		$res_data[] = $r;
+
+		//Mod-Eintrag löschen
+		//db_delete_data("ko_reservation_mod", "WHERE `id` = '$id'");
+
+		//Log
+		ko_get_login($r["user_id"], $log_login);
+		$r["user"] = $log_login["login"];
+		$r["notification"] = $notification ? getLL("yes") : getLL("no");
+		ko_log_diff("mod_res_approved", $r);
+
+		//Store information for notification email
+		if($notification) {
+			if($r["email"]) $email_rec[] = $r["email"];
+			else $noemail_rec[] = ko_html($r["name"]).", ".ko_html($r["telefon"]);
+			$res_text .= ko_get_res_infotext($r, $items[$r["item_id"]])."\n\n";
+		}
+	}
+
+	$new_ids = ko_res_store_reservation($res_data, FALSE, $double_error_txt, $success, $failure);
+	// delete moderations that were successfully transformed into real reservations
+	foreach ($success as $sId) {
+		db_delete_data("ko_reservation_mod", "WHERE `id` = '{$sId}'");
+	}
+	if($double_error_txt) {
+		koNotifier::Instance()->addError(4, $do_action);
+		koNotifier::Instance()->addTextError(getLL('res_collision').' <i>'.$double_error_txt.'</i><br />', $do_action);
+	}
+	else {
+		koNotifier::Instance()->addInfo(6, $do_action);
+	}
+
+	//Show email form to send notification
+	if($notification) {
+		$smarty->assign("txt_empfaenger", implode(", ", array_unique($email_rec)));
+		$smarty->assign('txt_empfaenger_semicolon', implode('; ', array_unique($email_rec)));
+		$smarty->assign("tpl_ohne_email", ($r["email"] == "" ? implode(", ", array_unique($noemail_rec)) : getLL("res_mod_no")) );
+		$p = ko_get_logged_in_person();
+		$smarty->assign("tpl_show_bcc_an_mich", ($p["email"] ? TRUE : FALSE));
+		$smarty->assign("tpl_show_send", TRUE);
+		$smarty->assign('txt_betreff', ('[kOOL] '.(sizeof($new_ids) > 1 ? getLL('res_emails_mod_confirm_subject') : getLL('res_email_mod_confirm_subject'))) );
+		$smarty->assign('tpl_res_ids', implode(',', $new_ids));
+
+		$smarty->assign('txt_emailtext', ((sizeof($new_ids) > 1 ? getLL('res_emails_mod_confirm_text') : getLL('res_email_mod_confirm_text'))."\n\n".ko_html($res_text)) );
+
+		$smarty->assign("tpl_show_rec_link", TRUE);
+
+		$_SESSION["show"]= "email_confirm";
+	}//if(notification)
+}
+
+
+
+
 /**
   * Stores a new reservation and sends all necessary emails
 	*/
-function ko_res_store_reservation($data, $send_user_email, &$double_error_txt) {
+function ko_res_store_reservation($data, $send_user_email, &$double_error_txt, &$success, &$failure) {
 	global $access, $BASE_PATH;
 
 	$ids = array();  //Will hold the ids of the new reservations
@@ -936,12 +801,18 @@ function ko_res_store_reservation($data, $send_user_email, &$double_error_txt) {
 	$double_error_txt = '';
 
 	foreach($data as $res) {
+		$oldId = $res['id'];
+
 		//Double check (needed as fallback and also e.g. if more than one reservation is given in data,
 		// they might overlap internally
 		if(FALSE === ko_res_check_double($res['item_id'], $res['startdatum'], $res['enddatum'], $res['startzeit'], $res['endzeit'], $_double_error_txt)) {
 			$double_error_txt .= $_double_error_txt;
+			$failure[] = $oldId;
 			continue;
 		}
+
+		// unset id if set
+		unset($res['id']);
 
 		$resitem = $items[$res["item_id"]];
 		//add other data
@@ -976,7 +847,7 @@ function ko_res_store_reservation($data, $send_user_email, &$double_error_txt) {
 		if($do_event) {
 			$event = db_select_data("ko_event", "WHERE `id` = '$do_event'", "*", "", "", TRUE);
 			$new_reservationen = $event["reservationen"] ? ($event["reservationen"].",$new_id") : $new_id;
-			db_update_data("ko_event", "WHERE `id` = '$do_event'", array("reservationen" => $new_reservationen));
+			db_update_data("ko_event", "WHERE `id` = '$do_event'", array("reservationen" => $new_reservationen, 'last_change' => date('Y-m-d H:i:s')));
 		}
 
 		//Log entry
@@ -984,6 +855,7 @@ function ko_res_store_reservation($data, $send_user_email, &$double_error_txt) {
 		ko_log("new_res", $log_message);
 
 		$ids[] = $new_id;
+		$success[] = $oldId;
 	}//foreach(data as res)
 
 
@@ -1007,6 +879,7 @@ function ko_res_store_reservation($data, $send_user_email, &$double_error_txt) {
 			$mods = ko_get_moderators_by_resgroup($gid);
 			foreach($mods as $mod) {
 				//Check user_pref for this moderator
+				if (!$mod['email']) continue;
 				if(ko_get_userpref($mod["id"], "do_mod_email_for_edit_res") == 1) {
 					ko_send_mail(ko_get_setting("info_email"), $mod["email"], "[kOOL] ".getLL("res_email_mod3_subject"), $mailtext);
 				}
@@ -1037,6 +910,9 @@ function ko_res_store_reservation($data, $send_user_email, &$double_error_txt) {
 function ko_res_settings() {
 	global $smarty;
 	global $access;
+	global $LEUTE_MOBILE_FIELDS;
+	global $LEUTE_EMAIL_FIELDS;
+	global $RES_GUEST_FIELDS_FORCE;
 
 	if($access['reservation']['MAX'] < 1 || $_SESSION['ses_userid'] == ko_get_guest_id()) return FALSE;
 
@@ -1044,26 +920,20 @@ function ko_res_settings() {
 	$gc = 0;
 	$rowcounter = 0;
 	$frmgroup[$gc]['titel'] = getLL('settings_title_user');
+	$frmgroup[$gc]['tab'] = True;
 
-	$frmgroup[$gc]['row'][$rowcounter++]['inputs'][0] = array('desc' => getLL('res_settings_default_view'),
+	$frmgroup[$gc]['row'][$rowcounter]['inputs'][0] = array('desc' => getLL('res_settings_default_view'),
 			'type' => 'select',
 			'name' => 'sel_reservation',
-			'values' => array('liste', 'show_cal_jahr', 'show_cal_monat', 'show_cal_woche', 'show_resource_month', 'show_resource_week', 'show_resource_day'),
-			'descs' => array(getLL('submenu_reservation_liste'), getLL('submenu_reservation_cal_year'), getLL('submenu_reservation_cal_month'), getLL('submenu_reservation_cal_week'), getLL('daten_resource_month'), getLL('daten_resource_week'), getLL('daten_resource_day')),
+			'values' => array('liste', 'show_cal_monat', 'show_cal_woche', 'show_resource_month', 'show_resource_week', 'show_resource_day'),
+			'descs' => array(getLL('submenu_reservation_liste'), getLL('submenu_reservation_cal_month'), getLL('submenu_reservation_cal_week'), getLL('daten_resource_month'), getLL('daten_resource_week'), getLL('daten_resource_day')),
 			'value' => ko_html(ko_get_userpref($_SESSION['ses_userid'], 'default_view_reservation'))
 			);
-	$frmgroup[$gc]['row'][$rowcounter]['inputs'][0] = array('desc' => getLL('admin_settings_limits_numberof_reservations'),
+	$frmgroup[$gc]['row'][$rowcounter++]['inputs'][1] = array('desc' => getLL('admin_settings_limits_numberof_reservations'),
 			'type' => 'text',
 			'params' => 'size="10"',
 			'name' => 'txt_limit_reservation',
 			'value' => ko_html(ko_get_userpref($_SESSION['ses_userid'], 'show_limit_reservation'))
-			);
-	$frmgroup[$gc]['row'][$rowcounter++]['inputs'][1] = array('desc' => getLL('admin_settings_limits_numberof_yearcal'),
-			'type' => 'select',
-			'name' => 'sel_cal_jahr_num',
-			'values' => array(3, 4, 6, 12),
-			'descs' => array('3', '4', '6', '12'),
-			'value' => ko_html(ko_get_userpref($_SESSION['ses_userid'], 'cal_jahr_num'))
 			);
 
 
@@ -1090,19 +960,12 @@ function ko_res_settings() {
 	$frmgroup[$gc]['row'][$rowcounter++]['inputs'][0] = array('type' => '   ');
 
 	$value = ko_get_userpref($_SESSION['ses_userid'], 'res_monthly_title');
-	$frmgroup[$gc]['row'][$rowcounter]['inputs'][0] = array('desc' => getLL('res_settings_monthly_title'),
+	$frmgroup[$gc]['row'][$rowcounter++]['inputs'][0] = array('desc' => getLL('res_settings_monthly_title'),
 			'type' => 'select',
 			'name' => 'sel_monthly_title',
 			'values' => array('item_id', 'zweck', 'name'),
 			'descs' => array(getLL('kota_ko_reservation_item_id'), getLL('kota_ko_reservation_zweck'), getLL('kota_ko_reservation_name')),
 			'value' => $value,
-			);
-	$value = ko_html(ko_get_userpref($_SESSION['ses_userid'], 'res_title_length'));
-	$frmgroup[$gc]['row'][$rowcounter++]['inputs'][1] = array('desc' => getLL('res_settings_title_length'),
-			'type' => 'text',
-			'name' => 'txt_title_length',
-			'value' => $value,
-			'params' => 'size="10"',
 			);
 	$value = ko_get_userpref($_SESSION['ses_userid'], 'res_mark_sunday');
 	$frmgroup[$gc]['row'][$rowcounter]['inputs'][0] = array('desc' => getLL('res_settings_mark_sunday'),
@@ -1200,19 +1063,53 @@ function ko_res_settings() {
 
 	if($_SESSION['ses_userid'] != ko_get_guest_id()) {
 		$value = ko_html(ko_get_userpref($_SESSION['ses_userid'], 'res_ical_deadline'));
-		$frmgroup[$gc]['row'][$rowcounter++]['inputs'][0] = array('desc' => getLL('res_settings_ical_deadline'),
+		$frmgroup[$gc]['row'][$rowcounter]['inputs'][0] = array('desc' => getLL('res_settings_ical_deadline'),
 				'type' => 'select',
 				'name' => 'sel_ical_deadline',
 				'values' => array(0, -1, -2, -3, -6, -12),
 				'descs' => array(getLL('res_settings_ical_deadline_0'), getLL('res_settings_ical_deadline_1'), getLL('res_settings_ical_deadline_2'), getLL('res_settings_ical_deadline_3'), getLL('res_settings_ical_deadline_6'), getLL('res_settings_ical_deadline_12')),
 				'value' => $value,
 				);
+
+		$values = array_unique(array_merge(array('telp', 'telg'), $LEUTE_MOBILE_FIELDS));
+		$descs = array();
+		foreach ($values as $v) {
+			$descs[] = getLL('kota_ko_leute_'.$v);
+		}
+		$value = ko_get_userpref($_SESSION['ses_userid'], 'res_prefill_tel');
+		$frmgroup[$gc]['row'][$rowcounter++]['inputs'][1] = array('desc' => getLL('res_settings_prefill_tel'),
+			'type' => 'select',
+			'name' => 'sel_prefill_tel',
+			'values' => $values,
+			'descs' => $descs,
+			'value' => $value,
+		);
+
+		if (sizeof($LEUTE_EMAIL_FIELDS) > 1) {
+			$values = $LEUTE_EMAIL_FIELDS;
+			$descs = array();
+			foreach ($values as $v) {
+				$descs[] = getLL('kota_ko_leute_'.$v);
+			}
+			$value = ko_get_userpref($_SESSION['ses_userid'], 'res_prefill_email');
+			$frmgroup[$gc]['row'][$rowcounter++]['inputs'][0] = array('desc' => getLL('res_settings_prefill_email'),
+				'type' => 'select',
+				'name' => 'sel_prefill_email',
+				'values' => $values,
+				'descs' => $descs,
+				'value' => $value,
+			);
+		}
+
 	}
+
+
 
 
 	if($access['reservation']['ALL'] > 3) {
 		$gc++;
 		$frmgroup[$gc]['titel'] = getLL('settings_title_global');
+		$frmgroup[$gc]['tab'] = TRUE;
 
 		// mandatory fields
 		$mandatoryFields = db_get_columns('ko_reservation');
@@ -1247,30 +1144,47 @@ function ko_res_settings() {
 				'params' => 'size="60"',
 				);
 
-		$value = ko_get_setting('res_show_persondata');
-		$frmgroup[$gc]['row'][$rowcounter]['inputs'][0] = array('desc' => getLL('admin_settings_misc_show_resdata'),
-				'type' => 'switch',
-				'name' => 'sel_res_show_persondata',
-				'label_0' => getLL('no'),
-				'label_1' => getLL('yes'),
-				'value' => $value == '' ? 0 : $value,
-				);
-		$value = ko_get_setting('res_show_purpose');
-		$frmgroup[$gc]['row'][$rowcounter++]['inputs'][1] = array('desc' => getLL('res_settings_show_purpose'),
-				'type' => 'switch',
-				'name' => 'sel_res_show_purpose',
-				'label_0' => getLL('no'),
-				'label_1' => getLL('yes'),
-				'value' => $value == '' ? 0 : $value,
-				);
+		$fields = db_get_columns('ko_reservation');
+		$values = $descs = array();
+		foreach ($fields as $field) {
+			if (!in_array($field['Field'], $mandatoryFieldsExclude) && !in_array($field['Field'], $RES_GUEST_FIELDS_FORCE)) {
+				$values[] = $field['Field'];
+				$descs[] = (trim(getLL('kota_ko_reservation_' . $field['Field'])) == '' ? $field['Field'] : getLL('kota_ko_reservation_' . $field['Field']));
+			}
+		}
+		$value = ko_get_setting('res_show_fields_to_guest');
+		$avalues = array_filter(array_map(function($el) {return trim($el);}, explode(',', $value)), function($el) {return $el != '';});
+		$adescs = array();
+		foreach ($avalues as $k => $av) {
+			if (!in_array($av, $values)) unset($avalues[$k]);
+			else $adescs[] = getLL('kota_ko_reservation_'.$av);
+		}
+		$avalue = implode(',', $avalues);
+		$frmgroup[$gc]['row'][$rowcounter++]['inputs'][0] = array('desc' => getLL('admin_settings_misc_show_resdata'),
+			'type' => 'checkboxes',
+			'name' => 'sel_res_show_fields_to_guest',
+			'values' => $values,
+			'avalues' => $avalues,
+			'descs' => $descs,
+			'adescs' => $adescs,
+			'avalue' => $avalue,
+			'size' => '6',
+		);
+
 		$value = ko_get_setting('res_allow_multires_for_guest');
-		$frmgroup[$gc]['row'][$rowcounter++]['inputs'][0] = array('desc' => getLL('res_settings_allow_multires_for_guest'),
+		$frmgroup[$gc]['row'][$rowcounter]['inputs'][0] = array('desc' => getLL('res_settings_allow_multires_for_guest'),
 				'type' => 'switch',
 				'name' => 'sel_allow_multires',
 				'label_0' => getLL('no'),
 				'label_1' => getLL('yes'),
 				'value' => $value == '' ? 0 : $value,
 				);
+		$value = ko_get_setting('res_show_ical_links_to_guest');
+		$frmgroup[$gc]['row'][$rowcounter++]['inputs'][1] = array('desc' => getLL('res_settings_show_ical_links_to_guest'),
+			'type' => 'switch',
+			'name' => 'sel_show_ical_links_to_guest',
+			'value' => $value,
+		);
 
 		$value = ko_get_setting('res_show_mod_to_all');
 		$frmgroup[$gc]['row'][$rowcounter]['inputs'][0] = array('desc' => getLL('res_settings_show_mod_to_all'),
@@ -1290,7 +1204,7 @@ function ko_res_settings() {
 				);
 
 		$value = ko_html(ko_get_setting('res_access_mode'));
-		$frmgroup[$gc]['row'][$rowcounter++]['inputs'][0] = array('desc' => getLL('res_settings_access_mode'),
+		$frmgroup[$gc]['row'][$rowcounter]['inputs'][0] = array('desc' => getLL('res_settings_access_mode'),
 				'type' => 'select',
 				'name' => 'sel_access_mode',
 				'values' => array(0, 1),
@@ -1363,7 +1277,7 @@ function ko_res_check_double($item, $datum1, $datum2, $zeit1, $zeit2, &$error_tx
 	if($zeit1 == "" && $zeit2 == "") $zeit2 = "23:59";
 
 	//Mit id Selbsttest ausschliessen
-	$where  = "WHERE `id`!='$id'";
+	$where  = "WHERE `id`!='$id' ";
 
 	//check for the right item and possibly linked items
 	ko_get_resitem_by_id($item, $resitem_);
@@ -1371,7 +1285,7 @@ function ko_res_check_double($item, $datum1, $datum2, $zeit1, $zeit2, &$error_tx
 	if($resitem["linked_items"] != "") {  //item with linked items
 		//check for all linked items in all linked items of the made reservations
 		$or = array();
-		foreach(explode(",", $resitem["linked_items"]) as $linked_item) {
+		foreach(array_merge(array($item), explode(",", $resitem["linked_items"])) as $linked_item) {
 			$or[] = "`linked_items` REGEXP '(^|,)".$linked_item."($|,)'";
 		}
 		//and check for item and the linked items
@@ -1455,11 +1369,11 @@ function ko_delete_empty_resgroups() {
   * Wendet Res-Filter an und gibt WHERE und LIMIT-String für SQL zurück
 	* Wendet permanente Zeitfilter und Filter für die darzustellenden Res-Items an.
 	*/
-function apply_res_filter(&$z_where, &$z_limit, $_start="", $_ende="", $user_id="") {
+function apply_res_filter(&$z_where, &$z_limit, $_start=NULL, $_ende=NULL, $user_id="") {
 	global $access, $KOTA;
 
-	$use_start = ($_start != "") ? $_start : $_SESSION["filter_start"];
-  $use_ende = ($_ende != "") ? $_ende : $_SESSION["filter_ende"];
+	$use_start = ($_start !== NULL) ? $_start : $_SESSION["filter_start"];
+	$use_ende = ($_ende !== NULL) ? $_ende : $_SESSION["filter_ende"];
 	$use_items = $_SESSION['show_items'];
 
 	//Permanenten Filter einfügen, falls vorhanden und nur view-Rechte
@@ -1470,7 +1384,7 @@ function apply_res_filter(&$z_where, &$z_limit, $_start="", $_ende="", $user_id=
 	// check, if the login has the 'force_global_filter' flag set to 1
 	$forceGlobalTimeFilter = ko_get_force_global_time_filter("reservation", $_SESSION['ses_userid']);
 
-	if(($forceGlobalTimeFilter || $access['reservation']['MAX'] < 4) && ($perm_filter_start || $perm_filter_ende)) {
+	if($forceGlobalTimeFilter != 2 && ($forceGlobalTimeFilter == 1 || $access['reservation']['MAX'] < 4) && ($perm_filter_start || $perm_filter_ende)) {
 		if($perm_filter_start != "") {
 			$z_where .= " AND enddatum >= '".$perm_filter_start."' ";
 		}
@@ -1479,27 +1393,10 @@ function apply_res_filter(&$z_where, &$z_limit, $_start="", $_ende="", $user_id=
 		}
 	}
 
-
-	if(isset($use_start) && $use_start != "immer") {
-	  get_heute($tag, $monat, $jahr);
-		if($use_start == "today") {
-			$start = sql_datum($tag.".".$monat.".".$jahr);
-		} else {
-			addmonth($monat, $jahr, $use_start);
-			$start = sql_datum("1.".$monat.".".$jahr);
-		}
-    $z_where .= "AND `enddatum` >= '$start'";
-  }
-  if(isset($use_ende) && $use_ende != "immer") {
-    get_heute($tag, $monat, $jahr);
-		if($use_ende == "today") {
-			$ende = sql_datum($tag.".".$monat.".".$jahr);
-		} else {
-			addmonth($monat, $jahr, ($use_ende+1));
-			$ende = sql_datum("0.".$monat.".".$jahr);
-		}
-    $z_where .= " AND `startdatum` <= '$ende'";
-  }
+	$start = ko_daten_parse_time_filter($use_start);
+	if ($start != '') $z_where .= "AND enddatum >= '$start'";
+	$ende = ko_daten_parse_time_filter($use_ende, '');
+	if ($ende != '') $z_where .= "AND startdatum <= '$ende'";
 
 	//Check for proper access
 	$show_items = array();
@@ -1578,20 +1475,19 @@ function ko_res_calendar() {
 	//Add the link to the year view
 	$code  = '';
 	$code .= '<div id="ko_calendar">';
-	$code .= '<div class="fc-mwselect">';
+	$code .= '<div class="fc-mwselect fc-mwselect-res">';
 	$code .= '<div name="mwselect" id="mwselect">';
 	$code .= ko_calendar_mwselect($_SESSION['cal_view']);
 	$code .= '</div>';
-	$code .= '<a href="index.php?action=show_cal_jahr"><img src="'.$ko_path.'images/cal_jahr.gif" border="0" title="'.getLL('res_cal_year').'"></a>';
 	$code .= '</div>';
 	$code .= '</div>';
 
 	//Add PDF link
-	$code .= '<table style="margin-left:12px" cellspacing="0" cellpadding="3">';
+	$code .= '<table style="margin-left:12px" cellspacing="0" cellpadding="3" id="pdf_link_footer">';
 	$code .= '<tr><td style="border-left-style:solid;border-left-width:1px">&nbsp;</td></tr>';
 	$code .= '<tr><td style="border-left-style:solid;border-left-width:1px;border-bottom-width:1px;border-bottom-style:solid;">';
 	$code .= '<a href="" onclick="sendReq(\'inc/ajax.php\', \'action\', \'pdfcalendar\', show_box); return false;">';
-	$code .= '<img src="'.$ko_path.'images/create_pdf.png" border="0" />&nbsp;'.getLL("res_list_footer_pdf_label").'</a>';
+	$code .= '&nbsp;<i class="fa fa-file-pdf-o"></i>&nbsp;'.getLL("res_list_footer_pdf_label").'</a>';
 	$code .= '<span name="res_pdf_link" id="res_pdf_link">&nbsp;</span>';
 	$code .= '</td></tr>';
 	$code .= '</table>';
@@ -1636,13 +1532,13 @@ function ko_get_resitems_css() {
 function ko_res_ical_links() {
 	global $RESICAL_URL, $BASE_URL, $access;
 
-	if($_SESSION['ses_userid'] == ko_get_guest_id()) return FALSE;
+	if($_SESSION['ses_userid'] == ko_get_guest_id() && !ko_get_setting('res_show_ical_links_to_guest')) return FALSE;
 	if(!defined('KOOL_ENCRYPTION_KEY') || trim(KOOL_ENCRYPTION_KEY) == '') {
 		print 'ERROR: '.getLL('error_res_13');
 	}
 
 	ko_get_login($_SESSION['ses_userid'], $login);
-	$base_link = ($RESICAL_URL ? $RESICAL_URL : $BASE_URL.'resical/').'?user='.md5($_SESSION['ses_userid'].$login['password'].KOOL_ENCRYPTION_KEY);
+	$base_link = ($RESICAL_URL ? $RESICAL_URL : $BASE_URL.'resical/').'?' . ($_SESSION['ses_userid'] == ko_get_guest_id() ? 'guest=1' : 'user='.md5($_SESSION['ses_userid'].$login['password'].KOOL_ENCRYPTION_KEY));
 
 	$help  = ko_get_help('reservation', 'ical_links');
 	$help2 = ko_get_help('reservation', 'ical_links2');
@@ -1856,6 +1752,11 @@ function ko_reservation_get_title($res, $item, $mode) {
 
 	if($show_comment) $title['kommentar'] = $res['zweck'];
 	else $title['kommentar'] = '';
+
+	// Strip HTML Tags
+	foreach ($title as $k => $v) {
+		$title[$k] = strip_tags($v);
+	}
 
 	return $title;
 }//ko_reservation_get_title()

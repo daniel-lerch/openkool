@@ -1,0 +1,139 @@
+#navbar-main {
+    border-bottom:none;
+    width:100%;
+
+    .kool-navbar-toggle(@navbar-height);
+
+    &.affix,
+    &.affix-bottom {
+        position:fixed;
+        left:0px;
+        top:0px;
+    }
+}
+
+#navbar-sec {
+    width: 100%;
+    background-color: @secondary-navbar-bg;
+    border-color: @secondary-navbar-border;
+    min-height: @secondary-navbar-height;
+    margin-bottom: @navbar-margin-bottom;
+    // position:relative is because of trash for shortlinks
+    position:relative;
+    z-index: 999;
+
+    &.affix,
+    &.affix-bottom {
+        position:fixed;
+        left:0px;
+        top:@navbar-height;
+    }
+
+    .navbar-text {
+        color: @secondary-navbar-color;
+    }
+
+    .navbar-nav {
+        > li > a {
+            color: @secondary-navbar-link-color;
+
+            &:hover,
+            &:focus {
+                color: @secondary-navbar-link-hover-color;
+                background-color: @secondary-navbar-link-hover-bg;
+
+                &.danger {
+                    color: #fff;
+                    background-color: @secondary-navbar-link-danger-hover-bg;
+                }
+            }
+
+            &.danger {
+                color: #fff;
+                background-color: @secondary-navbar-link-danger-bg;
+            }
+        }
+        > .active > a {
+            &,
+            &:hover,
+            &:focus {
+                color: @secondary-navbar-link-active-color;
+                background-color: @secondary-navbar-link-active-bg;
+
+                &.danger {
+                    color: #fff;
+                    background-color: @secondary-navbar-link-danger-active-bg;
+                }
+            }
+
+            &.danger {
+                color: #fff;
+                background-color: @secondary-navbar-link-danger-active-bg;
+            }
+        }
+        > .disabled > a {
+            &,
+            &:hover,
+            &:focus {
+                color: @secondary-navbar-link-disabled-color;
+                background-color: @secondary-navbar-link-disabled-bg;
+            }
+        }
+    }
+
+
+    .navbar-nav {
+        margin: (@secondary-navbar-padding-vertical / 2) -@secondary-navbar-padding-vertical;
+        min-height: @secondary-navbar-height;
+
+        > li {
+            height: @secondary-navbar-height;
+            > a {
+                padding-top: 10px;
+                padding-bottom: 10px;
+                line-height: @line-height-computed;
+
+                @media (max-width: (@screen-sm - 1)) {
+                    padding-left: @nav-link-padding-xs-horizontal;
+                    padding-right: @nav-link-padding-xs-horizontal;
+                }
+                @media (min-width: @screen-sm) and (max-width: (@screen-md - 1)) {
+                    padding-left: @nav-link-padding-sm-horizontal;
+                    padding-right: @nav-link-padding-sm-horizontal;
+                }
+                @media (min-width: @screen-md) {
+                    padding-left: @nav-link-padding;
+                    padding-right: @nav-link-padding;
+                }
+            }
+        }
+
+        // Prevent collapsing the navbar
+        @media (max-width: @grid-float-breakpoint-max) {
+            float: left;
+            margin: 0;
+
+            > li {
+                float: left;
+                > a {
+                    padding-top:    @secondary-navbar-padding-vertical;
+                    padding-bottom: @secondary-navbar-padding-vertical;
+                }
+            }
+        }
+        @media (min-width: @grid-float-breakpoint) {
+            float: left;
+            margin: 0;
+
+            > li {
+                float: left;
+                > a {
+                    padding-top:    @secondary-navbar-padding-vertical;
+                    padding-bottom: @secondary-navbar-padding-vertical;
+                }
+            }
+        }
+    }
+
+    .kool-navbar-toggle(@secondary-navbar-height);
+}

@@ -29,7 +29,6 @@ $ko_menu_akt = "ical";
 
 include($ko_path."inc/ko.inc");
 include($ko_path."reservation/inc/reservation.inc");
-ko_include_kota(array('ko_reservation'));
 
 $auth = FALSE;
 if(isset($_GET["ko_guest"])) {  //Stay with guest user
@@ -60,9 +59,9 @@ else {
 	} else {
 		$user = format_userinput($_SERVER["PHP_AUTH_USER"], "text", TRUE, 32);
 		$pw = md5($_SERVER["PHP_AUTH_PW"]);
-		$result = mysql_query("SELECT id,login FROM ko_admin WHERE `login` = '$user' AND `password` = '$pw'");
-		if(mysql_num_rows($result) == 1) {
-			$row = mysql_fetch_assoc($result);
+		$result = mysqli_query(db_get_link(), "SELECT id,login FROM ko_admin WHERE `login` = '$user' AND `password` = '$pw'");
+		if(mysqli_num_rows($result) == 1) {
+			$row = mysqli_fetch_assoc($result);
 			if($row["login"] == $user) {
 				$auth = TRUE;
 				$_SESSION["ses_username"] = $row["login"];
@@ -86,6 +85,7 @@ if(!ko_module_installed("reservation")) {
 }
 //Get access rights
 ko_get_access('reservation', $_SESSION['ses_userid'], TRUE);
+ko_include_kota(array('ko_reservation'));
 
 //Set resitems to be shown set by GET or preset named ical
 $use_itemset = FALSE;

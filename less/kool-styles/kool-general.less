@@ -1,0 +1,70 @@
+ul {
+    padding-left: 15px;
+
+    &.no-lst {
+
+        list-style-type: none;
+    }
+}
+
+#main-table-layout {
+    position:relative;
+    width:100%;
+    table-layout: fixed;
+
+    @media screen and (min-width : 992px)  {
+        display:table;
+    }
+}
+
+main {
+    padding:15px;
+
+    @media (max-width: (@screen-sm - 1)) {
+        padding:6px 3px;
+    }
+}
+
+#footer {
+    padding: 0px 20px;
+    background-color: @footer-bg;
+    color: @footer-color;
+
+    > table {
+        width: 100%;
+        height:@footer-height;
+    }
+    a {
+        color: @footer-link-color;
+
+        &:hover {
+            color: @footer-link-color-hover;
+        }
+    }
+}
+
+div.btn-field {
+    text-align:center;
+
+    button {
+        margin: 3px;
+    }
+}
+
+span.badge {
+    &.badge-info {
+        .contextual-badge(@brand-info);
+    }
+    &.badge-danger {
+        .contextual-badge(@brand-danger);
+    }
+    &.badge-success {
+        .contextual-badge(@brand-success);
+    }
+    &.badge-primary {
+        .contextual-badge(@brand-primary);
+    }
+    &.badge-warning {
+        .contextual-badge(@brand-warning);
+    }
+}

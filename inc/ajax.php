@@ -24,7 +24,6 @@
 *  This copyright notice MUST APPEAR in all copies of the script!
 ***************************************************************/
 
-
 //Allow POST as well
 if(isset($_POST['sesid']) && isset($_POST['action'])) $_GET = $_POST;
 
@@ -39,6 +38,9 @@ error_reporting(0);
 $ko_menu_akt = 'home';
 $ko_path = "../";
 require($ko_path."inc/ko.inc");
+
+array_walk_recursive($_GET, 'rawurldecode_array');
+array_walk_recursive($_GET,'utf8_decode_array');
 
 //Smarty-Templates-Engine laden
 require($BASE_PATH."inc/smarty.inc");
@@ -60,167 +62,97 @@ if(isset($_GET) && isset($_GET["action"])) {
 	hook_ajax_pre($ko_menu_akt, $action);
 
 	switch($action) {
-		case "opensm":
+		case 'togglesidebar':
+			//Guest kann Layout nicht ändern
+			if($_SESSION["ses_userid"] == ko_get_guest_id()) return FALSE;
+			$toState = format_userinput($_GET["tostate"], "js");
+
+			if(!in_array($toState, array('open', 'closed'))) return FALSE;
+
+			ko_save_userpref($_SESSION["ses_userid"], 'sidebar_state', $toState);
+		break;
+
+		case "togglesm":
 			//Guest kann Layout nicht ändern
 			if($_SESSION["ses_userid"] == ko_get_guest_id()) return FALSE;
 
 			//Übergebene Daten auslesen
-			$pos = format_userinput($_GET["pos"], "alpha");
-			if(!in_array($pos, array("left", "right"))) return FALSE;
 			$id = format_userinput($_GET["id"], "js");
 			$sm_module = format_userinput($_GET["mod"], "js");
+			$toState = format_userinput($_GET["tostate"], "js");
 			if(!in_array($sm_module, $MODULES)) return FALSE;
 
 			//Bestehende SM dieses Benutzers holen
-			$closed = explode(",", ko_get_userpref($_SESSION["ses_userid"], "submenu_".$sm_module."_".$pos."_closed"));
-			$open = explode(",", ko_get_userpref($_SESSION["ses_userid"], "submenu_".$sm_module."_".$pos));
-			if(in_array($id, $open)) continue;
+			$submenus = unserialize(ko_get_userpref($_SESSION["ses_userid"], "submenu_".$sm_module));
+			if($submenus[$id]['state'] == $toState || !in_array($toState, array('open', 'closed'))) continue;
 
-			//Geschlossenes öffnen
-			$new_open = implode(",", $open);
-			$new_closed = "";
-			foreach($closed as $c) {
-				if($c == $id) {
-					$new_open .= ($new_open == "") ? $c : ",$c";
-				} else {
-					$new_closed .= $c.",";
+			//Close submenu
+			$submenus[$id]['state'] = $toState;
+
+			//Werte neu speichern
+			ko_save_userpref($_SESSION["ses_userid"], "submenu_".$sm_module, serialize($submenus));
+		break;
+
+
+		case 'movesm':
+			//Guest kann Layout nicht ändern
+			if($_SESSION["ses_userid"] == ko_get_guest_id()) return FALSE;
+
+			//Übergebene Daten auslesen
+			$sm_module = format_userinput($_GET["mod"], "js");
+			if(!in_array($sm_module, $MODULES)) return FALSE;
+			$id = format_userinput($_GET["id"], "js");
+			$nextId = format_userinput($_GET["nextId"], "js");
+			$prevId = format_userinput($_GET["prevId"], "js");
+
+			$submenus = unserialize(ko_get_userpref($_SESSION["ses_userid"], "submenu_".$sm_module));
+			$newSubmenus = array();
+
+			$placed = false;
+			foreach ($submenus as $smName => $smData) {
+
+				if (!$placed && $nextId == $smName) {
+					$newSubmenus[$id] = $submenus[$id];
+					$newSubmenus[$smName] = $smData;
+					$placed = true;
+				}
+				else if (!$placed && $prevId == $smName) {
+					$newSubmenus[$smName] = $smData;
+					$newSubmenus[$id] = $submenus[$id];
+					$placed = true;
+				}
+				else if ($smName != $id) {
+					$newSubmenus[$smName] = $smData;
 				}
 			}
+
 			//Werte neu speichern
-			ko_save_userpref($_SESSION["ses_userid"], "submenu_".$sm_module."_".$pos."_closed", substr($new_closed, 0, -1));
-			ko_save_userpref($_SESSION["ses_userid"], "submenu_".$sm_module."_".$pos, $new_open);
+			ko_save_userpref($_SESSION["ses_userid"], "submenu_".$sm_module, serialize($newSubmenus));
+			break;
 
-			//Neuen HTML-Code für SM ausgeben
-			eval("\$r=submenu_".$sm_module.'($id, $pos, "open", 2);');
-			print $r;
-		break;
-
-
-		case "closesm":
+		case 'togglefm':
 			//Guest kann Layout nicht ändern
 			if($_SESSION["ses_userid"] == ko_get_guest_id()) return FALSE;
+			$module = format_userinput($_GET["fm"], "js");
+			$toState = format_userinput($_GET["tostate"], "js");
 
-			//Übergebene Daten auslesen
-			$pos = format_userinput($_GET["pos"], "alpha");
-			if(!in_array($pos, array("left", "right"))) return FALSE;
-			$id = format_userinput($_GET["id"], "js");
-			$sm_module = format_userinput($_GET["mod"], "js");
-			if(!in_array($sm_module, $MODULES)) return FALSE;
+			$frontModulesUP = explode(',', ko_get_userpref($_SESSION['ses_userid'], 'front_modules'));
 
-			//Bestehende SM dieses Benutzers holen
-			$open = explode(",", ko_get_userpref($_SESSION["ses_userid"], "submenu_".$sm_module."_".$pos));
-			$closed = explode(",", ko_get_userpref($_SESSION["ses_userid"], "submenu_".$sm_module."_".$pos."_closed"));
-			if(in_array($id, $closed)) continue;
-
-			//Offenes schliessen
-			$new_closed = implode(",", $closed);
-			$new_open = "";
-			foreach($open as $c) {
-				if($c == $id) {
-					$new_closed .= ($new_closed == "") ? $c : ",$c";
-				} else {
-					$new_open .= $c.",";
+			if ($toState == 'closed') {
+				foreach ($frontModulesUP as $k => $frontModuleUP) {
+					if ($frontModuleUP == $module) {
+						unset($frontModulesUP[$k]);
+					}
 				}
 			}
-			//Werte neu speichern
-			ko_save_userpref($_SESSION["ses_userid"], "submenu_".$sm_module."_".$pos."_closed", $new_closed);
-			ko_save_userpref($_SESSION["ses_userid"], "submenu_".$sm_module."_".$pos, substr($new_open, 0, -1));
-
-			//Neuen HTML-Code für SM ausgeben
-			eval("\$r=submenu_".$sm_module.'($id, $pos, "closed", 2);');
-			print $r;
-		break;
-
-
-
-		case "movesmup":
-			//Guest kann Layout nicht ändern
-			if($_SESSION["ses_userid"] == ko_get_guest_id()) return FALSE;
-
-			//Übergebene Daten auslesen
-			$pos = format_userinput($_GET["pos"], "alpha");
-			if(!in_array($pos, array("left", "right"))) return FALSE;
-			$id = format_userinput($_GET["id"], "js");
-			$sm_module = format_userinput($_GET["mod"], "js");
-			if(!in_array($sm_module, $MODULES)) return FALSE;
-
-			$closed = explode(",", ko_get_userpref($_SESSION["ses_userid"], "submenu_".$sm_module."_".$pos."_closed"));
-			$open = explode(",", ko_get_userpref($_SESSION["ses_userid"], "submenu_".$sm_module."_".$pos));
-
-			//Zustand finden
-			if(in_array($id, $closed)) {  //Falls geschlossen
-				$state = "_closed";
-				$array = $closed;
+			else {
+				if (!in_array($module, $frontModulesUP)) {
+					$frontModulesUP[] = $module;
+				}
 			}
-			if(in_array($id, $open)) {  //Falls offen
-				$state = "";
-				$array = $open;
-			}
+			ko_save_userpref($_SESSION['ses_userid'], 'front_modules', implode(',', $frontModulesUP));
 
-			//Index finden des zu verschiebenden Submenus
-			for($i = 0; $i<sizeof($array); $i++) {
-				if($array[$i] == $id) $index = $i;
-			}
-			//if($index == 0) continue;
-
-			//Submenu tauschen (resp. nach oben schieben)
-			$temp = $array[($index-1)];
-			$array[($index-1)] = $array[$index];
-			$array[$index] = $temp;
-
-			ko_save_userpref($_SESSION["ses_userid"], "submenu_".$sm_module."_".$pos.$state, implode(",", $array));
-			$_SESSION["submenu_".$pos.$state] = implode(",", $array);
-
-			//Neuen HTML-Code für SM ausgeben
-			print "main_".$pos."@@@";
-			print ko_get_submenu_code($sm_module, $pos);
-		break;
-
-
-		case "movesmdown":
-			//Guest kann Layout nicht ändern
-			if($_SESSION["ses_userid"] == ko_get_guest_id()) return FALSE;
-
-			//Übergebene Daten auslesen
-			$pos = format_userinput($_GET["pos"], "alpha");
-			if(!in_array($pos, array("left", "right"))) return FALSE;
-			$id = format_userinput($_GET["id"], "js");
-			$sm_module = format_userinput($_GET["mod"], "js");
-			if(!in_array($sm_module, $MODULES)) return FALSE;
-
-			$closed = explode(",", ko_get_userpref($_SESSION["ses_userid"], "submenu_".$sm_module."_".$pos."_closed"));
-			$open = explode(",", ko_get_userpref($_SESSION["ses_userid"], "submenu_".$sm_module."_".$pos));
-
-			//Zustand finden
-			if(in_array($id, $closed)) {  //Falls geschlossen
-				$state = "_closed";
-				$array = $closed;
-			}
-			if(in_array($id, $open)) {  //Falls offen
-				$state = "";
-				$array = $open;
-			}
-
-			//Index finden des zu verschiebenden Submenus
-			for($i = 0; $i<sizeof($array); $i++) {
-				if($array[$i] == $id) $index = $i;
-			}
-			if($index == (sizeof($array)-1)) continue;
-
-			//Submenu tauschen (resp. nach oben schieben)
-			$temp = $array[($index+1)];
-			$array[($index+1)] = $array[$index];
-			$array[$index] = $temp;
-
-			ko_save_userpref($_SESSION["ses_userid"], "submenu_".$sm_module."_".$pos.$state, implode(",", $array));
-			$_SESSION["submenu_".$pos.$state] = implode(",", $array);
-
-			//Neuen HTML-Code für SM ausgeben
-			print "main_".$pos."@@@";
-			print ko_get_submenu_code($sm_module, $pos);
-		break;
-
-
+			break;
 		case "savenote":
 			//Guest kann Layout nicht ändern
 			if($_SESSION["ses_userid"] == ko_get_guest_id()) return FALSE;
@@ -282,6 +214,62 @@ if(isset($_GET) && isset($_GET["action"])) {
 
 			//Neuen HTML-Code für SM ausgeben
 			print submenu("gsm_notizen", $pos, "", 2, $sm_module);  //State is always open when saving
+		break;
+
+
+		case 'updatesecmenu':
+			//Guest kann Layout nicht ändern
+			if($_SESSION["ses_userid"] == ko_get_guest_id()) return FALSE;
+
+			//Übergebene Daten auslesen
+			$sm_module = format_userinput($_GET["mod"], "js");
+			if(!in_array($sm_module, $MODULES)) return FALSE;
+			$id = format_userinput($_GET["id"], "js");
+			$nextId = format_userinput($_GET["nextId"], "js");
+			$prevId = format_userinput($_GET["prevId"], "js");
+			$removed = format_userinput($_GET["removed"], "uint");
+			$subMenuId = format_userinput($_GET["smId"], "js");
+
+			$subMenuLinksAll = ko_get_submenu_links($sm_module);
+			$links = array();
+			foreach ($subMenuLinksAll as $subMenuLinks) {
+				foreach ($subMenuLinks['links'] as $subMenuLink) {
+					$links[] = $subMenuLink['action'];
+				}
+			}
+			if (!in_array($id, $links)) {
+				return False;
+			}
+
+			$secMenuLinks = explode(',', ko_get_userpref($_SESSION['ses_userid'], $sm_module . '_menubar_links'));
+			$newSubMenuLinks = array();
+
+			$placed = false;
+			foreach ($secMenuLinks as $actionName) {
+				if ($actionName == '' || !in_array($actionName, $links) || in_array($actionName, $newSubMenuLinks)) continue;
+
+				if (!$placed && $nextId == $actionName) {
+					$newSubMenuLinks[] = $id;
+					$newSubMenuLinks[] = $actionName;
+					$placed = true;
+				} else if (!$placed && $prevId == $actionName) {
+					$newSubMenuLinks[] = $actionName;
+					$newSubMenuLinks[] = $id;
+					$placed = true;
+				} else if ($actionName != $id) {
+					$newSubMenuLinks[] = $actionName;
+				}
+			}
+			if (sizeof($newSubMenuLinks) == 0 && !$removed) {
+				$newSubMenuLinks[] = $id;
+			}
+			ko_save_userpref($_SESSION['ses_userid'], $sm_module . '_menubar_links', implode(',', $newSubMenuLinks));
+
+			if ($subMenuId != '') {
+				$state = $_SESSION["submenu"][$sm_module]['state'];
+				$r = call_user_func_array("submenu_".$sm_module, array($subMenuId, $state, 2));
+				print $r;
+			}
 		break;
 
 
@@ -375,12 +363,18 @@ if(isset($_GET) && isset($_GET["action"])) {
 				$df = db_select_data('ko_groups_datafields', "WHERE `id` = '$dfid'", '*', '', '', TRUE);
 			}
 
+			$do_save = TRUE;
+
 			//Treat checkbox directly by changing it's value (allow only one checkbox to be treated directy, so check for $col not $cols)
 			if(in_array($KOTA[$table][$col]['form']['type'], array('checkbox', 'switch'))) {
 				//Update value in db
 				$data = db_select_data($table, "WHERE `id` = '$id'", '*', '', '', TRUE);
+				$old_value = $data[$col];
 				$data[$col] = $data[$col] == 0 ? 1 : 0;
 				db_update_data($table, "WHERE `id` = '$id'", array($col => $data[$col]));
+
+				ko_log('inline_edit', "{$table} ({$id}) {$col}: {$old_value} --> {$data[$col]}");
+
 
 				//Save changes for ko_leute
 				if($table == 'ko_leute') ko_save_leute_changes($id, $data);
@@ -458,7 +452,7 @@ if(isset($_GET) && isset($_GET["action"])) {
 			}
 			//For all other input types show form
 			else {
-				//Check for group with no ore only one role - add/remove assignment directly
+				//Check for group with no or only one role - add/remove assignment directly
 				if($table == 'ko_leute' && substr($col, 0, 9) == 'MODULEgrp' && strlen($col) == 15) {
 					$gid = format_userinput(substr($col, 9), 'uint');
 					//Access check
@@ -474,13 +468,13 @@ if(isset($_GET) && isset($_GET["action"])) {
 							if($rid) $rid = ':r'.$rid;
 							//Add or remove person from group
 							$full_gid = ko_groups_decode($gid, 'full_gid').$rid;
-							if(FALSE === strpos($person['groups'], 'g'.$gid)) {
+							if(!preg_match('/g'.$gid.$rid.'($|,)/', $person['groups'])) {
 								$new_groups = $person['groups'].($person['groups'] != '' ? ',' : '').$full_gid;
 								$mode = 'add';
 							} else {
 								$curr_groups = explode(',', $person['groups']);
 								foreach($curr_groups as $k => $cg) {
-									if(FALSE !== strpos($cg, 'g'.$gid)) unset($curr_groups[$k]);
+									if(preg_match('/g'.$gid.$rid.'($|,)/', $cg)) unset($curr_groups[$k]);
 								}
 								$new_groups = implode(',', $curr_groups);
 								$mode = 'remove';
@@ -520,7 +514,6 @@ if(isset($_GET) && isset($_GET["action"])) {
 					}
 				}
 
-
 				$grp = ko_multiedit_formular($table, explode(',', $col), $id, '', '', TRUE);
 
 				$inputs = FALSE;
@@ -537,6 +530,7 @@ if(isset($_GET) && isset($_GET["action"])) {
 					$classes = array('inlineform');
 					$code = '';
 					foreach($inputs as $input) {
+						$input['add_class'] .= " form-element-inline";
 						$smarty->assign('input', $input);
 						$code .= $smarty->fetch('ko_formular_elements.tmpl');
 					}
@@ -545,7 +539,7 @@ if(isset($_GET) && isset($_GET["action"])) {
 					if(in_array($KOTA[$table][$col]['form']['type'], array('doubleselect'))
 						|| ($table == 'ko_leute' && substr($col, 0, 9) == 'MODULEgrp' && FALSE !== strpos($col, ':') && $df['type'] == 'multiselect')) {
 						$classes[] = 'if-doubleselect';
-						$code .= '<div><input type="button" name="if_submit" class="if_submit" value="'.getLL('OK').'" /></div>';
+						$code .= '<div><button type="button" class="if_submit btn btn-primary btn-sm" name="if_submit" value="'.getLL('OK').'">'.getLL('OK').'</button></div>';
 					}
 
 					if($code) print $_GET['id'].'@@@<div class="'.implode(' ', $classes).'" id="if_'.$_GET['id'].'">'.$code.'</div>';
@@ -591,10 +585,6 @@ if(isset($_GET) && isset($_GET["action"])) {
 			ko_get_access($module);
 			ko_include_kota(array($table));
 
-			// decode utf8
-			array_walk_recursive($_GET['koi'], 'urldecode_array');
-			array_walk_recursive($_GET['koi'], 'utf8_decode_array');
-
 			//Replace masked commas
 			foreach($a as $c) {
 				$_GET['koi'][$table][$c][$id] = str_replace('|', ',', $_GET['koi'][$table][$c][$id]);
@@ -605,7 +595,7 @@ if(isset($_GET) && isset($_GET["action"])) {
 			$_POST['koi'] = $_GET['koi'];
 			$hash = md5(md5($mysql_pass.$table.str_replace(',', ':', $col).$id));
 			$_POST['id'] = $table.'@'.$col.'@'.$id.'@'.$hash;
-			kota_submit_multiedit();
+			kota_submit_multiedit('', 'inline_edit');
 
 			if(koNotifier::Instance()->hasErrors()) {
 				print 'ERROR@@@'.getLL('error_'.$table.'_'.$error);
@@ -659,157 +649,216 @@ if(isset($_GET) && isset($_GET["action"])) {
 
 
 		case 'kotafilter':
+
+
 			$table = format_userinput($_GET['table'], 'alphanum+');
 			$cols = format_userinput($_GET['cols'], 'alphanumlist');
 			$module = format_userinput($_GET['module'], 'alphanum+');
+
+			$sortEnabled = format_userinput($_GET['sortenabled'], 'uint');
+			$filterEnabled = format_userinput($_GET['filterenabled'], 'uint');
 
 			$r = '';
 			$show_clear = FALSE;
 			ko_get_access($module);
 			ko_include_kota(array($table));
-			foreach(explode(',', $cols) as $col) {
-				if(!isset($KOTA[$table][$col])) continue;
-				$type = $KOTA[$table][$col]['filter']['type'];
-				if(!$type) $type = $KOTA[$table][$col]['form']['type'];
-				if(!$type) continue;
 
-				$val = $_SESSION['kota_filter'][$table][$col];
-				if($val != '') $show_clear = TRUE;
-				if(substr($val, 0, 1) == '!') {
-					$val = substr($val, 1);
-					$negChk = 'checked="checked"';
-				} else {
-					$negChk = '';
+			$supermodule = $KOTA[$table]['_supermodule'];
+			if (!$supermodule) $supermodule = $module;
+
+			if ($sortEnabled == '1') {
+
+				$sortCol = format_userinput($_GET['sortcol'], 'text');
+				$sortOrder = format_userinput($_GET['sortorder'], 'alphanum+');
+				$sortAction = format_userinput($_GET['sortaction'], 'alphanum+');
+				$sortBy = format_userinput($_GET['sortby'], 'text');
+				if ($sortBy && $sortCol && $sortOrder && $sortAction) {
+					$r .= '<div style="margin:0px auto;" class="btn-group btn-group-sm">';
+					$r .= '<button class="btn btn-default" disabled>' . getLL('list_sorting') . '</button>';
+					$r .= '<button class="btn btn-default" type="button" title="' . getLL('list_sort_desc') . '" ' . (($sortBy != $sortCol || $sortOrder == 'ASC') ? 'onclick="javascript:sendReq(\'../' . $supermodule . '/inc/ajax.php\', [\'action\',\'sort\',\'sort_order\',\'sesid\'], [\'' . $sortAction . '\',\'' . $sortBy . '\',\'DESC\',\'' . session_id() . '\'], do_element);"' : 'disabled') . '><span class="glyphicon glyphicon-chevron-down"></span></button>';
+					$r .= '<button class="btn btn-default" type="button" title="' . getLL('list_sort_asc') . '" ' . (($sortBy != $sortCol || $sortOrder == 'DESC') ? 'onclick="javascript:sendReq(\'../' . $supermodule . '/inc/ajax.php\', [\'action\',\'sort\',\'sort_order\',\'sesid\'], [\'' . $sortAction . '\',\'' . $sortBy . '\',\'ASC\',\'' . session_id() . '\'], do_element);"' : 'disabled') . '><span class="glyphicon glyphicon-chevron-up"></span></button>';
+					$r .= '</div>';
 				}
-				switch($type) {
-					case 'text':
-					case 'textarea':
-						$r .= '<label>'.getLL('kota_'.$table.'_'.$col).'</label>';
-						$r .= '<input type="text" class="kota_filter_inputs" name="kota_filter['.$table.':'.$col.']" value="'.$val.'" />';
-					break;
+			}
+			$r1 = $r;
+			$r = '';
 
-					case 'select':
-					case 'doubleselect':
-						$r .= '<label>'.getLL('kota_'.$table.'_'.$col).'</label>';
-						$params = $KOTA[$table][$col]['filter']['params'];
-						if(!$params) $params = $KOTA[$table][$col]['form']['params'];
-						$r .= '<select class="kota_filter_inputs" name="kota_filter['.$table.':'.$col.']" '.$params.' >';
 
-						//Use data array if set
-						if(is_array($KOTA[$table][$col]['filter']['data'])) {
-							$values = array_keys($KOTA[$table][$col]['filter']['data']);
-							$descs = array_values(array_values($KOTA[$table][$col]['filter']['data']));
+			if ($filterEnabled == '1') {
+				foreach(explode(',', $cols) as $col) {
+					if(!isset($KOTA[$table][$col])) continue;
+					$type = $KOTA[$table][$col]['filter']['type'];
+					if(!$type) $type = $KOTA[$table][$col]['form']['type'];
+					if(!$type) continue;
+
+					$val = $_SESSION['kota_filter'][$table][$col];
+					if($val != '') $show_clear = TRUE;
+
+					if ($type == 'jsdate') {
+						$val_from = $val['from'];
+						$val_to = $val['to'];
+						if($val['neg']) {
+							$val = substr($val, 1);
+							$negChk = 'checked="checked"';
 						} else {
-							$values = $KOTA[$table][$col]['form']['values'];
-							$descs = array_values($KOTA[$table][$col]['form']['descs']);
+							$negChk = '';
 						}
-						foreach($values as $k => $v) {
-							$sel = $val == $v ? 'selected="selected"' : '';
-							$r .= '<option value="'.$v.'" '.$sel.'>'.$descs[$k].'</option>';
-						}
-						$r .= '</select>';
-					break;
-
-					case 'textplus':
-					case 'textmultiplus':
-						$r .= '<label>'.getLL('kota_'.$table.'_'.$col).'</label>';
-						$params = $KOTA[$table][$col]['filter']['params'];
-						if(!$params) $params = $KOTA[$table][$col]['form']['params'];
-						$r .= '<select class="kota_filter_inputs" name="kota_filter['.$table.':'.$col.']" '.$params.' >';
-						if($type == 'textmultiplus') {
-							$values = kota_get_textmultiplus_values($table, $col);
+					}
+					else {
+						if(substr($val, 0, 1) == '!') {
+							$val = substr($val, 1);
+							$negChk = 'checked="checked"';
 						} else {
-							$values = db_select_distinct($table, $col, '', $KOTA[$table][$col]['form']['where'], $KOTA[$table][$col]['form']['select_case_sensitive'] ? TRUE : FALSE);
+							$negChk = '';
 						}
+					}
 
-						//Find FCN for list to apply
-						$applyMe = FALSE;
-						if(FALSE !== strpos($KOTA[$table][$col]['list'], '(')) {
-							$fcn = substr($KOTA[$table][$col]['list'], 0, strpos($KOTA[$table][$col]['list'], '('));
-							if(function_exists($fcn)) {
-								$applyMe = $KOTA[$table][$col]['list'];
-							}
-						}
+					if(substr($val, 0, 1) == '!') {
+						$val = substr($val, 1);
+						$negChk = 'checked="checked"';
+					} else {
+						$negChk = '';
+					}
+					switch($type) {
+						case 'text':
+						case 'textarea':
+							$r .= '<label for="kota_filter['.$table.':'.$col.']">'.getLL('kota_'.$table.'_'.$col).'</label>';
+							$r .= '<input type="text" class="kota_filter_inputs form-control input-sm" id="kota_filter['.$table.':'.$col.']" name="kota_filter['.$table.':'.$col.']" value="'.$val.'" />';
+							break;
 
-						foreach($values as $v) {
-							$sel = $val == $v ? 'selected="selected"' : '';
-							if($applyMe) {
-								eval("\$l=".str_replace('@VALUE@', addslashes($v), $applyMe).';');
-								if(!$l) $l = $v;
-							} else $l = $v;
-							if($l == '0') $l = '';
-							$r .= '<option value="'.$v.'" '.$sel.'>'.$l.'</option>';
-						}
-						$r .= '</select>';
-					break;
+						case 'select':
+						case 'doubleselect':
+							$r .= '<label for="kota_filter['.$table.':'.$col.']">'.getLL('kota_'.$table.'_'.$col).'</label>';
+							$params = $KOTA[$table][$col]['filter']['params'];
+							if(!$params) $params = $KOTA[$table][$col]['form']['params'];
+							$r .= '<select class="kota_filter_inputs input-sm form-control" id="kota_filter['.$table.':'.$col.']" name="kota_filter['.$table.':'.$col.']" '.$params.' >';
 
-					case 'checkbox':
-					case 'switch':
-						$r .= '<label>'.getLL('kota_'.$table.'_'.$col).'</label>';
-						$r .= '<select class="kota_filter_inputs" name="kota_filter['.$table.':'.$col.']" '.$KOTA[$table][$col]['form']['params'].' >';
-						$r .= '<option value="1" '.($val == 1 ? 'selected="selected"' : '').'>'.getLL('yes').'</option>';
-						$r .= '<option value="0" '.($val == 0 ? 'selected="selected"' : '').'>'.getLL('no').'</option>';
-						$r .= '</select>';
-					break;
-
-					case 'jsdate':
-						//TODO
-						/*
-						$r .= '<label>'.getLL('kota_'.$table.'_'.$col).'</label>';
-						$r .= getLL('filter_lower (YYYY-MM-DD)').'<br /><input type="text" name="kota_filter[" size=\"12\" maxlength=\"10\" />', 'upper (YYYY-MM-DD)', '<input type=\"text\" name=\"var2\" size=\"12\" maxlength=\"10\" />
-						*/
-					break;
-
-					case 'peoplesearch':
-						$values = db_select_distinct($table, $col, '', $KOTA[$table][$col]['form']['where'], FALSE);
-						$ids = array();
-						foreach($values as $value) {
-							if(FALSE !== strpos($value, ',')) {
-								foreach(explode(',', $value) as $v) {
-									if(!$v || !intval($v)) continue;
-									$ids[] = intval($v);
-								}
+							//Use data array if set
+							if(is_array($KOTA[$table][$col]['filter']['data'])) {
+								$values = array_keys($KOTA[$table][$col]['filter']['data']);
+								$descs = array_values(array_values($KOTA[$table][$col]['filter']['data']));
 							} else {
-								if(intval($value)) $ids[] = intval($value);
+								$values = $KOTA[$table][$col]['form']['values'];
+								$descs = array_values($KOTA[$table][$col]['form']['descs']);
 							}
-						}
-						if(sizeof($ids) > 0) {
-							$people = db_select_data('ko_leute', "WHERE `id` IN (".implode(',', $ids).")", '*', 'ORDER BY `firm` ASC, `nachname` ASC, `vorname` ASC');
-
-							$r .= '<label>'.getLL('kota_'.$table.'_'.$col).'</label>';
-							$r .= '<select class="kota_filter_inputs" name="kota_filter['.$table.':'.$col.']" size="0">';
-							$r .= '<option value=""></option>';
-							foreach($people as $p) {
-								if($p['firm']) {
-									$p_name = $p['firm'];
-									if($p['nachname'] || $p['vorname']) $p_name .= ' ('.trim($p['vorname'].' '.$p['nachname']).')';
-								} else {
-									$p_name = trim($p['vorname'].' '.$p['nachname']);
-								}
-								$p_address = trim($p['adresse'].' '.$p['plz'].' '.$p['ort']);
-
-								$sel = $p['id'] == $val ? 'selected="selected"' : '';
-								$r .= '<option value="'.$p['id'].'" '.$sel.' title="'.$p_address.'">'.$p_name.'</option>';
+							foreach($values as $k => $v) {
+								$sel = $val == $v ? 'selected="selected"' : '';
+								$r .= '<option value="'.$v.'" '.$sel.'>'.$descs[$k].'</option>';
 							}
 							$r .= '</select>';
-						}
-					break;
+							break;
 
-					//TODO: other types
+						case 'textplus':
+						case 'textmultiplus':
+							$r .= '<label for="kota_filter['.$table.':'.$col.']">'.getLL('kota_'.$table.'_'.$col).'</label>';
+							$params = $KOTA[$table][$col]['filter']['params'];
+							if(!$params) $params = $KOTA[$table][$col]['form']['params'];
+							$r .= '<select class="kota_filter_inputs input-sm form-control" size="0" id="kota_filter['.$table.':'.$col.']" name="kota_filter['.$table.':'.$col.']" '.$params.' >';
+							if($type == 'textmultiplus') {
+								$values = kota_get_textmultiplus_values($table, $col);
+							} else {
+								$values = db_select_distinct($table, $col, '', $KOTA[$table][$col]['form']['where'], $KOTA[$table][$col]['form']['select_case_sensitive'] ? TRUE : FALSE);
+							}
+
+							//Find FCN for list to apply
+							$applyMe = FALSE;
+							if(FALSE !== strpos($KOTA[$table][$col]['list'], '(')) {
+								$fcn = substr($KOTA[$table][$col]['list'], 0, strpos($KOTA[$table][$col]['list'], '('));
+								if(function_exists($fcn)) {
+									$applyMe = $KOTA[$table][$col]['list'];
+								}
+							}
+
+							foreach($values as $v) {
+								$sel = $val == $v ? 'selected="selected"' : '';
+								if($applyMe) {
+									eval("\$l=".str_replace('@VALUE@', addslashes($v), $applyMe).';');
+									if(!$l) $l = $v;
+								} else $l = $v;
+								if($l == '0') $l = '';
+								$r .= '<option value="'.$v.'" '.$sel.'>'.$l.'</option>';
+							}
+							$r .= '</select>';
+							break;
+
+						case 'checkbox':
+						case 'switch':
+							$r .= '<label for="kota_filter['.$table.':'.$col.']">'.getLL('kota_'.$table.'_'.$col).'</label><br>';
+							$r .= '<input type="checkbox" class="kota_filter_inputs" id="kota_filter['.$table.':'.$col.']" name="kota_filter['.$table.':'.$col.']" '.$KOTA[$table][$col]['form']['params'].' data-on-text="' . getLL('yes') . '" data-off-text="' . getLL('no') . '" value="1" ' . ($val ? 'checked' : '') . '>';
+							$r .= "<script>$('input[name=\"kota_filter[".$table.':'.$col."]\"]').bootstrapSwitch();</script>";
+							break;
+
+						case 'jsdate':
+							$r .= '<label>'.getLL('kota_'.$table.'_'.$col).'</label><br>';
+							$r .= getLL('date_from');
+							$r .= '<input type="date" class="input-sm form-control kota_filter_inputs" name="kota_filter['.$table.':'.$col.'][from]" value="'.$val_from.'" placeholder="YYYY-MM-DD">';
+							$r .= getLL('date_to');
+							$r .= '<input type="date" class="input-sm form-control kota_filter_inputs" name="kota_filter['.$table.':'.$col.'][to]" value="'.$val_to.'" placeholder="YYYY-MM-DD">';
+							break;
+
+						case 'peoplesearch':
+							if(!$access['leute']) ko_get_access('leute');
+							$values = db_select_distinct($table, $col, '', $KOTA[$table][$col]['form']['where'], FALSE);
+							$ids = array();
+							foreach($values as $value) {
+								if(FALSE !== strpos($value, ',')) {
+									foreach(explode(',', $value) as $v) {
+										if(!$v || !intval($v)) continue;
+										//Access check
+										if($access['leute']['ALL'] < 1 && $access['leute'][intval($v)] < 1) continue;
+										$ids[] = intval($v);
+									}
+								} else {
+									//Access check
+									if($access['leute']['ALL'] < 1 && $access['leute'][intval($value)] < 1) continue;
+									if(intval($value)) $ids[] = intval($value);
+								}
+							}
+							if(sizeof($ids) > 0) {
+								$people = db_select_data('ko_leute', "WHERE `id` IN (".implode(',', $ids).")", '*', 'ORDER BY `firm` ASC, `nachname` ASC, `vorname` ASC');
+
+								$r .= '<label for="kota_filter['.$table.':'.$col.']">'.getLL('kota_'.$table.'_'.$col).'</label>';
+								$r .= '<select class="kota_filter_inputs input-sm form-control" id="kota_filter['.$table.':'.$col.']" name="kota_filter['.$table.':'.$col.']" size="0">';
+								$r .= '<option value=""></option>';
+								foreach($people as $p) {
+									if($p['firm']) {
+										$p_name = $p['firm'];
+										if($p['nachname'] || $p['vorname']) $p_name .= ' ('.trim($p['vorname'].' '.$p['nachname']).')';
+									} else {
+										$p_name = trim($p['vorname'].' '.$p['nachname']);
+									}
+									$p_address = trim($p['adresse'].' '.$p['plz'].' '.$p['ort']).' (ID '.$p['id'].')';
+
+									$sel = $p['id'] == $val ? 'selected="selected"' : '';
+									$r .= '<option value="'.$p['id'].'" '.$sel.' title="'.$p_address.'">'.$p_name.'</option>';
+								}
+								$r .= '</select>';
+							}
+							break;
+
+						//TODO: other types
+					}
+				}
+				if($r != '') {
+					//Add negative checkbox
+					$r .= '<div class="checkbox">';
+					$r .= '<label for="kota_filterbox_neg" class="kota_filterbox_neg">';
+					$r .= '<input type="checkbox" id="kota_filterbox_neg" name="kota_filterbox_neg" value="1" '.$negChk.' >';
+					$r .= getLL('filter_negativ') . '</label></div>';
+					$r .= '<div style="margin-top: 8px;">';
+					if($show_clear) {
+						$r .= '<button type="submit" class="btn btn-sm btn-danger" id="kota_filterbox_clear" title="' . getLL('kota_filter_clear') . '" value="'.getLL('kota_filter_clear').'" rel="'.$table.':'.$cols.'"><span class="glyphicon glyphicon-remove"></span></button>';
+					}
+					$r .= '<button type="submit" class="btn btn-sm btn-primary pull-right" id="kota_filterbox_submit" title="' . getLL('kota_filter_submit') . '" value="'.getLL('kota_filter_submit').'"><span class="glyphicon glyphicon-ok"></span></button>';
+					$r .= '<i class="clearfix"></i>';
+					$r .= '</div>';
 				}
 			}
 
+			$r = $r1 . ($r1 != '' && $r != '' ? '<hr style="margin-top:8px;margin-bottom:8px;">' : '') . $r;
+
 			if($r != '') {
-				$r = '<h3>'.getLL('kota_filter_title').'</h3>'.$r;
-				//Add negative checkbox
-				$r .= '<input type="checkbox" id="kota_filterbox_neg" name="kota_filterbox_neg" value="1" '.$negChk.' />';
-				$r .= '<label for="kota_filterbox_neg" class="kota_filterbox_neg">'.getLL('filter_negativ').'</label>';
-				$r .= '<div style="margin-top: 8px;">';
-				$r .= '<input type="submit" id="kota_filterbox_submit" value="'.getLL('kota_filter_submit').'" style="margin-right: 8px;" />';
-				if($show_clear) {
-					$r .= '<input type="submit" id="kota_filterbox_clear" value="'.getLL('kota_filter_clear').'" rel="'.$table.':'.$cols.'" />';
-				}
-				$r .= '</div>';
+				$r = getLL('kota_filter_title') . '@@@' . $r;
 			}
 
 			print $r;
@@ -836,14 +885,36 @@ if(isset($_GET) && isset($_GET["action"])) {
 
 			//Store filter in session
 			foreach($_GET['kota_filter'] as $k => $v) {
-				//Replace | with , again
-				$v = str_replace('|', ',', $v);
+				$type = $KOTA[$table][$col]['filter']['type'];
+				if (!$type) $type = $KOTA[$table][$col]['form']['type'];
 
 				list($table, $col) = explode(':', $k);
+
 				if(!isset($KOTA[$table]) || !isset($KOTA[$table][$col])) continue;
-				//Add negation if checkbox was set
-				if($_GET['neg'] == 1) $v = '!'.$v;
-				$_SESSION['kota_filter'][$table][$col] = $v;
+
+				if ($type == 'jsdate') {
+					$v_from = $v['from'];
+					$v_to = $v['to'];
+
+					if($_GET['neg'] == 1) {
+						$_SESSION['kota_filter'][$table][$col]['neg'] = TRUE;
+					}
+					else {
+						$_SESSION['kota_filter'][$table][$col]['neg'] = FALSE;
+					}
+					// depending on datepicker, do preprocessing
+					$_SESSION['kota_filter'][$table][$col]['from'] = $v_from;
+					$_SESSION['kota_filter'][$table][$col]['to'] = $v_to;
+				}
+				else {
+					//Replace | with , again
+					$v = str_replace('|', ',', $v);
+
+					//Add negation if checkbox was set
+					if($_GET['neg'] == 1) $v = '!'.$v;
+
+					$_SESSION['kota_filter'][$table][$col] = $v;
+				}
 			}
 
 			//Store userpref
@@ -856,6 +927,7 @@ if(isset($_GET) && isset($_GET["action"])) {
 			$file = $file != '' ? $file : $module;
 			include_once($ko_path.$module.'/inc/'.$file.'.inc');
 			eval($KOTA[$table]['_inlineform']['redraw']['fcn']);
+
 		break;
 
 
@@ -888,7 +960,9 @@ if(isset($_GET) && isset($_GET["action"])) {
 			ko_include_kota(array($table));
 			$module = $KOTA[$table]['_access']['module'];
 			ko_get_access($module);
-			require_once($ko_path.$module.'/inc/'.$module.'.inc');
+			if (isset($KOTA[$table]['_supermodule'])) $supermodule = $KOTA[$table]['_supermodule'];
+			else $supermodule = $module;
+			require_once($ko_path.$supermodule.'/inc/'.$module.'.inc');
 
 			//ID and state of the clicked field
 			$id = format_userinput($_GET['id'], 'js');
@@ -909,7 +983,7 @@ if(isset($_GET) && isset($_GET["action"])) {
 
 			print 'main_content@@@';
 			eval($KOTA[$table]['_inlineform']['redraw']['fcn']);
-			print '@@@POST@@@$("#ko_list_colitemlist_flyout").show();';
+			print '<script>$(".popover.in").remove();$("#ko_list_colitemlist_click").popover("show");</script>';
 		break;
 
 
@@ -918,16 +992,41 @@ if(isset($_GET) && isset($_GET["action"])) {
 			$table = format_userinput($_GET['table'], 'js');
 			ko_include_kota(array($table));
 			$module = $KOTA[$table]['_access']['module'];
-			require_once($ko_path.$module.'/inc/'.$module.'.inc');
+			if (isset($KOTA[$table]['_supermodule'])) $supermodule = $KOTA[$table]['_supermodule'];
+			else $supermodule = $module;
+			require_once($ko_path.$supermodule.'/inc/'.$module.'.inc');
 
 			//save new value
 			if($_GET['name'] == '') continue;
 			$new_value = implode(',', $_SESSION['kota_show_cols_'.$table]);
 			$user_id = $access[$module]['MAX'] > 3 && $_GET['global'] == 'true' ? '-1' : $_SESSION['ses_userid'];
-			ko_save_userpref($user_id, format_userinput($_GET['name'], 'js', FALSE, 0, array('allquotes')), $new_value, $table.'_colitemset');
+			$name = format_userinput($_GET['name'], 'js', FALSE, 0, array('allquotes'));
+			ko_save_userpref($user_id, $name, $new_value, $table.'_colitemset');
+
+			ko_get_login($_SESSION['ses_userid'], $loggedIn);
+			$nameForOthers = "{$name} ({$loggedIn['login']})";
+
+			$logins = trim($_GET['logins']);
+			if ($logins) {
+				$logins = explode(',', $logins);
+				foreach ($logins as $lid) {
+					$lid = format_userinput($lid, 'uint');
+					if (!$lid) continue;
+					if ($lid == ko_get_root_id() || $lid == $_SESSION['ses_userid']) continue;
+
+					$n = $nameForOthers;
+					$c = 0;
+					while (ko_get_userpref($lid, $n, $table.'_colitemset')) {
+						$c++;
+						$n = "{$nameForOthers} - {$c}";
+					}
+					ko_save_userpref($lid, $n, $new_value, $table.'_colitemset');
+				}
+			}
 
 			print 'main_content@@@';
 			eval($KOTA[$table]['_inlineform']['redraw']['fcn']);
+			print '<script>$(".popover.in").remove();$("#ko_list_colitemlist_click").popover("show");</script>';
 		break;
 
 
@@ -935,7 +1034,9 @@ if(isset($_GET) && isset($_GET["action"])) {
 			$table = format_userinput($_GET['table'], 'js');
 			ko_include_kota(array($table));
 			$module = $KOTA[$table]['_access']['module'];
-			require_once($ko_path.$module.'/inc/'.$module.'.inc');
+			if (isset($KOTA[$table]['_supermodule'])) $supermodule = $KOTA[$table]['_supermodule'];
+			else $supermodule = $module;
+			require_once($ko_path.$supermodule.'/inc/'.$module.'.inc');
 
 			//save new value
 			$name = format_userinput($_GET['name'], 'js', FALSE, 0, array(), '@');
@@ -958,6 +1059,7 @@ if(isset($_GET) && isset($_GET["action"])) {
 
 			print 'main_content@@@';
 			eval($KOTA[$table]['_inlineform']['redraw']['fcn']);
+			print '<script>$(".popover.in").remove();$("#ko_list_colitemlist_click").popover("show");</script>';
 		break;
 
 
@@ -965,7 +1067,9 @@ if(isset($_GET) && isset($_GET["action"])) {
 			$table = format_userinput($_GET['table'], 'js');
 			ko_include_kota(array($table));
 			$module = $KOTA[$table]['_access']['module'];
-			require_once($ko_path.$module.'/inc/'.$module.'.inc');
+			if (isset($KOTA[$table]['_supermodule'])) $supermodule = $KOTA[$table]['_supermodule'];
+			else $supermodule = $module;
+			require_once($ko_path.$supermodule.'/inc/'.$module.'.inc');
 
 			//save new value
 			$name = format_userinput($_GET['name'], 'js', FALSE, 0, array(), '@');
@@ -977,6 +1081,7 @@ if(isset($_GET) && isset($_GET["action"])) {
 
 			print 'main_content@@@';
 			eval($KOTA[$table]['_inlineform']['redraw']['fcn']);
+			print '@@@POST@@@$(".popover-overlay.in").remove();$("#ko_list_colitemlist_click").popover("show");';
 		break;
 
 
@@ -1084,7 +1189,7 @@ if(isset($_GET) && isset($_GET["action"])) {
 			$new = array('pid' => $pid, 'crdate' => date('Y-m-d H:i:s'), 'cruser' => $_SESSION['ses_userid']);
 			foreach($_GET as $k => $v) {
 				if(in_array($k, array('action', 'field', 'pid', 'after', 'sesid'))) continue;
-				$new[$k] = utf8_decode($v);
+				$new[$k] = $v;
 			}
 			kota_process_data($table, $new, 'post', $log);
 
@@ -1146,7 +1251,7 @@ if(isset($_GET) && isset($_GET["action"])) {
 			$data = array();
 			foreach($_GET as $k => $v) {
 				if(in_array($k, array('action', 'field', 'pid', 'after', 'sesid'))) continue;
-				$data[$k] = utf8_decode($v);
+				$data[$k] = $v;
 			}
 			kota_process_data($table, $data, 'post', $log, $id);
 			db_update_data($table, "WHERE `id` = '$id'", $data);

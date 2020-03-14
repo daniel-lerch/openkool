@@ -1,111 +1,173 @@
-<div style="text-align: center;">
-{foreach from=$tpl_years item=year}
-<a href="index.php?action=set_stats_year&amp;year={$year}">{$year}</a>&nbsp;&nbsp;
-{/foreach}
-</div>
+<h3>
+	{$table_year_title}
+	<div class="btn-group btn-group-sm pull-right">
+		{foreach from=$tpl_years item=year}
+			<a class="btn btn-default" href="index.php?action=set_stats_year&amp;year={$year}"{if $year == $cur_year} disabled{/if}>
+				{$year}
+			</a>
+		{/foreach}
+	</div>
+</h3>
 
+<style>
+	#donations-stats-accounts-chart .ct-chart-bar .ct-label.ct-horizontal.ct-end {ldelim}
+		display: block;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+		transform: rotate(-40deg);
+		transform-origin: 100% 0;
+		text-align: right;
+		max-height: 1.5em;
+		min-width: 100px;
+		max-width: 100px;
+	{rdelim}
+</style>
 
-<h1>{$table_year_title}</h1>
-
-<table class="donations-stats" cellpadding="0" cellspacing="0">
-<tr>
-<td class="donations-stats-header dark bottom right">{$cur_year}</td>
-{foreach from=$tpl_header item=header}
-	<td colspan="2" class="donations-stats-header dark bottom">{$header}</td>
-{/foreach}
-<td colspan="2" class="donations-stats-header dark bottom left">{$label_total}</td>
-</tr>
-
-{foreach from=$tpl_data.accounts item=data}
-	<tr><td class="donations-stats-account dark right" id="donation_account_{$data.id}">{$data.name}</td>
-	{section name=month start=1 loop=$data max=12 step=1}
-		<td class="donations-stats-content-amount">
-			{if $data[month].amount > 0}
-				{$data[month].amount|number_format:2:".":"'"}
-			{else}
-				&nbsp;
-			{/if}
-		</td>
-		<td class="donations-stats-content-num">
-			&nbsp;
-			{if $show_num && $data[month].donations > 0}
-				({$data[month].donations})
-			{/if}
-		</td>
-	{/section}
-	<td class="donations-stats-content-amount dark">
-		{if $data.total.amount > 0}
-			{$data.total.amount|number_format:2:".":"'"}
-		{else}
-			&nbsp;
-		{/if}
-	</td>
-	<td class="donations-stats-content-num dark left">
-		&nbsp;
-		{if $show_num && $data.total.donations > 0}
-			({$data.total.donations})
-		{else}
-			&nbsp;
-		{/if}
-	</td>
+<table class="table table-bordered" style="width:100%;">
+	<tr>
+		<th class="bottom right bg-primary">{$cur_year}</th>
+		{foreach from=$tpl_header item=header}
+			<th class="bottom bg-primary text-right">{$header}</th>
+		{/foreach}
+		<th class="bottom left bg-primary text-right">{$label_total}</th>
 	</tr>
 
-	{foreach from=$data.sources item=source}
-		<tr class="donation_account_source source_account_{$data.id}"><td class="donations-stats-source right">{$source.name}</td>
-		{section name=month start=1 loop=$data max=12 step=1}
-			<td class="donations-stats-source-amount">
-				{if $source[month].amount > 0}
-					{$source[month].amount|number_format:2:".":"'"}
+	{foreach from=$tpl_data.accounts item=data}
+		<tr>
+			<td class="donations-stats-account right bg-primary" id="donation_account_{$data.id}">
+				{$data.name} <i id="donation_account_{$data.id}_toggle_sign" class="fa fa-plus"></i>
+			</td>
+			{section name=month start=1 loop=$data max=12 step=1}
+				<td class="text-right">
+					{if $data[month].amount > 0}
+						{$data[month].amount|number_format:2:".":"'"}
+					{else}
+						&nbsp;
+					{/if}
+					{if $show_num && $data[month].donations > 0}
+						<span class="donations-stats-num">({$data[month].donations})</span>
+					{/if}
+				</td>
+			{/section}
+			<td class="bg-primary text-right">
+				{if $data.total.amount > 0}
+					{$data.total.amount|number_format:2:".":"'"}
+				{else}
+					&nbsp;
+				{/if}
+				{if $show_num && $data.total.donations > 0}
+					<span class="donations-stats-num">({$data.total.donations})</span>
 				{else}
 					&nbsp;
 				{/if}
 			</td>
-			<td class="donations-stats-source-num">
-				&nbsp;
-				{if $show_num && $source[month].num > 0}
-					({$source[month].num})
+		</tr>
+
+		{foreach from=$data.sources item=source}
+			<tr class="donation_account_source source_account_{$data.id}">
+				<td class="right bg-warning">
+					{$source.name}
+				</td>
+				{section name=month start=1 loop=$data max=12 step=1}
+					<td class="text-right">
+						{if $source[month].amount > 0}
+							{$source[month].amount|number_format:2:".":"'"}
+						{else}
+							&nbsp;
+						{/if}
+						{if $show_num && $source[month].num > 0}
+							<span class="donations-stats-num">({$source[month].num})</span>
+						{/if}
+					</td>
+				{/section}
+				<td class="text-right bg-warning">
+					{if $source.total.amount > 0}
+						{$source.total.amount|number_format:2:".":"'"}
+					{else}
+						&nbsp;
+					{/if}
+					{if $show_num && $source.total.num > 0}
+						<span class="donations-stats-num">({$source.total.num})</span>
+					{/if}
+				</td>
+			</tr>
+		{/foreach}
+
+	{/foreach}
+
+	<tr>
+		<td class="donations-stats-account top right bg-primary" id="donation_account_total">
+			{$label_total} <i id="donation_account_total_toggle_sign" class="fa fa-plus"></i>
+		</td>
+		{section name=month start=1 loop=$data max=12 step=1}
+			{assign var="total" value=$tpl_data.total[month]}
+			<td class="top text-right">
+				{if $total.amount > 0}
+					{$total.amount|number_format:2:".":"'"}
+				{else}
+					&nbsp;
+				{/if}
+				{if $show_num && $total.donations > 0}
+					<span class="donations-stats-num">({$total.donations})</span>
 				{/if}
 			</td>
 		{/section}
-		<td class="donations-stats-source-amount">
-			{if $source.total.amount > 0}
-				{$source.total.amount|number_format:2:".":"'"}
-			{else}
-				&nbsp;
+		<td class="top bg-primary text-right">
+			{$tpl_data.grand_total.amount|number_format:2:".":"'"}
+			{if $show_num}
+				<span class="donations-stats-num">({$tpl_data.grand_total.donations})</span>
 			{/if}
 		</td>
-		<td class="donations-stats-source-num left">
-			&nbsp;
-			{if $show_num && $source.total.num > 0}
-				({$source.total.num})
-			{/if}
-		</td>
+	</tr>
+
+	{foreach from=$tpl_data.total.sources item=source}
+		<tr class="donation_account_source source_account_total">
+			<td class="right bg-warning">
+				{$source.name}
+			</td>
+			{section name=month start=1 loop=$data max=12 step=1}
+				<td class="text-right">
+					{if $source[month].amount > 0}
+						{$source[month].amount|number_format:2:".":"'"}
+					{else}
+						&nbsp;
+					{/if}
+					{if $show_num && $source[month].num > 0}
+						<span class="donations-stats-num">({$source[month].num})</span>
+					{/if}
+				</td>
+			{/section}
+			<td class="text-right bg-warning">
+				{if $source.total.amount > 0}
+					{$source.total.amount|number_format:2:".":"'"}
+				{else}
+					&nbsp;
+				{/if}
+				{if $show_num && $source.total.num > 0}
+					<span class="donations-stats-num">({$source.total.num})</span>
+				{/if}
+			</td>
 		</tr>
 	{/foreach}
-
-{/foreach}
-
-<tr>
-<td class="donations-stats-account dark top right">{$label_total}</td>
-{foreach from=$tpl_data.total item=total}
-	<td class="donations-stats-content-amount dark top">
-		{if $total.amount > 0}
-			{$total.amount|number_format:2:".":"'"}
-		{else}
-			&nbsp;
-		{/if}
-	</td>
-	<td class="donations-stats-content-num dark top">
-		{if $show_num && $total.donations > 0}
-			&nbsp;({$total.donations})
-		{/if}
-	</td>
-{/foreach}
-<td class="donations-stats-content-amount dark top">{$tpl_data.grand_total.amount|number_format:2:".":"'"}</td>
-<td class="donations-stats-content-num dark top left">{if $show_num}&nbsp;({$tpl_data.grand_total.donations}){/if}</td>
-</tr>
 </table>
 
-<br />
-<h1>{$img_year_title}</h1>
-{$img_year}
+<div class="row">
+	<div class="col-sm-6">
+		<h3>{$img_year_title}</h3>
+		<div class="fullscreen-elem" id="donations-stats-year-chart" style="height:500px;"></div>
+		<script>
+			var year_data = {$year_data_js};
+		</script>
+	</div>
+	<div class="col-sm-6">
+		<h3>{$img_accounts_title}</h3>
+		<div class="fullscreen-elem" id="donations-stats-accounts-chart" style="height:500px;"></div>
+		<script>
+			var accounts_data = {$accounts_data_js};
+		</script>
+	</div>
+</div>
+<script>
+	draw_donations_charts();
+</script>

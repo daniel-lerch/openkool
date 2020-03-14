@@ -24,6 +24,8 @@
 *  This copyright notice MUST APPEAR in all copies of the script!
 ***************************************************************/
 
+header('Content-Type: text/html; charset=ISO-8859-1');
+
 ob_start();  //Ausgabe-Pufferung einschalten
 
 $ko_path = "../";
@@ -349,7 +351,6 @@ switch($do_action) {
 			$subject = getLL("fileshare_email_subject").": ".$_POST["txt_betreff"];
 
 			ko_send_mail($use_email, $r, $subject, ko_emailtext($message_txt));
-			//ko_send_email($r, $subject, ko_emailtext($message_txt), $headers);
 		}//foreach(recipients as r)
 
 		$info = 7;
@@ -675,15 +676,6 @@ switch($do_action) {
 			$_SESSION["show"] = "webfolder_details";
 		}
 	break;
-
-
-
-
-	//Submenus
-  case "move_sm_left":
-  case "move_sm_right":
-    ko_submenu_actions("fileshare", $do_action);
-  break;
 
 
 	//Default:

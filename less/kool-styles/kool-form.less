@@ -1,0 +1,63 @@
+// header of formular
+.formular_header {
+    margin-bottom: 4px;
+
+    &.formular_header_datafields {
+        padding:3px 7px;
+        background: @datafields-header-bg;
+        border-radius: @datafields-header-border-radius;
+        border: 1px solid @datafields-header-border-color;
+        color: @datafields-header-color;
+    }
+
+    &.formular-header-primary {
+        > label {
+            padding-left:7px;
+            padding-right:7px;
+            background: @label-primary-bg;
+            border-radius: @border-radius-base;
+            //border: 1px solid darken(@label-primary-bg, 10%);
+            color: @label-color;
+        }
+    }
+
+    > label {
+        margin-bottom: 0px;
+    }
+
+    &.form-danger {
+        background: @brand-danger;
+        color: #fff;
+    }
+}
+
+
+// button column for doubleselect, peoplesearch etc.
+.btn-column {
+    padding-left: 2px;
+    padding-right: 2px;
+}
+
+
+// foreign_table
+div.form_ft_row {
+
+    tr.header_row {
+        display: none;
+    }
+    td.subpart {
+        border: 1px solid #999;
+        background: #f0f0f0;
+        padding: 2px;
+    }
+}
+
+
+input[type="checkbox"] {
+    margin-top: 2px;
+}
+
+
+label.radio-inline {
+    position:relative;
+}

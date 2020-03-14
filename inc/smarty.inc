@@ -1,4 +1,5 @@
 <?php
+
 /***************************************************************
 *  Copyright notice
 *
@@ -25,7 +26,7 @@
 ***************************************************************/
 
 // Smarty Library Dateien laden
-if(FALSE === include("Smarty.class.php")) ko_die("Could not find Smarty. Please install. For more information see http://www.smarty.net");
+if(FALSE === include_once("Smarty.class.php")) ko_die("Could not find Smarty. Please install. For more information see http://www.smarty.net");
 
 //Load smarty template engine
 if(substr($smarty_dir, -1) != "/") $smarty_dir .= "/";
@@ -40,8 +41,10 @@ $smarty->assign("ko_path", $ko_path);
 if($ko_menu_akt != 'install') $smarty->assign('ko_guest', ($_SESSION['ses_userid'] == ko_get_guest_id()));
 
 
-function smarty_modifier_contrast($hexcolor, $dark = '#000000', $light = '#FFFFFF') {
-	return ko_get_contrast_color($hexcolor, $dark, $light);
+if(!function_exists('smarty_modifier_contrast')) {
+	function smarty_modifier_contrast($hexcolor, $dark = '#000000', $light = '#FFFFFF') {
+		return ko_get_contrast_color($hexcolor, $dark, $light);
+	}
 }
 if(method_exists($smarty, 'registerPlugin')) {  //Smarty v3
 	$smarty->registerPlugin('modifier', 'contrast', 'smarty_modifier_contrast');
@@ -50,12 +53,90 @@ if(method_exists($smarty, 'registerPlugin')) {  //Smarty v3
 }
 
 
-function smarty_function_ll($params, &$smarty) {
-	return getLL($params['key']);
+if(!function_exists('smarty_function_ll')) {
+	function smarty_function_ll($params, &$smarty) {
+		return getLL($params['key']);
+	}
 }
 $smarty->register_function('ll', 'smarty_function_ll');
 
+$uid = 0;
+if(!function_exists('smarty_function_uid')) {
+	function smarty_function_uid($params, &$smarty) {
+		global $uid;
 
+		$u = round(microtime(true)*1000) . '-' . $uid;
+		$uid++;
+		$smarty->assign($params['loc'], 'agi-' . $u);
+	}
+}
+$smarty->register_function('uid', 'smarty_function_uid');
+
+if(!function_exists('smarty_function_strtoupper')) {
+	function smarty_function_strtoupper($params, &$smarty) {
+		return strtoupper($params['str']);
+	}
+}
+$smarty->register_function('strtoupper', 'smarty_function_strtoupper');
+
+if(!function_exists('smarty_function_utf8_encode_array')) {
+	function smarty_function_utf8_encode_array($params, &$smarty) {
+		$a = $params['arr'];
+		array_walk_recursive($a, 'utf8_encode_array');
+		if ($params['var']) {
+			$smarty->assign($params['var'], $a);
+		} else {
+			return $a;
+		}
+	}
+}
+$smarty->register_function('utf8_encode_array', 'smarty_function_utf8_encode_array');
+
+if(!function_exists('smarty_function_preset_for_logins')) {
+	function smarty_function_preset_for_logins($params, &$smarty) {
+		ko_get_logins($logins);
+		$values = $descs = $avalues = array();
+		$avalue = '';
+		foreach ($logins as $l) {
+			if ($l['id'] == ko_get_root_id() || $l['id'] == $_SESSION['ses_userid'] || $l['disabled']) continue;
+			$values[] = $l['id'];
+			$descs[] = $l['login'];
+		}
+		$i = array(
+			'name' => $params['name'],
+			'type' => 'checkboxes',
+			'size' => 6,
+			'values' => $values,
+			'descs' => $descs,
+			'avalues' => $avalues,
+			'avalue' => $avalue,
+		);
+		if ($params['var']) {
+			$smarty->assign($params['var'], $i);
+		} else {
+			return $i;
+		}
+	}
+}
+$smarty->register_function('presetForLogins', 'smarty_function_preset_for_logins');
+
+if(!function_exists('smarty_function_ko_path')) {
+	function smarty_function_ko_path($params, &$smarty) {
+		global $ko_path;
+
+		$p = $ko_path;
+		if ($params['var']) {
+			$smarty->assign($params['var'], $p);
+		} else {
+			return $p;
+		}
+	}
+}
+$smarty->register_function('koPath', 'smarty_function_ko_path');
+
+
+// Assign bootstrap variables
+$smarty->assign("bootstrap_cols_per_row", $BOOTSTRAP_COLS_PER_ROW);
 //Assign general LL-Labels
 //Itemlists
 $smarty->assign("itemlist_open_preset", getLL("itemlist_open_preset"));

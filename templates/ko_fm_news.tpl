@@ -1,39 +1,29 @@
 {include file="ko_fm_header.tpl"}
 
-<table width="100%" cellspacing="0">
+<ul class="list-group" style="margin-bottom:0px;">
+
 {foreach from=$tpl_news item=news key=k}
 
-	<tr><td class="news_header">
-	{if $tpl_fm_pos == "m"}
-		{$news.title}
-	{else}
-		<a href="index.php?action=show_single_news&amp;id={$news.id}">{$news.title}</a>
-	{/if}
-	</td></tr>
+	<li class="list-group-item">
 
-	<tr><td class="news_content">
-	<i>{$news.subtitle}</i>
+	<h4 class="list-group-item-heading">
+		{$news.title} <small>{$news.subtitle}</small>
+	</h4>
 
-	{if $tpl_fm_pos == "m"}
-		<br /><br />
+	<p class="list-group-item-text">
 		{$news.text}
-		<br /><br />
-		{if $news.link}
-			{$label_link}: <a href="http://{$news.link}">{$news.link}</a>
-			<br /><br />
-		{/if}
-		<small>
-      {if $news.author}{$news.author}<br />{/if}
-      {if $news.cdate}{$news.cdate}{/if}
-    </small>
-	{else}
-		{$news.text|truncate:30:"..."}
+	</p>
+	{if $news.link}
+		{$label_link}: <a href="http://{$news.link}">{$news.link}</a>
 	{/if}
+	{if $news.author || $news.cdate}<br><br>{/if}
+	{if $news.author}<i class="fa fa-user"></i> {$news.author}{/if}
+	{if $news.cdate}<span class="pull-right"><i class="fa fa-clock-o"></i> {$news.cdate}</span>{/if}
 
-	</td></tr>
+	</li>
 
 {/foreach}
-</table>
+</ul>
 
 
 {include file="ko_fm_footer.tpl"}

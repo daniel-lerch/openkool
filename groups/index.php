@@ -24,6 +24,8 @@
 *  This copyright notice MUST APPEAR in all copies of the script!
 ***************************************************************/
 
+header('Content-Type: text/html; charset=ISO-8859-1');
+
 ob_start();  //Ausgabe-Pufferung starten
 
 $ko_path = "../";
@@ -67,6 +69,9 @@ else $do_action = "";
 //Reset show_start if from another module
 if($_SERVER['HTTP_REFERER'] != '' && FALSE === strpos($_SERVER['HTTP_REFERER'], '/'.$ko_menu_akt.'/')) $_SESSION['show_start'] = 1;
 
+// This variable may contain the id of a group that should be highlighted when displaying the list
+$highlight_group = NULL;
+
 switch($do_action) {
 
 	/**
@@ -85,6 +90,11 @@ switch($do_action) {
 			if($_SESSION['show'] == 'list_groups') $_SESSION['show_start'] = 1;
 			$_SESSION['show'] = 'list_groups';
 			$_SESSION['show_back'] = $_SESSION['show'];
+		}
+
+		// hightlight certain group (used for group search)
+		if ($_GET['highlight']) {
+			$highlight_group = intval($_GET['highlight']);
 		}
 	break;
 
@@ -253,15 +263,14 @@ switch($do_action) {
 
 		$data['linked_group']             = format_userinput($_POST['sel_linked_group'], 'uint');
 		$data['linked_group']             = $data['linked_group'] ? $data['linked_group'] : 'NULL';
-
-		//Access check for pid
-		if($data['linked_group'] == 'NULL' && $access['groups']['ALL'] < 3) continue;
-		if($data['linked_group'] != 'NULL' && $access['groups']['ALL'] < 3 && $access['groups'][$data['linked_group']] < 3) continue;
+		//Access check for linked group
+		if($access['groups']['ALL'] < 2 && $access['groups'][$data['linked_group']] < 2) $data['linked_group'] = '';
 
 		$data["name"]            = format_userinput($_POST["txt_name"], "js");
 		$data["description"]     = format_userinput($_POST["txt_description"], "text");
 		$data["start"]           = sql_datum(format_userinput($_POST["txt_datum"], "date"));
 		$data["stop"]            = sql_datum(format_userinput($_POST["txt_datum2"], "date"));
+		$data['deadline']        = sql_datum(format_userinput($_POST['txt_deadline'], 'date'));
 		$data["roles"]           = format_userinput($_POST["sel_roles"], "intlist");
 		$data['rights_view']     = format_userinput($_POST['sel_rights_view'], 'intlist', FALSE, 0, array(), 'g');
 		$data['rights_new']      = format_userinput($_POST['sel_rights_new'], 'intlist', FALSE, 0, array(), 'g');
@@ -282,6 +291,9 @@ switch($do_action) {
 			$data['mailing_mod_others'] = format_userinput($_POST['sel_mailing_mod_others'], 'uint');
 			$data['mailing_reply_to'] = format_userinput($_POST['sel_mailing_reply_to'], 'alpha');
 			$data['mailing_modify_rcpts'] = format_userinput($_POST['sel_mailing_modify_rcpts'], 'uint');
+			$data['mailing_rectype'] = format_userinput($_POST['sel_mailing_rectype'], 'alpha');
+
+			$data['mailing_prefix']  = format_userinput($_POST["txt_mailing_prefix"], "text");
 		}
 		$data['maxcount'] = format_userinput($_POST['txt_maxcount'], 'uint');
 		$data['count_role'] = format_userinput($_POST['sel_count_role'], 'uint');
@@ -329,7 +341,7 @@ switch($do_action) {
 	case 'submit_new_role':
 		if($access['groups']['MAX'] < 3) continue;
 
-		kota_submit_multiedit('', 'new_role', '', $changes);
+		kota_submit_multiedit('', 'new_role', $changes);
 		if(!$notifier->hasErrors()) {
 			ko_update_grouprole_filter();
 			$_SESSION['show'] = 'list_roles';
@@ -346,7 +358,7 @@ switch($do_action) {
 		$new_hash = md5(md5($mysql_pass.$table.implode(':', explode(',', $columns)).'0'));
 		$_POST['id'] = $table.'@'.$columns.'@0@'.$new_hash;
 
-		kota_submit_multiedit('', 'new_role', '', $changes);
+		kota_submit_multiedit('', 'new_role', $changes);
 		if(!$notifier->hasErrors()) {
 			ko_update_grouprole_filter();
 			$_SESSION['show'] = 'list_roles';
@@ -381,6 +393,7 @@ switch($do_action) {
 		$data["description"]     = format_userinput($_POST["txt_description"], "text");
 		$data["start"]           = sql_datum(format_userinput($_POST["txt_datum"], "date"));
 		$data["stop"]            = sql_datum(format_userinput($_POST["txt_datum2"], "date"));
+		$data['deadline']        = sql_datum(format_userinput($_POST['txt_deadline'], 'date'));
 		$data["linked_group"]    = format_userinput($_POST["sel_linked_group"], "uint");
 		$data["linked_group"]    = $data["linked_group"] ? $data["linked_group"] : "NULL";
 		$data["pid"]             = format_userinput($_POST["sel_parentgroup"], "uint");
@@ -396,6 +409,9 @@ switch($do_action) {
 			$data['mailing_mod_others'] = format_userinput($_POST['sel_mailing_mod_others'], 'uint');
 			$data['mailing_reply_to'] = format_userinput($_POST['sel_mailing_reply_to'], 'alpha');
 			$data['mailing_modify_rcpts'] = format_userinput($_POST['sel_mailing_modify_rcpts'], 'uint');
+			$data['mailing_rectype'] = format_userinput($_POST['sel_mailing_rectype'], 'alpha');
+
+			$data['mailing_prefix']  = format_userinput($_POST["txt_mailing_prefix"], "text");
 		}
 		$data["roles"]           = format_userinput($_POST["sel_roles"], "intlist");
 		$data["type"]            = format_userinput($_POST["chk_type"], "uint");
@@ -454,9 +470,21 @@ switch($do_action) {
 		ko_update_groups_and_roles($id);
 		//Delete entries of datafields not used anymore
 		$new_df = explode(",", $data["datafields"]);
-		foreach(explode(",", $old_group["datafields"]) as $df) {
+		$old_df = explode(",", $old_group["datafields"]);
+		foreach($old_df as $df) {
 			if(in_array($df, $new_df)) continue;
 			else db_delete_data("ko_groups_datafields_data", "WHERE `group_id` = '$id' AND `datafield_id` = '$df'");
+		}
+		// initialize datafield entries for group members in case new datafields were added
+		foreach ($new_df as $df) {
+			if (in_array($df, $old_df)) continue;
+			else {
+				$persons = db_select_data('ko_leute', "where `groups` regexp 'g" . $id . "($|:r.*)'", "id");
+				foreach ($persons as $person) {
+					if (!$person['id']) continue;
+					db_insert_data('ko_groups_datafields_data', array('group_id' => $id, 'person_id' => $person['id'], 'datafield_id' => $df));
+				}
+			}
 		}
 		//Initial export to ezmlm if given
 		if($_POST["chk_ezmlm_export"]) ko_export_group_to_ezmlm($id);
@@ -630,83 +658,16 @@ switch($do_action) {
 
 
 
-
-	/**
-	  * Berechtigungen
-		*/
-	case "list_rights":
-		if($access['groups']['MAX'] < 3) continue;
-		$_SESSION["show_start"] = 1;
-		$_SESSION["show"] = "list_rights";
-		$_SESSION["show_back"] = $_SESSION["show"];
-	break;
-
-
-	case "edit_login_rights":
-		$edit_id = format_userinput($_POST["id"], "uint");
-		if(!$edit_id) continue;
-		$_SESSION["show"] = "edit_login_rights";
-	break;
-
-
-	case "submit_edit_login_rights":
-		if($access['groups']['ALL'] < 3) continue;
-		$login_id = format_userinput($_POST["id"], "uint");
-		if(!$login_id || ($login_id == ko_get_root_id() && $_SESSION["ses_userid"] != ko_get_root_id()) ) continue;
-
-		//Loop über die drei Rechte-Stufen
-		$mode = array('', 'view', 'new', 'edit', 'del');
-		for($i=3; $i>0; $i--) {
-			if(isset($_POST["sel_rights_".$mode[$i]])) {
-				//Nur Änderungen bearbeiten
-				$old = explode(",", format_userinput($_POST["old_sel_rights_".$mode[$i]], "intlist", FALSE, 0, array(), ":"));
-				$new = explode(",", format_userinput($_POST["sel_rights_".$mode[$i]], "intlist", FALSE, 0, array(), ":"));
-				$deleted = array_diff($old, $new);
-				$added = array_diff($new, $old);
-			
-				//Login aus gelöschten Gruppen entfernen
-				foreach($deleted as $id) {
-					$id = substr($id, -6);  //Nur letzte ID verwenden, davor steht die Motherline
-					//bisherige Rechte auslesen
-					$group = db_select_data("ko_groups", "WHERE `id` = '$id'", "id,rights_".$mode[$i]);
-					$rights_array = explode(",", $group[$id]["rights_".$mode[$i]]);
-					//Zu löschendes Login finden und entfernen
-					foreach($rights_array as $index => $right) if($right == $login_id) unset($rights_array[$index]);
-					foreach($rights_array as $a => $b) if(!$b) unset($rights_array[$a]);  //Leere Einträge löschen
-					//Neuer Eintrag in Gruppe speichern
-					db_update_data("ko_groups", "WHERE `id` = '$id'", array("rights_".$mode[$i] => implode(",", $rights_array)));
-					$all_groups[$id]['rights_'.$mode[$i]] = implode(',', $rights_array);
-				}
-
-				//Login in neu hinzugefügten Gruppen hinzufügen
-				foreach($added as $id) {
-					$id = substr($id, -6);  //Nur letzte ID verwenden, davor steht die Motherline
-					//Bestehende Rechte auslesen
-					$group = db_select_data("ko_groups", "WHERE `id` = '$id'", "id,rights_".$mode[$i]);
-					$rights_array = explode(",", $group[$id]["rights_".$mode[$i]]);
-					//Überprüfen, ob Login schon vorhanden ist (sollte nicht)
-					$add = TRUE;
-					foreach($rights_array as $right) if($right == $login_id) $add = FALSE;
-					if($add) $rights_array[] = $login_id;
-					foreach($rights_array as $a => $b) if(!$b) unset($rights_array[$a]);  //Leere Einträge löschen
-					//Neue Liste der Logins in Gruppe speichern
-					db_update_data("ko_groups", "WHERE `id` = '$id'", array("rights_".$mode[$i] => implode(",", $rights_array)));
-					$all_groups[$id]['rights_'.$mode[$i]] = implode(',', $rights_array);
-				}
-			}//if(isset(_POST[sel_rights_*]))
-		}//for(i=1..3)
-
-		$_SESSION["show"] = 'list_rights';
-	break;
-
-
-
 	case 'submit_groups_settings':
 		ko_save_userpref($_SESSION['ses_userid'], 'show_limit_groups', format_userinput($_POST['txt_limit_groups'], 'uint'));
 		ko_save_userpref($_SESSION['ses_userid'], 'default_view_groups', format_userinput($_POST['sel_default_view'], 'js'));
 		ko_save_userpref($_SESSION['ses_userid'], 'show_passed_groups', format_userinput($_POST['chk_show_passed_groups'], 'uint'));
 		ko_save_userpref($_SESSION['ses_userid'], 'groups_filterlink_add_column', format_userinput($_POST['chk_groups_filterlink_add_column'], 'uint'));
 		ko_save_userpref($_SESSION['ses_userid'], 'groups_show_top', format_userinput($_POST['chk_groups_show_top'], 'uint'));
+
+		if ($access['groups']['ALL'] && ko_module_installed('mailing')) {
+			ko_set_setting('group_mailing_from_email', format_userinput($_POST['txt_group_mailing_from_email'], 'email'));
+		}
 
 		$_SESSION['show'] = $_SESSION['show_back'] ? $_SESSION['show_back'] : 'groups_settings';
 	break;
@@ -821,21 +782,70 @@ switch($do_action) {
 	break;
 
 
+	case 'export_xls_with_people':
+		$presetId = format_userinput($_GET['preset_id'], 'uint');
+		$preset = db_select_data('ko_userprefs', "WHERE `id` = {$presetId}", '*', '', '', TRUE);
+		if (!$preset || $preset['id'] != $presetId || !in_array($preset['user_id'], array(-1, $_SESSION['ses_userid']))) continue;
+
+		$cols = explode(',', $preset['value']);
+
+		if ($_GET['ids']) {
+			$ids = explode(',', format_userinput($_GET['ids'], 'intlist'));
+
+			$ids_ = array();
+			foreach ($ids as $v) {
+				if (!$v) continue;
+				$v = zerofill($v, 6);
+				if ($access['groups']['ALL'] < 1 && $access['groups'][$v] < 1) continue;
+				$ids_[] = $v;
+			}
+			$idf = $ids_;
+		} else {
+			$ids = array($_SESSION["show_gid"]);
+		}
+
+		$filename = ko_groups_export_xls_with_people($ids, $cols);
+		if($filename) {
+			$onload_code = "ko_popup('".$ko_path.'download.php?action=file&amp;file='.substr($filename, 3)."');";
+		} else {
+			$notifier->addError(3, $do_action);
+		}
+		$_SESSION['show'] = 'list_groups';
+	break;
 
 
+	case 'copy_group':
+		if (sizeof($_POST['chk']) != 1) {
+			$notifier->addError(4);
+			continue;
+		}
+		$id = key($_POST['chk']);
+		if ($access['groups']['ALL'] < 3 && $access['groups'][$id] < 3) {
+			$notifier->addError(5);
+			continue;
+		}
 
-	//Submenus
-  case "move_sm_left":
-  case "move_sm_right":
-    ko_submenu_actions("groups", $do_action);
-  break;
+		list($oldToNew, $hierarchy) = ko_copy_group_recursively($id);
+		if (!$notifier->hasErrors()) {
+			ko_groups_get_hierarchy_lines($hierarchy, $lines);
+			$msg = implode("<br>", $lines);
+			$notifier->addInfo(7, '', array($msg));
 
+			$edit_id = current($oldToNew);
+			while (strlen($edit_id) < 6) $edit_id = '0' . $edit_id;
+			$_SESSION['show'] = 'edit_group';
+			$onload_code = "form_set_first_input();".$onload_code;
+
+			// reload all groups as there are new groups
+			ko_get_groups($all_groups);
+		}
+	break;
 
 	//Default:
-  default:
-	if(!hook_action_handler($do_action))
-    include($ko_path."inc/abuse.inc");
-  break;
+	default:
+		if(!hook_action_handler($do_action))
+		include($ko_path."inc/abuse.inc");
+	break;
 
 
 }//switch(do_action)
@@ -877,17 +887,19 @@ ko_set_submenues();
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="<?php print $_SESSION["lang"]; ?>" lang="<?php print $_SESSION["lang"]; ?>">
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1" />
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1" />
 <title><?php print "$HTML_TITLE: ".getLL("module_".$ko_menu_akt); ?></title>
 <?php
 print ko_include_css();
 
-$js_files = array($ko_path.'inc/jquery/jquery.js', $ko_path.'inc/kOOL.js');
+$js_files = array();
 if($_SESSION['show'] == 'edit_login_rights') $js_files[] = $ko_path.'inc/selectmenu.js';
 print ko_include_js($js_files);
 
 include($ko_path.'inc/js-sessiontimeout.inc');
 include('inc/js-groups.inc');
-$js_calendar->load_files();
+
 
 //Bei der Bearbeitung von Login-Rechten Ajax einbinden und alles für die drei selectmenus
 if($_SESSION['show'] == 'edit_login_rights') {
@@ -926,25 +938,14 @@ if($_SESSION['show'] == 'edit_login_rights') {
  * Gibt bei erfolgreichem Login das Menü aus, sonst einfach die Loginfelder
  */
 include($ko_path . "menu.php");
+
+ko_get_outer_submenu_code('groups');
 ?>
-
-
-<table width="100%">
-<tr> 
-
-<!-- Submenu -->
-<td class="main_left" name="main_left" id="main_left">
-<?php
-print ko_get_submenu_code("groups", "left");
-?>
-&nbsp;
-</td>
 
 
 <!-- Hauptbereich -->
-<td class="main">
-
-<form action="index.php" method="post" name="formular">  <!-- Hauptformular -->
+<main class="main">
+<form action="index.php" method="post" name="formular" enctype="multipart/form-data">  <!-- Hauptformular -->
 <input type="hidden" name="action" id="action" value="" />
 <input type="hidden" name="id" id="id" value="" />
 <div name="main_content" id="main_content">
@@ -959,7 +960,7 @@ hook_show_case_pre($_SESSION["show"]);
 switch($_SESSION["show"]) {
 
 	case "list_groups":
-		ko_groups_list();
+		ko_groups_list(TRUE, $highlight_group);
 	break;
 
 	case "new_group":
@@ -1002,10 +1003,6 @@ switch($_SESSION["show"]) {
 		ko_multiedit_formular('ko_grouproles', $do_columns, $do_ids, $order, array('cancel' => 'list_roles'));
 	break;
 
-	case "list_rights":
-		ko_groups_list_rights();
-	break;
-
 	case "edit_login_rights":
 		ko_groups_rights_formular($edit_id);
 	break;
@@ -1025,23 +1022,13 @@ switch($_SESSION["show"]) {
 hook_show_case_add($_SESSION["show"]);
 
 ?>
-&nbsp;
 </div>
 </form>
-</td>
+</main>
 
-<td class="main_right" name="main_right" id="main_right">
-
-<?php
-print ko_get_submenu_code("groups", "right");
-?>
-&nbsp;
-</td>
-</tr>
+</div>
 
 <?php include($ko_path . "footer.php"); ?>
-
-</table>
 
 </body>
 </html>

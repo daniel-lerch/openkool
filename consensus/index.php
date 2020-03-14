@@ -24,6 +24,8 @@
  *  This copyright notice MUST APPEAR in all copies of the script!
  ***************************************************************/
 
+header('Content-Type: text/html; charset=ISO-8859-1');
+
 
 $ko_path = '../';
 $ko_menu_akt = "consensus";
@@ -32,6 +34,7 @@ $SMARTY_RENDER_TEMPLATE = null;
 require($ko_path.'inc/ko.inc');
 require($ko_path.'rota/inc/rota.inc');
 require($ko_path.'inc/smarty.inc');
+ko_include_kota(array('ko_rota_teams', 'ko_event'));
 require_once('consensus.inc');
 
 
@@ -57,13 +60,20 @@ switch ($do_action) {
 	case '':
 		$get = explode('x', $_GET['x']);
 
-
 		$personId = $get[0];
 		$start = substr($get[1], 0, 4) . '-' . substr($get[1], -4, -2) . '-' . substr($get[1], 6, 8);
 		$span = $get[2];
-		$key = $get[3];
+		$team_ids = NULL;
+		if (sizeof($get) == 5) {
+			if ($get[3]) {
+				$team_ids = explode('-', $get[3]);
+			}
+			$key = $get[4];
+		} else {
+			$key = $get[3];
+		}
 
-		$pass = substr(md5($personId . $start . $span . KOOL_ENCRYPTION_KEY), 0, 6) == $key;
+		$pass = substr(md5($personId . $start . $span . ($team_ids == NULL ? '' : implode('-', $team_ids)) . KOOL_ENCRYPTION_KEY), 0, 6) == $key;
 
 
 		if ($pass) {
@@ -75,7 +85,6 @@ switch ($do_action) {
 }
 
 ?>
-
 <!DOCTYPE html
 	PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
 	"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
@@ -86,8 +95,10 @@ switch ($do_action) {
 <?php
 print '<script type="text/javascript" src="' . $ko_path . 'consensus/consensus.js?'.filemtime($ko_path.'consensus/consensus.js').'"></script>';
 print '<script type="text/javascript" src="' . $ko_path . 'inc/jquery/jquery.js?'.filemtime($ko_path.'inc/jquery/jquery.js').'"></script>';
+print '<script type="text/javascript" src="' . $ko_path . 'inc/bootstrap/core/js/bootstrap.min.js?'.filemtime($ko_path.'inc/tooltip.js').'"></script>';
 print '<script type="text/javascript" src="' . $ko_path . 'inc/tooltip.js?'.filemtime($ko_path.'inc/tooltip.js').'"></script>';
 include("js-consensus.inc");
+print '<link rel="stylesheet" type="text/css" href="'.$ko_path.'kool-base.css?'.filemtime($ko_path.'consensus/consensus.css').'" />';
 print '<link rel="stylesheet" type="text/css" href="'.$ko_path.'consensus/consensus.css?'.filemtime($ko_path.'consensus/consensus.css').'" />';
 ?>
 </head>

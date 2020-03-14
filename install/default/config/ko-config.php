@@ -62,21 +62,15 @@ $smarty_dir = $BASE_PATH;
 //Include path for smarty (if installed locally)
 $INCLUDE_PATH_SMARTY = '';
 
-//Set path to pdflatex executable (if installed locally)
-$PDFLATEX_PATH = '';
-
 //Transport settings for email (using SwiftMailer)
 //method can be: smtp, mail or sendmail
 //$MAIL_TRANSPORT = array('method' => 'smtp', 'host' => '', 'port' => '', 'ssl' => FALSE, 'tls' => FALSE, 'auth_user' => '', 'auth_pass' => '');
 
 //SMS-Parameter
-$SMS_PARAMETER = array('provider' => '', 'user' => '', 'pass' => '', 'api_id' => '');
+$SMS_PARAMETER = array('provider' => '', 'user' => '', 'pass' => '');
 
 //Settings for mailing module
 //$MAILING_PARAMETER = array('host' => '', 'port' => 110, 'user' => '', 'pass' => '', 'domain' => '', 'ssl' => false, 'validate-cert' => false, 'folder' => 'INBOX', 'return_path' => '', 'set_bulk_header' => false);
-
-//Fast-Filter (Filter-ID). Fallback if user has not selected his own fast filters
-$FAST_FILTER_IDS = array(2,3);
 
 //Plugins
 $PLUGINS = array(
@@ -88,7 +82,7 @@ $PLUGINS = array(
 @define('WARRANTY_URL', '');
 
 //Webfolders
-@define('WEBFOLDERS', TRUE);
+@define('WEBFOLDERS', TRUE);//TODO
 $WEBFOLDERS_BASE = $BASE_PATH.'webfolders/';
 $WEBFOLDERS_BASE_HTACCESS = $BASE_PATH.'.webfolders/';
 
@@ -142,7 +136,10 @@ $FAMFUNCTION_SORT_ORDER = array('husband' => 1, 'wife' => 2, 'child' => 3);
 //$LEUTE_ADMIN_SPALTEN_CONDITION = array();
 
 // This option (if set to true) disables the whole family functionality of kOOL
-//$LEUTE_NO_FAMILY = false;
+$LEUTE_NO_FAMILY = FALSE;
+
+// this option can be set to true in order to add the header 'Precedence: bulk' to outgoing group mails
+//$MAILING_ENABLE_BULK_HEADER = false;
 
 //Leute-Formular Layout einlesen
 include($ko_path.'config/leute_formular.inc');

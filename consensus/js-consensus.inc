@@ -27,7 +27,7 @@
 
 
 	$(document).ready(function() {
-		$(".open .button").live("click", function() {
+		$('body').on("click", ".open .button.editable", function() {
 			t = this.id.split("_");
 			event_id = t[0];
 			team_id = t[1];
@@ -35,6 +35,6 @@
 			answer = t[3];
 			sendReq("../consensus/ajax.php", "action,eventid,teamid,personid,answer,sesid", "addconsensusentry,"+event_id+","+team_id+","+person_id+","+answer+",<?php print session_id(); ?>", do_element_content);
 		});
-	})
+	});
 -->
 </script>

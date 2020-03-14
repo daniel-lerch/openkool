@@ -24,6 +24,8 @@
 *  This copyright notice MUST APPEAR in all copies of the script!
 ***************************************************************/
 
+header('Content-Type: text/html; charset=ISO-8859-1');
+
 ob_start();  //Ausgabe-Pufferung starten
 
 $ko_path = "../";
@@ -563,16 +565,6 @@ switch($do_action) {
 		//Queue löschen, falls gewünscht
 		if(ko_get_setting("tapes_clear_printqueue") == 1) $_SESSION["printqueue"] = array();
 	break;
-
-
-
-
-
-	//Submenus
-  case "move_sm_left":
-  case "move_sm_right":
-    ko_submenu_actions("tapes", $do_action);
-  break;
 
 
 	//Default:

@@ -38,46 +38,56 @@ if(sizeof($hooks) > 0) {
  * Haupt-Funktion, die von extern aufgerufen wird.
  * Erwartet zwei Argumente: $_SESSION["ses_userid"] und die Front-Modul-Bezeichnung
  */
-function ko_front_module($uid, $module, $pos = "", $news_id = 0) {
+function ko_front_module($uid, $module, $pos = 0, $news_id = 0, $state='open') {
 	global $smarty;
 
 	// Auf genügend Rechte überprüfen, ob das gewünschte Modul angezeigt werden darf
 	// TODO...
 
+	$smarty->assign('tpl_state', $state);
+	$smarty->assign('tpl_module', $module);
+	$smarty->assign('tpl_guest', $_SESSION['ses_userid'] == ko_get_guest_id());
+
 	// Richtige Funktion aufrufen, die das gewünschte Front-Modul ausgibt
 	switch($module) {
 		case "daten_cal":
-			ko_fm_daten_cal($uid, $pos);
+			$result = ko_fm_daten_cal($uid, $pos);
 		break;
 		case "geburtstage":
-			ko_fm_geburtstage($uid, $pos);
+			$result = ko_fm_geburtstage($uid, $pos);
 		break;
 		case "mod":
-			ko_fm_mod($uid);
+			$result = ko_fm_mod($uid);
 		break;
 		case "news":
-			ko_fm_news($uid, $pos, $news_id);
+			$result = ko_fm_news($uid, $pos, $news_id);
 		break;
 		case "adressaenderung":
-			ko_fm_adresse($uid);
+			$result = ko_fm_adresse($uid);
 		break;
 		case "today":
-			ko_fm_today($uid, $pos);
+			$result = ko_fm_today($uid, $pos);
 		break;
 		case "fileshare":
 			if(!ENABLE_FILESHARE) continue;
-			ko_fm_fileshare($uid, $pos);
+			$result = ko_fm_fileshare($uid, $pos);
 		break;
 		case 'fastfilter':
-			ko_fm_fastfilter($uid);
+			$result = ko_fm_fastfilter($uid);
 		break;
 
 		//Frontmodule from a plugin
 		default:
 			if(function_exists('my_frontmodule_'.$module)) {
-				call_user_func('my_frontmodule_'.$module, $uid, $pos);
+				$result = call_user_func('my_frontmodule_'.$module, $uid, $pos);
 			}
+			else {
+				$result = False;
+			}
+		break;
 	}
+
+	return $result;
 }//ko_front_module()
 
 
@@ -86,26 +96,21 @@ function ko_front_module($uid, $module, $pos = "", $news_id = 0) {
 function ko_fm_fastfilter($uid) {
 	global $smarty;
 
-	$content = '';
-	$fast_filter = ko_get_fast_filter();
-	foreach($fast_filter as $id) {
-		ko_get_filter_by_id($id, $ff);
-		$content .= $ff['name'].':<br />';;
-		$ff_code = str_replace('var1', ('fastfilter'.$id), $ff['code1']);
-		$ff_code = str_replace('submit_filter', 'set_fastfilter', $ff_code);
-		$content .= $ff_code.'<br />';
-	}
+	$result = '';
 
-	$content .= '<p align="center">';
-	$content .= '<input type="submit" name="submit_fm_fastfilter" value="'.getLL('ok').'" />';
-	$content .= '</p>';
+	$content = '<div class="input-group">';
+	$content .= '<input type="text" class="input-sm form-control" name="general_filter_value" placeholder="'.getLL('general_search_placeholder').'">';
+	$content .= '<div class="input-group-btn"><button class="btn btn-sm btn-primary" type="submit" name="submit_fm_fastfilter" value="'.getLL('OK').'">' . getLL('OK') . '</button></div>';
+	$content .= '</div>';
 
 	$smarty->assign('tpl_fm_title', getLL('fm_fastfilter_title'));
-	print '<form action="leute/index.php?action=set_fastfilter" method="POST">';
-	$smarty->display('ko_fm_header.tpl');
-	print $content;
-	$smarty->display('ko_fm_footer.tpl');
-	print '</form>';
+	$result .= '<form action="leute/index.php?action=set_general_filter" method="POST">';
+	$result .= $smarty->fetch('ko_fm_header.tpl');
+	$result .= $content;
+	$result .= $smarty->fetch('ko_fm_footer.tpl');
+	$result .= '</form>';
+
+	return $result;
 }//ko_fm_fastfilter()
 
 
@@ -129,7 +134,6 @@ function ko_fm_daten_cal($uid, $pos) {
 		apply_daten_filter($z_where, $z_limit, 'immer', 'immer', array_keys($egs));
 	}
 	
-	$title_length = ko_get_userpref($_SESSION['ses_userid'], 'daten_title_length');
 	$startstamp = mktime(1,1,1, date('m'), 1, date('Y'));
 	$endstamp = mktime(1,1,1, (date('m') == 12 ? 1 : date('m')+1), 0, (date('m') == 12 ? date('Y')+1 : date('Y')));
 	$z_where .= ' AND `enddatum` >= \''.strftime('%Y-%m-%d', $startstamp).'\' AND `startdatum` <= \''.strftime('%Y-%m-%d', $endstamp).'\'';
@@ -139,7 +143,6 @@ function ko_fm_daten_cal($uid, $pos) {
 	foreach($events as $event) {
 		$content = array();
 		$content['text'] = $event['eventgruppen_name'].($event['kommentar'] ? ': '.$event['kommentar'] : '');
-		if(strlen($content['text']) > $title_length) $content['text'] = substr($content['text'], 0, $title_length).'..';
 
 		if($event['startzeit'] == '00:00:00' && $event['endzeit'] == '00:00:00') {
 			$content['zeit'] = getLL('time_all_day');
@@ -200,7 +203,7 @@ function ko_fm_daten_cal($uid, $pos) {
 				foreach($data[substr($date, -2)] as $entry) {
 					$tooltip .= '<b>'.strtr($entry['text'], $jsmap).'</b><br />'.strtr($entry['zeit'], $jsmap).'<br />';
 				}
-				$ph = $pos == 'r' ? 'l' : 'r';
+				$ph = $pos == '3' ? 'l' : 'r';
 				$r .= '<td class="'.$class.'" onmouseover="tooltip.show(\''.$tooltip.'\', \'\', \'b\', \''.$ph.'\');" onmouseout="tooltip.hide();">';
 				$r .= '<b>'.strftime('%d', strtotime($date)).'</b>';
 			} else {
@@ -222,7 +225,7 @@ function ko_fm_daten_cal($uid, $pos) {
 
 	$smarty->assign("tpl_cal_titel", getLL("fm_daten_title")." ".strftime($GLOBALS["DATETIME"]["mY"], time()));
 	$smarty->assign('table', $r);
-	$smarty->display('ko_fm_daten_cal.tpl');
+	return $smarty->fetch('ko_fm_daten_cal.tpl');
 
 }//ko_fm_daten_cal()
 
@@ -237,7 +240,7 @@ function ko_fm_geburtstage($uid, $pos) {
 	if(!ko_module_installed('leute')) return FALSE;
 
 	//Check for access to birthday column
-	$columns = ko_get_leute_admin_spalten($uid);
+	$columns = ko_get_leute_admin_spalten($uid, 'all');
 	if(is_array($columns['view']) && !in_array('geburtsdatum', $columns['view'])) return FALSE;
 
 	$all_rights = ko_get_access_all('leute_admin', $uid);
@@ -284,8 +287,10 @@ function ko_fm_geburtstage($uid, $pos) {
 		$data[$row]['geburtsdatum'] = sql2datum($p['geburtsdatum']);
 
 		//Overlib-Text mit ko_html2 für FM
-		$data[$row]['_tooltip']  = '&lt;b&gt;'.ko_html2($p['vorname']).' '.ko_html2($p['nachname']).'&lt;/b&gt; ';
-		$data[$row]['_tooltip'] .= '('.$p['alter'].')&lt;br /&gt;'.sql2datum($p['geburtsdatum']);
+		$ttText  = '&lt;b&gt;'.ko_html2($p['vorname']).' '.ko_html2($p['nachname']).'&lt;/b&gt; ';
+		$ttText .= '('.$p['alter'].')&lt;br /&gt;'.sql2datum($p['geburtsdatum']);
+
+		$data[$row]['_tooltip'] = ko_get_tooltip_code($ttText);
 
 		//Link
 		$data[$row]['_link'] = 'leute/index.php?action=set_idfilter&amp;id='.$p['id'];
@@ -297,8 +302,8 @@ function ko_fm_geburtstage($uid, $pos) {
 	$smarty->assign('tpl_fm_title', getLL('fm_birthdays_title'));
 	$smarty->assign('label_years', getLL('fm_birthdays_label_years'));
 	$smarty->assign('tpl_fm_pos', $pos);
-	$smarty->assign('ttpos', $pos == 'r' ? 'l' : 'r');
-	$smarty->display('ko_fm_geburtstage.tpl');
+	$smarty->assign('ttpos', $pos == '3' ? 'l' : 'r');
+	return $smarty->fetch('ko_fm_geburtstage.tpl');
 }//ko_fm_geburtstage()
 
 
@@ -376,25 +381,29 @@ function ko_fm_mod($uid) {
 
 	//Text und Link für Reservationen
 	$smarty->assign("tpl_show_res", $show_res_mod);
-	$smarty->assign("tpl_text_res", getLL("fm_mod_open_res")."&nbsp;(".sizeof($res_mod).")<br />");
+	$smarty->assign("tpl_num_res", sizeof($res_mod));
+	$smarty->assign("tpl_text_res", getLL("fm_mod_open_res"));
   $smarty->assign("tpl_open_mod_res", (sizeof($res_mod) > 0) ? TRUE : FALSE);
 
 	//Text und Link für Adressänderungen
 	$smarty->assign("tpl_show_aa", $show_aa);
-	$smarty->assign("tpl_text_aa", getLL("fm_mod_open_aa")."&nbsp;($aa_mod_count)<br />");
+	$smarty->assign("tpl_num_aa", $aa_mod_count);
+	$smarty->assign("tpl_text_aa", getLL("fm_mod_open_aa"));
   $smarty->assign("tpl_open_mod_aa", ($aa_mod_count > 0) ? TRUE : FALSE);
 
 	//Text und Link für Gruppen-Anmeldungen
 	$smarty->assign("tpl_show_groups", $show_group_mod);
-	$smarty->assign("tpl_text_groups", getLL("fm_mod_open_group")."&nbsp;($num_group_mod)<br />");
+	$smarty->assign("tpl_num_groups", $num_group_mod);
+	$smarty->assign("tpl_text_groups", getLL("fm_mod_open_group"));
   $smarty->assign("tpl_open_mod_groups", ($num_group_mod > 0) ? TRUE : FALSE);
 
 	//Text und Link für Events
 	$smarty->assign("tpl_show_event", $show_event_mod);
-	$smarty->assign("tpl_text_event", getLL("fm_mod_open_events")."&nbsp;(".$num_event_mod.")<br />");
+	$smarty->assign("tpl_num_event", $num_event_mod);
+	$smarty->assign("tpl_text_event", getLL("fm_mod_open_events"));
   $smarty->assign("tpl_open_mod_event", $num_event_mod > 0 ? TRUE : FALSE);
 
-	$smarty->display("ko_fm_mod.tpl");
+	return $smarty->fetch("ko_fm_mod.tpl");
 }//ko_fm_mod_res()
 
 
@@ -426,7 +435,8 @@ function ko_fm_today($uid, $pos) {
 
 			$events_heute[$h_i]["raum"] = ko_html($h["room"]);
 			$events_heute[$h_i]["eventgruppe"] = ko_html($h["eventgruppen_name"]);
-			$events_heute[$h_i]["kommentar"] = ko_html($h["kommentar"]);
+			$events_heute[$h_i]['kommentar'] = $h['kommentar'];
+			$events_heute[$h_i]['title'] = ko_html($h['title']);
 
 			if($h["startzeit"] == "00:00:00" && $h["endzeit"] == "00:00:00") {
 				$events_heute[$h_i]["startzeit"] = getLL("time_all_day");
@@ -467,7 +477,8 @@ function ko_fm_today($uid, $pos) {
 
 			$events_woche[$w_i]["raum"] = ko_html($w["room"]);
 			$events_woche[$w_i]["eventgruppe"] = ko_html($w["eventgruppen_name"]);
-			$events_woche[$w_i]["kommentar"] = ko_html($w["kommentar"]);
+			$events_woche[$w_i]['kommentar'] = $w['kommentar'];
+			$events_woche[$w_i]['title'] = ko_html($w['title']);
 
 			$tag = explode("-", $w["startdatum"]);
 			$events_woche[$w_i]["wochentag"] = strftime("%A", mktime(1, 1, 1, $tag[1], $tag[2], $tag[0]));
@@ -607,8 +618,8 @@ function ko_fm_today($uid, $pos) {
 	/* Letzte Leute-Änderungen */
 	$found = FALSE;
 	$smarty->assign("title_people_new", getLL("fm_today_people_new"));
-	ko_get_access_all('leute', '', $leute_max_rights);
-	if($leute_max_rights > 1) {
+	ko_get_access('leute');
+	if($access['leute']['MAX'] >= 1) {
 		//Don't show changes done by root to other users
 		$where_add = ($_SESSION["ses_userid"] != ko_get_root_id()) ? " AND user_id != '".ko_get_root_id()."' " : "";
 		$logs = db_select_data('ko_log', "WHERE `type` = 'edit_person' AND `date` >= '".$_SESSION['last_login']."' ".$where_add, '*', 'ORDER BY date DESC', 'LIMIT 0,30');
@@ -622,6 +633,8 @@ function ko_fm_today($uid, $pos) {
 			}
 			ko_get_leute($people, " AND `id` IN ('".implode("','", $lids)."')");
 			foreach($logs as $log) {
+				// Do access check
+				if ($access['leute']['ALL'] == 0 && $access['leute'][$log['_leute_id']] == 0) continue;
 				$tpl_person[$p_counter]['user'] = $logins[$log['user_id']]['login'];
 				$tpl_person[$p_counter]['log'] = ko_html(substr($log['comment'], strpos($log['comment'], ':')+2));
 				//Name of the edited person
@@ -657,7 +670,7 @@ function ko_fm_today($uid, $pos) {
 
 	$smarty->assign("tpl_fm_pos", $pos);
 	$smarty->assign("tpl_fm_title", getLL("fm_name_today") );
-	$smarty->display("ko_fm_today.tpl");
+	return $smarty->fetch("ko_fm_today.tpl");
 
 }//ko_fm_today()
 
@@ -684,10 +697,14 @@ function ko_fm_news($uid, $pos, $id) {
 	}//if..else(id>0)
 
 	foreach($news_ as $n_i => $n) {
-		$news[$n_i]["text"] = nl2br(ko_html($n["text"]));
+		$news[$n_i]["text"] = $n["text"];
 		$news[$n_i]["subtitle"] = nl2br(ko_html($n["subtitle"]));
 		$news[$n_i]["title"] = nl2br(ko_html($n["title"]));
-		$news[$n_i]["link"] = ko_html($n["link"]);
+		$link = ko_html($n["link"]);
+		if (substr($link, 0, 7) == 'http://') {
+			$link = substr($link, 7);
+		}
+		$news[$n_i]["link"] = $link;
 		$news[$n_i]["author"] = ko_html($n["author"]);
 		if($n['cdate'] != '0000-00-00') $news[$n_i]['cdate'] = sql2datum($n['cdate']);
 		$news[$n_i]["id"] = $n["id"];
@@ -697,7 +714,7 @@ function ko_fm_news($uid, $pos, $id) {
 	$smarty->assign("tpl_news", $news);
 	$smarty->assign("tpl_fm_pos", $pos);
 
-	$smarty->display("ko_fm_news.tpl");
+	return $smarty->fetch("ko_fm_news.tpl");
 }//ko_fm_news()
 
 
@@ -711,7 +728,7 @@ function ko_fm_adresse($uid) {
 
 	//Don't show mutation form for users with global access 2 or more for the address module (as they can make changes to the addresses directly)
 	$rights_all = ko_get_access_all('leute_admin', $uid);
-	if($rights_all >= 2) return;
+	if($rights_all >= 2) return FALSE;
 
 	$smarty->assign("label_name", getLL("fm_aa_name"));
 	$smarty->assign("label_firstname", getLL("fm_aa_firstname"));
@@ -723,7 +740,7 @@ function ko_fm_adresse($uid) {
 
 	$smarty->assign("tpl_aa_show", "name");
 	$smarty->assign("tpl_fm_title", getLL("fm_aa_title"));
-	$smarty->display("ko_fm_adressaenderung.tpl");
+	return $smarty->fetch("ko_fm_adressaenderung.tpl");
 }//ko_fm_adresse()
 
 
@@ -737,9 +754,10 @@ function ko_fm_fileshare($uid, $pos) {
 	//Berechtigungen checken
 	if(!ko_module_installed("fileshare")) return FALSE;
 
+	$result = '';
 	//FM-Titel
 	$smarty->assign("tpl_fm_title", getLL("fm_fileshare_title"));
-	$smarty->display("ko_fm_header.tpl");
+	$result .= $smarty->fetch("ko_fm_header.tpl");
 
 	//Durch alle Ordner gehen
 	$found = FALSE;
@@ -757,7 +775,7 @@ function ko_fm_fileshare($uid, $pos) {
 			$code .= '<a href="fileshare/index.php?action=show_folder&id='.$folder["id"].'">'.$folder["name"].'</a><br />';
 
 		  //Mitte: Liste der einzelnen Dateien anzeigen
-			if($pos == "m") {
+			if(in_array($pos, array(2, 3))) {
 				$code .= '<ul type="square">';
 				foreach($shares as $share) {
 					if(file_exists($FILESHARE_FOLDER.$share["id"])) $file_ok = TRUE;
@@ -775,13 +793,15 @@ function ko_fm_fileshare($uid, $pos) {
 	}//foreach(folders as folder)
 
 	if($found) {
-		print '<p style="font-weight:600;padding:1px;margin:2px;">'.getLL("fm_fileshare_new").'</p>';
-		print $code;
+		$result .= '<p style="font-weight:600;padding:1px;margin:2px;">'.getLL("fm_fileshare_new").'</p>';
+		$result .= $code;
 	} else {
-		print getLL("fm_fileshare_none");
+		$result .= getLL("fm_fileshare_none");
 	}
 	
-	$smarty->display("ko_fm_footer.tpl");
+	$result .= $smarty->fetch("ko_fm_footer.tpl");
+
+	return $result;
 }//ko_fm_fileshare()
 
 ?>

@@ -27,6 +27,10 @@ set_error_handler('exception_error_handler', E_ERROR);
 //Autoloader
 require_once($ko_path.'inc/SabreDAV/vendor/autoload.php');
 
+require_once('PrincipalBackend_kOOL.php');
+require_once('AuthBackend_kOOL.php');
+require_once('CardDAVBackend_kOOL.php');
+
 //Backends
 $authBackend      = new Sabre\DAV\Auth\Backend\kOOL($pdo);
 $principalBackend = new Sabre\DAVACL\PrincipalBackend\kOOL($pdo);
@@ -46,7 +50,7 @@ $server->setBaseUri(parse_url($BASE_URL, PHP_URL_PATH).'dav/');
 
 //Plugins
 $server->addPlugin(new Sabre\DAV\Auth\Plugin($authBackend,'kOOL CardDAV Server'));
-$server->addPlugin(new Sabre\DAV\Browser\Plugin());
+//$server->addPlugin(new Sabre\DAV\Browser\Plugin());
 //$server->addPlugin(new Sabre\CalDAV\Plugin());
 $server->addPlugin(new Sabre\CardDAV\Plugin());
 $server->addPlugin(new Sabre\DAVACL\Plugin());

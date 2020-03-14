@@ -53,18 +53,21 @@ function do_new_datafield() {
 			split = responseText.split("#");
 			value = split[0].trim();
 			text = split[1];
-			var neu1 = new Option(text, value);
-			var neu2 = new Option(text, value);
 
-			//add option to select
-			sel1 = document.formular.sel_ds1_sel_datafields;
-			sel1.options[sel1.length] = neu1;
-			sel2 = document.formular.sel_ds2_sel_datafields;
-			sel2.options[sel2.length] = neu2;
-			//add option-value to hidden field
-			hid = document.formular.sel_datafields;
-			if(hid.value != "") hid.value = hid.value+","+value;
-			else hid.value = value;
+			//Add new value
+			var $list1 = $(document.getElementsByName('sel_ds1_sel_datafields')[0]);
+			var $list2 = $(document.getElementsByName('sel_ds2_sel_datafields')[0]);
+			$list1.append(getSelectOption(value, text));
+			$list2.append(getSelectOption(value, text));
+
+			// Update hidden value
+			var $hid = $(document.getElementsByName('sel_datafields')[0]);
+			var vals = [];
+			$list2.children().each(function() {
+				if ($(this).data('value')) vals.push($(this).data('value'));
+			});
+			$hid.val(vals.join(','));
+
 
 			//Message-Box ausblenden
 			msg = document.getElementsByName('wait_message')[0];
@@ -80,12 +83,17 @@ function do_new_datafield() {
 
 
 $(document).ready(function() {
-	$("#chk_groups_dffilter").live("click", function(e) {
+	$("body").on("click", '#chk_groups_dffilter', function(e) {
 		if(this.checked == true) {
 			jumpToUrl("index.php?action=set_dffilter");
 		} else {
 			jumpToUrl("index.php?action=unset_dffilter");
 		}
+	});
+
+	$('input[name="chk_type"]').on('switchChange.bootstrapSwitch', function(event, state) {
+		if(state) close_panel('#group_datafields');
+		else open_panel('#group_datafields');
 	});
 });
 

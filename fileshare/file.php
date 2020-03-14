@@ -86,16 +86,16 @@ if(!$error) {
 		else
 		{//Nicht eingeloggt, also externer Empfänger
 			$query = "SELECT * FROM ko_fileshare_sent WHERE `file_id` = '$file_id' AND `recipient_id` = '$recipient_id'";
-			$result2 = mysql_query($query);
-			if(mysql_num_rows($result2) == 0) {
+			$result2 = mysqli_query(db_get_link(), $query);
+			if(mysqli_num_rows($result2) == 0) {
 				$error = 1;
 			} else {
-				$file_sent = mysql_fetch_assoc($result2);
+				$file_sent = mysqli_fetch_assoc($result2);
 				$found = $file_sent["recipient"];
 				//Done-Eintrag speichern
 				db_update_data('ko_fileshare_sent', "WHERE `file_id` = '$file_id' AND `recipient_id` = '$recipient_id'", array('d_date' => date('Y-m-d H:i:s')));;
 			}
-			mysql_free_result($result2);
+			mysqli_free_result($result2);
 		}//if..else(_SESSION[ses_userid])
 
 

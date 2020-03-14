@@ -1,0 +1,86 @@
+span.fa-stack {
+    height: 1em;
+    width: 1em;
+
+    div.btn-group &,
+    .btn & {
+        line-height: 0.9;
+    }
+    .icon & {
+        line-height: 0.7;
+    }
+}
+
+
+div.btn-group-sm span.fa-stack,
+.btn-sm span.fa-stack {
+    height: @line-height-small * 1em;
+    width: 1em;
+}
+
+
+.@{fa-css-prefix}-stack-xs, .@{fa-css-prefix}-stack-sm {
+    position: absolute;
+    left: 0;
+    text-align: center;
+}
+.@{fa-css-prefix}-stack-xs { font-size: 0.6em; }
+.@{fa-css-prefix}-stack-sm { font-size: 0.8em; }
+
+.@{fa-css-prefix}-stack-bottom-right {
+    left: 1em;
+    bottom: -0.3em;
+
+    &.@{fa-css-prefix}-stack-sm {
+        left: 0.8em;
+    }
+    &.@{fa-css-prefix}-stack-xs {
+        left: 1em;
+    }
+}
+.@{fa-css-prefix}-stack-bottom-left {
+    left: -0.6em;
+    bottom: -0.3em;
+}
+.@{fa-css-prefix}-stack-top-right {
+    left: 0.6em;
+    bottom: 1em;
+}
+.@{fa-css-prefix}-stack-top-left {
+    left: -0.6em;
+    bottom: 1em;
+}
+
+div.btn-group-sm .btn span.glyphicon,
+div.btn-group-sm .btn span.caret,
+div.btn-group-sm .btn i.fa {
+    line-height:1.5em !important;
+}
+
+
+button {
+
+    &.icon {
+        margin:0px 0px 0px 0px;
+        padding:0px 0px 0px 0px;
+        border:none;
+        background:none;
+        color:@link-color;
+
+        &:hover {
+            color:@link-hover-color;
+        }
+        &:focus {
+            outline: none;
+        }
+    }
+
+    &.icon-btn {
+        padding-left:9px;
+        padding-right:9px;
+    }
+}
+
+.icon-line-height {
+    line-height: @line-height-computed !important;
+}

@@ -1,0 +1,22 @@
+.btn-group-infilling {
+    display: table;
+    width: 100%;
+    border-collapse: separate;
+    > .btn,
+    > .btn-group {
+        float: none;
+        display: table-cell;
+        width: 1%;
+
+        &.btn-main {
+            width: 100%;
+        }
+    }
+    > .btn-group .btn {
+        width: 100%;
+    }
+
+    > .btn-group .dropdown-menu {
+        left: auto;
+    }
+}

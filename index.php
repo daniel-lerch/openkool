@@ -24,6 +24,8 @@
 *  This copyright notice MUST APPEAR in all copies of the script!
 ***************************************************************/
 
+header('Content-Type: text/html; charset=ISO-8859-1');
+
 $ko_path = "./";
 $ko_menu_akt = "home";
 
@@ -74,11 +76,13 @@ if(sizeof($hooks) > 0) foreach($hooks as $hook) include($hook);
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="<?php print $_SESSION["lang"]; ?>" lang="<?php print $_SESSION["lang"]; ?>">
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1" />
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1" />
 <link rel="SHORTCUT ICON" href="<?php print $ko_path; ?>images/kOOL_logo.ico" />
 <title><?php print $HTML_TITLE; ?></title>
 <?php
 print ko_include_css();
-print ko_include_js(array($ko_path.'inc/jquery/jquery.js', $ko_path.'inc/kOOL.js'), FALSE);
+print ko_include_js();
 include($ko_path.'inc/js-sessiontimeout.inc');
 ?>
 </head>
@@ -96,45 +100,12 @@ include($ko_path . "menu.php");
 ?>
 
 
-<table width="100%">
-<tr>
-<td class="main_left">
-<?php
-//Front-Modules links
-$fm_left_ = ko_get_userpref($_SESSION["ses_userid"], "front_modules_left");
-$fm_left = explode(",", $fm_left_);
-if(is_array($fm_left)) {
-	foreach($fm_left as $m) {
-		ko_front_module($_SESSION["ses_userid"], $m, "l");
-		print "<br />";
-	}
-}
-?>
-</td>
 
-<td class="main">
 <?php
 /**
 	* Aktionen von Frontmodulen behandeln
 	*/
 switch($do_action) {
-
-	/**
-		* Ein einzelner News-Eintrag soll in der Mitte gross angezeigt werden
-		(nach Klick auf Link, der erscheint, wenn das News-Modul rechts oder links angezeigt wird).
-		*/
-	case "show_single_news":
-		//Einzelne News anzeigen
-		if(FALSE === ($id = format_userinput($_GET["id"], "uint", TRUE))) {
-			trigger_error("invalid news-id: ".$_GET["id"], E_USER_ERROR);
-			exit;
-		}
-
-		if($id) {
-			ko_front_module($_SESSION["ses_userid"], "news", "m", $id);
-			print "<br /><br />";
-		}
-	break;
 
 
 
@@ -303,16 +274,18 @@ switch($do_action) {
 		}//if(sizeof(fm_aa_ids) == 1)
 
 		$smarty->assign("tpl_fm_title", getLL("fm_aa_title"));
-		if($aa_display) $smarty->display("ko_fm_adressaenderung.tpl");
+		if($aa_display) $aa_content = $smarty->fetch("ko_fm_adressaenderung.tpl");
 	break;
 
 
 	//Default:
-  default:
-    include($ko_path."inc/abuse.inc");
-  break;
+	default:
+		$abuse = true;
+	break;
 }//switch(do_action)
 
+
+print '<main class="main">';
 
 //Infos ausgeben
 if($notifier->hasNotifications(koNotifier::ALL)) {
@@ -320,39 +293,93 @@ if($notifier->hasNotifications(koNotifier::ALL)) {
 }
 
 
-
-//Front-Modules mitte
-$fm_center_ = ko_get_userpref($_SESSION["ses_userid"], "front_modules_center");
-$fm_center = explode(",", $fm_center_);
-if(is_array($fm_center)) {
-	foreach($fm_center as $m) {
-		ko_front_module($_SESSION["ses_userid"], $m, "m");
-		print "<br />";
-	}
+if ($abuse && $do_action) {
+	include($ko_path."inc/abuse.inc");
 }
-?>
-</td>
-
-<td class="main_right">
-<?php
-//Front-Modules rechts
-$fm_right_ = ko_get_userpref($_SESSION["ses_userid"], "front_modules_right");
-$fm_right = explode(",", $fm_right_);
-if(is_array($fm_right)) {
-	foreach($fm_right as $m) {
-		ko_front_module($_SESSION["ses_userid"], $m, "r");
-		print "<br />";
+else {
+	$linearFrontModules = array();
+	foreach ($FRONTMODULES_LAYOUT as $frontModule) {
+		$linearFrontModules = array_merge($linearFrontModules, $frontModule);
 	}
+	$frontModulesUPOld = explode(',', ko_get_userpref($_SESSION['ses_userid'], 'front_modules'));
+	$frontModulesUP = array();
+	foreach ($frontModulesUPOld as $name) {
+		if (!$name) continue;
+		if (in_array($name, $linearFrontModules)) {
+			$frontModulesUP[] = $name;
+		}
+	}
+	ko_save_userpref($_SESSION['ses_userid'], 'front_modules', implode(',', $frontModulesUP));
+
+	print '<div class="row" id="front-modules-container">';
+	if ($aa_display) {
+		print '<div class="col col-xs-12 col-sm-6 col-sm-offset-3 col-md-4 col-md-offset-4 col-lg-4 col-lg-offset-4">';
+		print $aa_content;
+		print '</div>';
+	}
+	else {
+		$i = 0;
+		foreach ($FRONTMODULES_LAYOUT as $fmCol) {
+			$code = '';
+			foreach ($fmCol as $fm) {
+				if (!ko_check_fm_for_user($fm, $_SESSION['ses_userid'])) continue;
+				$cont = FALSE;
+				switch ($fm) {
+					case 'adressaenderung':
+						if (!is_array($access['leute'])) ko_get_access('leute');
+						if ($access['leute']['ALL'] >= 2) $cont = TRUE;
+					break;
+					case 'daten_cal':
+						if (!is_array($access['daten'])) ko_get_access('daten');
+						if ($access['daten']['MAX'] < 1) $cont = TRUE;
+					break;
+				}
+				$state = in_array($fm, $frontModulesUP) ? 'open' : 'closed';
+				if ($state == 'open' || $_SESSION['ses_userid'] != ko_get_guest_id()) {
+					$fmContent = ko_front_module($_SESSION["ses_userid"], $fm, $i, 0, $state);
+					if ($fmContent !== False) {
+						$code .= $fmContent;
+					}
+				}
+			}
+			if ($code != '') {
+				switch ($i) {
+					case 0:
+						print '<div class="col col-xs-12 col-sm-3 col-md-2">';
+					break;
+					case 1:
+						print '<div class="col col-xs-12 col-sm-6 col-md-8">';
+						print '<div class="col col-sm-12 col-md-6">';
+					break;
+					case 2:
+						print '<div class="col col-sm-12 col-md-6">';
+					break;
+					case 3:
+						print '<div class="col col-xs-12 col-sm-3 col-md-2">';
+					break;
+				}
+				print $code;
+				print '</div>';
+				if ($i == 2) print '</div>';
+			}
+			$i ++;
+		}
+	}
+	print '</div>';
+
+	print '</div>';
 }
-?>
-</td>
-</tr>
 
 
-<?php
+print '</main>';
+
+
+
+
+
 //--- copyright notice on frontpage:
 //--- Obstructing the appearance of this notice is prohibited by law.
-print '<tr><td colspan="3" class="copyright">';
+print '<div id="footer" style="text-align:center;">';
 print '<a href="http://www.churchtool.org"><b>'.getLL("kool").'</b></a> '.sprintf(getLL("copyright_notice"), VERSION).'<br />';
 if(WARRANTY_GIVER != "") {
 	print sprintf(getLL("copyright_warranty"), '<a href="'.WARRANTY_URL.'">'.WARRANTY_GIVER.'</a>');
@@ -361,10 +388,10 @@ if(WARRANTY_GIVER != "") {
 }
 print " ".sprintf(getLL("copyright_free_software"), '<a href="http://www.fsf.org/licensing/licenses/gpl.html">', '</a>')."<br />";
 print getLL("copyright_obstruction");
-print '</td></tr>';
+print '</div>';
 //--- end of copyright notice
 ?>
-</table>
 
 </body>
+
 </html>

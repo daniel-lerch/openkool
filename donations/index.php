@@ -24,6 +24,8 @@
 *  This copyright notice MUST APPEAR in all copies of the script!
 ***************************************************************/
 
+header('Content-Type: text/html; charset=ISO-8859-1');
+
 ob_start();  //Ausgabe-Pufferung starten
 
 $ko_path = "../";
@@ -50,13 +52,11 @@ $notifier = koNotifier::Instance();
 //*** Rechte auslesen
 ko_get_access('donations');
 
-
 //Smarty-Templates-Engine laden
 require("$ko_path/inc/smarty.inc");
 
 //kOOL Table Array
 ko_include_kota(array('ko_donations', 'ko_donations_accounts'));
-
 
 //*** Plugins einlesen:
 $hooks = hook_include_main("donations");
@@ -99,6 +99,12 @@ switch($do_action) {
 		$_SESSION["show_start"] = 1;
 	break;
 
+	case "list_donations_mod":
+		if($access['donations']['MAX'] < 1) continue;
+		$_SESSION["show"] = "list_donations_mod";
+		$_SESSION["show_start"] = 1;
+	break;
+
 
 
 
@@ -121,7 +127,8 @@ switch($do_action) {
 	case 'submit_new_donation':
 		if($access['donations']['MAX'] < 2) continue;
 
-		kota_submit_multiedit('', 'new_donation', '', $changes);
+		kota_submit_multiedit('', 'new_donation', $changes);
+
 		if(!$notifier->hasErrors()) {
 			$infos[] = 1;
 			$onload_code = 'form_set_first_input();'.$onload_code;
@@ -132,7 +139,7 @@ switch($do_action) {
 				if(!trim($v)) continue;
 				$info_txt_add .= $k.': <b>'.$v.'</b>, ';
 			}
-			if($info_txt_add != '') $info_txt_add = '<br />'.substr($info_txt_add, 0, -2);
+			if($info_txt_add != '') $info_txt_add = '<br />'.substr($info_txt_add, 0, -2); // TODO:
 		}
 	break;
 
@@ -145,6 +152,7 @@ switch($do_action) {
 		$_POST['id'] = $table.'@'.$columns.'@0@'.$new_hash;
 
 		kota_submit_multiedit('', 'new_donation');
+
 		if(!$notifier->hasErrors()) {
 			$infos[] = 1;
 			$onload_code = 'form_set_first_input();'.$onload_code;
@@ -169,7 +177,7 @@ switch($do_action) {
 				if(!trim($v)) continue;
 				$info_txt_add .= $k.': <b>'.$v.'</b>, ';
 			}
-			if($info_txt_add != '') $info_txt_add = '<br />'.substr($info_txt_add, 0, -2);
+			if($info_txt_add != '') $info_txt_add = '<br />'.substr($info_txt_add, 0, -2); // TODO:
 		}
 	break;
 
@@ -235,6 +243,7 @@ switch($do_action) {
 		if($access['donations']['MAX'] < 3) continue;
 
 		kota_submit_multiedit("", "edit_donation");
+
 		if(!$notifier->hasErrors()) {
 			$_SESSION["show"] = "list_donations";
 		}
@@ -287,6 +296,110 @@ switch($do_action) {
 
 		ko_log("merge_donations", "$person2 --> $person1");
 		$_SESSION["show"] = "list_donations";
+	break;
+
+
+	// donations mod
+	case 'submit_donations_mod':
+	case 'submit_donations_mod_aa':
+		$id = format_userinput($_POST['donations_mod_id'], 'uint');
+		if (!$id) continue;
+		ko_get_donations_mod($donationMod, $id);
+		if (!$donationMod) continue;
+		if ($access['donations']['MAX'] < 3) continue;
+		$pid = format_userinput($_POST['donations_mod_person_id'], 'alphanum');
+
+		$valutadate = sql_datum(format_userinput($_POST['valutadate_' . $id], 'text'));
+		$source = format_userinput($_POST['source_' . $id], 'text');
+		$account = format_userinput($_POST['account_' . $id], 'uint');
+		$comment = format_userinput($_POST['comment_' . $id], 'text');
+		$addToGroup = format_userinput($_POST['add_to_group_' . $id], 'uint');
+		$addToSelectedPerson = format_userinput($_POST['add_to_selected_person_' . $id], 'uint');
+
+		$account = db_select_data('ko_donations_accounts', "WHERE `id` = '" . $account . "'", "*", '', '', TRUE, TRUE);
+		if (!$account || $access['donations'][$account['id']] < 2) {
+			$notifier->addError(7);
+			continue;
+		}
+
+		$p = array();
+		foreach ($donationMod as $key => $value) {
+			if (substr($key, 0, 3) == '_p_') {
+				$pKey = substr($key, 3);
+				$p[$pKey] = $value;
+			}
+		}
+
+		if ($pid == 'selected' && !$addToSelectedPerson) {
+			$notifier->addError(5);
+			continue;
+		}
+
+		if ($pid == 'selected') {
+			ko_get_person_by_id($addToSelectedPerson, $pData);
+			if (!$pData) {
+				$notifier->addError(6);
+				continue;
+			}
+			if ($do_action == 'submit_donations_mod_aa') {
+				$p["_leute_id"] = $pData['id'];
+				db_insert_data("ko_leute_mod", $p);
+			}
+			$person = $pData['id'];
+		}
+		else if ($pid == 0) {
+			$groups = array();
+			if ($addToGroup) {
+				$x = $account['group_id'];
+				$group_ids = explode(',', $x);
+				foreach ($group_ids as $group_id) {
+					if (!$group_id) continue;
+					$new_group = ko_groups_decode($group_id, 'full_gid');
+					if (!preg_match('/^g[0-9]{6}(:g[0-9]{6})*(:r[0-9]{6})?$/', $new_group)) continue;
+					$groups[] = $new_group;
+				}
+			}
+			$p['groups'] = implode(',', $groups);
+			$person = db_insert_data('ko_leute', $p);
+		}
+		else {
+			ko_get_person_by_id($pid, $pData);
+			if (!$pData) {
+				$notifier->addError(6);
+				continue;
+			}
+			if ($do_action == 'submit_donations_mod_aa') {
+				$p["_leute_id"] = $pData['id'];
+				db_insert_data("ko_leute_mod", $p);
+			}
+			$person = $pData['id'];
+		}
+
+		$donation = array(
+			'valutadate' => $valutadate,
+			'source' => $source,
+			'account' => $account['id'],
+			'comment' => $comment,
+			'amount' => $donationMod['amount'],
+			'date' => $donationMod['date'],
+			'person' => $person,
+		);
+		$new_donation_id = db_insert_data('ko_donations', $donation);
+		db_delete_data('ko_donations_mod', 'where `id` = ' . $id);
+		ko_log_diff($do_action, $donationMod);
+		$notifier->addInfo(5);
+	break;
+
+	case 'submit_del_donations_mod':
+		$id = format_userinput($_POST['donations_mod_id'], 'uint');
+		if (!$id) continue;
+		ko_get_donations_mod($donationMod, $id);
+		if (!$donationMod) continue;
+		if ($access['donations']['MAX'] < 3) continue;
+
+		db_delete_data('ko_donations_mod', 'where `id` = ' . $id);
+		ko_log_diff($do_action, $donationMod);
+		$notifier->addInfo(4);
 	break;
 
 
@@ -361,7 +474,7 @@ switch($do_action) {
 				if(!trim($v)) continue;
 				$info_txt_add .= $k.': <b>'.$v.'</b>, ';
 			}
-			if($info_txt_add != '') $info_txt_add = '<br />'.substr($info_txt_add, 0, -2);
+			if($info_txt_add != '') $info_txt_add = '<br />'.substr($info_txt_add, 0, -2); // TODO:
 		}
 	break;
 
@@ -514,7 +627,7 @@ switch($do_action) {
 		if(!$id) continue;
 
 		$_SESSION["donations_filter"]["person"] = $id;
-		if(!$_SESSION["show"]) $_SESSION["show"] = "list_donations";
+		if(!$_SESSION["show"] || $_GET['set_show']) $_SESSION["show"] = "list_donations";
 		$_SESSION["show_start"] = 1;
 	break;
 
@@ -533,14 +646,14 @@ switch($do_action) {
 
 	//Stats
 	case "show_stats":
-		if($access['donations']['MAX'] < 4) continue;
+		if($access['donations']['MAX'] < 1) continue;
 
 		$_SESSION["show"] = "show_stats";
 	break;
 
 
 	case "set_stats_year":
-		if($access['donations']['MAX'] < 4) continue;
+		if($access['donations']['MAX'] < 1) continue;
 
 		$year = format_userinput($_GET["year"], "uint", FALSE, 4);
 		if(!$year) $year = date("Y");
@@ -608,6 +721,38 @@ switch($do_action) {
 
 
 
+	case 'mark_thanked':
+		global $info;
+
+		apply_donations_filter($z_where, $z_limit);
+		$ids = array();
+		if ($_POST['chk']) {
+			$ids = array_keys($_POST['chk']);
+		}
+		if (sizeof($ids) > 0) {
+			$where = "WHERE `id` IN (".(implode(',', $ids)).") ";
+		} else {
+			$where = "WHERE 1=1 ";
+		}
+
+		$entries = db_select_data('ko_donations', "{$where} {$z_where}");
+
+		$nUpdated = 0;
+		foreach($entries as $d) {
+			if (!$d['thanked']) {
+				db_update_data('ko_donations', "WHERE `id` = '".$d['id']."'", array('thanked' => 1));
+				$dNew = $d;
+				$dNew['thanked'] = 1;
+				ko_log_diff('donation_thanked', $dNew, $d);
+
+				$nUpdated++;
+			}
+		}
+
+		koNotifier::Instance()->addInfo(6, '', array($nUpdated));
+	break;
+
+
 	case 'donation_settings':
 		if($access['donations']['MAX'] < 1) continue;
 
@@ -626,6 +771,7 @@ switch($do_action) {
 		ko_save_userpref($_SESSION['ses_userid'], 'donations_export_combine_accounts', format_userinput($_POST['chk_export_combine_accounts'], 'uint'));
 		ko_save_userpref($_SESSION['ses_userid'], 'donations_recurring_prompt', format_userinput($_POST['chk_recurring_prompt'], 'uint'));
 		ko_save_userpref($_SESSION['ses_userid'], 'donations_date_field', format_userinput($_POST['sel_date_field'], 'alpha'));
+		ko_save_userpref($_SESSION['ses_userid'], 'donations_menubar_links', format_userinput($_POST['dsel_donations_menubar_links'], 'text'));
 
 		if($access['donations']['MAX'] > 3) {
 			$id = substr($_POST['sel_ps_filter'], 0, 3) == '@G@' ? '-1' : $_SESSION['ses_userid'];
@@ -640,15 +786,6 @@ switch($do_action) {
 
 		$_SESSION['show'] = $_SESSION['show_back'] ? $_SESSION['show_back'] : 'donation_settings';
 	break;
-
-
-
-
-	//Submenus
-  case "move_sm_left":
-  case "move_sm_right":
-    ko_submenu_actions("donations", $do_action);
-  break;
 
 
 	//Default:
@@ -709,13 +846,17 @@ ko_set_submenues();
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="<?php print $_SESSION["lang"]; ?>" lang="<?php print $_SESSION["lang"]; ?>">
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1" />
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1" />
 <title><?php print "$HTML_TITLE: ".getLL("module_".$ko_menu_akt); ?></title>
 <?php
-print ko_include_css();
-print ko_include_js(array($ko_path.'inc/jquery/jquery.js', $ko_path.'inc/kOOL.js', $ko_path.'inc/ckeditor/ckeditor.js', $ko_path.'inc/ckeditor/adapters/jquery.js'));
+print ko_include_css(array($ko_path.'inc/chartist/kool-chartist.min.css'));
+print ko_include_js(array($ko_path.'inc/ckeditor/ckeditor.js', $ko_path.'inc/ckeditor/adapters/jquery.js', $ko_path.'inc/chartist/chartist.js', $ko_path.'inc/chartist/plugins/chartist-plugin-legend.js', $ko_path.'inc/chartist/plugins/chartist-plugin-tooltip.js'));
 include($ko_path.'inc/js-sessiontimeout.inc');
 include('inc/js-donations.inc');
-$js_calendar->load_files();
+if ($_SESSION['show'] == 'list_donations_mod') {
+	include('inc/js-donationsmod.inc');
+}
 ?>
 </head>
 
@@ -726,20 +867,12 @@ $js_calendar->load_files();
  * Gibt bei erfolgreichem Login das Menü aus, sonst einfach die Loginfelder
  */
 include($ko_path . "menu.php");
+
+ko_get_outer_submenu_code('donations');
+
 ?>
 
-
-<table width="100%">
-<tr>
-
-<td class="main_left" name="main_left" id="main_left">
-<?php
-print ko_get_submenu_code("donations", "left");
-?>
-</td>
-
-
-<td class="main">
+<main class="main">
 <form action="index.php" method="post" name="formular" enctype="multipart/form-data">
 <input type="hidden" name="action" id="action" value="" />
 <input type="hidden" name="id" id="id" value="" />
@@ -768,6 +901,10 @@ switch($_SESSION["show"]) {
 
 	case "list_reoccuring_donations":
 		ko_list_reoccuring_donations();
+	break;
+
+	case "list_donations_mod":
+		ko_list_donations_mod();
 	break;
 
 	case 'new_donation':
@@ -806,6 +943,10 @@ switch($_SESSION["show"]) {
 		ko_multiedit_formular("ko_donations_accounts", $do_columns, $do_ids, $order, array("cancel" => "list_accounts"));
 	break;
 
+	case 'donation_thanks_preview':
+		ko_donations_thanks_preview();
+	break;
+
 	case 'donation_settings':
 		ko_donations_settings();
 	break;
@@ -823,20 +964,11 @@ hook_show_case_add($_SESSION["show"]);
 ?>
 </div>
 </form>
-</td>
+</main>
 
-<td class="main_right" name="main_right" id="main_right">
-
-<?php
-print ko_get_submenu_code("donations", "right");
-?>
-
-</td>
-</tr>
+</div>
 
 <?php include($ko_path . "footer.php"); ?>
-
-</table>
 
 </body>
 </html>

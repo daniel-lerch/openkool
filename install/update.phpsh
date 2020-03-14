@@ -63,17 +63,19 @@ require_once($ko_path.'inc/ko.inc');
 require_once($ko_path.'inc/class.dbStructUpdater.php');
 
 //Get all tables
-$result = mysql_query('SHOW TABLES');
+$result = mysqli_query(db_get_link(), 'SHOW TABLES');
 $tables = array();
-while($row = mysql_fetch_assoc($result)) {
+while($row = mysqli_fetch_assoc($result)) {
 	$tables[] = array_shift($row);
 }
 
 //Get CREATE statement for all tables
+$leute = '';
+$leute_mod = '';
 $source = '';
 foreach($tables as $table) {
-	$res = mysql_query('SHOW CREATE TABLE `'.$table.'`');
-	$row = mysql_fetch_assoc($res);
+	$res = mysqli_query(db_get_link(), 'SHOW CREATE TABLE `'.$table.'`');
+	$row = mysqli_fetch_assoc($res);
 
 	//Remove collation
 	if(FALSE !== strpos($row['Create Table'], 'COLLATE')) {
@@ -87,7 +89,18 @@ foreach($tables as $table) {
 //Get dest SQL
 $dest = file_get_contents($ko_path.'/install/kOOL_db.sql');
 
+
 $updater = new dbStructUpdater($UPDATER_CONF);
+
+
+// adapt sql of table_mod to s.t. it agrees with table
+$modDefs = $updater->getModTabUpdates($updater::TABLE_DEFINITION, FALSE, $dest);
+
+foreach ($updater->config['modTables'] as $modTable => $settings) {
+	$dest = preg_replace("/(CREATE TABLE `{$modTable}`[^;]*;)/", '', $dest);
+}
+$dest .= $modDefs;
+
 
 if(!$options['only_inserts']) {
 	$updates = $updater->getUpdates($source, $dest);
@@ -97,48 +110,47 @@ if(!$options['only_updates']) {
 	$inserts = $updater->getInserts($dest);
 }
 
-
+/*
 //Plugins
-/* TODO:
 foreach($PLUGINS as $plugin) {
+	if ($plugin['name'] != 'vsasexams') continue;
 	$db_file = $ko_path.'plugins/'.$plugin['name'].'/db.sql';
 	if(file_exists($db_file)) {
 		$destP = file_get_contents($db_file);
-		$updatesP = $updater->getUpdates($source, $destP);
-		print_r($updatesP);
-		$insertsP = $updater->getInserts($destP);
-		print_r($insertsP);
+		print_r($updater->getAllSQL($destP));
 	}
 }
-exit;
+//exit;
 */
 
 
 if(!$options['only_inserts']) {
-	if(sizeof($updates) > 0) {
-		print "\n\nALTER\n\n";
-		foreach($updates as $sql) {
-			if($options['preview']) {
-				print $sql."\n";
-			} else if($options['automatic']) {
-				mysql_query($sql);
-				print mysql_error();
-				print "DONE: $sql\n\n";
-			} else if($options['interactive']) {
-				print $sql."\n";
-				$cmd = cli_read_stdin("(y)es apply, (N)o don't apply, (q)uit: ", array('', 'y', 'n', 'q'), 'n');
-				if($cmd == 'y') {
-					mysql_query($sql);
-					print mysql_error();
-					print "DONE: $sql\n";
-				} elseif($cmd == 'q') {
+	for ($i = 0; $i < 2; $i++) {
+		if ($i == 1) $updates = $updater->getModTabUpdates();
+		if(sizeof($updates) > 0) {
+			print "\n\nALTER\n\n";
+			foreach($updates as $sql) {
+				if($options['preview']) {
+					print $sql."\n";
+				} else if($options['automatic']) {
+					mysqli_query(db_get_link(), $sql);
+					print mysqli_error(db_get_link());
+					print "DONE: $sql\n\n";
+				} else if($options['interactive']) {
+					print $sql."\n";
+					$cmd = cli_read_stdin("(y)es apply, (N)o don't apply, (q)uit: ", array('', 'y', 'n', 'q'), 'n');
+					if($cmd == 'y') {
+						mysqli_query(db_get_link(), $sql);
+						print mysqli_error(db_get_link());
+						print "DONE: $sql\n";
+					} elseif($cmd == 'q') {
+						print "\n";
+						exit;
+					}
 					print "\n";
-					exit;
 				}
-				print "\n";
 			}
 		}
-		print "\n";
 	}
 }
 if(!$options['only_updates']) {
@@ -148,15 +160,15 @@ if(!$options['only_updates']) {
 			if($options['preview']) {
 				print $sql."\n";
 			} else if($options['automatic']) {
-				mysql_query($sql);
-				print mysql_error();
+				mysqli_query(db_get_link(), $sql);
+				print mysqli_error(db_get_link());
 				print "DONE: $sql\n\n";
 			} else if($options['interactive']) {
 				print $sql."\n";
 				$cmd = cli_read_stdin("(y)es apply, (N)o don't apply, (q)uit: ", array('', 'y', 'n', 'q'), 'n');
 				if($cmd == 'y') {
-					mysql_query($sql);
-					print mysql_error();
+					mysqli_query(db_get_link(), $sql);
+					print mysqli_error(db_get_link());
 					print "DONE: $sql\n";
 				} elseif($cmd == 'q') {
 					print "\n";

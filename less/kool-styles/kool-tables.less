@@ -1,0 +1,265 @@
+table.table {
+    &.auto-width {
+        width: auto;
+    }
+
+    &.ko_list > tbody > tr > td {
+        vertical-align: middle;
+    }
+
+    > tbody > tr,
+    > thead > tr {
+        &.row-danger {
+            background-color: @row-danger-bg;
+        }
+        &.row-success {
+            background-color: @row-success-bg;
+        }
+        &.row-warning {
+            background-color: @row-warning-bg;
+        }
+        &.row-primary {
+            background-color: @row-primary-bg;
+        }
+        &.row-info {
+            background-color: @row-info-bg;
+        }
+        &.row-inactive {
+            background-color: @row-inactive-bg;
+
+            > td {
+                color: @row-inactive-color;
+
+                a {
+                    color: @row-inactive-link-color;
+                }
+            }
+        }
+
+        &.ko_list_sunday td {
+            border-bottom: 2px solid #666 !important;
+        }
+
+        th {
+            &.ko_listh_filter_act {
+                background-color: @state-warning-bg;
+            }
+
+            &.ko_list {
+                position:relative;
+            }
+
+            span.ko_list_hide {
+                position: absolute;
+                top: 9px;
+                right: 9px;
+                width: 10px;
+                height: 10px;
+            }
+        }
+    }
+}
+
+div.list_overlay {
+    display:none;
+    padding:6px;
+    border-radius: @border-radius-base;
+    position:absolute;
+    background: #fff;
+    top: -10px;
+    left: -10px;
+    z-index:1002;
+    border:1px solid @dropdown-border;
+    padding-left:9px;
+
+    > ul {
+        list-style-type: none;
+        padding:0px 0px 0px 0px;
+        margin:0px 0px 0px 0px;
+        white-space: nowrap;
+
+        > li {
+            padding:0px 0px 0px 0px;
+            margin:0px 0px 0px 0px;
+            display:inline;
+
+            button,
+            a {
+                margin-right: 3px;
+            }
+        }
+    }
+}
+
+.list-icon {
+    font-size: 15px;
+
+    .list-edit-overlay & {
+        padding-right: 3px;
+    }
+}
+
+.list-action-header {
+    width: 20px;
+}
+
+
+// Zebra-striping
+//
+// Default zebra-stripe styles (alternating gray and transparent backgrounds)
+
+.table-alternating {
+    > tbody > tr {
+        &.row-odd {
+            background-color: @table-bg-accent;
+        }
+
+        &.row-odd,
+        &.row-even {
+            &.row-danger {
+                background-color: @row-danger-bg;
+            }
+            &.row-success {
+                background-color: @row-success-bg;
+            }
+            &.row-warning {
+                background-color: @row-warning-bg;
+            }
+            &.row-primary {
+                background-color: @row-primary-bg;
+            }
+            &.row-info {
+                background-color: @row-info-bg;
+            }
+            &.row-inactive {
+                background-color: @row-inactive-bg;
+
+                > td {
+                    color: @row-inactive-color;
+
+                    a {
+                        color: @row-inactive-link-color;
+                    }
+                }
+            }
+        }
+    }
+}
+
+
+// Hover effect
+//
+// Placed here since it has to come after the potential zebra striping
+
+.table-hover {
+    > tbody > tr:hover,
+    > thead > tr:hover {
+        background-color: @table-bg-hover;
+
+        &.row-danger {
+            background-color: darken(@row-danger-bg, 5%);
+        }
+        &.row-success {
+            background-color: darken(@row-success-bg, 5%);
+        }
+        &.row-warning {
+            background-color: darken(@row-warning-bg, 5%);
+        }
+        &.row-primary {
+            background-color: darken(@row-primary-bg, 5%);
+        }
+        &.row-info {
+            background-color: darken(@row-info-bg, 5%);
+
+            &.no-hover {
+                background-color: @row-info-bg;
+            }
+        }
+        &.row-inactive {
+            background-color: darken(@row-inactive-bg, 5%);
+
+            > td {
+                color: @row-inactive-color;
+
+                a {
+                    color: @row-inactive-link-color;
+                }
+            }
+        }
+    }
+}
+
+table.table.table-bordered {
+    border: 2px solid @table-border-color;
+}
+
+table.table > tbody > tr {
+    &,
+    > td,
+    > th {
+        .top { border-top: 1px solid @table-border-color; }
+        .bottom { border-bottom: 2px solid @table-border-color; }
+        .right { border-right: 2px solid @table-border-color; }
+        .left { border-left: 1px solid @table-border-color; }
+    }
+}
+
+@media only screen and (max-width: @screen-sm) {
+    table.table.ko_list{
+        display: block;
+        position: relative;
+        width: 100%;
+        border-collapse: collapse;
+        border-spacing: 0;
+        border: 1px solid @table-border-color;
+
+        th {
+            display: block;
+            text-align: right;
+            min-height: 28px;
+        }
+        td {
+            display: block;
+            min-height: 28px;
+        }
+        > thead {
+            display: block;
+            float: left;
+
+            > tr {
+                display: block;
+
+                > td, > th {
+                    border-left-width: 0px;
+                    border-top-width: 0px;
+                    border-right: 1px solid @table-border-color;
+                    border-bottom-width: 0px;
+                }
+            }
+        }
+        > tbody {
+            display: block;
+            width: auto;
+            position: relative;
+            overflow-x: auto;
+            white-space: nowrap;
+
+            > tr {
+                display: inline-block;
+                vertical-align: top;
+
+                > td, > th {
+                    border-left: 1px solid @table-border-color;
+                    border-top-width: 0px;
+                    border-right-width: 0px;
+                    border-bottom-width: 0px;
+                }
+            }
+        }
+    }
+    tr.full-line-row {
+        width: 0px;
+        height: 0px;
+        overflow: hidden;
+    }
+}

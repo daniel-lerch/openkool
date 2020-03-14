@@ -329,16 +329,12 @@ function hook_function_inline($function, &$data) {
 
 
 
-function hook_submenu($module, $menu, &$submenu, &$menucounter, &$itemcounter) {
+function hook_submenu($module, $menu, &$submenu, &$menucounter) {
 	global $my_submenu, $access;
 
 	if(is_array($my_submenu[$module][$menu])) {
 		foreach($my_submenu[$module][$menu] as $s) {
-			$pre  = is_array($s['show']) && in_array($_SESSION["show"], $s["show"]) ? "<b>" : "";
-			$post = is_array($s['show']) && in_array($_SESSION["show"], $s["show"]) ? "</b>" : "";
-			$submenu[$menucounter]["output"][$itemcounter] = $pre.$s["output"].$post;
-			$submenu[$menucounter]["link"][$itemcounter] = $s["link"];
-			$submenu[$menucounter]["html"][$itemcounter++] = $s["html"];
+			$submenu[$menucounter]["items"][] = $s;
 		}
 	}
 }//hook_submenu()
@@ -416,6 +412,26 @@ function hook_access_get_groups($module) {
 
 
 
+/**
+ * Hook for leute filters: plugins can set $f_sql
+ *
+ * @param string $f_sql SQL which selects people
+ * @param array $f_ Filter from Database
+ * @param array $f Filter from Filter Array
+ */
+function hook_apply_leute_filter(&$f_sql, $f_, $f) {
+	global $PLUGINS;
+
+	foreach($PLUGINS as $plugin) {
+		$action_ = $plugin['name'] . '_' . $f_['_name'];
+		if(function_exists('my_apply_leute_filter_'.$action_)) {
+			call_user_func_array('my_apply_leute_filter_'.$action_, array(&$f_sql, $f_, $f));
+		}
+	}
+}//hook_apply_leute_filter()
+
+
+
 
 /**
  * Hook for access system: Get available levels for given module
@@ -436,4 +452,51 @@ function hook_access_get_levels($module, &$values, &$descs) {
 	}
 	return FALSE;
 }//hook_access_get_levels()
+
+
+
+
+/**
+ * Hook for post.php: allows plugins to react on post requests to kOOL
+ *
+ * @param string $action name of action
+ * @param array $request the request array
+*  @param array $response the response array
+ */
+function hook_post_action($action, $request, &$response) {
+	global $PLUGINS;
+
+	foreach($PLUGINS as $plugin) {
+		$action_ = $plugin['name'] . '_' . $action;
+		if(function_exists('my_post_action_handler_'.$action_)) {
+			call_user_func_array('my_post_action_handler_'.$action_, array($request, &$response));
+			return TRUE; // TODO: allow more than one plugin to react on action -> finish loop before returning
+		}
+	}
+	return FALSE;
+}//hook_post_action()
+
+
+
+
+/**
+ * Hook for access system: Will be called before rendering access levels for login or admingroup
+ *                         $user_access will hold the current values from db, which may be changed
+ *
+ * @param string $module Name of module
+ * @param array &$user_access Will contain the access levels for this module
+ * @param array $mode login or admingroup
+ * @param int $id ID of login or admingroup
+ * @return boolean TRUE if a hook function has been found;
+ */
+function hook_access_levels_preprocess($module, &$user_access, $mode, $id) {
+	$fcn = 'my_'.$module.'_access_levels_preprocess';
+	if(function_exists($fcn)) {
+		call_user_func_array($fcn, array(&$user_access, &$mode, $id));
+		return TRUE;
+	}
+	return FALSE;
+}//hook_access_levels_preprocess()
+
+
 ?>

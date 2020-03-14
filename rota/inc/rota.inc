@@ -28,9 +28,6 @@ require_once($BASE_PATH."inc/class.kOOL_listview.php");
 require_once($BASE_PATH."consensus/consensus.inc");
 
 
-$ROTA_TIMESPANS = array('1d', '1w', '2w', '1m', '2m', '3m', '6m', '12m');
-
-
 
 /**
  * Show scheduling for events
@@ -55,22 +52,24 @@ function ko_rota_schedule($output=TRUE) {
 	if($access['rota']['MAX'] > 1) {
 		$exports[] = array(
 			'link' => "javascript:sendReq('../rota/inc/ajax.php', 'action,mode,id,sesid', 'export,event,###event_id###,###session_id###', show_box);",
-			'img' => "../images/icon_excel.png",
+			'html' => '<i class="fa fa-file-excel-o"></i>',
 			'title' => getLL('rota_event_export'),
 		);
 	}
 	if($access['rota']['MAX'] > 3) {
 		$exports[] = array(
 			'link' => "index.php?action=show_filesend&filetype=event:###event_id###",
-			'img' => "../images/icon_email.png",
+			'html' => '<i class="fa fa-envelope"></i>',
 			'title' => getLL('rota_event_email'),
 		);
 	}
 	$exports[] = array(
 		'link' => "javascript:sendReq('../rota/inc/ajax.php', 'action,id,sesid', 'eventmylist,###event_id###,###session_id###', do_element);",
-		'img' => "../images/icon_exportadd_my_list.png",
+		//'img' => "../images/icon_exportadd_my_list.png",
+		'html' => '<span class="fa-stack"><i class="fa fa-list fa-stack-1x"></i><i class="fa fa-chevron-right fa-stack-sm fa-stack-bottom-left text-success"></i><i class="fa fa-plus-circle fa-stack-sm fa-stack-top-right text-success"></i></span>',
 		'title' => getLL('rota_event_mylist'),
 	);
+
 	//Allow plugins to add new exports per event
 	$plugins = hook_get_by_type('rota');
 	foreach($plugins as $plugin) {
@@ -81,7 +80,7 @@ function ko_rota_schedule($output=TRUE) {
 
 	//Get events to be schedulled
 	$patterns = array('/###event_id###/', '/###session_id###/');
-	$events = ko_rota_get_events();
+	$events = ko_rota_get_events('', '', FALSE, TRUE);
 	foreach($events as $ei => $event) {
 		$events[$ei]['schedulling_code'] = ko_rota_get_schedulling_code($event);
 		//Process KOTA fields for event subtitles
@@ -111,7 +110,7 @@ function ko_rota_schedule($output=TRUE) {
 	$smarty->assign('show_weeks', $show_weeks);
 
 	if($show_weeks) {
-		$weeks = ko_rota_get_weeks($rota_teams);
+		$weeks = ko_rota_get_weeks($rota_teams, '', TRUE);
 		foreach($weeks as $wi => $week) {
 			$weeks[$wi]['schedulling_code'] = ko_rota_get_schedulling_code($week, 'week');
 		}
@@ -134,20 +133,32 @@ function ko_rota_schedule($output=TRUE) {
 	$exports = array();
 
 	//List of events as xls
-	$exports[] = array('mode' => 'eventlist', 'icon' => '../images/icon_excel.png', 'label' => getLL('rota_export_excel_eventlist'));
+	$exports[] = array('mode' => 'eventlist', 'html' => '<i class="fa fa-file-excel-o"></i>', 'label' => getLL('rota_export_excel_eventlist'));
 
 	//Landscape export if not only one day is displayed
-	if($_SESSION['rota_timespan'] != '1d') $exports[] = array('mode' => 'eventtable', 'icon' => '../images/icon_excel_l.png', 'label' => getLL('rota_export_excel_eventtable'));
+	if($_SESSION['rota_timespan'] != '1d') $exports[] = array('mode' => 'eventtable', 'html' => '<i class="fa fa-file-excel-o"></i>', 'label' => getLL('rota_export_excel_eventtable'));
 
 	//Export with weeks if only weekly teams are displayed
 	$show_weektable = TRUE;
 	foreach($rota_teams as $team) {
 		if($team['rotatype'] == 'event') $show_weektable = FALSE;
 	}
-	if($show_weektable) $exports[] = array('mode' => 'weektable', 'icon' => '../images/icon_excel_l.png', 'label' => getLL('rota_export_excel_weektable'));
+	if($show_weektable) $exports[] = array('mode' => 'weektable', 'html' => '<i class="fa fa-file-excel-o"></i>', 'label' => getLL('rota_export_excel_weektable'));
+
+	// helper overview
+	$exports[] = array(
+		'mode' => 'helperoverviewl',
+		'html' => '<i class="fa fa-file-excel-o"></i>',
+		'label' => getLL('rota_helperoverview_l_export'),
+	);
+	$exports[] = array(
+		'mode' => 'helperoverviewp',
+		'html' => '<i class="fa fa-file-excel-o"></i>',
+		'label' => getLL('rota_helperoverview_p_export'),
+	);
 
 	//PDF export
-	$exports[] = array('mode' => 'pdftable', 'icon' => '../images/create_pdf.png', 'label' => getLL('rota_export_excel_pdftable'));
+	$exports[] = array('mode' => 'pdftable', 'html' => '<i class="fa fa-file-pdf-o"></i>', 'label' => getLL('rota_export_excel_pdftable'));
 
 
 	//Allow plugins to add new exports
@@ -253,6 +264,7 @@ function ko_rota_list_teams($output=TRUE) {
 	$list->setActions(array('edit' => array('action' => 'edit_team'),
 													'delete' => array('action' => 'delete_team', 'confirm' => TRUE))
 										);
+	if ($access['rota']['MAX'] > 4) $list->setActionNew('new_team');
 	$list->setStats($rows, '', '', '', TRUE);
 	if(!ko_get_setting('rota_manual_ordering')) {
 		$list->setSort(TRUE, 'setsort', $_SESSION['sort_rota_teams'], $_SESSION['sort_rota_teams_order']);
@@ -309,6 +321,7 @@ function ko_rota_settings() {
 	$gc = 0;
 	$rowcounter = 0;
 	$frmgroup[$gc]['titel'] = getLL('settings_title_user');
+	$frmgroup[$gc]['tab'] = True;
 
 	$frmgroup[$gc]['row'][$rowcounter++]['inputs'][0] = array('desc' => getLL('rota_settings_default_view'),
 		'type' => 'select',
@@ -332,6 +345,16 @@ function ko_rota_settings() {
 		'label_1' => getLL('yes'),
 		'value' => $value == '' ? 0 : $value,
 	);
+	if($_SESSION['ses_userid'] != ko_get_guest_id()) {
+		$value = ko_html(ko_get_userpref($_SESSION['ses_userid'], 'rota_ical_deadline'));
+		$frmgroup[$gc]['row'][$rowcounter++]['inputs'][0] = array('desc' => getLL('rota_settings_ical_deadline'),
+			'type' => 'select',
+			'name' => 'sel_ical_deadline',
+			'values' => array(0, -1, -2, -3, -6, -12, -9999),
+			'descs' => array(getLL('daten_settings_ical_deadline_0'), getLL('daten_settings_ical_deadline_1'), getLL('daten_settings_ical_deadline_2'), getLL('daten_settings_ical_deadline_3'), getLL('daten_settings_ical_deadline_6'), getLL('daten_settings_ical_deadline_12'), getLL('daten_settings_ical_deadline_9999')),
+			'value' => $value,
+		);
+	}
 
 	if($access['rota']['MAX'] > 2) {
 		$frmgroup[$gc]['row'][$rowcounter]['inputs'][0] = array('desc' => getLL('rota_settings_orderby'),
@@ -401,6 +424,13 @@ function ko_rota_settings() {
 		'params' => 'size="5"',
 		'show_moves' => TRUE,
 	);
+	$frmgroup[$gc]['row'][$rowcounter]['inputs'][1] = array('desc' => getLL('rota_settings_show_participation'),
+		'name' => 'sel_show_participation',
+		'type' => 'select',
+		'values' => array('no', 'past', 'all'),
+		'descs' => array(getLL('rota_settings_show_participation_no'), getLL('rota_settings_show_participation_past'), getLL('rota_settings_show_participation_all')),
+		'value' => ko_get_userpref($_SESSION['ses_userid'], 'rota_show_participation'),
+	);
 
 
 
@@ -408,6 +438,8 @@ function ko_rota_settings() {
 	if($access['rota']['MAX'] > 4) {
 		$gc++;
 		$frmgroup[$gc]['titel'] = getLL('settings_title_global');
+		$frmgroup[$gc]['tab'] = True;
+
 
 		$value = ko_get_setting('rota_showroles');
 		$frmgroup[$gc]['row'][$rowcounter]['inputs'][0] = array('desc' => getLL('rota_settings_showroles'),
@@ -466,6 +498,7 @@ function ko_rota_settings() {
 			'value' => $value == '' ? 0 : $value,
 		);
 
+
 		// Consensus settings
 		$values = $descs = $avalues = $adescs = array();
 		$exclude = array('eventgruppen_id', 'startdatum', 'enddatum', 'startzeit', 'endzeit', 'room', 'rota', 'reservationen');
@@ -495,6 +528,11 @@ function ko_rota_settings() {
 			'name' => 'consensus_description',
 			'type' => 'richtexteditor',
 			'value' => ko_get_setting('consensus_description'),
+		);
+		$frmgroup[$gc]['row'][$rowcounter++]['inputs'][0] = array('desc' => getLL('rota_settings_restrict_link'),
+			'name' => 'consensus_restrict_link',
+			'type' => 'switch',
+			'value' => ko_get_setting('consensus_restrict_link'),
 		);
 
 	}
@@ -648,6 +686,7 @@ function ko_rota_export_event_xls($eventid) {
 	if($access['rota']['MAX'] < 2) return;
 
 	$event = ko_rota_get_events('', $eventid, TRUE);
+
 	$w = date('Y-W', (strtotime($event['startdatum'])-(ko_get_setting('rota_weekstart')*3600*24)));
 	$week = ko_rota_get_weeks('', $w);
 	$order = 'ORDER BY '.$_SESSION['sort_rota_teams'].' '.$_SESSION['sort_rota_teams_order'];
@@ -941,7 +980,7 @@ function ko_rota_export_landscape_xls($date, $mode) {
  *
  * Always include all teams not just those active in the session. For this, an excel export can be sent.
  */
-function ko_rota_get_placeholders($p, $eventid='') {
+function ko_rota_get_placeholders($p, $eventid='', $consensus_teams=NULL) {
 	global $ko_path, $BASE_URL;
 
 	//Set all to empty so the markers won't show up in the mailtext if not set below
@@ -959,6 +998,7 @@ function ko_rota_get_placeholders($p, $eventid='') {
 		'[[LEADER_TEAM_EVENTS_SCHEDULE]]' => '',
 		'[[PERSONAL_SCHEDULE]]' => '',
 		'[[CONSENSUS_LINK]]' => '',
+		'[[ICAL_LINK]]' => '',
 	);
 
 	$all_events = ko_rota_get_events('', $eventid, TRUE);
@@ -988,7 +1028,16 @@ function ko_rota_get_placeholders($p, $eventid='') {
 	//Consensus
 	$consensus_link = $BASE_URL;
 	if(substr($BASE_URL, -1) != '/') $consensus_link .= '/';
-	$r['[[CONSENSUS_LINK]]'] = $consensus_link.'consensus/?x=' . $p['id'] . 'x' . str_replace('-', '', $_SESSION['rota_timestart']) . 'x' . $_SESSION['rota_timespan'] . 'x' . substr(md5($p['id'] . $_SESSION['rota_timestart'] . $_SESSION['rota_timespan'] . KOOL_ENCRYPTION_KEY), 0, 6);
+	$teams_url = '';
+	if ($consensus_teams !== NULL) {
+		$teams_url = implode('-', $consensus_teams);
+	}
+	$r['[[CONSENSUS_LINK]]'] = '<a href="'.$consensus_link.'consensus/?x=' . $p['id'] . 'x' . str_replace('-', '', $_SESSION['rota_timestart']) . 'x' . $_SESSION['rota_timespan'] . ($teams_url ? 'x' . $teams_url : '') . 'x' . substr(md5($p['id'] . $_SESSION['rota_timestart'] . $_SESSION['rota_timespan'] . $teams_url . KOOL_ENCRYPTION_KEY), 0, 6).'">'.getLL('ko_consensus').'</a>';
+
+	$ical_link = $BASE_URL;
+	if(substr($BASE_URL, -1) != '/') $ical_link .= '/';
+	$ical_link .= 'rotaical/index.php?person='.$p['id'].'x'.strtolower(substr(md5($p['id'] . KOOL_ENCRYPTION_KEY . 'rotaIcal' . KOOL_ENCRYPTION_KEY . 'rotaIcal' . KOOL_ENCRYPTION_KEY . $p['id']), 0, 10));
+	$r['[[ICAL_LINK]]'] = $ical_link;
 
 	$r['[[FIRSTNAME]]'] = $p['vorname'];
 	$r['[[LASTNAME]]'] = $p['nachname'];
@@ -1068,7 +1117,7 @@ function ko_rota_get_placeholders($p, $eventid='') {
 	}
 
 	foreach($r as $k => $v) {
-		$r[$k] = trim($v);
+		$r[$k] = nl2br(trim($v));
 	}
 
 	return $r;
@@ -1087,23 +1136,20 @@ function ko_rota_get_placeholders($p, $eventid='') {
 function ko_rota_timespan_title($start, $ts) {
 	global $DATETIME;
 
-	switch($ts) {
-		case '1d':
-			$sT = $eT = strtotime($start);
+	switch(substr($ts, -1)) {
+		case 'd':
+			$inc = substr($ts, 0, -1);
+			$sT = strtotime($start);
+			$eT = strtotime(add2date(add2date($start, 'day', $inc, TRUE), 'day', -1, TRUE));
 		break;
 
-		case '1w':
-		case '2w':
+		case 'w':
 			$inc = substr($ts, 0, -1);
 			$sT = strtotime($start);
 			$eT = strtotime(add2date(add2date($start, 'week', $inc, TRUE), 'day', -1, TRUE));
 		break;
 
-		case '1m':
-		case '2m':
-		case '3m':
-		case '6m':
-		case '12m':
+		case 'm':
 			$inc = substr($ts, 0, -1);
 			$sT = strtotime($start);
 			$eT = strtotime(add2date(add2date($start, 'month', $inc, TRUE), 'day', -1, TRUE));
@@ -1172,7 +1218,7 @@ function ko_rota_export_landscape_pdf() {
 	define('FPDF_FONTPATH',$BASE_PATH.'fpdf/schriften/');
 	require_once($BASE_PATH.'fpdf/mc_table.php');
 	$pdf=new PDF_MC_Table('L', 'mm', 'A4');
-  $pdf->Open();
+	$pdf->Open();
 	$pdf->SetAutoPageBreak(true, 1);
 	$pdf->AddFont('fontn','','arial.php');
 	$pdf->AddFont('fontb','','arialb.php');
@@ -1377,6 +1423,466 @@ function ko_rota_export_landscape_pdf() {
 
 
 
+function ko_rota_export_helper_overview($orientation='portrait') {
+	global $access, $ko_path, $BASE_PATH, $BASE_URL, $DATETIME;
+
+	// TODO: why is $ko_path incorrect??
+	require_once $ko_path . '../inc/phpexcel/PHPExcel.php';
+	require_once $ko_path . '../inc/phpexcel/PHPExcel/Writer/Excel2007.php';
+
+	if($access['rota']['MAX'] < 2) return;
+
+	$events = ko_rota_get_events('', '', TRUE);
+	array_map(function($e) {kota_process_data('ko_event', $e, 'xls'); return $e;}, $events);
+
+	$teams = $_SESSION['rota_teams'];
+
+	if (sizeof($teams) == 0) {
+		return FALSE;
+	} else {
+		$order = 'ORDER BY '.$_SESSION['sort_rota_teams'].' '.$_SESSION['sort_rota_teams_order'];
+		$all_teams = db_select_data('ko_rota_teams', 'WHERE `id` in ('.implode(',', $teams).')', '*', $order);
+	}
+
+	foreach ($all_teams as $tk => $team) {
+		if ($access['rota']['ALL'] < 2 && $access['rota'][$team['id']] < 2) {
+			unset($all_teams[$tk]);
+		};
+	}
+
+	$data = array('events' => $events, 'teams' => $all_teams, 'data' => array());
+
+	foreach ($all_teams as $tk => $team) {
+		$team_entry = array('members' => ko_rota_get_team_members($team['id'], TRUE));
+
+		// Add all helpers that were added using free text
+		foreach ($events as $event) {
+			$data_entry = array();
+			if (in_array($team['id'], $event['teams'])) {
+				$helpers = ko_rota_get_helpers_by_event_team($event['id'], $team['id']);
+				foreach ($helpers as $k => $helper) {
+					if ($helper['is_free_text']) {
+						$team_entry['members']['people']["manualId_e{$event['id']}_t{$team['id']}_u{$k}"] = array('vorname' => $helper['name'], 'nachname' => '', 'uid' => "e{$event['id']}_t{$team['id']}_u{$k}");
+					}
+				}
+			}
+		}
+
+		foreach ($events as $event) {
+			$data_entry = array();
+			if (!in_array($team['id'], $event['teams'])) {
+				$data_entry['disabled'] = TRUE;
+			} else {
+				$entries = array();
+				$helpers = ko_rota_get_helpers_by_event_team($event['id'], $team['id']);
+				foreach ($team_entry['members']['people'] as $member) {
+					$found = FALSE;
+					foreach ($helpers as $k => $helper) {
+						if ($helper['id'] == $member['id'] || ($helper['is_free_text'] && $member['uid'] == "e{$event['id']}_t{$team['id']}_u{$k}")) {
+							$found = 'TRUE';
+							break;
+						}
+					}
+					$entries[] = $found;
+				}
+				$data_entry['event_entries'] = $entries;
+			}
+			$team_entry['team_entries'][] = $data_entry;
+		}
+		$data['data'][] = $team_entry;
+	}
+
+	$title = utf8_encode(getLL('rota_helperoverview_title')."\n".ko_rota_timespan_title($_SESSION['rota_timestart'], $_SESSION['rota_timespan']));
+
+	$event_fields = explode(',', ko_get_userpref($_SESSION['ses_userid'], 'rota_eventfields'));
+	array_filter($event_fields, function($el) {return trim($el) != '';});
+
+	$use_colors = ko_get_userpref($_SESSION['ses_userid'], 'rota_pdf_use_colors');
+
+	$mark = utf8_encode(getLL('rota_helperoverview_mark'));
+
+	$person = ko_get_logged_in_person();
+	$xls_default_font = ko_get_setting('xls_default_font');
+	$name = $person['vorname'] . ' ' . $person['nachname'];
+
+	$objPHPExcel = new PHPExcel();
+	$objPHPExcel->getProperties()->setCreator(utf8_encode($name));
+	$objPHPExcel->getProperties()->setLastModifiedBy(utf8_encode($name));
+	$objPHPExcel->getProperties()->setTitle(utf8_encode($title));
+	$objPHPExcel->getProperties()->setSubject('kOOL-Export');
+	$objPHPExcel->getProperties()->setDescription('');
+
+	$sheet = $objPHPExcel->setActiveSheetIndex(0);
+	$sheet->getPageSetup()->setPaperSize(PHPExcel_Worksheet_PageSetup::PAPERSIZE_A4);
+	if ($orientation == 'landscape') {
+		$sheet->getPageSetup()->setOrientation(
+			PHPExcel_Worksheet_PageSetup::ORIENTATION_LANDSCAPE
+		);
+	} else {
+		$sheet->getPageSetup()->setOrientation(
+			PHPExcel_Worksheet_PageSetup::ORIENTATION_PORTRAIT
+		);
+	}
+
+	if ($xls_default_font) {
+		$sheet->getDefaultStyle()->getFont()->setName($xls_default_font);
+	} else {
+		$sheet->getDefaultStyle()->getFont()->setName('Arial');
+	}
+
+	$cellstyle = array(
+		'title' => array(
+			'font' => array(
+				'bold' => ko_get_setting('xls_title_bold') ? true : false,
+				'size' => 14,
+				'name' => utf8_encode(ko_get_setting('xls_title_font'))
+			),
+			'alignment' => array(
+				'vertical' => PHPExcel_Style_Alignment::VERTICAL_CENTER,
+			),
+		),
+		'eventfield' => array(
+			'font' => array(
+				'size' => 8,
+			),
+		),
+		'teamtitle' => array(
+			'font' => array(
+				'bold' => ko_get_setting('xls_title_bold') ? true : false,
+				'size' => 12,
+				'name' => utf8_encode(ko_get_setting('xls_title_font')),
+				'color' => array(
+					'rgb' => '000000',
+				),
+			),
+			'fill' => array(
+				'type' => PHPExcel_Style_Fill::FILL_SOLID,
+				'startcolor' => array(
+					'rgb' => 'EEEEEE',
+				),
+			),
+			'alignment' => array(
+				'vertical' => PHPExcel_Style_Alignment::VERTICAL_CENTER,
+			),
+		),
+		'disabled' => array(
+			'fill' => array(
+				'type' => PHPExcel_Style_Fill::FILL_SOLID,
+				'startcolor' => array(
+					'rgb' => 'DDDDDD',
+				),
+			),
+		),
+		'bordertop' => array(
+			'borders' => array(
+				'top' => array(
+					'style' => PHPExcel_Style_Border::BORDER_THIN,
+					'color' => array('rgb' => '000000'),
+				),
+			),
+		),
+		'borderleft' => array(
+			'borders' => array(
+				'left' => array(
+					'style' => PHPExcel_Style_Border::BORDER_THIN,
+					'color' => array('rgb' => '000000'),
+				),
+			),
+		),
+		'borderright' => array(
+			'borders' => array(
+				'right' => array(
+					'style' => PHPExcel_Style_Border::BORDER_THIN,
+					'color' => array('rgb' => '000000'),
+				),
+			),
+		),
+		'borderbottom' => array(
+			'borders' => array(
+				'bottom' => array(
+					'style' => PHPExcel_Style_Border::BORDER_THIN,
+					'color' => array('rgb' => '000000'),
+				),
+			),
+		),
+		'entry' => array(
+			'alignment' => array(
+				'horizontal' => PHPExcel_Style_Alignment::HORIZONTAL_CENTER,
+			)
+		),
+		'borderleft_small' => array(
+			'borders' => array(
+				'left' => array(
+					'style' => PHPExcel_Style_Border::BORDER_THIN,
+					'color' => array('rgb' => 'CCCCCC'),
+				),
+			),
+		),
+	);
+
+	$cellstyle_p = $cellstyle;
+	unset($cellstyle_p['teamtitle']['fill']);
+	unset($cellstyle_p['teamtitle']['alignment']);
+	$cellstyle_p['teamtitle']['font'] = array(
+		'bold' => false,
+		'size' => 8
+	);
+
+	//Add Logo
+	$logo1Path = '../my_images/'.ko_get_pdf_logo();
+
+	if ($orientation == 'landscape') {
+		if (file_exists($ko_path . $logo1Path)) {
+			$logo1Path = $ko_path . $logo1Path;
+			$objDrawing = new PHPExcel_Worksheet_Drawing();
+			$objDrawing->setName('Logo');
+			$objDrawing->setDescription('Logo');
+			$objDrawing->setPath($logo1Path);
+			$objDrawing->setCoordinates('A1');
+			$objDrawing->setResizeProportional(true);
+			$objDrawing->setWidthAndHeight(300, 70);
+			$objDrawing->setWorksheet($sheet);
+		}
+
+		$sheet->getColumnDimension('A')->setWidth(30);
+
+		//title
+		$sheet->getRowDimension(1)->setRowHeight(60);
+		$sheet->setCellValueByColumnAndRow(2,1, $title);
+		$sheet->getStyle('C1')->applyFromArray($cellstyle['title']);
+
+		$row = 2;
+		$col = 0;
+		$field_titles = array(getLL('kota_listview_ko_event_eventgruppen_id'), getLL('kota_listview_ko_event_startdatum'), getLL('kota_listview_ko_event_startzeit'));
+		foreach ($event_fields as $event_field) {
+			$field_titles[] = getLL("kota_listview_ko_event_{$event_field}");
+		}
+		foreach ($field_titles as $field_title) {
+			$sheet->setCellValueByColumnAndRow($col, $row, utf8_encode($field_title));
+			$sheet->getStyleByColumnAndRow($col, $row)->applyFromArray($cellstyle['eventfield']);
+			$sheet->getStyleByColumnAndRow($col, $row)->getAlignment()->setWrapText(true);
+			$row++;
+		}
+
+		$row = 2;
+		$col = 1;
+		foreach ($data['events'] as $event) {
+			$row = 2;
+
+			if ($use_colors && $event['eventgruppen_farbe']) {
+				$fillstyle = array(
+					'fill' => array(
+						'type' => PHPExcel_Style_Fill::FILL_SOLID,
+						'startcolor' => array(
+							'rgb' => strtoupper($event['eventgruppen_farbe']),
+						),
+					),
+					'font' => array(
+						'color' => array(
+							'rgb' => ko_get_contrast_color($event['eventgruppen_farbe'], '000000', 'FFFFFF'),
+						),
+					),
+				);
+
+				for ($k = $row; $k < $row + sizeof($field_titles); $k++) {
+					$sheet->getStyleByColumnAndRow($col, $k)->applyFromArray($fillstyle);
+				}
+			}
+
+			$fields = array();
+			$fields[] = $event['eventgruppen_name'];
+			$fields[] = strftime('%a., %d.%m.%Y', strtotime($event['startdatum']));
+			$fields[] = ' '.ko_get_time_as_string($event, 1, 'default', FALSE);
+
+			foreach ($event_fields as $event_field) {
+				$fields[] = $event[$event_field];
+			}
+			foreach ($fields as $field) {
+
+				$sheet->setCellValueByColumnAndRow($col, $row, utf8_encode($field));
+				$sheet->getStyleByColumnAndRow($col, $row)->applyFromArray($cellstyle['eventfield']);
+				$sheet->getStyleByColumnAndRow($col, $row)->getAlignment()->setWrapText(true);
+
+				$row++;
+			}
+			$sheet->getColumnDimensionByColumn($col)->setWidth(15);
+			$col++;
+		}
+
+		$k = 0;
+		foreach ($data['teams'] as $team) {
+			$old_row = $row;
+			$col = 0;
+			$sheet->getRowDimension($row)->setRowHeight(19);
+			$sheet->setCellValueByColumnAndRow($col, $row, utf8_encode($team['name']));
+			for ($j = $col; $j <= $col + sizeof($data['events']); $j++) {
+				$sheet->getStyleByColumnAndRow($j, $row)->applyFromArray($cellstyle['teamtitle']);
+			}
+			$row++;
+
+			$team_data = $data['data'][$k];
+			foreach ($team_data['members']['people'] as $member) {
+				$sheet->setCellValueByColumnAndRow($col, $row, utf8_encode(trim($member['vorname'].' '.$member['nachname'])));
+				$row++;
+			}
+			$col++;
+
+			foreach ($team_data['team_entries'] as $event_entries) {
+				$row = $old_row + 1;
+				if ($event_entries['disabled']) {
+					for ($i = 0; $i < sizeof($team_data['members']['people']); $i++) {
+						$sheet->getStyleByColumnAndRow($col, $row)->applyFromArray($cellstyle['disabled']);
+						$row++;
+					}
+				} else {
+					foreach ($event_entries['event_entries'] as $helper_entry) {
+						if ($helper_entry) {
+							$sheet->getStyleByColumnAndRow($col, $row)->applyFromArray($cellstyle['entry']);
+							$sheet->setCellValueByColumnAndRow($col, $row, $mark);
+						}
+						$row++;
+					}
+				}
+				$col++;
+			}
+			$k++;
+		}
+	} else {
+		if (file_exists($ko_path . $logo1Path)) {
+			$logo1Path = $ko_path . $logo1Path;
+			$objDrawing = new PHPExcel_Worksheet_Drawing();
+			$objDrawing->setName('Logo');
+			$objDrawing->setDescription('Logo');
+			$objDrawing->setPath($logo1Path);
+			$objDrawing->setCoordinates('A1');
+			$objDrawing->setResizeProportional(true);
+			$objDrawing->setWidthAndHeight(300, 70);
+			$objDrawing->setWorksheet($sheet);
+		}
+
+		$sheet->getColumnDimension('A')->setWidth(20);
+		$sheet->getRowDimension(1)->setRowHeight(60);
+
+		//title
+		$sheet->setCellValueByColumnAndRow(3,1, $title);
+		$sheet->getStyle('D1')->applyFromArray($cellstyle_p['title']);
+
+		$row = 2;
+		$col = 0;
+		$field_titles = array(getLL('kota_listview_ko_event_eventgruppen_id'), getLL('kota_listview_ko_event_startdatum'));
+		foreach ($event_fields as $event_field) {
+			$field_titles[] = getLL("kota_listview_ko_event_{$event_field}");
+		}
+		foreach ($field_titles as $field_title) {
+			$sheet->setCellValueByColumnAndRow($col, $row, utf8_encode($field_title));
+			$sheet->getStyleByColumnAndRow($col, $row)->applyFromArray($cellstyle['eventfield']);
+			//$sheet->getStyleByColumnAndRow($col, $row)->getAlignment()->setWrapText(true);
+			$col++;
+		}
+
+		$row = 4;
+		$col = 0;
+		foreach ($data['events'] as $event) {
+			$col = 0;
+
+			if ($use_colors && $event['eventgruppen_farbe']) {
+				$fillstyle = array(
+					'fill' => array(
+						'type' => PHPExcel_Style_Fill::FILL_SOLID,
+						'startcolor' => array(
+							'rgb' => strtoupper($event['eventgruppen_farbe']),
+						),
+					),
+					'font' => array(
+						'color' => array(
+							'rgb' => ko_get_contrast_color($event['eventgruppen_farbe'], '000000', 'FFFFFF'),
+						),
+					),
+				);
+
+				for ($k = $col; $k < $col + sizeof($field_titles); $k++) {
+					$sheet->getStyleByColumnAndRow($k, $row)->applyFromArray($fillstyle);
+				}
+			}
+
+			$fields = array();
+			$fields[] = $event['eventgruppen_name'];
+			$fields[] = strftime('%d.%m.%y', strtotime($event['startdatum'])).' '.ko_get_time_as_string($event, 1, 'default', FALSE);
+
+			foreach ($event_fields as $event_field) {
+				$fields[] = $event[$event_field];
+			}
+			foreach ($fields as $field) {
+				$sheet->getColumnDimensionByColumn($col)->setWidth(13);
+				$sheet->setCellValueByColumnAndRow($col, $row, utf8_encode($field));
+				$sheet->getStyleByColumnAndRow($col, $row)->applyFromArray($cellstyle_p['eventfield']);
+				$sheet->getStyleByColumnAndRow($col, $row)->getAlignment()->setWrapText(true);
+
+				$col++;
+			}
+			$row++;
+		}
+
+		$k = 0;
+		foreach ($data['teams'] as $team) {
+			$old_col = $col;
+			$row = 2;
+			$sheet->setCellValueByColumnAndRow($col, $row, utf8_encode($team['name']));
+			$sheet->getStyleByColumnAndRow($col, $row)->applyFromArray($cellstyle_p['teamtitle']);
+			for ($j = $row; $j <= $row + sizeof($data['events']) + 1; $j++) {
+				$sheet->getStyleByColumnAndRow($col, $j)->applyFromArray($cellstyle_p['borderleft']);
+			}
+			$row++;
+
+			$team_data = $data['data'][$k];
+			$c = 0;
+			foreach ($team_data['members']['people'] as $member) {
+				if ($c > 0) {
+					for ($j = $row; $j <= $row + sizeof($data['events']); $j++) {
+						$sheet->getStyleByColumnAndRow($col, $j)->applyFromArray($cellstyle_p['borderleft_small']);
+					}
+				}
+				$sheet->getColumnDimensionByColumn($col)->setWidth(4);
+				$sheet->setCellValueByColumnAndRow($col, $row, utf8_encode($member['vorname'].' '.$member['nachname']));
+				$sheet->getStyleByColumnAndRow($col, $row)->getAlignment()->setTextRotation(90);
+				$col++;
+				$c++;
+			}
+			$row++;
+
+			foreach ($team_data['team_entries'] as $event_entries) {
+				$col = $old_col;
+				if ($event_entries['disabled']) {
+					for ($i = 0; $i < sizeof($team_data['members']['people']); $i++) {
+						$sheet->getStyleByColumnAndRow($col, $row)->getFill()->applyFromArray($cellstyle_p['disabled']['fill']);
+						$col++;
+					}
+				} else {
+					foreach ($event_entries['event_entries'] as $helper_entry) {
+						if ($helper_entry) {
+							$sheet->setCellValueByColumnAndRow($col, $row, $mark);
+							$sheet->getStyleByColumnAndRow($col, $row)->applyFromArray($cellstyle['entry']);
+						}
+						$col++;
+					}
+				}
+				$row++;
+			}
+			$k++;
+		}
+	}
+
+
+	$filename = $ko_path.'../download/excel/'.getLL('rota_filename').date('YmdHis').'.xlsx';
+	//simple fileformat for testing
+	//$filename = $ko_path.'download/excel/bk.xlsx';
+	$objWriter = PHPExcel_IOFactory::createWriter($objPHPExcel, 'Excel2007');
+	$objWriter->save($filename);
+
+	return $filename;
+}
+
+
 
 
 
@@ -1386,7 +1892,7 @@ function ko_dp_create_dienste_pdf($dienste_, $monate) {
 
 	//PDF starten
   define('FPDF_FONTPATH',$BASE_PATH.'fpdf/schriften/');
-  require($BASE_PATH.'fpdf/mc_table.php');
+  require_once($BASE_PATH.'fpdf/mc_table.php');
   $pdf=new PDF_MC_Table('P', 'mm', 'A4');
   $pdf->Open();
   $pdf->SetAutoPageBreak(true, 1);
@@ -1546,18 +2052,19 @@ function ko_dp_create_dienste_pdf($dienste_, $monate) {
 
 
 function ko_rota_send_file_form($get) {
-	global $ko_path, $BASE_PATH, $DATETIME, $access;
+	global $ko_path, $BASE_PATH, $DATETIME, $access, $smarty;
 
 	if($access['rota']['MAX'] < 4) return FALSE;
 
 	$c = '';
 
-	$c .= '<h1>'.getLL('download_send_title').'</h1>';
-	$c .= '<div style="width: 700px;">';
+	$c .= '<h3>'.getLL('download_send_title').'</h3>';
 	$c .= '<input type="hidden" name="filetype" value="'.$get['filetype'].'" />';
-
-	$c .= '<b>'.getLL('download_send_sender').':</b><br />';
-	$c .= '<select name="sender" size="0" style="width: 700px; margin-bottom: 10px;">';
+	$c .= '<div class="row">';
+	$c .= '<div class="col-xs-12 col-md-8">';
+	$c .= '<div class="form-group">';
+	$c .= '<label>'.getLL('download_send_sender').':</label>';
+	$c .= '<select name="sender" class="input-sm form-control">';
 	//Sender: one of the email addresses of this login
 	$p = ko_get_logged_in_person();
 	if(ko_get_leute_email($p, $emails)) {
@@ -1570,13 +2077,18 @@ function ko_rota_send_file_form($get) {
 		$info_email = ko_get_setting('info_email');
 		$c .= '<option value="'.$info_email.'">'.$info_email.'</option>';
 	}
-	$c .= '</select><br />';
+	$c .= '</select>';
+	$c .= '</div>';
+	$c .= '</div>';
+	$c .= '</div>';
 
 
 	//Possible recipient options
-	$c .= '<div style="width: 700px;">';
-	$c .= '<b>'.getLL('download_send_recipients').':</b><br />';
-	$c .= '<select name="recipients" size="0" style="float: left; width: 340px; margin-bottom: 10px;" id="recipients">';
+	$c .= '<div class="row">';
+	$c .= '<div class="col-xs-12 col-md-8">';
+	$c .= '<div class="form-group">';
+	$c .= '<label>'.getLL('download_send_recipients').':</label>';
+	$c .= '<select class="input-sm form-control" name="recipients" id="recipients">';
 	$sel = array($get['recipients'] => 'selected="selected"');
 
 	$c .= '<option value="schedulled" '.$sel['schedulled'].' title="'.getLL('rota_send_schedulled').'">'.getLL('rota_send_schedulled').'</option>';
@@ -1585,6 +2097,7 @@ function ko_rota_send_file_form($get) {
 	$c .= '<option value="selectedleaders" '.$sel['selectedleaders'].' title="'.getLL('rota_send_selectedleaders').'">'.getLL('rota_send_selectedleaders').'</option>';
 	if($access['rota']['ALL'] > 3) {
 		$c .= '<option value="allrotamembers" '.$sel['allrotamembers'].' title="'.getLL('rota_send_allrotamembers').'">'.getLL('rota_send_allrotamembers').'</option>';
+		$c .= '<option value="allrotamembersconsensus" '.$sel['allrotamembersconsensus'].' title="'.getLL('rota_send_allrotamembersconsensus').'">'.getLL('rota_send_allrotamembersconsensus').'</option>';
 		$c .= '<option value="allrotaleaders" '.$sel['allrotaleaders'].' title="'.getLL('rota_send_allrotaleaders').'">'.getLL('rota_send_allrotaleaders').'</option>';
 	}
 	$c .= '<option value="manualschedulled" '.$sel['manualschedulled'].' title="'.getLL('rota_send_manualschedulled').'">'.getLL('rota_send_manualschedulled').'</option>';
@@ -1610,8 +2123,8 @@ function ko_rota_send_file_form($get) {
 
 	//Add select for recipient mode single
 	//TODO: Reset from $get
-	$options['single']  = '<b>'.getLL('rota_send_single_title').':</b><br />';
-	$options['single'] .= '<select name="single_id[]" size="10" style="width: 340px;" multiple="multiple">';
+	$options['single']  = '<div class="row"><div class="col-xs-12 col-md-8"><div class="form-group"><label>'.getLL('rota_send_single_title').':</label>';
+
 	//Get all rota team members
 	$order = 'ORDER BY '.$_SESSION['sort_rota_teams'].' '.$_SESSION['sort_rota_teams_order'];
 	$teams = db_select_data('ko_rota_teams', 'WHERE 1', '*', $order);
@@ -1629,63 +2142,106 @@ function ko_rota_send_file_form($get) {
 		else $sort_keys[$p['id']] = $p['vorname'].$p['nachname'];
 	}
 	asort($sort_keys);
+
+	$submittedV = array_filter(explode(',', $_POST['single_id']), function($e){return trim($e)?TRUE:FALSE;});
+	$values = $descs = $avalues = $adescs = array();
 	foreach($sort_keys as $id => $v) {
 		$p = $sorted_people[$id];
-		$selectedP = (isset($sel['single']) && in_array($id, $_POST['single_id'])) ? 'selected="selected"' : '';
-		$options['single'] .= '<option value="'.$id.'" '.$selectedP.'>'.$p.'</option>';
-	}
-	$options['single'] .= '</select>';
 
+		if (isset($sel['single']) && in_array($id, $submittedV)) {
+			$avalues[] = $id;
+			$avalues[] = $p;
+		}
+		$values[] = $id;
+		$descs[] = $p;
+	}
+	$value = implode(',', $avalues);
+	$localSm = clone($smarty);
+	$localSm->assign('input', array('type' => 'doubleselect', 'values' => $values, 'descs' => $descs, 'avalues' => $avalues, 'adescs' => $adescs, 'value' => $value, 'name' => 'single_id', 'html_id' => 'single_id', 'js_func_add' => 'double_select_add'));
+	$inputHtml = $localSm->fetch('ko_formular_elements.tmpl');
+	$options['single'] .= $inputHtml;
+	$options['single'] .= '</div></div></div>';
 
 	//Add a list of all teams to select from (for members)
-	$options['manualmembers']  = '<b>'.getLL('rota_send_manualmembers_title').':</b><br />';
-	$options['manualmembers'] .= '<select name="sel_teams_members[]" size="10" multiple="multiple" style="width: 340px; height: 170px;">';
+	$options['manualmembers']  = '<div class="row"><div class="col-xs-12 col-md-8"><div class="form-group"><label>'.getLL('rota_send_manualmembers_title').':</label>';
+	$submittedV = array_filter(explode(',', $_POST['sel_teams_members']), function($e){return trim($e)?TRUE:FALSE;});
+	$values = $descs = $avalues = $adescs = array();
 	//Get all rota teams
 	foreach($teams as $team) {
 		if($access['rota']['ALL'] < 4 && $access['rota'][$team['id']] < 4) continue;
-		$selectedT = (isset($sel['manualmembers']) && in_array($team['id'], $_POST['sel_teams_members'])) ? 'selected="selected"' : '';
-		$options['manualmembers'] .= '<option value="'.$team['id'].'" '.$selectedT.'>'.$team['name'].'</option>';
+		if (isset($sel['manualmembers']) && in_array($team['id'], $submittedV)) {
+			$avalues[] = $team['id'];
+			$avalues[] = $team['name'];
+		}
+		$values[] = $team['id'];
+		$descs[] = $team['name'];
 	}
-	$options['manualmembers'] .= '</select>';
-
-
-	//Add a list of all teams to select from (for leaders)
-	$options['manualleaders']  = '<b>'.getLL('rota_send_manualleaders_title').':</b><br />';
-	$options['manualleaders'] .= '<select name="sel_teams_leaders[]" size="10" multiple="multiple" style="width: 340px; height: 170px;">';
-	//Get all rota teams
-	foreach($teams as $team) {
-		if($access['rota']['ALL'] < 4 && $access['rota'][$team['id']] < 4) continue;
-		$selectedT = (isset($sel['manualleaders']) && in_array($team['id'], $_POST['sel_teams_leaders'])) ? 'selected="selected"' : '';
-		$options['manualleaders'] .= '<option value="'.$team['id'].'" '.$selectedT.'>'.$team['name'].'</option>';
-	}
-	$options['manualleaders'] .= '</select>';
+	$value = implode(',', $avalues);
+	$localSm->assign('input', array('type' => 'doubleselect', 'values' => $values, 'descs' => $descs, 'avalues' => $avalues, 'adescs' => $adescs, 'value' => $value, 'name' => 'sel_teams_members', 'js_func_add' => 'double_select_add'));
+	$inputHtml = $localSm->fetch('ko_formular_elements.tmpl');
+	$options['manualmembers'] .= $inputHtml;
+	$options['manualmembers'] .= '</div></div></div>';
 
 	//Add a list of all teams to select from (for leaders)
-	$options['manualschedulled']  = '<b>'.getLL('rota_send_manualschedulled_title').':</b><br />';
-	$options['manualschedulled'] .= '<select name="sel_teams_schedulled[]" size="10" multiple="multiple" style="width: 340px; height: 170px;">';
+	$options['manualleaders']  = '<div class="row"><div class="col-xs-12 col-md-8"><div class="form-group"><label>'.getLL('rota_send_manualleaders_title').':</label>';
+	$submittedV = array_filter(explode(',', $_POST['sel_teams_leaders']), function($e){return trim($e)?TRUE:FALSE;});
+	$values = $descs = $avalues = $adescs = array();
 	//Get all rota teams
 	foreach($teams as $team) {
 		if($access['rota']['ALL'] < 4 && $access['rota'][$team['id']] < 4) continue;
-		$selectedT = (isset($sel['manualschedulled']) && in_array($team['id'], $_POST['sel_teams_schedulled'])) ? 'selected="selected"' : '';
-		$options['manualschedulled'] .= '<option value="'.$team['id'].'" '.$selectedT.'>'.$team['name'].'</option>';
+		if (isset($sel['manualleaders']) && in_array($team['id'], $submittedV)) {
+			$avalues[] = $team['id'];
+			$avalues[] = $team['name'];
+		}
+		$values[] = $team['id'];
+		$descs[] = $team['name'];
 	}
-	$options['manualschedulled'] .= '</select>';
+	$value = implode(',', $avalues);
+	$localSm->assign('input', array('type' => 'doubleselect', 'values' => $values, 'descs' => $descs, 'avalues' => $avalues, 'adescs' => $adescs, 'value' => $value, 'name' => 'sel_teams_leaders', 'js_func_add' => 'double_select_add'));
+	$inputHtml = $localSm->fetch('ko_formular_elements.tmpl');
+	$options['manualleaders'] .= $inputHtml;
+	$options['manualleaders'] .= '</div></div></div>';
+
+	//Add a list of all teams to select from (for leaders)
+	$options['manualschedulled']  = '<div class="row"><div class="col-xs-12 col-md-8"><div class="form-group"><label>'.getLL('rota_send_manualschedulled_title').':</label>';
+	$submittedV = array_filter(explode(',', $_POST['sel_teams_schedulled']), function($e){return trim($e)?TRUE:FALSE;});
+	$values = $descs = $avalues = $adescs = array();
+	//Get all rota teams
+	foreach($teams as $team) {
+		if($access['rota']['ALL'] < 4 && $access['rota'][$team['id']] < 4) continue;
+		if (isset($sel['manualschedulled']) && in_array($team['id'], $submittedV)) {
+			$avalues[] = $team['id'];
+			$avalues[] = $team['name'];
+		}
+		$values[] = $team['id'];
+		$descs[] = $team['name'];
+	}
+	$value = implode(',', $avalues);
+	$localSm->assign('input', array('type' => 'doubleselect', 'values' => $values, 'descs' => $descs, 'avalues' => $avalues, 'adescs' => $adescs, 'value' => $value, 'name' => 'sel_teams_schedulled', 'js_func_add' => 'double_select_add'));
+	$inputHtml = $localSm->fetch('ko_formular_elements.tmpl');
+	$options['manualschedulled'] .= $inputHtml;
+	$options['manualschedulled'] .= '</div></div></div>';
 
 	$c .= '</select>';
+	$c .= '</div>';
+	$c .= '</div>';
+	$c .= '</div>';
 
 	if(is_array($options)) {
 		foreach($options as $key => $code) {
 			$style = isset($sel[$key]) ? '' : 'display: none;';
-			$c .= '<div class="recipients_options" style="'.$style.' float: right;" id="options_'.$key.'">'.$code.'</div>';
+			$c .= '<div class="recipients_options" style="'.$style.'" id="options_'.$key.'">'.$code.'</div>';
 		}
 	}
 	$c .= '</div>';
 
 
 	//Group as additional recipients
-	$c .= '<br clear="all" /><div style="width: 700px;">';
-	$c .= '<b>'.getLL('download_send_recipients_group').':</b><br />';
-	$c .= '<select name="recipients_group" size="0" style="float: left; width: 340px; margin-bottom: 10px;" id="recipients_group">';
+	$c .= '<div class="row">';
+	$c .= '<div class="col-md-8">';
+	$c .= '<div class="form-group">';
+	$c .= '<label>'.getLL('download_send_recipients_group').':</label>';
+	$c .= '<select name="recipients_group" id="recipients_group" class="input-sm form-control">';
 	$c .= '<option value=""></option>';
 
 	//Get selected group from POST or userpref
@@ -1708,15 +2264,24 @@ function ko_rota_send_file_form($get) {
 	$c .= '</select>';
 
 	$c .= '</div>';
+	$c .= '</div>';
+	$c .= '</div>';
 
 
 	//Subject
-	$c .= '<br clear="all" /><b>'.getLL('download_send_subject').':</b><br />';
-	$c .= '<input type="text" name="subject" style="width: 700px; margin-bottom: 10px;" value="'.$subject.'"><br />';
+	$c .= '<div class="row">';
+	$c .= '<div class="col-md-8">';
+	$c .= '<div class="form-group">';
+	$c .= '<label>'.getLL('download_send_subject').':</label>';
+	$c .= '<input type="text" class="input-sm form-control" name="subject" value="'.$subject.'">';
+	$c .= '</div>';
+	$c .= '</div>';
+	$c .= '</div>';
 
 
 	//Files
-	$c .= '<br clear="all" /><b>'.getLL('download_send_files').':</b><br />';
+	$c .= '<div class="form-group">';
+	$c .= '<label>'.getLL('download_send_files').':</label>';
 	if($get['file'] && !is_array($get['files'])) {
 		$files = array($get['file']);
 	} else {
@@ -1737,49 +2302,77 @@ function ko_rota_send_file_form($get) {
 		$fc++;
 	}
 	if(sizeof($filelist) > 0) {
-		$c .= '<ul><li>'.implode('</li><li>', $filelist).'</li></ul>';
+		$c .= '<ul class="list-group"><li class="list-group-item">'.implode('</li><li class="list-group-item">', $filelist).'</li></ul>';
 	}
 
 	//Upload form for new file
-	$c .= '<input type="file" name="new_file" style="margin-bottom: 10px;" /><br />';
-	$c .= '<input type="submit" name="submit_file" style="margin-bottom: 10px;" onclick="set_action(\'filesend_upload\', this);" value="'.getLL('download_send_upload_submit').'" /><br />';
+	$c .= '<input type="file" name="new_file">';
+	$c .= '<button type="submit" class="btn btn-primary" name="submit_file" onclick="set_action(\'filesend_upload\', this);" value="'.getLL('download_send_upload_submit').'">'.getLL('download_send_upload_submit').'</button>';
+	$c .= '</div>';
 
-
-	$c .= '<b>'.getLL('download_send_text').':</b><br />';
+	$c .= '<div class="row">';
+	$c .= '<div class="col-md-8">';
+	$c .= '<div class="form-group">';
+	$c .= '<label>'.getLL('download_send_text').':</label>';
 	//Show select with placeholders for rota
-	$c .= '<select name="placeholder" size="0" id="placeholder" style="width: 700px;" onchange="richtexteditor_insert_text(\'emailtext\', \'[[\'+this.value+\']]\');">';
+	$c .= '<select name="placeholder" class="input-sm form-control" id="placeholder" onchange="richtexteditor_insert_text(\'emailtext\', \'[[\'+this.value+\']]\');">';
 	$c .= '<option value="">'.getLL('download_send_insert_placeholder').'</option>';
 	$c .= '<option value="" disabled="disabled">-------------------------</option>';
-	foreach(array('_SALUTATION', '_SALUTATION_FORMAL', 'FIRSTNAME', 'LASTNAME', 'TEAM_NAME', 'LEADER_TEAM_NAME', 'PERSONAL_SCHEDULE', 'TEAM_EVENTS', 'TEAM_EVENTS_SCHEDULE', 'LEADER_TEAM_EVENTS', 'LEADER_TEAM_EVENTS_SCHEDULE', 'ALL_EVENTS', 'ALL_EVENTS_SCHEDULE', 'CONSENSUS_LINK') as $key) {
+	foreach(array('_SALUTATION', '_SALUTATION_FORMAL', 'FIRSTNAME', 'LASTNAME', 'TEAM_NAME', 'LEADER_TEAM_NAME', 'PERSONAL_SCHEDULE', 'TEAM_EVENTS', 'TEAM_EVENTS_SCHEDULE', 'LEADER_TEAM_EVENTS', 'LEADER_TEAM_EVENTS_SCHEDULE', 'ALL_EVENTS', 'ALL_EVENTS_SCHEDULE', 'CONSENSUS_LINK', 'ICAL_LINK') as $key) {
 		$c .= '<option value="'.$key.'">[['.$key.']]: '.getLL('rota_placeholder_'.$key).'</option>';
 	}
 	$c .= '</select>';
 
 	//Show select for presets for the mail text
-	$c .= '<div name="text_presets" id="text_presets">';
-	$c .= '<select name="preset" size="0" id="preset" style="width: 680px; float: left;" onchange="richtexteditor_insert_html(\'emailtext\', this.value);">';
+	$c .= '<div class="input-group input-group-sm">';
+	$c .= '<select name="preset" class="input-sm form-control" id="preset" name="preset" onchange="richtexteditor_insert_html(\'emailtext\', this.value);">';
 	$c .= '<option value="">'.getLL('download_send_insert_preset').'</option>';
 	$c .= '<option value="" disabled="disabled">-------------------------</option>';
 	$presets = array_merge((array)ko_get_userpref('-1', '', 'rota_emailtext_presets', 'ORDER by `key` ASC'), (array)ko_get_userpref($_SESSION['ses_userid'], '', 'rota_emailtext_presets', 'ORDER by `key` ASC'));
 	foreach($presets as $preset) {
 		$prefix = $preset['user_id'] == -1 ? getLL('itemlist_global_short').' ' : '';
-		$c .= '<option id="preset_'.$preset['id'].'" value="'.ko_js_escape($preset['value']).'">'.$prefix.$preset['key'].'</option>';
+		$c .= '<option id="preset_'.$preset['id'].'" value="'.ko_js_escape(utf8_encode($preset['value'])).'">'.$prefix.$preset['key'].'</option>';
 	}
-	$c .= '</select></div>';
+	$c .= '</select>';
 	//Icon to delete presets
-	$c .= '<input type="image" name="del_preset" src="../images/icon_trash.png" alt="X" onclick="sendReq(\'../rota/inc/ajax.php\', \'action,id,sesid\', \'delpreset,\'+document.getElementById(\'preset\').options[document.getElementById(\'preset\').selectedIndex].id+\','.session_id().'\', do_element); return false;" />';
-	$c .= '<div style="clear:both"></div>';
-	$c .= '<textarea name="text" id="emailtext" class="richtexteditor" cols="40" rows="10" style="width: 700px; height: 170px;">'.$get['text'].'</textarea>';
-
-	//Save as new text template
-	$c .= '<div style="width: 700px; white-space: nowrap; text-align: right;">';
-	$c .= '<span style="display: inline;">'.getLL('download_send_new_preset').':</span>&nbsp;<input type="text" name="save_preset" style="display: inline;" id="save_preset_name" />';
-	$c .= '<br />';
-	if($access['rota']['MAX'] > 4) $c .= '&nbsp;<input type="checkbox" name="chk_global" id="preset_global" value="1" style="display: inline;" /><label for="preset_global" style="display: inline;">'.getLL('itemlist_global').'</label><br />';
-	$c .= '<input type="button" name="btn_save_template" value="'.getLL('save').'" id="btn_save_template" />';
+	$c .= '<div class="input-group-btn"><button name="del_preset" class="btn btn-danger" type="button" onclick="sendReq(\'../rota/inc/ajax.php\', \'action,id,sesid\', \'delpreset,\'+document.getElementById(\'preset\').options[document.getElementById(\'preset\').selectedIndex].id+\','.session_id().'\', do_element); return false;"><i class="fa fa-trash"></i></button></div>';
 	$c .= '</div>';
 
-	$c .= '<p align="center"><input type="submit" name="submit_send" value="'.getLL('download_send_send').'" onclick="set_action(\'filesend\', this);" /></p>';
+	$c .= '<textarea name="text" id="emailtext" class="richtexteditor" style="height: 170px;">'.$get['text'].'</textarea>';
+	$c .= '</div>';
+	$c .= '</div>';
+	$c .= '</div>';
+
+	//Save as new text template
+	$c .= '<div class="row">';
+	$c .= '<div class="col-md-6 col-md-offset-2 col-lg-4 col-lg-offset-4">';
+	$c .= '<div class="input-group input-group-sm">';
+	$c .= '<input type="text" class="input-sm form-control" name="save_preset" id="save_preset_name" placeholder="'.getLL('download_send_new_preset').'">';
+	if($access['rota']['MAX'] > 4) $c .= '<span class="input-group-addon"><input type="checkbox" name="chk_global" id="preset_global" value="1">&nbsp;'.getLL('itemlist_global').'</span>';
+	$c .= '<div class="input-group-btn"><button type="button" class="btn btn-success" name="btn_save_template" value="'.getLL('save').'" id="btn_save_template">'.getLL('save').'</button></div>';
+	$c .= '</div>';
+	$c .= '</div>';
+	$c .= '</div>';
+
+	$c .= '<br>';
+
+	$c .= '<h4>'.getLL('rota_filesend_recipient_preview').':</h4>';
+	$c .= '<div class="row"><div class="col-md-8" id="filesend_preview"></div></div>';
+
+	// add crm contact form
+	$crm_group = ko_get_crm_contact_form_group(array('leute_ids'), array('type' => 'email'));
+	if ($crm_group) {
+		$smarty->assign("tpl_groups", $crm_group);
+		$smarty->assign("tpl_hide_cancel", TRUE);
+		$smarty->assign("tpl_special_submit", "&nbsp;");
+		$c .= $smarty->fetch("ko_formular.tpl");
+	}
+
+	$c .= '<div class="row">';
+	$c .= '<div class="col-md-8">';
+	$c .= '<div class="btn-field"><button type="submit" class="btn btn-primary" name="submit_send" value="'.getLL('download_send_send').'" onclick="set_action(\'filesend\', this);">'.getLL('download_send_send').'</button></div>';
+	$c .= '</div>';
+	$c .= '</div>';
 	$c .= '</div>';
 
 
@@ -1787,3 +2380,314 @@ function ko_rota_send_file_form($get) {
 
 	print $c;
 }//ko_rota_send_file_form()
+
+
+/**
+ * @param string $mode either SEND or PREVIEW
+ * @return bool
+ */
+function ko_rota_filesend_parse_post($mode='SEND', &$text, &$subject, &$recipients, &$eventid, &$restrict_to_teams, &$from, &$send_files) {
+	global $access, $BASE_PATH;
+
+	if($access['rota']['MAX'] < 4) return FALSE;
+
+	//Get logged in person and he's email addresses
+	$p = ko_get_logged_in_person();
+	if(!ko_get_leute_email($p, $emails)) $emails = array(ko_get_setting('info_email'));
+
+	//Check for valid sender address
+	$from_email = format_userinput($_POST['sender'], 'email');
+	if(!check_email($from_email) || !in_array($from_email, $emails)) return FALSE;
+
+	//Build sender header with name and email address
+	$from_name = $p['vorname'] || $p['nachname'] ? $p['vorname'].' '.$p['nachname'] : $p['firm'];
+	$from = array($from_email => $from_name);
+
+
+	//Get file and filetype from submitted form
+	$filetype = $_POST['filetype'];
+	$send_files = array();
+	foreach($_POST['files'] as $k => $file) {
+		$file = realpath($BASE_PATH.$file);
+		if(substr($file, 0, strlen($BASE_PATH)) != $BASE_PATH) return FALSE;
+		$send_files[$file] = basename($file);
+	}
+
+	$restrict_consensus_link = ko_get_setting('consensus_restrict_link') == 1 ? TRUE : FALSE;
+	$restrict_to_teams = NULL;
+	//Get recipients according to recipients mode
+	if(in_array($_POST['recipients'], array('schedulled', 'selectedschedulled', 'manualschedulled'))) {
+		if(substr($_POST['filetype'], 0, 5) == 'event') {
+			list($m, $eventid) = explode(':', $filetype);
+		} else {
+			$events = ko_rota_get_events();
+			$eventid = array();
+			foreach($events as $e) {
+				$eventid[] = $e['id'];
+			}
+		}
+		//Only include shown rota teams
+		if($_POST['recipients'] == 'selectedschedulled') {
+			$team_ids = $_SESSION['rota_teams'];
+			if ($restrict_consensus_link) $restrict_to_teams = $team_ids;
+		} else if($_POST['recipients'] == 'manualschedulled') {
+			$team_ids = array_filter(explode(',', $_POST['sel_teams_schedulled']), function($e){return trim($e)?TRUE:FALSE;});
+			if ($restrict_consensus_link) $restrict_to_teams = $team_ids;
+		} else {
+			$team_ids = '';
+		}
+		$recipients = ko_rota_get_recipients_by_event($eventid, $team_ids, 4);
+	}
+	else if($_POST['recipients'] == 'single') {
+		$recipients = array();
+		foreach(explode(',', $_POST['single_id']) as $sid) {
+			$sid = format_userinput($sid, 'uint');
+			if(!$sid) continue;
+			ko_get_person_by_id($sid, $p);
+			if(!$p['id']) continue;
+			$recipients[] = $p;
+		}
+	}
+	else {
+		$roleid = '';
+		switch($_POST['recipients']) {
+			case 'selectedmembers':
+				$teams = $_SESSION['rota_teams'];
+				if ($restrict_consensus_link) $restrict_to_teams = $teams;
+				break;
+			case 'selectedleaders':
+				$teams = $_SESSION['rota_teams'];
+				if ($restrict_consensus_link) $restrict_to_teams = $teams;
+				$roleid = ko_get_setting('rota_leaderrole');
+				break;
+			case 'allrotamembers':
+				$teams = array_keys(db_select_data('ko_rota_teams', 'WHERE 1'));
+				break;
+			case 'allrotamembersconsensus':
+				$teams = array_keys(db_select_data('ko_rota_teams', 'WHERE `allow_consensus` = "1"'));
+				break;
+			case 'allrotaleaders':
+				$teams = array_keys(db_select_data('ko_rota_teams', 'WHERE 1'));
+				$roleid = ko_get_setting('rota_leaderrole');
+				break;
+			case 'manualmembers':
+				$teams = $team_ids = array_filter(explode(',', $_POST['sel_teams_members']), function($e){return trim($e)?TRUE:FALSE;});
+				if ($restrict_consensus_link) $restrict_to_teams = $teams;
+				break;
+			case 'manualleaders':
+				$teams = $teams = $team_ids = array_filter(explode(',', $_POST['sel_teams_leaders']), function($e){return trim($e)?TRUE:FALSE;});
+				if ($restrict_consensus_link) $restrict_to_teams = $teams;
+				$roleid = ko_get_setting('rota_leaderrole');
+				break;
+		}
+		$recipients = array();
+		foreach($teams as $teamID) {
+			if($access['rota']['ALL'] < 4 && $access['rota'][$teamID] < 4) return FALSE;
+			$rec = ko_rota_get_team_members($teamID, TRUE, $roleid);
+			$recipients = array_merge($recipients, $rec['people']);
+		}
+	}
+
+	//Add members from selected group (if any)
+	if($_POST['recipients_group']) {
+		$gid = format_userinput($_POST['recipients_group'], 'uint');
+		if($gid) {
+			$group = db_select_data('ko_groups', "WHERE `id` = '$gid'", '*', '', '', TRUE);
+			if($group['id'] > 0 && $group['id'] == $gid) {
+				//Save userpref
+				if ($mode != 'PREVIEW') ko_save_userpref($_SESSION['ses_userid'], 'rota_recipients_group', $gid);
+				//Get all group members
+				$group_members = db_select_data('ko_leute', "WHERE `deleted` = '0' AND `hidden` = '0' AND `groups` LIKE '%g$gid%'");
+				foreach($group_members as $member) {
+					$recipients[] = $member;
+				}
+			}
+		}
+	} else {
+		if ($mode != 'PREVIEW') ko_save_userpref($_SESSION['ses_userid'], 'rota_recipients_group', '');
+	}
+
+	// If set, check all teams that should be visible in consensus for access of user
+	if($restrict_consensus_link) {
+		if($restrict_to_teams === NULL) {
+			$all_teams = db_select_data('ko_rota_teams', 'WHERE 1=1');
+			$restrict_to_teams = array_keys($all_teams);
+		}
+		if($access['rota']['ALL'] < 3) {
+			foreach($restrict_to_teams as $k => $t) {
+				if($access['rota'][$t] < 3) unset($restrict_to_teams[$k]);
+			}
+		}
+	}
+
+
+	//Remove double entries
+	$rec_ids = array();
+	foreach($recipients as $k => $v) {
+		if(in_array($v['id'], $rec_ids)) unset($recipients[$k]);
+		else {
+			if ($found = ko_get_leute_email($v, $emails)) $recipients[$k]['_has_mail'] = TRUE;
+			else $recipients[$k]['_has_mail'] = FALSE;
+		}
+		$rec_ids[] = $v['id'];
+	}
+
+	$text = $_POST['text'];
+	$subject = $_POST['subject'];
+
+}
+
+function ko_rota_filesend_send_mail($mode='SEND', $text, $subject, $recipient, $send_files, $eventid, $from, $restrict_to_teams) {
+	//Send file to recipients
+	$subject = strtr($subject, array("\n" => '', "\r" => ''));
+
+	$found = ko_get_leute_email($recipient, $emails);
+	if($found) {
+		//Email text
+		$emailtext = strtr($text, ko_rota_get_placeholders($recipient, $eventid, $restrict_to_teams));
+
+		if ($mode == 'SEND') ko_send_html_mail($from, $emails[0], $subject, ko_emailtext($emailtext), $send_files);
+		return array('recipient' => $recipient, 'email' => $emails[0], 'emailSubject' => $subject, 'emailText' => ko_emailtext($emailtext));
+		//$email_recipients[] = $emails[0].' ('.$recipient['id'].')';
+	} else {
+		return FALSE;
+		//$noemail_recipients[] = $recipient['vorname'].' '.$recipient['nachname'].' ('.$recipient['id'].')';
+	}
+
+}
+
+
+
+function ko_rota_ical_links() {
+	global $ICAL_URL, $BASE_URL, $access;
+
+	if(!defined('KOOL_ENCRYPTION_KEY') || trim(KOOL_ENCRYPTION_KEY) == '') {
+		print 'ERROR: '.getLL('error_rota_1');
+		return FALSE;
+	}
+
+	ko_get_login($_SESSION['ses_userid'], $login);
+	$base_link = $BASE_URL.'rotaical/index.php?user='.md5($_SESSION['ses_userid'].$login['password'].KOOL_ENCRYPTION_KEY);
+
+	$content = '';
+	$content .= '<div class="ical-links">';
+	$content .= '<h1>'.getLL('rota_ical_links_title').'</h1>';
+	$content .= '<p>'.getLL('rota_ical_links_description').'</p>';
+
+	/*
+	$content .= '<h4>'.getLL('daten_ical_links_title_all').'</h4>';
+	$content .= ko_get_ical_link($base_link, getLL('all')).'<br />';
+
+	$link = $base_link.'&teams='.implode(',', $_SESSION['show_tg']);
+	//Add current KOTA filter if set
+	if(sizeof($_SESSION['kota_filter']['ko_rota_teams']) > 0) {
+		foreach($_SESSION['kota_filter']['ko_rota_teams'] as $k => $v) {
+			if(!$v) continue;
+			$link .= '&kota_'.$k.'='.urlencode($v);
+		}
+	}
+	$content .= ko_get_ical_link($link, getLL('daten_ical_links_current')).'<br />';
+
+	$content .= '<h4>'.getLL('daten_ical_links_title_presets').'</h4>';
+	$itemset = array_merge((array)ko_get_userpref('-1', '', 'rota_itemset', 'ORDER BY `key` ASC'), (array)ko_get_userpref($_SESSION['ses_userid'], '', 'rota_itemset', 'ORDER BY `key` ASC'));
+	foreach($itemset as $i) {
+		if(!$i['key'] || !$i['value']) continue;
+		$label = ($i['user_id'] == '-1' ? getLL('itemlist_global_short').$i['key'] : $i['key']);
+		$content .= ko_get_ical_link($base_link.'&teams=p'.$i['id'], $label).'<br />';
+	}
+
+	$content .= '<h4>'.getLL('daten_ical_links_title_single').'</h4>';
+	$teams = db_select_data('ko_rota_teams', "WHERE 1=1", '*', 'ORDER BY `sort` ASC');
+	foreach($teams as $id => $t) {
+		if($access['rota']['ALL'] < 1 && $access['daten'][$id] < 1) continue;
+		if(!$t['id']) continue;
+		$content .= ko_get_ical_link($base_link.'&teams='.$t['id'], $t['name']).'<br />';
+	}
+
+	$content .= '</div>';
+	*/
+
+
+	$teams = array_keys(db_select_data('ko_rota_teams', 'WHERE 1'));
+	$ppl = array();
+	foreach($teams as $teamID) {
+		if($access['rota']['ALL'] < 4 && $access['rota'][$teamID] < 4) return FALSE;
+		$rec = ko_rota_get_team_members($teamID, TRUE);
+		$ppl = array_merge($ppl, $rec['people']);
+	}
+
+	$orderfield = ko_get_userpref($_SESSION['ses_userid'], 'rota_orderby');
+	if(!$orderfield) $orderfield = 'nachname';
+
+	if (sizeof($ppl) > 0) {
+		$max_length_lastname = array_reduce($ppl, function ($carry, $item) {
+			return max(strlen($item['nachname']), $carry);
+		});
+		$max_length_firstname = array_reduce($ppl, function ($carry, $item) {
+			return max(strlen($item['vorname']), $carry);
+		});
+		$ppl_ = array();
+		foreach ($ppl as $p) {
+			//Don't use addresses with no name
+			if(trim($p['vorname']) == '' && trim($p['nachname']) == '') continue;
+
+			if($orderfield == 'nachname') {
+				$ppl_[str_fill($p['nachname'], $max_length_lastname, ' ', 'append').str_fill($p['vorname'], $max_length_firstname, ' ', 'append').$p['id']] = $p;
+			} else {
+				$ppl_[str_fill($p['vorname'], $max_length_firstname, ' ', 'append').str_fill($p['nachname'], $max_length_lastname, ' ', 'append').$p['id']] = $p;
+			}
+		}
+		$ppl = $ppl_;
+		ksort($ppl);
+
+		$content .= '<h4>'.getLL('rota_ical_links_title_personal').'</h4>';
+		$content .= '<div class="panel-group" id="rota-individual-ical-links">';
+		$lastStart = '';
+		$first = TRUE;
+
+		foreach($ppl as $p) {
+			if (strtoupper(substr($p[$orderfield], 0, 1)) != $lastStart) {
+				if (!$first) {
+						$content .=
+'</div>
+	</div>
+</div>';
+				}
+				$lastStart = strtoupper(substr($p[$orderfield], 0, 1));
+				$content .=
+'<div class="panel panel-default">
+	<div class="panel-heading" role="tab" id="heading'.$lastStart.'">
+		<h4 class="panel-title">
+			<a style="display:block;" data-toggle="collapse" data-parent="#rota-individual-ical-links" href="#collapse'.$lastStart.'">
+				'.$lastStart.'
+			</a>
+		</h4>
+	</div>
+	<div id="collapse'.$lastStart.'" class="panel-collapse collapse">
+		<div class="panel-body">
+			';
+				$first = FALSE;
+			}
+			$link = $BASE_URL . 'rotaical/index.php?person='.$p['id'].'x'.strtolower(substr(md5($p['id'] . KOOL_ENCRYPTION_KEY . 'rotaIcal' . KOOL_ENCRYPTION_KEY . 'rotaIcal' . KOOL_ENCRYPTION_KEY . $p['id']), 0, 10));
+			if($orderfield == 'nachname') {
+				$label = "{$p['nachname']} {$p['vorname']}";
+			} else {
+				$label = "{$p['vorname']} {$p['nachname']}";
+			}
+			$adr = trim($p['adresse'].' '.$p['plz'].' '.$p['ort']);
+			$bd = ($p['geburtsdatum'] && $p['geburtsdatum'] != '0000-00-00') ? sql2datum($p['geburtsdatum']) : '';
+			if ($adr && $bd) $title = $adr.", ".$bd;
+			else $title = $adr . $bd;
+			$content .= '<div class="col-md-6">'.ko_get_ical_link($link, $label, $title).'</div>';
+		}
+		$content .=
+'</div>
+	</div>
+</div>';
+
+		$content .= '</div>';
+		$content .= '</div>';
+	}
+
+	print $content;
+}//ko_rota_ical_links()

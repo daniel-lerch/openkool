@@ -1,0 +1,212 @@
+span.fcEventEditIcons {
+    display: none;
+    float: left;
+    position: absolute;
+    z-index: 999999;
+    background: @gray-dark;
+    padding: 0;
+    margin-top: -1px;
+    margin-left: -2px;
+    border-radius: 3px 0 0 3px;
+    opacity: 0.95;
+
+    button.icon {
+        height: 12px;
+        margin-top: -1px;
+        padding-left: 2px;
+        padding-right: 2px;
+        &.confirm {
+            color: @brand-success;
+            &:hover {
+                color: darken(@brand-success, 15%);
+            }
+        }
+        &.delete,
+        &.deny {
+            color: @brand-danger;
+            &:hover {
+                color: darken(@brand-danger, 15%);
+            }
+        }
+
+
+        i.fa {
+            font-size: 1.2em;
+        }
+    }
+}
+
+/*.fc-toolbar {
+    .fc-left {
+        width: 33%;
+    }
+    .fc-center {
+        width: 33%;
+    }
+    .fc-right {
+        width: 34%;
+
+        .fc-button-group {
+            float: right;
+        }
+    }
+}*/
+
+.fc-toolbar {
+    &.fc-header-toolbar {
+        @media (max-width: (850px - 1)) {
+            .fc-left, .fc-center, .fc-right {
+                float: none !important;
+                display: block !important;
+                > div, > h2 {
+                    float: none !important;
+                }
+            }
+
+            .fc-left h2 {
+                font-size: 1.6em;
+                margin-bottom: 3px;
+            }
+
+            .fc-right {
+                display: none !important;
+            }
+        }
+
+        @media (min-width: (850px)) {
+            .fc-left, .fc-center, .fc-right {
+                width: 33%;
+            }
+
+            .fc-left, .fc-center {
+                div {
+                    float: none;
+                }
+            }
+
+            .fc-right {
+                div {
+                    float: right;
+                }
+            }
+        }
+    }
+
+    &.fc-footer-toolbar {
+        @media (min-width: (850px)) {
+            .fc-left {
+                display: none !important;
+            }
+        }
+    }
+}
+
+
+
+
+div.fc-mwselect {
+    position: absolute;
+    top: 0;
+    right: 122px;
+    text-align: right;
+
+    &.fc-mwselect-res {
+        right: 230px;
+    }
+
+    select {
+        height: 26px;
+    }
+
+    @media (max-width: (850px - 1)) {
+        top: ~"calc(100% - 26px)";
+
+        &, &.fc-mwselect-res {
+            right: 0;
+        }
+    }
+}
+
+.fc-unthemed .fc-bg .fc-today {
+    background: darken(#fcf8e3, 15%) !important;
+}
+
+.fc-day-header {
+    background-color: lighten(@gray-lighter, 2%);
+
+    &.fc-sat,
+    &.fc-sun {
+        background-color: lighten(@gray-light, 40%);
+    }
+}
+
+
+/* Birthdays in calendar */
+.fc-birthday {
+    cursor: pointer;
+}
+
+/* Birthdays in calendar */
+
+.fc-content-skeleton .fc-week-number,
+.fc-agendaWeek-view .fc-day-header {
+    &:hover {
+        cursor: pointer;
+    }
+}
+
+.fc-day-number {
+    font-weight: 900;
+}
+
+#ko_calendar {
+    position: relative;
+}
+
+
+.fc-icon.fc-icon-k-today:before {
+    content: @fa-var-stop;
+    display: inline-block;
+    font: normal normal normal @fa-font-size-base/1 FontAwesome; // shortening font declaration
+    font-size: inherit; // can't have font-size inherit on line above, so need to override
+    text-rendering: auto; // optimizelegibility throws things off #1094
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    transform: translate(0, 0); // ensures no half-pixel rendering in firefox
+}
+.fc-icon.fc-icon-k-month {
+    background-image: url(../../images/cal_month.gif);
+    background-repeat: no-repeat no-repeat;
+    width: 17px;
+    height: 17px;
+}
+.fc-icon.fc-icon-k-week {
+    background-image: url(../../images/cal_week.gif);
+    background-repeat: no-repeat no-repeat;
+    width: 17px;
+    height: 17px;
+}
+.fc-icon.fc-icon-k-day {
+    background-image: url(../../images/cal_day.gif);
+    background-repeat: no-repeat no-repeat;
+    width: 17px;
+    height: 17px;
+}
+.fc-icon.fc-icon-k-tl-month {
+    background-image: url(../../images/resource_month.png);
+    background-repeat: no-repeat no-repeat;
+    width: 17px;
+    height: 17px;
+}
+.fc-icon.fc-icon-k-tl-week {
+    background-image: url(../../images/resource_week.png);
+    background-repeat: no-repeat no-repeat;
+    width: 17px;
+    height: 17px;
+}
+.fc-icon.fc-icon-k-tl-day {
+    background-image: url(../../images/resource_day.png);
+    background-repeat: no-repeat no-repeat;
+    width: 17px;
+    height: 17px;
+}

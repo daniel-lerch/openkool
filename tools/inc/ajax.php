@@ -37,6 +37,8 @@ $ko_path = '../../';
 require($ko_path.'inc/ko.inc');
 $ko_path = '../';
 
+array_walk_recursive($_GET,'utf8_decode_array');
+
 ko_include_kota(array('ko_scheduler_tasks'));
 
 // Plugins einlesen:

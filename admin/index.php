@@ -24,6 +24,8 @@
 *  This copyright notice MUST APPEAR in all copies of the script!
 ***************************************************************/
 
+header('Content-Type: text/html; charset=ISO-8859-1');
+
 ob_start();  //Ausgabe-Pufferung starten
 
 $ko_path = "../";
@@ -37,7 +39,12 @@ $notifier = koNotifier::Instance();
 //Redirect to SSL if needed
 ko_check_ssl();
 
-if(!ko_module_installed("admin")) {
+//***Action auslesen:
+if($_POST["action"]) $do_action = $_POST["action"];
+else if($_GET["action"]) $do_action = $_GET["action"];
+else $do_action = "";
+
+if(!ko_module_installed("admin") && !in_array($do_action, array('change_password', 'submit_change_password'))) {
 	header("Location: ".$BASE_URL."index.php");  //Absolute URL
 }
 
@@ -45,19 +52,17 @@ ob_end_flush();  //Puffer flushen
 
 //Get access rights
 ko_get_access('admin');
+if (ko_module_installed('vesr')) {
+	ko_get_access('vesr');
+}
 
 //kOOL Table Array
-ko_include_kota(array('ko_pdf_layout', 'ko_news', '_ko_sms_log', 'ko_log', 'ko_admingroups'));
+ko_include_kota(array('ko_news', '_ko_sms_log', 'ko_log', 'ko_admingroups', 'ko_admin', 'ko_labels', 'ko_pdf_layout', 'ko_vesr'));
 
 //*** Plugins einlesen:
 $hooks = hook_include_main("admin");
 if(sizeof($hooks) > 0) foreach($hooks as $hook) include_once($hook);
 
-
-//***Action auslesen:
-if($_POST["action"]) $do_action = $_POST["action"];
-else if($_GET["action"]) $do_action = $_GET["action"];
-else $do_action = "";
 
 //Reset show_start if from another module
 if($_SERVER['HTTP_REFERER'] != '' && FALSE === strpos($_SERVER['HTTP_REFERER'], '/'.$ko_menu_akt.'/')) $_SESSION['show_start'] = 1;
@@ -65,29 +70,14 @@ if($_SERVER['HTTP_REFERER'] != '' && FALSE === strpos($_SERVER['HTTP_REFERER'], 
 switch($do_action) {
 
 	//Anzeigen
-	case "set_allgemein":
-		if($access['admin']['MAX'] < 2) continue;
-		$_SESSION["show"] = "set_allgemein";
-	break;
-
-	case "set_etiketten":
-		if($access['admin']['MAX'] < 2) continue;
-		$_SESSION["show"] = "set_etiketten";
+	case "admin_settings":
+		if($access['admin']['MAX'] < 1) continue;
+		$_SESSION["show"] = "admin_settings";
 	break;
 
 	case "set_leute_pdf":
 		if($access['admin']['MAX'] < 2) continue;
 		$_SESSION["show"] = "set_leute_pdf";
-	break;
-
-	case "set_layout":
-		if($access['admin']['MAX'] < 1) continue;
-		$_SESSION["show"] = "set_layout";
-	break;
-
-	case "set_layout_guest":
-		if($access['admin']['MAX'] < 3) continue;
-		$_SESSION["show"] = "set_layout_guest";
 	break;
 
 	case "set_show_logins":
@@ -143,13 +133,13 @@ switch($do_action) {
 
 
 	case "change_password":
-		if(ko_get_setting("change_password") == 1) {
+		if(ko_get_setting("change_password") == 1 && $_SESSION['ses_userid'] != ko_get_guest_id()) {
 			$_SESSION["show"] = "change_password";
 		}
 	break;
 
 	case "submit_change_password":
-		if(ko_get_setting("change_password") == 1) {
+		if(ko_get_setting("change_password") == 1 && $_SESSION['ses_userid'] != ko_get_guest_id()) {
 			$old = $_POST["txt_pwd_old"];
 			$new1 = $_POST["txt_pwd_new1"];
 			$new2 = $_POST["txt_pwd_new2"];
@@ -170,48 +160,97 @@ switch($do_action) {
 
 
 	//Speichern
-	case "save_set_allgemein":
-		if($access['admin']['MAX'] < 2) continue;
+	case "submit_admin_settings":
+		// general settings
+		if($access['admin']['MAX'] >= 2) {
+			if(in_array('leute', $MODULES)) {
+				$login_edit_person = format_userinput($_POST["rd_login_edit_person"], "uint", FALSE, 1);
+				if($login_edit_person == 0 || $login_edit_person == 1)
+					ko_set_setting("login_edit_person", $login_edit_person);
+			}
 
-		if(in_array('leute', $MODULES)) {
-			$login_edit_person = format_userinput($_POST["rd_login_edit_person"], "uint", FALSE, 1);
-			if($login_edit_person == 0 || $login_edit_person == 1)
-				ko_set_setting("login_edit_person", $login_edit_person);
+			if(in_array('sms', $MODULES)) {
+				$sms_country_code = format_userinput($_POST["txt_sms_country_code"], "uint");
+				ko_set_setting("sms_country_code", $sms_country_code);
+			}
+
+			if(in_array('mailing', $MODULES) && is_array($MAILING_PARAMETER) && $MAILING_PARAMETER['domain'] != '') {
+				ko_set_setting('mailing_mails_per_cycle', format_userinput($_POST['txt_mailing_mails_per_cycle'], 'uint'));
+				ko_set_setting('mailing_max_recipients', format_userinput($_POST['txt_mailing_max_recipients'], 'uint'));
+				ko_set_setting('mailing_only_alias', format_userinput($_POST['chk_mailing_only_alias'], 'uint'));
+				ko_set_setting('mailing_allow_double', format_userinput($_POST['chk_mailing_allow_double'], 'uint'));
+				ko_set_setting('mailing_from_email', format_userinput($_POST['txt_mailing_from_email'], 'email'));
+			}
+
+			//XLS export
+			ko_set_setting('xls_default_font', format_userinput($_POST['txt_xls_default_font'], 'text'));
+			ko_set_setting('xls_title_font', format_userinput($_POST['txt_xls_title_font'], 'text'));
+			ko_set_setting('xls_title_bold', format_userinput($_POST['chk_xls_title_bold'], 'uint'));
+			ko_set_setting('xls_title_color', format_userinput($_POST['txt_xls_title_color'], 'alpha'));
+
+			$change_password = format_userinput($_POST["rd_change_password"], "uint", FALSE, 1);
+			if($change_password == 0 || $change_password == 1)
+				ko_set_setting("change_password", $change_password);
+
+			//Contact settings
+			$contact_fields = array('name', 'address', 'zip', 'city', 'phone', 'url');
+			foreach($contact_fields as $field) {
+				ko_set_setting('info_'.$field, format_userinput($_POST['txt_contact_'.$field], 'text'));
+			}
+			$email_info = format_userinput($_POST['txt_contact_email'], 'email');
+			if(check_email($email_info)) ko_set_setting('info_email', $email_info);
 		}
 
-		if(in_array('sms', $MODULES)) {
-			$sms_country_code = format_userinput($_POST["txt_sms_country_code"], "uint");
-			ko_set_setting("sms_country_code", $sms_country_code);
+		// layout settings
+		if($access['admin']['MAX'] >= 1) {
+
+			$uid = $_SESSION["ses_userid"];
+
+			//Default-Seiten pro Modul
+			ko_save_userpref($uid, "default_view_admin", format_userinput($_POST["sel_admin"], "js"));
+			ko_save_userpref($uid, "show_limit_logins", format_userinput($_POST["show_limit_logins"], "uint"));
+			ko_save_userpref($uid, "default_view_tapes", format_userinput($_POST["sel_tapes"], "js"));
+			ko_save_userpref($uid, "default_view_fileshare", format_userinput($_POST["sel_fileshare"], "js"));
+			ko_save_userpref($uid, 'default_module', format_userinput($_POST['sel_default_module'], 'js'));
+
+			//Popupmenu-Einstellungen
+			ko_save_userpref($uid, "menu_order", format_userinput($_POST["sel_menu_order"], "alphanumlist"));
+
+			//Diverses-Einstellungen
+			ko_save_userpref($uid, "save_files_as_share", format_userinput($_POST["sel_save_files_as_share"], "uint", FALSE, 1));
+			ko_save_userpref($uid, 'export_table_format', format_userinput($_POST['export_table_format'], 'alphanum'));
+			ko_save_userpref($uid, 'show_notes', format_userinput($_POST['show_notes'], 'uint', FALSE, 1));
+			ko_save_userpref($uid, 'save_kota_filter', format_userinput($_POST['save_kota_filter'], 'uint', FALSE, 1));
+			ko_save_userpref($uid, 'download_not_directly', format_userinput($_POST['download_not_directly'], 'uint', FALSE, 1));
 		}
 
-		if(in_array('mailing', $MODULES) && is_array($MAILING_PARAMETER) && $MAILING_PARAMETER['domain'] != '') {
-			ko_set_setting('mailing_mails_per_cycle', format_userinput($_POST['txt_mailing_mails_per_cycle'], 'uint'));
-			ko_set_setting('mailing_max_recipients', format_userinput($_POST['txt_mailing_max_recipients'], 'uint'));
-			ko_set_setting('mailing_only_alias', format_userinput($_POST['chk_mailing_only_alias'], 'uint'));
-			ko_set_setting('mailing_allow_double', format_userinput($_POST['chk_mailing_allow_double'], 'uint'));
+		// layout settings guest
+		if($access['admin']['MAX'] >= 3) {
+
+			$uid = ko_get_guest_id();
+
+			// front modules
+			ko_save_userpref($uid, "front_modules", format_userinput($_POST["chks_front_modules_guest"], "text"));
+
+			//Default-Seiten pro Modul
+			ko_save_userpref($uid, "default_view_admin", format_userinput($_POST["sel_admin_guest"], "js"));
+			ko_save_userpref($uid, "default_view_tapes", format_userinput($_POST["sel_tapes_guest"], "js"));
+			ko_save_userpref($uid, "default_view_fileshare", format_userinput($_POST["sel_fileshare_guest"], "js"));
+			ko_save_userpref($uid, 'default_module', format_userinput($_POST['sel_default_module_guest'], 'js'));
+
+			//Popupmenu-Einstellungen
+			ko_save_userpref($uid, "menu_order", format_userinput($_POST["sel_menu_order_guest"], "alphanumlist"));
+
+			//Diverses-Einstellungen
+			ko_save_userpref($uid, "save_files_as_share", format_userinput($_POST["sel_save_files_as_share_guest"], "uint", FALSE, 1));
+			ko_save_userpref($uid, 'export_table_format', format_userinput($_POST['export_table_format_guest'], 'alphanum'));
+			ko_save_userpref($uid, 'show_notes', format_userinput($_POST['show_notes_guest'], 'uint', FALSE, 1));
+			ko_save_userpref($uid, 'save_kota_filter', format_userinput($_POST['save_kota_filter_guest'], 'uint', FALSE, 1));
+			ko_save_userpref($uid, 'download_not_directly', format_userinput($_POST['download_not_directly_guest'], 'uint', FALSE, 1));
+
 		}
 
-		//XLS export
-		ko_set_setting('xls_default_font', format_userinput($_POST['txt_xls_default_font'], 'text'));
-		ko_set_setting('xls_title_font', format_userinput($_POST['txt_xls_title_font'], 'text'));
-		ko_set_setting('xls_title_bold', format_userinput($_POST['chk_xls_title_bold'], 'uint'));
-		ko_set_setting('xls_title_color', format_userinput($_POST['txt_xls_title_color'], 'alpha'));
-
-		$change_password = format_userinput($_POST["rd_change_password"], "uint", FALSE, 1);
-		if($change_password == 0 || $change_password == 1)
-			ko_set_setting("change_password", $change_password);
-
-		//Contact settings
-		$contact_fields = array('name', 'address', 'zip', 'city', 'phone', 'url');
-		foreach($contact_fields as $field) {
-			ko_set_setting('info_'.$field, format_userinput($_POST['txt_contact_'.$field], 'text'));
-		}
-		$email_info = format_userinput($_POST['txt_contact_email'], 'email');
-		if(check_email($email_info)) ko_set_setting('info_email', $email_info);
-			
-			
-		$notifier->addInfo(1, $do_action);
-		$_SESSION["show"] = "set_allgemein";
+		$_SESSION["show"] = "admin_settings";
 	break;
 
 
@@ -231,7 +270,7 @@ switch($do_action) {
 				$credits = (float)$sms->getCreditsUsed();
 				//Check for success and add it to the list of known senderIDs
 				$ret = $sms->checkOriginatorAuthorization($number);
-				if($ret != 1) {
+				if($ret == '031') {
 					$sender_ids = explode(',', ko_get_setting('sms_sender_ids'));
 					$sender_ids[] = $number;
 					$new = array();
@@ -241,6 +280,10 @@ switch($do_action) {
 					}
 					ko_set_setting('sms_sender_ids', implode(',', $new));
 					ko_log('sms_new_sender_id', $number.' - '.($credits+(float)$sms->getCreditsUsed()));
+				}
+				else {
+					$error_txt_add = $ret.' '.getLL('error_aspsms_'.intval($ret));
+					$notifier->addError(17, $do_action, array($error_txt_add));
 				}
 			} else {
 				//Have unlock code sent to new senderID
@@ -318,67 +361,6 @@ switch($do_action) {
 		}
 		ko_set_setting('sms_sender_ids', implode(',', $new));
 		ko_log('sms_new_sender_id', $senderID);
-	break;
-
-
-
-	case "save_set_layout_guest":
-		if($access['admin']['MAX'] < 3) continue;
-	case "save_set_layout":
-		if($access['admin']['MAX'] < 1) continue;
-
-		$uid = ($do_action == "save_set_layout") ? $_SESSION["ses_userid"] : ko_get_guest_id();
-
-		//Frontmodules speichern
-		$fm_left = $fm_center = $fm_right = "";
-		foreach($FRONTMODULES as $fm_i => $fm) {
-			if(!ko_check_fm_for_user($fm_i, $uid)) continue;
-			switch($_POST["rd_fm_".$fm_i]) {
-				case "nicht":
-				break;
-
-				case "left":
-					$fm_left .= $fm_i . ",";
-				break;
-
-				case "center":
-					$fm_center .= $fm_i . ",";
-				break;
-
-				case "right":
-					$fm_right .= $fm_i . ",";
-				break;
-			}//switch()
-		}//foreach()
-		ko_save_userpref($uid, "front_modules_left", substr($fm_left,0,-1));
-		ko_save_userpref($uid, "front_modules_center", substr($fm_center,0,-1));
-		ko_save_userpref($uid, "front_modules_right", substr($fm_right,0,-1));
-
-		//Limiten
-		ko_save_userpref($uid, "show_limit_logins", format_userinput($_POST["txt_limit_logins"], "uint"));
-		ko_save_userpref($uid, "show_limit_fileshare", format_userinput($_POST["txt_limit_fileshare"], "uint"));
-		ko_save_userpref($uid, "show_limit_tapes", format_userinput($_POST["txt_limit_tapes"], "uint"));
-
-		//Default-Seiten pro Modul
-		ko_save_userpref($uid, "default_view_admin", format_userinput($_POST["sel_admin"], "js"));
-		ko_save_userpref($uid, "default_view_tapes", format_userinput($_POST["sel_tapes"], "js"));
-		ko_save_userpref($uid, "default_view_fileshare", format_userinput($_POST["sel_fileshare"], "js"));
-		ko_save_userpref($uid, 'default_module', format_userinput($_POST['sel_default_module'], 'js'));
-
-		//Popupmenu-Einstellungen
-		ko_save_userpref($uid, "modules_dropdown", format_userinput($_POST["sel_modules_dropdown"], "js"));
-		ko_save_userpref($uid, "menu_order", format_userinput($_POST["sel_menu_order"], "alphanumlist"));
-
-		//Diverses-Einstellungen
-		ko_save_userpref($uid, "save_files_as_share", format_userinput($_POST["sel_save_files_as_share"], "uint", FALSE, 1));
-		ko_save_userpref($uid, 'export_table_format', format_userinput($_POST['export_table_format'], 'alphanum'));
-		ko_save_userpref($uid, 'show_notes', format_userinput($_POST['show_notes'], 'uint', FALSE, 1));
-		ko_save_userpref($uid, 'save_kota_filter', format_userinput($_POST['save_kota_filter'], 'uint', FALSE, 1));
-		ko_save_userpref($uid, 'download_not_directly', format_userinput($_POST['download_not_directly'], 'uint', FALSE, 1));
-
-
-		$notifier->addInfo(1, $do_action);
-		$_SESSION["show"] = ($do_action == "save_set_layout") ? "set_layout" : "set_layout_guest";
 	break;
 
 
@@ -715,6 +697,11 @@ switch($do_action) {
 						}
 						ko_save_admin($module . '_force_global', $id, $_POST['sel_force_global_'.$module], "admingroups");
 						ko_save_admin($module . '_reminder_rights', $id, $_POST['sel_reminder_rights_'.$module], "admingroups");
+
+						//KOTA columns
+						$coltable = 'ko_event';
+						$savecols = format_userinput($_POST['kota_columns_'.$coltable], 'alphanumlist');
+						ko_save_admin('kota_columns_'.$coltable, $id, $savecols, 'admingroups');
 					break;
 					case "reservation":
 						if(ko_get_setting('res_access_mode') == 1) {
@@ -752,6 +739,13 @@ switch($do_action) {
 			} else $save_string = '0';
 			ko_save_admin($module, $id, $save_string, "admingroup");
 			$log_message .= getLL("module_".$module).': "'.str_replace(",", ", ", $save_string).'", ';
+
+			//KOTA columns
+			if($module == 'kg') {
+				$coltable = 'ko_kleingruppen';
+				$savecols = format_userinput($_POST['kota_columns_'.$coltable], 'alphanumlist');
+				ko_save_admin('kota_columns_'.$coltable, $id, $savecols, 'admingroups');
+			}
 		}
 
 
@@ -812,7 +806,7 @@ switch($do_action) {
 			if($m == 'tools' && $id != ko_get_root_id()) unset($save_modules[$m_i]);
 		}
 		foreach($MODULES as $m) {
-      if(!in_array($m, $save_modules)) {
+		if(!in_array($m, $save_modules)) {
 				ko_save_admin($m, $id, "0");
 				if($m == "leute") {
 					ko_save_admin("leute_filter", $id, "0");
@@ -1051,6 +1045,11 @@ switch($do_action) {
 						}
 						ko_save_admin($module . '_force_global', $id, $_POST['sel_force_global_'.$module], "login");
 						ko_save_admin($module . '_reminder_rights', $id, $_POST['sel_reminder_rights_'.$module], "login");
+
+						//KOTA columns
+						$coltable = 'ko_event';
+						$savecols = format_userinput($_POST['kota_columns_'.$coltable], 'alphanumlist');
+						ko_save_admin('kota_columns_'.$coltable, $id, $savecols);
 					break;
 					case "reservation":
 						if(ko_get_setting('res_access_mode') == 1) {
@@ -1066,6 +1065,7 @@ switch($do_action) {
 					case "tapes": ko_get_tapegroups($gruppen); break;
 					case "donations": $gruppen = db_select_data("ko_donations_accounts", "", "*", "ORDER BY number ASC"); break;
 					case 'tracking': $gruppen = db_select_data('ko_tracking', '', '*', 'ORDER BY name ASC'); break;
+					case 'crm': ko_get_crm_projects($gruppen, '', '', 'ORDER BY `title` ASC'); break;
 
 					default:
 						$gruppen = hook_access_get_groups($module);
@@ -1288,130 +1288,70 @@ switch($do_action) {
 
 
 	//Etiketten-Vorlage
-	case "open_etiketten":
+	case "list_labels":
 		if($access['admin']['MAX'] < 2) continue;
 
-		//GET- oder POST-Übergabe testen
-		if($_POST["sel_vorlage_open"]) {
-			$etiketten_id = format_userinput($_POST["sel_vorlage_open"], "js");
-		} else if($_GET["sel_vorlage_open"]) {
-			$etiketten_id = format_userinput($_GET["sel_vorlage_open"], "js");
-		} else {
-			$notifier->addError(9, $do_action);
-			continue;
-		}
-
-		//Auf gültige Vorlagen-ID prüfen
-		ko_get_etiketten_vorlage($etiketten_id, $vorlage);
-		if(is_array($vorlage) && $vorlage["name"] != "") {
-			$_SESSION["show"] = "set_etiketten_open";
-		} else {
-			$etiketten_id = "";
-			$notifier->addError(9, $do_action);
-		}
+		$_SESSION['show'] = 'list_labels';
 	break;
 
-
-
-	case "submit_del_etiketten_vorlage":
+	case "new_label":
 		if($access['admin']['MAX'] < 2) continue;
-		$sel_vorlage = format_userinput($_POST["sel_vorlage_open"], "alphanum");
-		if(!$sel_vorlage || strlen($sel_vorlage) != 32) {
+
+		$_SESSION['show'] = 'new_label';
+		$onload_code = 'form_set_first_input();'.$onload_code;
+	break;
+
+	case 'edit_label':
+		$id = format_userinput($_POST['id'], 'uint');
+		if ($id == '') {
+			$id = format_userinput($_GET['id'], 'uint');
+		}
+		if (!$id) continue;
+		if($access['admin']['ALL'] < 2) continue;
+
+		$_SESSION['show'] = 'edit_label';
+		$onload_code = 'form_set_first_input();'.$onload_code;
+	break;
+
+	case "delete_label":
+		if($access['admin']['MAX'] < 2) continue;
+		$id = format_userinput($_POST['id'], 'uint');
+		$entry = db_select_data('ko_labels', "WHERE `id` = '$id'", '*', '', '', TRUE, TRUE);
+		if(!$entry['id'] || $entry['id'] != $id) {
 			$notifier->addError(8, $do_action);
 			continue;
 		}
 
-		ko_get_etiketten_vorlage($sel_vorlage, $vorlage);
-		if(is_array($vorlage) && $vorlage["name"] != "") {
-			db_delete_data("ko_etiketten", "WHERE `vorlage` = '$sel_vorlage'");
-			//Delete image if any stored for this preset
-			if($vorlage['pic_file'] && file_exists($BASE_PATH.$vorlage['pic_file'])) unlink($BASE_PATH.$vorlage['pic_file']);
-			$notifier->addInfo(6, $do_action);
-		} else {
-			$notifier->addError(8, $do_action);
-		}
-
-		$_SESSION["show"] = "set_etiketten_open";
-		$etiketten_id = "";
+		db_delete_data('ko_labels', "WHERE `id` = '$id'");
+		ko_log_diff('del_label', $entry);
 	break;
 
 
-	case "save_etiketten":
+	case "submit_new_label":
+	case "submit_as_new_label":
 		if($access['admin']['MAX'] < 2) continue;
 
-		if($_POST["txt_vorlage_neu"]) {  //Neue Vorlage speichern
-			$keys["name"] = format_userinput($_POST["txt_vorlage_neu"], "text");
-			$id = md5(time().format_userinput($_POST["txt_vorlage_neu"], "text"));
-			$mode = "new";
-			$notifier->addInfo(4, $do_action);
-		} else if($_POST["sel_vorlage_save"]) {  //Bestehende neu speichern
-			$id = format_userinput($_POST["sel_vorlage_save"], "alphanum");
-			$mode = "edit";
-			$notifier->addInfo(5, $do_action);
-		} else continue;
-
-		//Verlangte Angaben überprüfen (per_row, per_col)
-		if(!$_POST["txt_per_row"] || !$_POST["txt_per_col"]) {
-			$notifier->addError(7, $do_action);
-			continue;
+		if($do_action == 'submit_as_new_label') {
+			list($table, $columns, $ids, $hash) = explode('@', $_POST['id']);
+			//Fake POST[id] for kota_submit_multiedit() to remove the id from the id. Otherwise this entry will be edited
+			$new_hash = md5(md5($mysql_pass.$table.implode(':', explode(',', $columns)).'0'));
+			$_POST['id'] = $table.'@'.$columns.'@0@'.$new_hash;
 		}
 
-		$keys['page_format']      = format_userinput($_POST['sel_pageformat'], 'alphanum');
-		$keys['page_orientation'] = format_userinput($_POST['sel_pageorientation'], 'alpha', FALSE, 1);
-		$keys['per_row']          = format_userinput($_POST['txt_per_row'], 'uint');
-		$keys['per_col']          = format_userinput($_POST['txt_per_col'], 'uint');
-		$keys['border_top']       = format_userinput($_POST['txt_border_top'], 'float');
-		$keys['border_right']     = format_userinput($_POST['txt_border_right'], 'float');
-		$keys['border_bottom']    = format_userinput($_POST['txt_border_bottom'], 'float');
-		$keys['border_left']      = format_userinput($_POST['txt_border_left'], 'float');
-		$keys['spacing_horiz']    = format_userinput($_POST['txt_spacing_horiz'], 'float');
-		$keys['spacing_vert']     = format_userinput($_POST['txt_spacing_vert'], 'float');
-		$keys['align_horiz']      = format_userinput($_POST['sel_align_horiz'], 'alpha', FALSE, 1);
-		$keys['align_vert']       = format_userinput($_POST['sel_align_vert'], 'alpha', FALSE, 1);
-		$keys['font']             = format_userinput($_POST['sel_font'], 'text');
-		$keys['textsize']         = format_userinput($_POST['sel_textsize'], 'uint');
-		$keys['ra_font']          = format_userinput($_POST['sel_ra_font'], 'text');
-		$keys['ra_textsize']      = format_userinput($_POST['sel_ra_textsize'], 'uint');
-		$keys['ra_margin_top']    = format_userinput($_POST['txt_ra_margin_top'], 'float');
-		$keys['ra_margin_left']   = format_userinput($_POST['txt_ra_margin_left'], 'float');
-
-		//Save image
-		if($_FILES['pic_file']['tmp_name']) {
-			$dissallow_ext = array('php', 'php3', 'inc');
-			$tmp = $_FILES['pic_file']["tmp_name"];
-			if(!$tmp) return FALSE;
-			$upload_name = $_FILES['pic_file']["name"];
-			$ext_ = explode('.', $upload_name);
-			$ext = strtolower($ext_[sizeof($ext_)-1]);
-			if(in_array($ext, $dissallow_ext)) return FALSE;
-
-			$path = $BASE_PATH.'my_images/';
-			$filename = 'label_'.$id.'.'.$ext;
-			$dest = $path.$filename;
-
-			$ret = move_uploaded_file($tmp, $dest);
-			if($ret) {
-				$value = 'my_images/'.$filename;
-				chmod($dest, 0644);
-			} else {
-				$value = '';
-			}
-			$keys['pic_file']       = $value;
+		$new_id = kota_submit_multiedit('', 'new_label');
+		if(!$notifier->hasErrors()) {
+			$_SESSION['show'] = 'list_labels';
 		}
-		$keys['pic_x']          = format_userinput($_POST['txt_pic_x'], 'float');
-		$keys['pic_y']          = format_userinput($_POST['txt_pic_y'], 'float');
-		$keys['pic_w']          = format_userinput($_POST['txt_pic_w'], 'float');
+	break;
 
-		ko_save_etiketten_vorlage($id, $keys, $mode);
+	case "submit_edit_label":
+		if($access['admin']['ALL'] < 2) continue;
 
-		//Log-Meldung
-		$log_type = ($mode == "new") ? "new_etiketten" : "edit_etiketten";
-    $name = $keys["name"]; unset($keys["name"]);
-    $log_message = $name.": ".implode(", ", $keys);
-	  ko_log($log_type, $log_message);
+		kota_submit_multiedit('', 'edit_label');
 
-		$_SESSION["show"] = "set_etiketten_open";
-		$etiketten_id = $id;
+		if(!$notifier->hasErrors()) {
+			$_SESSION['show'] = 'list_labels';
+		}
 	break;
 
 
@@ -1490,6 +1430,7 @@ switch($do_action) {
 
 	case "submit_new_leute_pdf":
 	case "submit_edit_leute_pdf":
+	case "submit_as_new_leute_pdf":
 		if($access['admin']['MAX'] < 2) continue;
 
 		if($do_action == "submit_edit_leute_pdf") {
@@ -1631,11 +1572,79 @@ switch($do_action) {
 
 
 
-	//Submenus
-  case "move_sm_left":
-  case "move_sm_right":
-    ko_submenu_actions("admin", $do_action);
-  break;
+	case 'delete_vesr':
+		if($access['vesr'] < 1) continue;
+
+		$id = format_userinput($_POST['id'], 'uint');
+		if(!$id) continue;
+
+		$entry = db_select_data('ko_vesr', "WHERE `id` = '$id'", '*', '', '', TRUE);
+		if(!$entry['id'] || $entry['id'] != $id) continue;
+
+		db_delete_data('ko_vesr', "WHERE `id` = '$id'");
+		ko_log_diff('delete_vesr', $entry);
+		$notifier->addInfo(10);
+	break;
+
+	case 'vesr_import':
+		if ($access['vesr'] < 1) continue;
+
+		$_SESSION['show_back'] = $_SESSION['show'];
+		$_SESSION['show'] = 'vesr_import';
+	break;
+
+	case 'submit_vesr_import':
+		if($access['vesr'] < 1) continue;
+
+		if(is_array($_FILES['esrpayment_file'])) {
+			$upload_dir = $BASE_PATH.'my_images/v11/';
+			$filename = 'vesr_'.date('Ymd_His').'.v11';
+			move_uploaded_file($_FILES['esrpayment_file']['tmp_name'], $upload_dir.$filename);
+			$file = $upload_dir.$filename;
+			if(!file_exists($file)) $notifier->addError(19);
+
+			if (ko_vesr_is_duplicate_file($filename)) {
+				unlink($upload_dir.$filename);
+				$notifier->addError(21);
+			} else {
+				$vesr_error = ko_vesr_import ($file, $vesr_data, $vesr_done);
+				if($vesr_error) {
+					$notifier->addError($vesr_error);
+					unlink($upload_dir.$filename);
+				}
+			}
+		} else {
+			$notifier->addError(20);
+		}
+
+		$_SESSION['show'] = 'vesr_import';
+	break;
+
+	case 'vesr_settings':
+		if ($access['vesr'] < 2) continue;
+
+		$_SESSION['show_back'] = $_SESSION['show'];
+		$_SESSION['show'] = 'vesr_settings';
+	break;
+
+	case 'submit_vesr_settings':
+		if ($access['vesr'] < 2) continue;
+
+		ko_set_setting('vesr_import_email_host', format_userinput($_POST['txt_vesr_import_email_host'], 'text'));
+		ko_set_setting('vesr_import_email_user', format_userinput($_POST['txt_vesr_import_email_user'], 'text'));
+		// encrypt password
+		include_once($BASE_PATH.'inc/class.mcrypt.php');
+		$crypt = new mcrypt('aes');
+		$crypt->setKey(KOOL_ENCRYPTION_KEY);
+		$value = trim($crypt->encrypt(format_userinput($_POST['txt_vesr_import_email_pass'], 'text')));
+		ko_set_setting('vesr_import_email_pass', $value);
+		ko_set_setting('vesr_import_email_ssl', format_userinput($_POST['chk_vesr_import_email_ssl'], 'uint'));
+		ko_set_setting('vesr_import_email_port', format_userinput($_POST['chk_vesr_import_email_port'], 'uint'));
+		ko_set_setting('vesr_import_email_report_address', format_userinput($_POST['txt_vesr_import_email_report_address'], 'email'));
+
+		$_SESSION['show'] = $_SESSION['show_back'] ? $_SESSION['show_back'] : 'show_logins';
+	break;
+
 
 
 	//Default:
@@ -1690,15 +1699,23 @@ require("$ko_path/inc/smarty.inc");
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="<?php print $_SESSION["lang"]; ?>" lang="<?php print $_SESSION["lang"]; ?>">
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1" />
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1" />
 <title><?php print "$HTML_TITLE: ".getLL("module_".$ko_menu_akt); ?></title>
 <?php
 print ko_include_css();
 
-$js_files = array($ko_path.'inc/jquery/jquery.js', $ko_path.'inc/kOOL.js');
+$js_files = array();
+$js_files[] = $ko_path.'inc/ckeditor/ckeditor.js';
+$js_files[] = $ko_path.'inc/ckeditor/adapters/jquery.js';
 if(in_array($_SESSION['show'], array('edit_login', 'edit_admingroup'))) $js_files[] = $ko_path.'inc/selectmenu.js';
+$js_files[] = $ko_path.'inc/ckeditor/ckeditor.js';
+$js_files[] = $ko_path.'inc/ckeditor/adapters/jquery.js';
 print ko_include_js($js_files);
 
+include($ko_path.'admin/inc/js-admin.inc');
 include($ko_path.'inc/js-sessiontimeout.inc');
+include("inc/js-admin.inc");
 $js_calendar->load_files();
 
 //Prepare group double selects when editing a login
@@ -1711,19 +1728,19 @@ if(in_array($_SESSION['show'], array('edit_login', 'edit_admingroup'))) {
 	//View
 	$list_id = 1;
 	include($ko_path.'leute/inc/js-groupmenu.inc');
-	$loadcode .= "initList($list_id, document.formular.sel_ds1_sel_groups_rights_view);";
+	$loadcode .= "initList($list_id, document.getElementsByName('sel_ds1_sel_groups_rights_view')[0]);";
 	//New
 	$list_id = 2;
 	include($ko_path.'leute/inc/js-groupmenu.inc');
-	$loadcode .= "initList($list_id, document.formular.sel_ds1_sel_groups_rights_new);";
+	$loadcode .= "initList($list_id, document.getElementsByName('sel_ds1_sel_groups_rights_new')[0]);";
 	//Edit
 	$list_id = 3;
 	include($ko_path.'leute/inc/js-groupmenu.inc');
-	$loadcode .= "initList($list_id, document.formular.sel_ds1_sel_groups_rights_edit);";
+	$loadcode .= "initList($list_id, document.getElementsByName('sel_ds1_sel_groups_rights_edit')[0]);";
 	//Del
 	$list_id = 4;
 	include($ko_path.'leute/inc/js-groupmenu.inc');
-	$loadcode .= "initList($list_id, document.formular.sel_ds1_sel_groups_rights_del);";
+	$loadcode .= "initList($list_id, document.getElementsByName('sel_ds1_sel_groups_rights_del')[0]);";
 	$onload_code = $loadcode.$onload_code;
 	//Reset userpref to original value
 	ko_save_userpref($_SESSION['ses_userid'], 'show_passed_groups', $show_passed_groups);
@@ -1738,23 +1755,12 @@ if(in_array($_SESSION['show'], array('edit_login', 'edit_admingroup'))) {
  * Gibt bei erfolgreichem Login das Menü aus, sonst einfach die Loginfelder
  */
 include($ko_path . "menu.php");
+
+ko_get_outer_submenu_code('admin');
+
 ?>
 
-
-<table width="100%">
-<tr> 
-
-<!-- Submenu -->
-<td class="main_left" name="main_left" id="main_left">
-<?php
-print ko_get_submenu_code("admin", "left");
-?>
-&nbsp;
-</td>
-
-
-<!-- Hauptbereich -->
-<td class="main">
+<main class="main">
 <form action="index.php" method="post" name="formular" enctype="multipart/form-data" autocomplete="off">  <!-- Hauptformular -->
 <input type="hidden" name="action" id="action" value="" />
 <input type="hidden" name="id" id="id" value="" />
@@ -1768,23 +1774,18 @@ if($notifier->hasNotifications(koNotifier::ALL)) {
 hook_show_case_pre($_SESSION["show"]);
 
 switch($_SESSION["show"]) {
-	case "set_allgemein";
-		ko_show_set_allgemein();
+	case "admin_settings";
+		ko_admin_settings();
 	break;
-	case "set_etiketten";
-		ko_show_set_etiketten();
+	case "list_labels";
+		ko_admin_list_labels();
 	break;
-	case "set_etiketten_open":
-		ko_show_set_etiketten($etiketten_id);
+	case "edit_label":
+	case "new_label":
+		ko_admin_formular_labels(($_SESSION['show'] == 'new_label' ? 'new' : 'edit'), $id);
 	break;
 	case "set_leute_pdf";
 		ko_list_leute_pdf();
-	break;
-	case "set_layout";
-		ko_show_set_layout($_SESSION["ses_userid"]);
-	break;
-	case "set_layout_guest";
-		ko_show_set_layout(ko_get_guest_id());
 	break;
 	case "show_logins";
 		ko_set_logins_list();
@@ -1831,6 +1832,15 @@ switch($_SESSION["show"]) {
 	case 'edit_news':
 		ko_formular_news('edit', $id);
 	break;
+	case 'vesr_settings':
+		ko_vesr_settings();
+	break;
+	case 'vesr_import':
+		if(isset($vesr_data) && isset($vesr_done) && is_array($vesr_data)) {
+			ko_vesr_overview($vesr_data, $vesr_done);
+		}
+		ko_show_vesr_import();
+	break;
 
 	default:
 		//HOOK: Plugins erlauben, neue Show-Cases zu definieren
@@ -1842,23 +1852,13 @@ switch($_SESSION["show"]) {
 hook_show_case_add($_SESSION["show"]);
 
 ?>
-&nbsp;
 </div>
 </form>
-</td>
+	</main>
 
-<td class="main_right" name="main_right" id="main_right">
+	</div>
 
-<?php
-print ko_get_submenu_code("admin", "right");
-?>
-&nbsp;
-</td>
-</tr>
-
-<?php include($ko_path . "footer.php"); ?>
-
-</table>
+	<?php include($ko_path . "footer.php"); ?>
 
 </body>
 </html>

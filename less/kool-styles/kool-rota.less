@@ -1,0 +1,105 @@
+.rota-schedule {
+    tr + tr {
+        td, th {
+            border-top: 1px solid #aaa;
+        }
+    }
+}
+
+.rota-event {
+    overflow-x: auto;
+
+    .rota-entry {
+        display:block;
+
+        &:hover {
+            i {
+                color: @brand-danger;
+            }
+        }
+    }
+
+    .btn.rota-consensus-entry {
+        display:block;
+    }
+}
+
+ul.dropdown-menu {
+    li {
+        a.rota-consensus-bg {
+            &.no-answer {
+                background-color: #fcfcfc;
+
+                &.hoverable:hover {
+                    background-color: darken(#fcfcfc, 8%);
+                }
+            }
+            &.no {
+                background-color: #ffcfcd;
+
+                &.hoverable:hover {
+                    background-color: darken(#ffcfcd, 8%);
+                }
+            }
+            &.maybe {
+                background-color: #ffeea6;
+
+                &.hoverable:hover {
+                    background-color: darken(#ffeea6, 8%);
+                }
+            }
+            &.yes {
+                background-color: #d1f3d1;
+
+                &.hoverable:hover {
+                    background-color: darken(#d1f3d1, 8%);
+                }
+            }
+        }
+
+        a.rota-consensus-group-bg {
+            &.hoverable:hover {
+                -webkit-filter: brightness(92%);
+            }
+        }
+    }
+}
+
+.rota-inner-table {
+    @media (max-width: (@screen-sm - 1)) {
+        .table-cell {
+            padding-left: 3px;
+            padding-right: 3px;
+
+            &:nth-child(2) {
+                padding-top: 6px;
+            }
+
+            &:first-child {
+                padding-top: 3px;
+            }
+            &:last-child {
+                padding-bottom: 3px;
+            }
+        }
+    }
+    @media (min-width: @screen-sm) {
+        display: table;
+        table-layout: fixed;
+
+        .table-row {
+            display: table-row;
+        }
+
+        .table-cell {
+            padding-left: 3px;
+            padding-right: 3px;
+
+            display: table-cell;
+
+            &.first-cell {
+                width: 200px;
+            }
+        }
+    }
+}

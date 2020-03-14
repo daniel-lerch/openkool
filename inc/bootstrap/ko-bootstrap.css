@@ -1,0 +1,267 @@
+.btn-toolbar div.input-group {
+	width:auto !important;
+}
+/***********************************************************************************************************************
+                                                     GENERAL
+***********************************************************************************************************************/
+
+@-webkit-viewport   { width: device-width; }
+@-moz-viewport      { width: device-width; }
+@-ms-viewport       { width: device-width; }
+@-o-viewport        { width: device-width; }
+@viewport           { width: device-width; }
+
+form {
+	margin:0px;
+}
+table {
+	font-size: inherit;
+}
+.nowrap {
+	white-space: nowrap;
+}
+.nomargin {
+	margin-top:0px !important;
+	margin-right:0px !important;
+	margin-left:0px !important;
+	margin-bottom:0px !important;
+}
+.nopadding {
+	padding:0px !important;
+}
+.no-padding-right {
+	padding-right:0px !important;
+}
+.no-padding-left {
+	padding-left:0px !important;
+}
+.full-width {
+	width:100% !important;
+}
+.full-height {
+	height:100% !important;
+}
+.v-align-m {
+	vertical-align: middle !important;
+}
+.v-align-t {
+	vertical-align: top !important;
+}
+.clearfix {
+	clear:both;
+}
+.auto-width {
+	width: auto !important;
+}
+
+@media screen and (min-width: 0px) {
+	.text-left-xs {
+		text-align: left;
+	}
+	.text-center-xs {
+		text-align: center;
+	}
+	.text-right-xs {
+		text-align: right;
+	}
+}
+@media (min-width: 768px) {
+	.text-left-sm {
+		text-align: left;
+	}
+	.text-center-sm {
+		text-align: center;
+	}
+	.text-right-sm {
+		text-align: right;
+	}
+}
+@media (min-width: 991px) {
+	.text-left-md {
+		text-align: left;
+	}
+	.text-center-md {
+		text-align: center;
+	}
+	.text-right-md {
+		text-align: right;
+	}
+}
+@media (min-width: 1200px) {
+	.text-left-lg {
+		text-align: left;
+	}
+	.text-center-lg {
+		text-align: center;
+	}
+	.text-right-lg {
+		text-align: right;
+	}
+}
+
+
+/*************************************
+             ELEMENTS
+*************************************/
+div.koi-checkboxes-container {
+	overflow-y: scroll;
+	overflow-x: hidden;
+	width: 100%;
+	border:1px solid #ddd;
+	border-radius:5px;
+}
+div.koi-checkboxes-entry {
+	padding-left: 5px;
+	margin:0px;
+	line-height:22px;
+	display:block;
+}
+div.koi-checkboxes-entry label {
+	font-weight:normal;
+	font-size:0.9em;
+	margin:0px;
+	white-space: nowrap;
+	width:100%;
+	cursor:pointer;
+}
+div.koi-checkboxes-checked {
+	background: #d9edf7;
+}
+.glyphicon-button {
+	line-height: inherit !important;
+}
+
+
+
+/***********************************************************************************************************************
+                                                 LOGO AND LOGIN
+***********************************************************************************************************************/
+
+
+
+/***********************************************************************************************************************
+                                                    NAVIGATION
+***********************************************************************************************************************/
+ul .dropdown-menu {
+	width:200px;
+}
+
+/*************************************
+             LOGIN FORM
+*************************************/
+.dropdown-form {
+	z-index:1001;
+	padding:15px;
+	width:200px;
+}
+.dropdown-form button {
+	float:right;
+}
+
+
+
+/***********************************************************************************************************************
+                                                     SIDEBAR
+***********************************************************************************************************************/
+
+
+
+/*************************************
+         SIDEBAR PANELS
+*************************************/
+/* BODY */
+span.itemlist_group_1 {
+	font-size: 12px;
+	font-weight: 900;
+	padding-left: 12px;
+	background: url('../../images/toggle_minus.png') top left no-repeat;
+}
+span.itemlist_group_0 {
+	font-size: 12px;
+	font-weight: 900;
+	padding-left: 12px;
+	background: url('../../images/toggle_plus.png') top left no-repeat;
+}
+
+
+/***********************************************************************************************************************
+                                                    MAIN CONTENT
+***********************************************************************************************************************/
+
+
+
+/***********************************************************************************************************************
+                                                      KO_LIST
+***********************************************************************************************************************/
+
+.pagestats {
+	display:inline-block;
+}
+#ko_list_colitemlist_flyout {
+	position: absolute;
+	top: 16px;
+	right: 0;
+	padding: 5px;
+	border: 1px solid #999;
+	background: #fff;
+	display: none;
+	text-align: left;
+	width: 202px;
+}
+#ko_list_colitemlist_flyout .itemlist {
+	width: 200px;
+}
+.list-title {
+	display:inline-block;
+}
+table.ko_list>tbody>tr:first-child>th {
+	text-align:center;
+}
+
+
+/***********************************************************************************************************************
+                                                   KO_FORMULAR
+***********************************************************************************************************************/
+.formular-cell {
+	margin-top:5px;
+	margin-bottom:5px;
+}
+.formular_header {
+	display:block;
+}
+
+label.formular_header {
+	background-color: #d8d8d8;
+	padding: 1px 2px;
+	font-weight: 900;
+	margin: 6px 0 2px 0;
+	display: block;
+}
+
+
+
+.df_header {
+	font-size: 11px;
+	font-weight: 900;
+	padding: 2px 0 3px 0;
+	margin-top: 10px;
+	color: #666;
+}
+
+.df_content {
+	background: #9aea9a;
+	padding: 0 0 5px 2px;
+}
+
+
+
+/***********************************************************************************************************************
+                                                   KO_TRACKING
+***********************************************************************************************************************/
+.tracking-status-cell {
+	-webkit-transition: background-color .5s;
+	transition: background-color .5s;
+}
+.tracking-status-cell-success {
+	background-color: #c1e2b3 !important;
+}

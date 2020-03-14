@@ -1,23 +1,15 @@
 <script language="javascript" type="text/javascript">
 <!--
-function EG(t1, t2, rota, room, resitems, rest1, rest2, title, kommentar, allow_program) {
-	this.t1 = t1;
-	this.t2 = t2;
-	this.rota = rota;
-	this.room = room;
-	this.resitems = resitems;
-	this.rest1 = rest1;
-	this.rest2 = rest2;
-	this.title = title.trim();
-	this.kommentar = kommentar.trim();
-	this.allow_program = allow_program;
-}
+
+
+
+var firstEgSelected = false;
 
 function selEventGroup(gid) {
 	//Res group has been selected
 	if(gid.slice(0,1) == "i") return false;
 
-	var r = new Object();
+	var r = {};
 	<?php
 	//Check for installed modules
 	if(ko_module_installed("rota")) print 'var rota_installed = true;'."\n";
@@ -37,92 +29,147 @@ function selEventGroup(gid) {
 			$_resitems = array();
 			foreach(explode(",", $eg["resitems"]) as $rid) {
 				if($access['reservation']['ALL'] < 2 && $access['reservation'][$rid] < 2) continue;
-				$_resitems[] = $items[$rid]["name"]."@@".$rid;
+				$_resitems[] = array('value' => $rid, 'text' => utf8_encode($items[$rid]["name"]));
 			}
-			$resitems = $eg["resitems"]."@@@@".implode("@@@", $_resitems);
+			$resitems = json_encode($_resitems);
 		} else {
-			$resitems = "";
+			$resitems = "[]";
 		}
-		$code .= sprintf("r['%s'] = new EG('%s', '%s', %s, '%s', '%s', '%s', '%s', '%s', '%s', %s);\n",
-										 $eg["id"],                            //id
-										 substr($eg["startzeit"], 0, -3),      //Startzeit
-										 substr($eg["endzeit"], 0, -3),        //Endzeit
-										 ($eg["rota"] ? "true" : "false"),     //Rota
-										 $eg["room"],                          //Room
-										 $resitems,                            //Resitems
-										 substr($eg["res_startzeit"], 0, -3),  //Res Startzeit
-										 substr($eg["res_endzeit"], 0, -3),    //Res Endzeit
-										 strtr($eg["title"], array("'" => "\'")),  //Title
-										 strtr($eg["kommentar"], array("\n" => "|", "\r" => "", "\t" => "", "'" => "\'")),  //Comments
-										 (($eg['moderation'] == 0 || $access['daten'][$eg['id']] >= 3) ? "true" : "false") // allow adding program entries
-										 );
+
+		$code .= sprintf("var rEl = {};\n", $eg['id']);
+
+		$code .= sprintf("rEl['%s'] = %s;", 'allow_program', (($eg['moderation'] == 0 || $access['daten'][$eg['id']] >= 3) ? "true" : "false"));
+		$code .= sprintf("rEl['%s'] = '%s';", 'startzeit', substr($eg["startzeit"], 0, -3));
+		$code .= sprintf("rEl['%s'] = '%s';", 'endzeit', substr($eg["endzeit"], 0, -3));
+		$code .= sprintf("rEl['%s'] = %s;", 'do_notify', (trim($eg['notify']) ? "'".trim($eg['notify'])."'" : "null"));
+		if (ko_module_installed('reservation')) $code .= sprintf("rEl['%s'] = %s;", 'resitems', $resitems);
+		if (ko_module_installed('reservation')) $code .= sprintf("rEl['%s'] = '%s';", 'res_startzeit', substr($eg["res_startzeit"], 0, -3));
+		if (ko_module_installed('reservation')) $code .= sprintf("rEl['%s'] = '%s';", 'res_endzeit', substr($eg["res_endzeit"], 0, -3));
+		if (ko_module_installed('reservation')) $code .= sprintf("rEl['%s'] = %s;", 'responsible_for_res', $eg["responsible_for_res"]);
+
+		foreach ($EVENT_PROPAGATE_FIELDS as $prop) {
+			if (!$prop['module'] || ko_module_installed($prop['module'])) {
+				$val = $eg[$prop['from']];
+				if (!$val && $prop['default']) $val = $prop['default'];
+				switch ($prop['type']) {
+					case 'date':
+					case 'string':
+						$code .= sprintf("rEl['%s'] = '%s';", $prop['to'], trim(strtr($val, array("\n" => "\\n", "\r" => "\\r", "\t" => "\\t", "'" => "\'"))));
+					break;
+					case 'int':
+						$code .= sprintf("rEl['%s'] = %d;", $prop['to'], intval($val));
+					break;
+					case 'bool':
+						$code .= sprintf("rEl['%s'] = %s;", $prop['to'], $val ? 'true' : 'false');
+					break;
+				}
+			}
+		}
+
+		$code .= sprintf("r['%s'] = rEl;\n", $eg['id']);
 	}
 	print $code;
 	print "daten_label_program_no_access = '" . getLL('daten_label_program_no_access') . "';";
 	?>
 
-	koi_room = document.getElementsByName("koi[ko_event][room][0]")[0];
-	koi_title = document.getElementsByName("koi[ko_event][title][0]")[0];
-	koi_kommentar = document.getElementsByName("koi[ko_event][kommentar][0]")[0];
-	koi_kommentar_rte = document.getElementById("cke_koi[ko_event][kommentar][0]");
-	if(rota_installed) koi_rota = document.getElementsByName("koi[ko_event][rota][0]")[0];
-	koi_zeit = document.getElementsByName("koi[ko_event][startzeit][0]")[0];
-	koi_zeit2 = document.getElementsByName("koi[ko_event][endzeit][0]")[0];
+	var fields = {};
+
+	<?php if ($_SESSION['show'] != 'edit_termin') { ?>
+
+
+
+
+	// Define all the fields
+	fields['startzeit'] = $(document.getElementsByName("koi[ko_event][startzeit][0]")[0]);
+	fields['endzeit'] = $(document.getElementsByName("koi[ko_event][endzeit][0]")[0]);
+	fields['do_notify'] = $(document.getElementsByName('koi[ko_event][do_notify][0]')[0]);
+	<?php if (ko_module_installed('reservation')) { ?>fields['res_startzeit'] = $('[name="res_startzeit"]');<?php } ?>
+	<?php if (ko_module_installed('reservation')) { ?>fields['res_endzeit'] = $('[name="res_endzeit"]');<?php } ?>
+	<?php if (ko_module_installed('reservation')) { ?>fields['resitems'] = $('#sel_ds1_sel_do_res');<?php } ?>
+	<?php if (ko_module_installed('reservation')) { ?>fields['responsible_for_res'] = $('[name="sel_responsible_for_res"]');<?php } ?>
+	<?php
+	foreach ($EVENT_PROPAGATE_FIELDS as $prop) {
+		if (!$prop['module'] || ko_module_installed($prop['module'])) {
+			printf("fields['%s'] = $(document.getElementsByName(\"koi[ko_event][%s][0]\")[0]);", $prop['to'], $prop['to']);
+		}
+	}
+	?>
 
 	if(r[gid]) {
-		if(r[gid]["t1"] != "00:00") koi_zeit.value = r[gid]["t1"];
-		if(r[gid]["t2"] != "00:00") koi_zeit2.value = r[gid]["t2"];
-		koi_room.value = r[gid]["room"];
-		koi_title.value = r[gid]["title"].replace(/\|/g, "\n");
+		if (firstEgSelected) {
+			var c = confirm('<?php print str_replace("'", "\'", getLL('daten_seleventgroup_confirm')) ?>');
+			if (!c) return false;
+		}
+
+		if(r[gid]['startzeit'] != "00:00" || r[gid]['endzeit'] != "00:00") {
+			fields['startzeit'].setVal(r[gid]['startzeit'] == '00:00' ? '' : r[gid]['startzeit']);
+			fields['endzeit'].setVal(r[gid]['endzeit'] == '00:00' ? '' : r[gid]['endzeit']);
+		}
+		if(r[gid]['do_notify'] !== null) {
+			fields['do_notify'].closest('.formular-cell').show();
+			fields['do_notify'].setVal(1);
+		} else {
+			fields['do_notify'].setVal(1);
+			fields['do_notify'].closest('.formular-cell').hide();
+		}
+
 
 		// Set 'data-preset-join-value-local' of foreign table load presets button to eventgroup id
 		$('button.form_ft_load_preset[data-field="ko_event.program"]').attr('data-preset-join-value-local', gid);
-
 		$(".ko_event_warning_program").remove();
-		if (!r[gid]["allow_program"]) {
-			$('span.form_ft_new[data-field="ko_event.program"]').parent('td.formular_content').hide();
-			$('span.form_ft_new[data-field="ko_event.program"]').parent('td.formular_content').parent('tr').append('<span style="font-size:10px;margin:8px;color:#FC6231;" class="ko_event_warning_program">' + daten_label_program_no_access + '</span>');
+		if (!r[gid]['allow_program']) {
+			$('span.form_ft_new[data-field="ko_event.program"]')
+				.parent('td.formular_content')
+				.hide()
+				.parent('tr')
+				.append('<span style="font-size:10px;margin:8px;color:#FC6231;" class="ko_event_warning_program">' + daten_label_program_no_access + '</span>');
 		}
 		else {
 			$(".ko_event_warning_program").remove();
 			$('span.form_ft_new[data-field="ko_event.program"]').parent('td.formular_content').show();
 		}
 
-		// check whether the description is in a ckeditor-box or in a textarea
-		if (koi_kommentar_rte == null) {
-			koi_kommentar.value = r[gid]["kommentar"].replace(/\|/g, "\n");
+
+		<?php if (ko_module_installed('reservation')) { ?>
+
+		if(r[gid]['res_startzeit'] != "00:00" || r[gid]['res_endzeit'] != "00:00") {
+			fields['res_startzeit'].setVal(r[gid]['res_startzeit'] == '00:00' ? '' : r[gid]['res_startzeit']);
+			fields['res_endzeit'].setVal(r[gid]['res_endzeit'] == '00:00' ? '' : r[gid]['res_endzeit']);
 		}
-		else {
-			for(var i in CKEDITOR.instances) {
-				if (CKEDITOR.instances[i].name == "koi[ko_event][kommentar][0]") {
-					CKEDITOR.instances[i].setData(r[gid]["kommentar"]);
-				}
+		fields['resitems'].setVal(r[gid]['resitems']);
+		if(r[gid]['responsible_for_res']) fields['responsible_for_res'].setVal(r[gid]['responsible_for_res']);
+		else fields['responsible_for_res'].setVal(<?= $_SESSION['ses_userid']; ?>);
+
+		<?php }
+
+		foreach ($EVENT_PROPAGATE_FIELDS as $prop) {
+			if (!$prop['module'] || ko_module_installed($prop['module'])) {
+				printf("fields['%s'].setVal(r[gid]['%s']);", $prop['to'], $prop['to'], $prop['to']);
 			}
 		}
 
-		if(rota_installed) koi_rota.checked = r[gid]["rota"];
+		?>
 
-		if(res_installed) {
-			if(r[gid]["rest1"] != "") document.formular.res_startzeit.value = r[gid]["rest1"];
-			if(r[gid]["rest2"] != "") document.formular.res_endzeit.value = r[gid]["rest2"];
-
-			//First clear all res items
-			list = document.formular.sel_ds2_sel_do_res;
-			for (var i=list.options.length-1; i>=0; i--) list.options[i]=null;
-			document.formular.sel_do_res.value = '';
-			//Then add the ones of the newly selected event group
-			if(r[gid]["resitems"]) {
-				split = r[gid]["resitems"].split("@@@@");
-				document.formular.sel_do_res.value = split[0];
-				opts = split[1].split("@@@");
-				for(var i=0; i<opts.length; i++) {
-					opt = opts[i].split("@@");
-					document.formular.sel_ds2_sel_do_res.options[i] = new Option(opt[0], opt[1]);
-				}
-			}
-
-		}//if(res)
+		firstEgSelected = true;
 	}//if(r[gid])
+
+	<?php } else { ?>
+
+	fields['do_notify'] = $(document.getElementsByName('koi[ko_event][do_notify][<?= $edit_id ?>]')[0]);
+
+	if(r[gid]) {
+		if(r[gid]['do_notify'] !== null) {
+			fields['do_notify'].closest('.formular-cell').show();
+			fields['do_notify'].setVal(1);
+		} else {
+			fields['do_notify'].setVal(1);
+			fields['do_notify'].closest('.formular-cell').hide();
+		}
+	}
+
+	<?php } ?>
+
+	return true;
 }//selEventGruppe()
 
 -->

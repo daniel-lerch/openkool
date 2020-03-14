@@ -27,156 +27,72 @@
 require_once($BASE_PATH."inc/class.kOOL_listview.php");
 
 
+
+
 function ko_set_logins_list($output=TRUE) {
-	global $smarty, $ko_path;
+	global $smarty;
 	global $access;
 
 	if($access['admin']['MAX'] < 5) return FALSE;
 
 	if($_SESSION["ses_username"] != "root") $z_where = " AND `login` != 'root' ";
 	else $z_where = "";
-	$rows = db_get_count("ko_admin", "id", $z_where);
-	if($_SESSION['show_start'] > $rows) $_SESSION['show_start'] = 1;
-	$z_limit = 'LIMIT '.((int)$_SESSION['show_start']-1).', '.$_SESSION['show_limit'];
-	ko_get_logins($login, $z_where, $z_limit);
 
-	//Statistik über Suchergebnisse und Anzeige
-  $stats_end = ($_SESSION["show_limit"]+$_SESSION["show_start"]-1) > $rows ? $rows : ($_SESSION["show_limit"]+$_SESSION["show_start"]-1);
-	$smarty->assign("tpl_stats", $_SESSION["show_start"]." - ".$stats_end." ".getLL("list_oftotal")." ".$rows);
+	//Add KOTA filter
+	$kota_where = kota_apply_filter('ko_admin');
 
-	//Links für Prev und Next-Page vorbereiten
-  if($_SESSION["show_start"] > 1) {
-		$smarty->assign("tpl_prevlink_link", "javascript:sendReq('../admin/inc/ajax.php', 'action,set_start,sesid', 'setstart,".(($_SESSION["show_start"]-$_SESSION["show_limit"] < 1) ? 1 : ($_SESSION["show_start"]-$_SESSION["show_limit"])).",".session_id()."', do_element);");
-  } else {
-    $smarty->assign('tpl_prevlink_link', '');
-  }
-  if(($_SESSION["show_start"]+$_SESSION["show_limit"]-1) < $rows) {
-		$smarty->assign("tpl_nextlink_link", "javascript:sendReq('../admin/inc/ajax.php', 'action,set_start,sesid', 'setstart,".($_SESSION["show_limit"]+$_SESSION["show_start"]).",".session_id()."', do_element);");
-  } else {
-    $smarty->assign('tpl_nextlink_link', '');
-  }
-	$smarty->assign('limitM', $_SESSION['show_limit'] >= 100 ? $_SESSION['show_limit']-50 : max(10, $_SESSION['show_limit']-10));
-	$smarty->assign('limitP', $_SESSION['show_limit'] >= 50 ? $_SESSION['show_limit']+50 : $_SESSION['show_limit']+10);
+	if($kota_where != '') $z_where .= " AND ($kota_where) ";
 
+	$rows = db_get_count('ko_admin', 'id', $z_where);
 
-	//Header-Informationen
-	$smarty->assign("tpl_show_3cols", TRUE);
+	$z_limit = 'LIMIT ' . ($_SESSION['show_start']-1) . ', ' . $_SESSION['show_limit'];
 
-	$show_cols = array(getLL("admin_logins_login"), getLL("admin_logins_status"), getLL("admin_logins_modules"), getLL("admin_logins_admingroups"), getLL("admin_logins_person"));
-	$sort_cols = array('login', 'MODULEdisabled', 'modules', 'admingroups', 'MODULEleute_id');
-  foreach($show_cols as $c_i => $c) {
-    $tpl_table_header[$c_i]['sort'] = $sort_cols[$c_i];
-    $tpl_table_header[$c_i]["name"] = $show_cols[$c_i];
-  }
-  $smarty->assign("tpl_table_header", $tpl_table_header);
-  $smarty->assign('sort', array('show' => TRUE,
-																'action' => 'setsortlogins',
-																'akt' => $_SESSION['sort_logins'],
-																'akt_order' => $_SESSION['sort_logins_order'])
+	if($_SESSION['show_start'] > $rows) {
+		$_SESSION['show_start'] = 1;
+		$z_limit = 'LIMIT '.($_SESSION['show_start']-1).', '.$_SESSION['show_limit'];
+	}
+
+	ko_get_logins($es, $z_where, $z_limit);
+
+	$list = new kOOL_listview();
+
+	$list->init('admin', 'ko_admin', array('chk', 'edit', 'delete'), $_SESSION["show_start"], $_SESSION["show_limit"]);
+	$list->setTitle(getLL("admin_logins_list_title"));
+	$list->setActions(array('edit' => array('action' => 'edit_login'),
+			'delete' => array('action' => 'delete_login', 'confirm' => TRUE))
 	);
-	$smarty->assign('module', 'admin');
-	$smarty->assign('sesid', session_id());
+	if ($access['admin']['ALL'] > 4) $list->setActionNew('set_new_login');
+	$list->setSort(TRUE, 'setsortlogins', $_SESSION['sort_logins'], $_SESSION['sort_logins_order']);
+	$list->setStats($rows);
+	$list->disableMultiedit();
 
-
-	//Logins in Liste einfüllen
-	$guest_id = (int)ko_get_guest_id();
-	$root_id = (int)ko_get_root_id();
-	foreach($login as $l_i => $l) {
-		//root-Login nur anzeigen, wenn root eingeloggt ist
-		if($l["login"] == "root" && $_SESSION["ses_username"] != "root") continue;
-
-		//Disabled login
-		$tpl_list_data[$l_i]["rowclass"] = $l["disabled"] ? "ko_list_hidden" : "";
-
-		//Checkbox
-		$tpl_list_data[$l_i]["show_checkbox"] = TRUE;
-							
-		//Edit-Button
-		$tpl_list_data[$l_i]["show_edit_button"] = TRUE;
-		$tpl_list_data[$l_i]["alt_edit"] = getLL("admin_edit_login");
-		$tpl_list_data[$l_i]["onclick_edit"] = "javascript:set_action('edit_login');set_hidden_value('id', '$l_i');this.submit";
-									
-		//Delete-Button
-		if((int)$l_i == $guest_id) {  //ko_guest darf nicht gelöscht werden
-			$tpl_list_data[$l_i]["show_delete_button"] = FALSE;
-		} else {
-			$tpl_list_data[$l_i]["show_delete_button"] = TRUE;
-			$tpl_list_data[$l_i]["alt_delete"] = getLL("admin_del_login");
-			$tpl_list_data[$l_i]["onclick_delete"] = "javascript:c = confirm('".getLL("admin_del_login_confirm")."');if(!c) return;set_action('delete_login');set_hidden_value('id', '$l_i');";
+	$manualAccess = array();
+	foreach ($es as $k => $v) {
+		if ($v['id'] == ko_get_guest_id()) {
+			$manual_access[$k] = FALSE;
 		}
-
-		//Index
-		$tpl_list_data[$l_i]["id"] = $l_i;
-
-		//Login-Name
-		if($_SESSION["ses_userid"] == $root_id) {
-			$link = $ko_path."admin/index.php?action=login_details&amp;id=".$l_i;
-			$tpl_list_data[$l_i][1] = '<b><a href="'.$link.'">'.ko_html($l["login"]).'</a></b>';
-		} else {
-			$tpl_list_data[$l_i][1] = '<b>'.ko_html($l["login"]).'</b>';
+		else {
+			$manual_access[$k] = TRUE;
 		}
+	}
+	$list->setAccessRights(FALSE);
+	$list->setManualAccess('delete', $manual_access);
 
-		//disable/enable (not for root, ko_guest or logged in login
-		if($l_i != $guest_id && $l_i != $root_id && $l_i != $_SESSION['ses_userid']) {
-			if($l["disabled"]) {
-				$html = '<input type="image" src="'.$ko_path.'images/icon_login_disable.png" onclick="sendReq(\'../admin/inc/ajax.php\', \'action,mode,id,sesid\', \'ablelogin,enabled,'.$l_i.','.session_id().'\', do_element); return false;" />';
-			} else {
-				$html = '<input type="image" src="'.$ko_path.'images/icon_login_enable.png" onclick="sendReq(\'../admin/inc/ajax.php\', \'action,mode,id,sesid\', \'ablelogin,disabled,'.$l_i.','.session_id().'\', do_element); return false;" />';
-			}
-		} else {
-			$html = '&nbsp;';
-		}
-		$tpl_list_data[$l_i][2] = $html;
+	$list->setRowClass('ko_list_hidden', "return 'DISABLED';");
 
-		//Module
-		$value = array();
-		foreach(explode(",", $l["modules"]) as $module) {
-			$value[] = getLL("module_".$module);
-		}
-		$tpl_list_data[$l_i][3] = ko_html(implode(", ", $value));
+	$list->setWarning(kota_filter_get_warntext('ko_admin'));
 
-		//Admingroups
-		$value = array();
-		$all_admingroups = ko_get_admingroups($l["id"]);
-		foreach(explode(",", $l["admingroups"]) as $ag) {
-			$value[] = $all_admingroups[$ag]["name"];
-		}
-		$tpl_list_data[$l_i][4] = ko_html(implode(", ", $value));
-
-		//assigned person
-		if($l["leute_id"] < 1) {
-			if($l['email']) {
-				$value = '('.ko_html($l['email']).')';
-			} else {
-				$value = "-";
-			}
-		} else {
-			ko_get_person_by_id($l["leute_id"], $p);
-			$value = $p["vorname"]." ".$p["nachname"];
-			if($l['email']) $value .= ' ('.ko_html($l['email']).')';
-			//Add link to person
-			$value = '<a href="'.$ko_path.'leute/index.php?action=set_idfilter&amp;id='.$p['id'].'">'.$value.'</a>';
-		}
-		$tpl_list_data[$l_i][5] = $value;
-		
-
-	}//foreach(login)
-
+	//Footer
 	$list_footer = $smarty->get_template_vars('list_footer');
 	$list_footer[] = array("label" => getLL("admin_change_user_label"),
-												 "button" => '<input type="submit" onclick="set_action(\'sudo_login\');" value="'.getLL("admin_change_user").'" />');
-	$smarty->assign("show_list_footer", TRUE);
-	$smarty->assign("list_footer", $list_footer);
+		"button" => '<button type="submit" class="btn btn-sm btn-default" onclick="set_action(\'sudo_login\');" value="'.getLL("admin_change_user").'">' . getLL("admin_change_user") . '</button>');
+	$list->setFooter($list_footer);
 
-	$smarty->assign("help", ko_get_help("admin", "show_logins"));
-
-	$smarty->assign("tpl_list_title", getLL("admin_logins_list_title"));
-	$smarty->assign('tpl_list_cols', array(1, 2, 3, 4, 5));
-  $smarty->assign('tpl_list_data', $tpl_list_data);
+	//Output the list
 	if($output) {
-		$smarty->display('ko_list.tpl');
+		$list->render($es);
 	} else {
-		print $smarty->fetch('ko_list.tpl');
+		print $list->render($es);
 	}
 }//ko_set_logins_list()
 
@@ -208,6 +124,7 @@ function ko_list_admingroups($output=TRUE) {
 	$list->setActions(array('edit' => array('action' => 'edit_admingroup'),
 													'delete' => array('action' => 'delete_admingroup', 'confirm' => TRUE))
 										);
+	if ($access['admin']['ALL'] > 4) $list->setActionNew('set_new_admingroup');
 	$list->setSort(FALSE);
 	$list->setStats($rows, '', '', '', TRUE);
 	$list->disableMultiedit();
@@ -276,7 +193,7 @@ function ko_show_logs($output=TRUE) {
 		$z_limit = 'LIMIT '.($_SESSION['show_logs_start']-1).', '.$_SESSION['show_logs_limit'];
 	}
 
-	$order = 'ORDER BY '.$_SESSION['sort_logs'].' '.$_SESSION['sort_logs_order'];
+	$order = 'ORDER BY '.$_SESSION['sort_logs'].' '.$_SESSION['sort_logs_order'].', id '.$_SESSION['sort_logs_order'];
 
 
 	$rows = db_get_count('ko_log', 'id', $z_where);
@@ -426,14 +343,17 @@ function ko_show_sms_log($output=TRUE) {
 		//Show stats between all markers
 		$last = date('Y-m-d');
 		$mark_stats = '';
+		$first = True;
 		foreach($marks as $date => $mark) {
-			$mark_stats .= '<br />'.substr($date, 0, 10).' - '.$last.': '.$mark;
+			if (!$first) $mark_stats .= '<br />';
+			$mark_stats .= substr($date, 0, 10).' - '.$last.': '.$mark;
 			$last = substr($date, 0, 10);
+			$first = False;
 		}
 		$list_footer[] = array('label' => $mark_stats, 'button' => '');
 
 		//Button to add new marker
-		$list_footer[] = array('label' => getLL('admin_sms_log_mark_label'), 'button' => '<input type="submit" name="sms_mark" onclick="set_action(\'sms_log_mark\');" value="'.getLL('OK').'" />');
+		$list_footer[] = array('label' => getLL('admin_sms_log_mark_label'), 'button' => '<button type="submit" class="btn btn-sm btn-primary" name="sms_mark" onclick="set_action(\'sms_log_mark\');" value="'.getLL('OK').'">' . getLL('OK') . '</button>');
 	}
 
 	$list->setFooter($list_footer);
@@ -452,7 +372,7 @@ function ko_show_sms_log($output=TRUE) {
 
 
 function ko_login_formular($mode, $id=0, $type="login") {
-	global $smarty, $ko_path, $MODULES, $MODULES_GROUP_ACCESS, $BASE_PATH;
+	global $smarty, $ko_path, $MODULES, $MODULES_GROUP_ACCESS, $BASE_PATH, $BOOTSTRAP_COLS_PER_ROW;
 	global $access, $all_groups, $KOTA;
 
 	if($access['admin']['MAX'] < 5) return false;
@@ -683,19 +603,21 @@ function ko_login_formular($mode, $id=0, $type="login") {
 		$group[++$gc] = array("titel" => getLL("module_leute"), "state" => "open", "colspan" => 'colspan="6"');
 		$help = ko_get_help("admin", "login_rights_leute");
 		$group[$gc]["row"][$rowcounter++]["inputs"][0] = array("desc" => "",
-																													 "type" => "html",
-																													 "value" => $help["link"]."&nbsp;".getLL("admin_logins_rights_leute"),
-																													 "colspan" => 'colspan="6"'
-																													);
+			"type" => "html",
+			"value" => $help["link"]."&nbsp;".getLL("admin_logins_rights_leute"),
+			"colspan" => 'colspan="6"',
+			"columnWidth" => $BOOTSTRAP_COLS_PER_ROW,
+		);
 		$values = $descs = array(0, 1, 2, 3, 4);
 		$group[$gc]["row"][$rowcounter]["inputs"][0] = array("desc" => strtoupper(getLL("all")),
-																 "type" => "select",
-																 "name" => "sel_rechte_leute",
-																 "values" => $values,
-																 "descs" => $descs,
-																 "value" => $user_access['leute']['ALL'],
-																 "params" => 'size="0"',
-																 );
+			"type" => "select",
+			"name" => "sel_rechte_leute",
+			"all_class" => 'sel_rechte',
+			"values" => $values,
+			"descs" => $descs,
+			"value" => $user_access['leute']['ALL'],
+			"params" => 'size="0"',
+		);
 
 
 		//Stufen-Berechtigungen nach Filtern
@@ -760,13 +682,14 @@ function ko_login_formular($mode, $id=0, $type="login") {
 				}
 			}
 			$group[$gc]["row"][$rowcounter]["inputs"][$i] = array("desc" => getLL("admin_logins_rights_leute_level")." ".$i,
-																	 "type" => "select",
-																	 "name" => "sel_rechte_leute_".$i,
-																	 "values" => $l_values[$i],
-																	 "descs" => $l_descs[$i],
-																	 "value" => $l_sel[$i],
-																	 "params" => 'size="0"',
-																	 );
+				"type" => "select",
+				"name" => "sel_rechte_leute_".$i,
+				"all_class" => 'sel_rechte',
+				"values" => $l_values[$i],
+				"descs" => $l_descs[$i],
+				"value" => $l_sel[$i],
+				"params" => 'size="0"',
+			);
 		}
 		$rowcounter++;
 
@@ -828,10 +751,9 @@ function ko_login_formular($mode, $id=0, $type="login") {
 						);
 			$value = $type == 'login' ? $login['leute_admin_assign'] : $admingroups[$id]['leute_admin_assign'];
 			$group[$gc]['row'][$rowcounter++]['inputs'][1] = array('desc' => getLL('admin_logins_rights_leute_assign'),
-						'type' => 'checkbox',
+						'type' => 'switch',
 						'name' => 'chk_leute_admin_assign',
-						'value' => 1,
-						'params' => $value ? 'checked="checked"' : '',
+						'value' => $value ? '1' : '0',
 						'colspan' => 'colspan="2"',
 						);
 
@@ -839,10 +761,9 @@ function ko_login_formular($mode, $id=0, $type="login") {
 			//Setting to enable group subscriptions for users without level 4
 			$value = $type == 'login' ? $login['leute_admin_gs'] : $admingroups[$id]['leute_admin_gs'];
 			$group[$gc]["row"][$rowcounter++]["inputs"][0] = array("desc" => getLL("admin_logins_rights_leute_gs"),
-						"type" => "checkbox",
+						"type" => "switch",
 						"name" => "chk_leute_admin_gs",
-						"value" => "1",
-						"params" => $value ? 'checked="checked"' : "",
+						'value' => $value ? '1' : '0',
 						"colspan" => 'colspan="4"',
 						);
 		}
@@ -896,6 +817,12 @@ function ko_login_formular($mode, $id=0, $type="login") {
 			case "tapes": ko_get_tapegroups($gruppen); break;
 			case "donations": $gruppen = db_select_data("ko_donations_accounts", "", "*", "ORDER BY number ASC"); break;
 			case 'tracking': $gruppen = db_select_data('ko_tracking', '', '*', 'ORDER BY name ASC'); break;
+			case 'crm':
+				ko_get_crm_projects($gruppen, '', '', 'ORDER BY `title` ASC');
+				foreach ($gruppen as $k => $g) {
+					$gruppen[$k]['name'] = $g['title'];
+				}
+			break;
 
 			default:
 				$gruppen = hook_access_get_groups($module);
@@ -906,39 +833,45 @@ function ko_login_formular($mode, $id=0, $type="login") {
 		$help = ko_get_help("admin", "login_rights_".$module);
 		$group[++$gc] = array("titel" => getLL("module_".$module), "state" => "open", "colspan" => 'colspan="6"');
 		$group[$gc]["row"][$rowcounter++]["inputs"][0] = array("desc" => "",
-																													 "type" => "html",
-																													 "value" => $help["link"]."&nbsp;".getLL("admin_logins_rights_".$module),
-																													 "colspan" => 'colspan="6"'
-																													);
+			"type" => "html",
+			"value" => $help["link"]."&nbsp;".getLL("admin_logins_rights_".$module),
+			"colspan" => 'colspan="6"',
+			"columnWidth" => $BOOTSTRAP_COLS_PER_ROW,
+		);
 		$values = $descs = array(0, 1, 2, 3, 4);
-		if(in_array($module, array('reservation', 'rota'))) $values = $descs = array(0, 1, 2, 3, 4, 5);
+		if(in_array($module, array('reservation', 'rota', 'crm'))) $values = $descs = array(0, 1, 2, 3, 4, 5);
 		//Get levels from function (e.g. for plugins)
 		if(TRUE === hook_access_get_levels($module, $_values, $_descs)) {
 			$values = $_values;
 			$descs = $_descs;
 		}
 
+		//Allow plugins to change access levels
+		hook_access_levels_preprocess($module, $user_access[$module], 'login', $id);
+
 		$group[$gc]["row"][$rowcounter]["inputs"][0] = array("desc" => strtoupper(getLL("all")),
-																 "type" => "select",
-																 "name" => "sel_rechte_".$module."_0",
-																 "values" => $values,
-																 "descs" => $descs,
-																 "value" => $user_access[$module]['ALL'],
-																 "params" => 'size="0"',
-																 'buttons' => '<img src="'.$ko_path.'/images/icon_arrow_right.png" border="0" class="access_apply_all cursor_pointer" id="rechte_'.$module.'_0" title="'.getLL('admin_logins_apply_all_title').'" />',
-																 );
+			"type" => "select",
+			"name" => "sel_rechte_".$module."_0",
+			"add_class" => 'sel_rechte',
+			"values" => $values,
+			"descs" => $descs,
+			"value" => $user_access[$module]['ALL'],
+			"params" => 'size="0"',
+			'buttons' => '<div class="input-group-btn"><button class="btn btn-default access_apply_all" id="rechte_'.$module.'_0" title="'.getLL('admin_logins_apply_all_title').'"><span class="glyphicon glyphicon-chevron-right"></span></button></div>',
+		);
 
 		//Gruppen-Rechte
 		$col = 1;
 		foreach($gruppen as $g_i => $g) {
 			$group[$gc]["row"][$rowcounter]["inputs"][$col++] = array("desc" => ko_html($g["name"]),
-																	 "type" => "select",
-																	 "name" => "sel_rechte_".$module."_".$g_i,
-																	 "values" => $values,
-																	 "descs" => $descs,
-																	 "value" => $user_access[$module][$g_i],
-																	 "params" => 'size="0"',
-																	 );
+				"type" => "select",
+				"name" => "sel_rechte_".$module."_".$g_i,
+				"add_class" => 'sel_rechte',
+				"values" => $values,
+				"descs" => $descs,
+				"value" => $user_access[$module][$g_i],
+				"params" => 'size="0"',
+			);
 			if($col == 6) {
 				$col = 0;
 				$rowcounter++;
@@ -951,10 +884,10 @@ function ko_login_formular($mode, $id=0, $type="login") {
 			$res = db_select_data('ko_admin' . ($type == "login" ? '' : 'groups'), "where `id` = $id", $mTable[$module] . "_force_global", '', '', TRUE, TRUE);
 			$value = $res[$mTable[$module] . "_force_global"];
 			$group[$gc]["row"][++$rowcounter]["inputs"][0] = array("desc" => getLL('force_global_filter'),
-				"type" => "switch",
+				"type" => "select",
 				"name" => "sel_force_global_".$module,
-				"label_0" => getLL('no'),
-				"label_1" => getLL('yes'),
+				"values" => array('0', '1', '2'),
+				"descs" => array(getLL('force_global_filter_0'), getLL('force_global_filter_1'), getLL('force_global_filter_2')), 
 				"value" => $value
 			);
 
@@ -971,6 +904,11 @@ function ko_login_formular($mode, $id=0, $type="login") {
 			}
 		}
 
+
+		if($module == 'daten') {
+			$group[$gc]['row'][++$rowcounter]['inputs'][0] = ko_access_get_kota_columns_form($id, 'ko_event', $type);
+		}
+
 	}
 
 
@@ -981,19 +919,21 @@ function ko_login_formular($mode, $id=0, $type="login") {
 		$group[++$gc] = array('titel' => getLL('module_groups'), 'state' => 'open', 'colspan' => 'colspan="6"');
 		$help = ko_get_help('admin', 'login_rights_groups');
 		$group[$gc]['row'][$rowcounter++]['inputs'][0] = array('desc' => '',
-																													 'type' => 'html',
-																													 'value' => $help['link'].'&nbsp;'.getLL('admin_logins_rights_groups'),
-																													 'colspan' => 'colspan="6"'
-																													);
+			'type' => 'html',
+			'value' => $help['link'].'&nbsp;'.getLL('admin_logins_rights_groups'),
+			'colspan' => 'colspan="6"',
+			"columnWidth" => $BOOTSTRAP_COLS_PER_ROW,
+		);
 		$values = $descs = array(0, 1, 2, 3, 4);
 		$group[$gc]['row'][$rowcounter++]['inputs'][0] = array('desc' => strtoupper(getLL('all')),
-																 'type' => 'select',
-																 'name' => 'sel_rechte_groups',
-																 'values' => $values,
-																 'descs' => $descs,
-																 'value' => $user_access['groups']['ALL'],
-																 'params' => 'size="0"',
-																 );
+			'type' => 'select',
+			'name' => 'sel_rechte_groups',
+			"add_class" => 'sel_rechte',
+			'values' => $values,
+			'descs' => $descs,
+			'value' => $user_access['groups']['ALL'],
+			'params' => 'size="0"',
+		);
 
 		include_once($ko_path.'groups/inc/groups.inc');
 		if(!is_array($all_groups)) ko_get_groups($all_groups);
@@ -1021,20 +961,20 @@ function ko_login_formular($mode, $id=0, $type="login") {
 				unset($sort_groups);
 
 				$group[$gc]['row'][$rowcounter]['inputs'][$col] = array('desc' => getLL('form_groups_rights_rights_'.$rights_level),
-																														 'type' => 'dyndoubleselect',
-																														 'js_func_add' => 'double_select_add',
-																														 'name' => 'sel_groups_rights_'.$rights_level,
-																														 'avalues' => $groups_rights_avalues,
-																														 'avalue' => implode(',', $groups_rights_avalues),
-																														 'adescs' => $groups_rights_adescs,
-																														 'params' => 'size="10"',
-																														 'nochecklist' => TRUE,
-																														 );
+					'type' => 'dyndoubleselect',
+					'js_func_add' => 'double_select_add',
+					'name' => 'sel_groups_rights_'.$rights_level,
+					'avalues' => $groups_rights_avalues,
+					'avalue' => implode(',', $groups_rights_avalues),
+					'adescs' => $groups_rights_adescs,
+					'params' => 'size="10"',
+					'nochecklist' => TRUE,
+				);
 			} else {
 				$group[$gc]['row'][$rowcounter]['inputs'][$col] = array('desc' => getLL('form_groups_rights_rights_'.$rights_level),
-																														 'type' => 'html',
-																														 'value' => getLL('form_groups_all_groups'),
-																														 );
+					'type' => 'html',
+					'value' => getLL('form_groups_all_groups'),
+				);
 			}
 
 			$col++;
@@ -1062,55 +1002,32 @@ function ko_login_formular($mode, $id=0, $type="login") {
 		$help = ko_get_help("admin", "login_rights_".$module);
 		$group[++$gc] = array("titel" => getLL("module_".$module), "state" => "open", "colspan" => 'colspan="6"');
 		$group[$gc]["row"][$rowcounter++]["inputs"][0] = array("desc" => "",
-																													 "type" => "html",
-																													 "value" => $help["link"]."&nbsp;".getLL("admin_logins_rights_".$module),
-																													 "colspan" => 'colspan="6"'
-																													);
+			"type" => "html",
+			"value" => $help["link"]."&nbsp;".getLL("admin_logins_rights_".$module),
+			"colspan" => 'colspan="6"',
+			"columnWidth" => $BOOTSTRAP_COLS_PER_ROW,
+		);
 		$values = $descs = array(0, 1, 2, 3, 4);
-		if($module == 'admin') $values = $descs = array(0, 1, 2, 3, 4, 5);
+		if(in_array($module , array('admin'))) $values = $descs = array(0, 1, 2, 3, 4, 5);
+		else if(in_array($module , array('vesr'))) $values = $descs = array(0, 1, 2);
 		//Get levels from function (e.g. for plugins)
 		if(TRUE === hook_access_get_levels($module, $_values, $_descs)) {
 			$values = $_values;
 			$descs = $_descs;
 		}
 		$group[$gc]["row"][$rowcounter]["inputs"][0] = array("desc" => "",
-																 "type" => "select",
-																 "name" => "sel_rechte_".$module,
-																 "values" => $values,
-																 "descs" => $descs,
-																 "value" => $user_access[$module]['ALL'],
-																 "params" => 'size="0"',
-																 );
+			"type" => "select",
+			"name" => "sel_rechte_".$module,
+			"add_class" => 'sel_rechte',
+			"values" => $values,
+			"descs" => $descs,
+			"value" => $user_access[$module]['ALL'],
+			"params" => 'size="0"',
+		);
 
 		//Show KOTA columns this user should have access to. So far only for ko_kleingruppen
 		if($module == 'kg') {
-			$coltable = 'ko_kleingruppen';
-			ko_include_kota(array($coltable));
-			$col_values = $col_descs = array();
-			foreach($KOTA[$coltable] as $k => $v) {
-				if(substr($k, 0, 1) == '_') continue;
-				$ll = getLL('kota_'.$coltable.'_'.$k);
-				if(!$ll) continue;
-				$col_values[] = $k;
-				$col_descs[] = $ll ? $ll : $k;
-			}
-			$col_adescs = array();
-			$col_avalues = ko_access_get_kota_columns($id, $coltable, 'login');
-			foreach($col_avalues as $avalue) {
-				$ll = getLL('kota_'.$coltable.'_'.$avalue);
-				if(!$ll) continue;
-				$col_adescs[] = $ll ? $ll : $avalue;
-			}
-			$group[$gc]["row"][++$rowcounter]["inputs"][0] = array("desc" => getLL("admin_logins_kota_columns"),
-																		 "type" => "checkboxes",
-																		 "name" => 'kota_columns_'.$coltable,
-																		 "values" => $col_values,
-																		 "descs" => $col_descs,
-																		 "avalues" => $col_avalues,
-																		 "avalue" => implode(",", $col_avalues),
-																		 "size" => min(7, sizeof($col_values)),
-																		 "colspan" => 'colspan="3"',
-																		 );
+			$group[$gc]['row'][++$rowcounter]['inputs'][0] = ko_access_get_kota_columns_form($id, 'ko_kleingruppen', $type);
 		}
 
 	}
@@ -1172,308 +1089,1096 @@ function ko_login_details($id) {
 
 
 
+function ko_show_vesr_import() {
+	global $access, $BASE_PATH;
+
+	if($access['vesr'] < 1) return FALSE;
+
+	//Upload form
+	$c = '';
+	$c .= '<h1>'.getLL('vesr_title').'</h1>';
+	$c .= '<p>'.getLL('vesr_description').'</p>';
+	$c .= '<form action="index.php" method="post" name="formular" enctype="multipart/form-data">';
+	$c .= '<input type="hidden" name="action" value="submit_vesr_import" />';
+	$c .= '<input type="file" name="esrpayment_file" /><br /><br />';
+	$c .= '<input type="submit" value="'.getLL('OK').'" />';
+	$c .= '</form>';
+
+	print $c;
+
+
+	if(db_get_count('ko_vesr', 'id') > 0) {
+		$order = 'ORDER BY `crdate` DESC';
+		$rows = db_get_count('ko_vesr', 'id');
+		$es = db_select_data('ko_vesr', 'WHERE 1=1', '*', $order);
+
+		$list = new kOOL_listview();
+		$list->init('admin', 'ko_vesr', array('delete'), 1, 1000);
+		$list->setTitle(getLL('vesr_list_title'));
+		$list->setActions(array('delete' => array('action' => 'delete_vesr', 'confirm' => TRUE)));
+		$list->setSort(FALSE);
+		$list->setStats($rows, '', '', '', TRUE);
+		$list->disableMultiedit();
+
+		//TODO: Add payed-icons to billed_amount and amount columns if billing_id is set on vesr entry
+
+		print '<br clear="all" /><br /><br />';
+		print $list->render($es);
+	}
+}
 
 
 
-function ko_show_set_allgemein() {
+function ko_vesr_settings() {
+	global $BASE_PATH, $smarty;
+
+	$gc = $rowcounter = 0;
+	$frmgroup = array($gc => array('titel' => getLL('vesr_settings_group_import_email')));
+
+	$value = ko_get_setting('vesr_import_email_host');
+	$frmgroup[$gc]['row'][$rowcounter]['inputs'][0] = array('desc' => getLL('vesr_settings_import_email_host'),
+		'type' => 'text',
+		'name' => 'txt_vesr_import_email_host',
+		'params' => 'size="60"',
+		'value' => $value,
+	);
+	$value = ko_get_setting('vesr_import_email_port');
+	$frmgroup[$gc]['row'][$rowcounter++]['inputs'][1] = array('desc' => getLL('vesr_settings_import_email_port'),
+		'type' => 'text',
+		'name' => 'chk_vesr_import_email_port',
+		'value' => $value,
+	);
+
+	$value = ko_get_setting('vesr_import_email_user');
+	$frmgroup[$gc]['row'][$rowcounter]['inputs'][0] = array('desc' => getLL('vesr_settings_import_email_user'),
+		'type' => 'text',
+		'name' => 'txt_vesr_import_email_user',
+		'params' => 'size="60"',
+		'value' => $value,
+	);
+
+	$value = ko_get_setting('vesr_import_email_pass');
+	// decrypt password
+	include_once($BASE_PATH.'inc/class.mcrypt.php');
+	$crypt = new mcrypt('aes');
+	$crypt->setKey(KOOL_ENCRYPTION_KEY);
+	$value = trim($crypt->decrypt($value));
+	$frmgroup[$gc]['row'][$rowcounter++]['inputs'][1] = array('desc' => getLL('vesr_settings_import_email_pass'),
+		'type' => 'text',
+		'name' => 'txt_vesr_import_email_pass',
+		'value' => $value,
+	);
+
+	$value = ko_get_setting('vesr_import_email_ssl');
+	$frmgroup[$gc]['row'][$rowcounter]['inputs'][0] = array('desc' => getLL('vesr_settings_import_email_ssl'),
+		'type' => 'switch',
+		'name' => 'chk_vesr_import_email_ssl',
+		'value' => $value,
+	);
+
+	$value = ko_get_setting('vesr_import_email_report_address');
+	$frmgroup[$gc]['row'][$rowcounter++]['inputs'][1] = array('desc' => getLL('vesr_settings_import_email_report_address'),
+		'type' => 'text',
+		'name' => 'txt_vesr_import_email_report_address',
+		'value' => $value,
+	);
+
+	//Allow plugins to add further settings
+	hook_form('vesr_settings', $frmgroup, '', '');
+
+
+	//display the form
+	$smarty->assign('tpl_titel', getLL('vesr_settings_form_title'));
+	$smarty->assign('tpl_submit_value', getLL('save'));
+	$smarty->assign('tpl_action', 'submit_vesr_settings');
+	$smarty->assign('tpl_cancel', $_SESSION['show_back']?$_SESSION['show_back']:'show_logins');
+	$smarty->assign('tpl_groups', $frmgroup);
+
+	$smarty->display("ko_formular.tpl");
+}
+
+
+
+
+function ko_admin_settings() {
 	global $smarty, $ko_path;
 	global $access, $MODULES, $SMS_PARAMETER, $MAILING_PARAMETER;
 
-	if($access['admin']['MAX'] < 2) return;
 
-	$smarty->assign("tpl_titel", getLL("admin_settings_general_settings"));
+	//build form
+	$gc = 0;
+	$rowcounter = 0;
 
-	$pc = 0;
-	$parts[$pc]['titel'] = getLL('admin_settings_contact');
-	$contact_fields = array('name', 'address', 'zip', 'city', 'phone', 'url', 'email');
-	$cc = 0;
-	foreach($contact_fields as $field) {
-		$setting[$cc]['desc'] = getLL('admin_settings_contact_'.$field);
-		$setting[$cc]['type'] = 'text';
-		$setting[$cc]['name'] = 'txt_contact_'.$field;
-		$setting[$cc]['params'] = 'size="40"';
-		$setting[$cc]['value'] = ko_html(ko_get_setting('info_'.$field));
-		$cc++;
+	if($access['admin']['MAX'] < 2) {
+		$doGeneral = false;
+	}
+	else {
+		$doGeneral = true;
+		$titleGeneral = getLL('admin_settings_general_settings');
+		$helpGeneral = ko_get_help("admin", "set_allgemein");
 	}
 
-	$parts[$pc]['settings'] = $setting;
-
-
-	unset($setting);
-	$counter = 0;
-	$parts[++$pc]["titel"] = getLL("admin_settings_options");
-	if(in_array('leute', $MODULES)) {
-		$setting[$counter]["desc"] = getLL("admin_settings_options_login_edit_person");
-		$setting[$counter]["type"] = "radio";
-		$setting[$counter]["name"] = "rd_login_edit_person";
-		$setting[$counter]["value"] = array(1, 0);
-		$setting[$counter]["output"] = array(getLL("yes"), getLL("no"));
-		$setting[$counter]["checked"] = ko_html(ko_get_setting("login_edit_person"));
-		$counter++;
+	if($access['admin']['MAX'] < 1) {
+		$doLayout = false;
+	}
+	else {
+		$doLayout = true;
+		$titleLayout = getLL("admin_settings_layout");
+		$helpLayout = ko_get_help("admin", "set_layout");
 	}
 
-	$setting[$counter]["desc"] = getLL("admin_settings_options_change_password");
-	$setting[$counter]["type"] = "radio";
-	$setting[$counter]["name"] = "rd_change_password";
-	$setting[$counter]["value"] = array(1, 0);
-	$setting[$counter]["output"] = array(getLL("yes"), getLL("no"));
-	$setting[$counter]["checked"] = ko_html(ko_get_setting("change_password"));
-	$counter++;
+	if ($access['admin']['MAX'] < 3) {
+		$doGuest = false;
+	}
+	else {
+		$doGuest = true;
+		$titleGuest = getLL("admin_settings_layout_guest");
+		$helpGuest = ko_get_help("admin", "set_layout_guest");
+	}
 
-	$parts[$pc]["settings"] = $setting;
+	$doSomething = $doGeneral || $doLayout || $doGuest;
+	$doOther = ($doGeneral + $doLayout + $doGuest) > 1;
 
 
 
-	if(in_array('sms', $MODULES)) {
-		unset($setting);
-		$counter = 0;
-		$parts[++$pc]['titel'] = getLL('admin_settings_sms');
 
-		$setting[$counter]['desc'] = getLL('admin_settings_sms_sender_ids');
-		$setting[$counter]['type'] = 'html';
-		$sender_ids = explode(',', ko_get_setting('sms_sender_ids'));
-		$v = array();
-		foreach($sender_ids as $id) {
-			$v[] = ko_html($id).' <a href="#" onclick="c=confirm(\''.getLL('admin_settings_sms_confirm_delete_sender_id').'\'); if(!c) { return false; } else { jumpToUrl(\'index.php?action=delete_sms_sender_id&sender_id='.urlencode($id).'\'); }"><img src="'.$ko_path.'images/icon_trash.png" border="0" /></a>';
+	if ($doGeneral) {
+		if ($doOther) {
+			$frmgroup[$gc]['titel'] = $titleGeneral;
+			$frmgroup[$gc]['help'] = $helpGeneral;
+			$frmgroup[$gc]['tab'] = true;
+			$gc++;
 		}
-		$setting[$counter]['value'] = implode(', ', $v);
-		$counter++;
 
-		if($SMS_PARAMETER['provider'] == 'aspsms') {
-			$setting[$counter]['desc'] = getLL('admin_settings_sms_new_sender_id');
-			$setting[$counter]['type'] = 'html';
-			$v = '';
-			if(check_natel($_POST['sms_sender_id']) && $_POST['submit_sms_sender_id']) {
-				$v .= '<input type="text" name="sms_sender_id" value="'.$_POST['sms_sender_id'].'" size="20" maxlength="11" />';
-				$v .= '&nbsp;&nbsp;&nbsp;';
-				$v .= getLL('admin_settings_sms_new_sender_id_code').': <input type="text" name="sms_sender_id_code" size="10" />';
-			} else {
-				$v .= '<input type="text" name="sms_sender_id" value="" size="20" maxlength="11" />';
+		$frmgroup[$gc]['titel'] = getLL('admin_settings_contact');
+
+		$contact_fields = array('name', 'address', 'zip', 'city', 'phone', 'url', 'email');
+		$colCounter = 0;
+		foreach($contact_fields as $field) {
+			$frmgroup[$gc]['row'][$rowcounter]['inputs'][$colCounter] = array('desc' => getLL('admin_settings_contact_'.$field),
+				'type' => 'text',
+				'name' => 'txt_contact_'.$field,
+				'value' => ko_html(ko_get_setting('info_'.$field)),
+			);
+			$colCounter++;
+			if ($colCounter > 1) {
+				$colCounter = 0;
+				$rowcounter++;
 			}
-			$v .= '&nbsp;&nbsp;<input type="submit" name="submit_sms_sender_id" onclick="set_action(\'submit_sms_sender_id\');" value="'.getLL('OK').'" />';
-			$setting[$counter]['value'] = $v;
-			$counter++;
-		} else {
-			$setting[$counter]['desc'] = getLL('admin_settings_sms_new_sender_id_clickatell');
-			$setting[$counter]['type'] = 'html';
-			$v  = '<input type="text" name="sms_sender_id" value="" size="20" />';
-			$v .= '&nbsp;&nbsp;<input type="submit" name="submit_sms_sender_id_clickatell" onclick="set_action(\'submit_sms_sender_id_clickatell\');" value="'.getLL('OK').'" />';
-			$setting[$counter]['value'] = $v;
-			$counter++;
 		}
 
-		$setting[$counter]['desc'] = getLL('admin_settings_sms_country_code');
-		$setting[$counter]['type'] = 'text';
-		$setting[$counter]['name'] = 'txt_sms_country_code';
-		$setting[$counter]['params'] = '';
-		$setting[$counter]['value'] = ko_html(ko_get_setting('sms_country_code'));
-		$counter++;
+		$gc++;
+		$frmgroup[$gc]['titel'] = getLL("admin_settings_options");
+		$rowcounter = 0;
 
-		$parts[$pc]['settings'] = $setting;
+		if(in_array('leute', $MODULES)) {
+			$frmgroup[$gc]['row'][$rowcounter]['inputs'][0] = array('desc' => getLL("admin_settings_options_login_edit_person"),
+				'type' => 'switch',
+				'name' => 'rd_login_edit_person',
+				'value' => ko_html(ko_get_setting("login_edit_person")),
+			);
+		}
+
+		$frmgroup[$gc]['row'][$rowcounter++]['inputs'][1] = array('desc' => getLL("admin_settings_options_change_password"),
+			'type' => 'switch',
+			'name' => 'rd_change_password',
+			'value' => ko_html(ko_get_setting("change_password")),
+		);
+
+		if(in_array('sms', $MODULES)) {
+			$gc++;
+			$frmgroup[$gc]['titel'] = getLL('admin_settings_sms');
+			$rowcounter = 0;
+
+			$sender_ids = array_filter(explode(',', ko_get_setting('sms_sender_ids')), function($e) {return $e?TRUE:FALSE;});
+			$v = array();
+			foreach($sender_ids as $id) {
+				$v[] =
+					'<div class="btn-group btn-group-sm">
+	<button class="btn btn-default" disabled>
+		'.ko_html($id).'
+	</button>
+	<button class="btn btn-danger" type="button" onclick="c=confirm(\''.getLL('admin_settings_sms_confirm_delete_sender_id').'\'); if(!c) { return false; } else { jumpToUrl(\'index.php?action=delete_sms_sender_id&sender_id='.urlencode($id).'\'); }">
+		<i class="fa fa-trash"></i>
+	</button>
+</div>';
+			}
+			if (sizeof($v) > 0) {
+				$v = implode('&nbsp;', $v);
+			} else {
+				$v = getLL('none');
+			}
+
+			$frmgroup[$gc]['row'][$rowcounter]['inputs'][0] = array('desc' => getLL('admin_settings_sms_sender_ids'),
+				'type' => 'html',
+				'value' => $v,
+			);
+
+			if($SMS_PARAMETER['provider'] == 'aspsms') {
+				$v = '<div class="input-group input-group-sm">';
+				if((check_natel($_POST['sms_sender_id']) && $_POST['submit_sms_sender_id'])) {
+					$v .= '<input class="input-sm form-control" type="text" name="sms_sender_id" value="'.$_POST['sms_sender_id'].'" maxlength="11">';
+					$v .= '<span class="input-group-addon">' . getLL('admin_settings_sms_new_sender_id_code').'</span><input class="input-sm form-control" type="text" name="sms_sender_id_code" size="10">';
+				} else {
+					$v .= '<input class="input-sm form-control" type="text" name="sms_sender_id" value="" maxlength="11">';
+				}
+				$v .= '<div class="input-group-btn"><button type="submit" class="btn btn-primary" name="submit_sms_sender_id" onclick="set_action(\'submit_sms_sender_id\');" value="'.getLL('OK').'">' . getLL('OK') . '</button></div>';
+				$v .= '</div>';
+				$frmgroup[$gc]['row'][$rowcounter++]['inputs'][1] = array('desc' => getLL('admin_settings_sms_new_sender_id'),
+					'type' => 'html',
+					'value' => $v,
+				);
+			} else {
+				$v = '<div class="input-group input-group-sm">';
+				$v .= '<input class="input-sm form-control" type="text" name="sms_sender_id" value="">';
+				$v .= '<div class="input-group-btn">';
+				$v .= '<button class="btn btn-primary" type="submit" name="submit_sms_sender_id_clickatell" onclick="set_action(\'submit_sms_sender_id_clickatell\');" value="'.getLL('OK').'">';
+				$v .= getLL('OK');
+				$v .= '</button>';
+				$v .= '</div>';
+				$v .= '</div>';
+
+				$frmgroup[$gc]['row'][$rowcounter]['inputs'][0] = array('desc' => getLL('admin_settings_sms_new_sender_id_clickatell'),
+					'type' => 'html',
+					'value' => $v,
+				);
+			}
+
+			$frmgroup[$gc]['row'][$rowcounter++]['inputs'][1] = array('desc' => getLL('admin_settings_sms_country_code'),
+				'type' => 'text',
+				'name' => 'txt_sms_country_code',
+				'value' => ko_html(ko_get_setting('sms_country_code')),
+			);
+		}
+
+
+		if(in_array('mailing', $MODULES) && is_array($MAILING_PARAMETER) && $MAILING_PARAMETER['domain'] != '') {
+			$gc++;
+			$frmgroup[$gc]['titel'] = getLL('admin_settings_mailing');
+			$rowcounter = 0;
+
+			$frmgroup[$gc]['row'][$rowcounter]['inputs'][0] = array('desc' => getLL('admin_settings_mailing_mails_per_cycle'),
+				'type' => 'text',
+				'name' => 'txt_mailing_mails_per_cycle',
+				'value' => ko_html(ko_get_setting('mailing_mails_per_cycle')),
+			);
+
+			$frmgroup[$gc]['row'][$rowcounter++]['inputs'][1] = array('desc' => getLL('admin_settings_mailing_max_recipients'),
+				'type' => 'text',
+				'name' => 'txt_mailing_max_recipients',
+				'value' => ko_html(ko_get_setting('mailing_max_recipients')),
+			);
+
+			$value = ko_get_setting('mailing_only_alias');
+			$frmgroup[$gc]['row'][$rowcounter]['inputs'][0] = array('desc' => getLL('admin_settings_mailing_only_alias'),
+				'type' => 'switch',
+				'value' => $value ? '1' : '0',
+				'name' => 'chk_mailing_only_alias',
+			);
+
+			$value = ko_get_setting('mailing_allow_double');
+			$frmgroup[$gc]['row'][$rowcounter++]['inputs'][1] = array('desc' => getLL('admin_settings_mailing_allow_double'),
+				'type' => 'switch',
+				'name' => 'chk_mailing_allow_double',
+				'value' => $value ? '1' : '0',
+			);
+
+			$value = ko_get_setting('mailing_from_email');
+			$frmgroup[$gc]['row'][$rowcounter++]['inputs'][0] = array(
+				'desc' => getLL('admin_settings_mailing_from_email'),
+				'type' => 'text',
+				'name' => 'txt_mailing_from_email',
+				'value' => $value,
+			);
+		}
+
+
+
+		//XLS export settings
+		$gc++;
+		$frmgroup[$gc]['titel'] = getLL('admin_settings_xls');
+		$rowcounter = 0;
+
+		$frmgroup[$gc]['row'][$rowcounter]['inputs'][0] = array('desc' => getLL('admin_settings_xls_default_font'),
+			'type' => 'text',
+			'name' => 'txt_xls_default_font',
+			'value' => ko_html(ko_get_setting('xls_default_font')),
+		);
+
+		$frmgroup[$gc]['row'][$rowcounter++]['inputs'][1] = array('desc' => getLL('admin_settings_xls_title_font'),
+			'type' => 'text',
+			'name' => 'txt_xls_title_font',
+			'value' => ko_html(ko_get_setting('xls_title_font')),
+		);
+
+		$value = ko_get_setting('xls_title_bold');
+		$frmgroup[$gc]['row'][$rowcounter]['inputs'][0] = array('desc' => getLL('admin_settings_xls_title_bold'),
+			'type' => 'switch',
+			'name' => 'chk_xls_title_bold',
+			'value' => $value ? '1' : '0',
+		);
+
+		$frmgroup[$gc]['row'][$rowcounter++]['inputs'][1] = array('desc' => getLL('admin_settings_xls_title_color'),
+			'type' => 'select',
+			'name' => 'txt_xls_title_color',
+			'values' => array('blue', 'black', 'cyan', 'brown', 'magenta', 'grey', 'green', 'orange', 'purple', 'red', 'yellow'),
+			'descs' => array(getLL('admin_settings_xls_title_color_blue'), getLL('admin_settings_xls_title_color_black'), getLL('admin_settings_xls_title_color_cyan'), getLL('admin_settings_xls_title_color_brown'), getLL('admin_settings_xls_title_color_magenta'), getLL('admin_settings_xls_title_color_grey'), getLL('admin_settings_xls_title_color_green'), getLL('admin_settings_xls_title_color_orange'), getLL('admin_settings_xls_title_color_purple'), getLL('admin_settings_xls_title_color_red'), getLL('admin_settings_xls_title_color_yellow')),
+			'value' => ko_get_setting('xls_title_color'),
+			'params' => $value ? 'checked="checked"' : '',
+		);
+		$gc++;
 	}
 
 
-	if(in_array('mailing', $MODULES) && is_array($MAILING_PARAMETER) && $MAILING_PARAMETER['domain'] != '') {
-		unset($setting);
-		$counter = 0;
-		$parts[++$pc]['titel'] = getLL('admin_settings_mailing');
 
-		$setting[$counter]['desc'] = getLL('admin_settings_mailing_mails_per_cycle');
-		$setting[$counter]['type'] = 'text';
-		$setting[$counter]['name'] = 'txt_mailing_mails_per_cycle';
-		$setting[$counter]['params'] = 'size="10"';
-		$setting[$counter]['value'] = ko_html(ko_get_setting('mailing_mails_per_cycle'));
-		$counter++;
 
-		$setting[$counter]['desc'] = getLL('admin_settings_mailing_max_recipients');
-		$setting[$counter]['type'] = 'text';
-		$setting[$counter]['name'] = 'txt_mailing_max_recipients';
-		$setting[$counter]['params'] = 'size="10"';
-		$setting[$counter]['value'] = ko_html(ko_get_setting('mailing_max_recipients'));
-		$counter++;
 
-		$setting[$counter]['desc'] = getLL('admin_settings_mailing_only_alias');
-		$setting[$counter]['type'] = 'checkbox';
-		$setting[$counter]['name'] = 'chk_mailing_only_alias';
-		$value = ko_get_setting('mailing_only_alias');
-		$setting[$counter]['params'] = $value ? 'checked="checked"' : '';
-		$counter++;
+	if ($doLayout) {
+		if ($doOther) {
+			$frmgroup[$gc]['titel'] = $titleLayout;
+			$frmgroup[$gc]['help'] = $helpLayout;
+			$frmgroup[$gc]['tab'] = true;
+			$gc++;
+		}
+		$uid = $_SESSION['ses_userid'];
+		//Default-Seiten pro Modul
+		$settings = array();
+		//Default module after login
+		$values = $descs = array('');
+		foreach($MODULES as $m) {
+			if(in_array($m, array('sms', 'kg', 'mailing'))) continue;
+			if(!ko_module_installed($m, $uid)) continue;
+			$values[] = $m;
+			$descs[] = getLL('module_'.$m);
+		}
+		$settings[] = array('desc' => getLL('admin_settings_default_module'),
+			'type' => 'select',
+			'name' => 'sel_default_module',
+			'values' => $values,
+			'descs' => $descs,
+			'value' => ko_get_userpref($uid, 'default_module')
+		);
+		if(ko_module_installed("admin", $uid)) {
+			$descs = $values = array();
+			ko_get_access_all('admin', $uid, $max);
+			if($max > 1) {
+				$values[] = 'admin_settings';
+				$values[] = 'list_news';
+				$descs[] = getLL('submenu_admin_admin_settings');
+				$descs[] = getLL('submenu_admin_list_news');
+			}
+			if($max > 3) {
+				$values[] = 'set_show_logins';
+				$values[] = 'show_logs';
+				$descs[] = getLL('submenu_admin_set_show_logins');
+				$descs[] = getLL('submenu_admin_show_logs');
+			}
+			if (sizeof($values) > 0) {
+				$settings[] = array('desc' => getLL('module_admin'),
+					'type' => 'select',
+					'name' => 'sel_admin',
+					'values' => $values,
+					'descs' => $descs,
+					'value' => ko_html(ko_get_userpref($uid, 'default_view_admin'))
+				);
+			}
+			$settings[] = array('desc' => getLL('admin_settings_limits_numberof_logins'),
+				'type' => 'text',
+				'name' => 'show_limit_logins',
+				'value' => ko_get_userpref($uid, "show_limit_logins"),
+			);
+		}
+		if(ko_module_installed("tapes", $uid)) {
+			$settings[] = array('desc' => getLL('module_tapes'),
+				'type' => 'select',
+				'name' => 'sel_tapes',
+				'values' => array('list_tapes', 'list_series'),
+				'descs' => array(getLL('submenu_tapes_list_tapes'), getLL('submenu_tapes_list_series')),
+				'value' => ko_html(ko_get_userpref($uid, 'default_view_tapes'))
+			);
+		}
+		if(ko_module_installed("fileshare", $uid)) {
+			if(ENABLE_FILESHARE) {
+				$values = array('inbox', 'list_webfolders', 'SPECIAL_webfolder');
+				$descs = array(getLL('fileshare_inbox'), getLL('submenu_fileshare_list_webfolders'), getLL('fileshare_default_view_webfolder'));
+			} else {
+				$values = array('list_webfolders', 'SPECIAL_webfolder');
+				$descs = array(getLL('submenu_fileshare_list_webfolders'), getLL('fileshare_default_view_webfolder'));
+			}
+			$settings[] = array('desc' => getLL('module_fileshare'),
+				'type' => 'select',
+				'name' => 'sel_fileshare',
+				'values' => $values,
+				'descs' => $descs,
+				'value' => ko_html(ko_get_userpref($uid, 'default_view_fileshare'))
+			);
+		}
 
-		$setting[$counter]['desc'] = getLL('admin_settings_mailing_allow_double');
-		$setting[$counter]['type'] = 'checkbox';
-		$setting[$counter]['name'] = 'chk_mailing_allow_double';
-		$value = ko_get_setting('mailing_allow_double');
-		$setting[$counter]['params'] = $value ? 'checked="checked"' : '';
-		$counter++;
+		if(sizeof($settings) > 0) {
+			$frmgroup[$gc]['titel'] = getLL("admin_settings_default");
+			$colCounter = 0;
+			foreach ($settings as $setting) {
+				$frmgroup[$gc]["row"][$rowcounter]["inputs"][$colCounter++] = $setting;
+				if ($colCounter > 1) {
+					$colCounter = 0;
+					$rowcounter++;
+				}
+			}
+			$gc++;
+		}
 
-		$parts[$pc]['settings'] = $setting;
+
+		//settings for the menu/dropdown
+		$settings = array();
+
+		//menu order
+		$value = ko_get_userpref($uid, "menu_order");  //Wert aus Userpref auslesen...
+		//available modules for this user
+		$values = $descs = $avalues = $adescs = NULL;
+		foreach($MODULES as $m) {
+			if(ko_module_installed($m, $uid)) {
+				$values[] = $m;
+				$descs[] = getLL("module_".$m);
+			}
+		}
+		//selected menus
+		foreach(explode(",", $value) as $m) {
+			$avalues[] = $m;
+			$adescs[] = getLL("module_".$m);
+		}
+		$settings[] = array("desc" => getLL("admin_settings_menu_order").":",
+			"type" => "doubleselect",
+			"js_func_add" => "double_select_add",
+			"show_moves" => TRUE,
+			"name" => "sel_menu_order",
+			"values" => $values,
+			"descs" => $descs,
+			"avalues" => $avalues,
+			"adescs" => $adescs,
+			"avalue" => $value,
+			"params" => 'size="7"',
+		);
+
+		if(sizeof($settings) > 0) {
+			$frmgroup[$gc]['titel'] = getLL("admin_settings_menu");
+			$colCounter = 0;
+			foreach ($settings as $setting) {
+				$frmgroup[$gc]["row"][$rowcounter]["inputs"][$colCounter++] = $setting;
+				if ($colCounter > 1) {
+					$colCounter = 0;
+					$rowcounter++;
+				}
+			}
+			$gc++;
+		}
+
+
+
+		//Diverses
+		$settings = array();
+
+		//Show gsm notes
+		if($uid != ko_get_guest_id()) {
+			$value = ko_get_userpref($_SESSION['ses_userid'], 'save_kota_filter');
+			$settings[] = array('desc' => getLL('admin_settings_save_kota_filter'),
+				'type' => 'switch',
+				'name' => 'save_kota_filter',
+				'label_0' => getLL('no'),
+				'label_1' => getLL('yes'),
+				'value' => $value == '' ? 0 : $value,
+			);
+			$value = ko_get_userpref($_SESSION['ses_userid'], 'export_table_format');
+			$settings[] = array('desc' => getLL('admin_settings_export_table_format'),
+				'type' => 'select',
+				'name' => 'export_table_format',
+				'values' => array('xlsx', 'xls'),
+				'descs' => array(getLL('admin_settings_export_table_format_xlsx'), getLL('admin_settings_export_table_format_xls')),
+				'value' => $value
+			);
+		}
+		$value = ko_get_userpref($_SESSION['ses_userid'], 'download_not_directly');
+		$settings[] = array('desc' => getLL('admin_settings_download_not_directly'),
+			'type' => 'switch',
+			'name' => 'download_not_directly',
+			'label_0' => getLL('no'),
+			'label_1' => getLL('yes'),
+			'value' => $value == '' ? 0 : $value,
+		);
+
+		//Erstellte Dateien in Fileshare-Folder speichern
+		if(ENABLE_FILESHARE && ko_module_installed("fileshare", $uid) && $uid != ko_get_guest_id()) {
+			ko_get_access_all('fileshare', $uid, $max);
+			if($max > 1) {
+				$value = ko_get_userpref($uid, "save_files_as_share");  //Wert aus Userpref auslesen...
+				if(!isset($value)) $value = 2;  //...oder falls nicht definiert auf Nein setzen
+				$settings[] = array("desc" => getLL("admin_settings_misc_save_fileshare"),
+					"type" => "select",
+					"name" => "sel_save_files_as_share",
+					"values" => array("1", "2"),
+					"descs" => array(getLL("yes"), getLL("no")),
+					"value" => $value
+				);
+			}
+		}
+
+		if(sizeof($settings) > 0) {
+			$frmgroup[$gc]['titel'] = getLL("admin_settings_misc");
+			$colCounter = 0;
+			foreach ($settings as $setting) {
+				$frmgroup[$gc]["row"][$rowcounter]["inputs"][$colCounter++] = $setting;
+				if ($colCounter > 1) {
+					$colCounter = 0;
+					$rowcounter++;
+				}
+			}
+			$gc++;
+		}
 	}
 
 
 
-	//XLS export settings
-	unset($setting);
-	$counter = 0;
-	$parts[++$pc]['titel'] = getLL('admin_settings_xls');
-
-	$setting[$counter]['desc'] = getLL('admin_settings_xls_default_font');
-	$setting[$counter]['type'] = 'text';
-	$setting[$counter]['name'] = 'txt_xls_default_font';
-	$setting[$counter]['params'] = 'size="30"';
-	$setting[$counter]['value'] = ko_html(ko_get_setting('xls_default_font'));
-	$counter++;
-
-	$setting[$counter]['desc'] = getLL('admin_settings_xls_title_font');
-	$setting[$counter]['type'] = 'text';
-	$setting[$counter]['name'] = 'txt_xls_title_font';
-	$setting[$counter]['params'] = 'size="30"';
-	$setting[$counter]['value'] = ko_html(ko_get_setting('xls_title_font'));
-	$counter++;
-
-	$setting[$counter]['desc'] = getLL('admin_settings_xls_title_bold');
-	$setting[$counter]['type'] = 'checkbox';
-	$setting[$counter]['name'] = 'chk_xls_title_bold';
-	$value = ko_get_setting('xls_title_bold');
-	$setting[$counter]['params'] = $value ? 'checked="checked"' : '';
-	$counter++;
-
-	$setting[$counter]['desc'] = getLL('admin_settings_xls_title_color');
-	$setting[$counter]['type'] = 'select';
-	$setting[$counter]['name'] = 'txt_xls_title_color';
-	$setting[$counter]['params'] = 'size="0"';
-	$setting[$counter]['values'] = array('blue', 'black', 'cyan', 'brown', 'magenta', 'grey', 'green', 'orange', 'purple', 'red', 'yellow');
-	$setting[$counter]['descs'] = array(getLL('admin_settings_xls_title_color_blue'), getLL('admin_settings_xls_title_color_black'), getLL('admin_settings_xls_title_color_cyan'), getLL('admin_settings_xls_title_color_brown'), getLL('admin_settings_xls_title_color_magenta'), getLL('admin_settings_xls_title_color_grey'), getLL('admin_settings_xls_title_color_green'), getLL('admin_settings_xls_title_color_orange'), getLL('admin_settings_xls_title_color_purple'), getLL('admin_settings_xls_title_color_red'), getLL('admin_settings_xls_title_color_yellow'));
-	$setting[$counter]['value'] = ko_get_setting('xls_title_color');
-	$counter++;
-
-	$parts[$pc]['settings'] = $setting;
 
 
+	if ($doGuest) {
+		$uid = ko_get_guest_id();
+		if ($doOther) {
+			$frmgroup[$gc]['titel'] = $titleGuest;
+			$frmgroup[$gc]['help'] = $helpGuest;
+			$frmgroup[$gc]['tab'] = true;
+			$gc++;
+		}
+		//Default-Seiten pro Modul
+		$settings = array();
+		// frontmodules shown to guest
+		$values = $descs = $avalues = $adescs = array();
+		$values = array(
+			'adressaenderung', 'daten_cal', 'news', 'today'
+		);
+		foreach ($values as $value) {
+			$descs[] = getLL('fm_name_' . $value);
+		}
+		$value = ko_get_userpref($uid, 'front_modules');
+		foreach (explode(',', $value) as $aavalue) {
+			for ($i = 0; $i < sizeof($values); $i++) {
+				if ($values[$i] == $aavalue) {
+					$avalues[] = $values[$i];
+					$adescs[] = $descs[$i];
+				}
+			}
+		}
+		$settings[] = array('desc' => getLL('admin_settings_fm'),
+			'type' => 'checkboxes',
+			'name' => 'chks_front_modules_guest',
+			'values' => $values,
+			'descs' => $descs,
+			'avalues' => $avalues,
+			'adescs' => $adescs,
+			'value' => $value,
+			'size' => 4,
+		);
 
-	//Add help link
-	$smarty->assign("help", ko_get_help("admin", "set_allgemein"));
+		//Default module after login
+		$values = $descs = array('');
+		foreach($MODULES as $m) {
+			if(in_array($m, array('sms', 'kg', 'mailing'))) continue;
+			if(!ko_module_installed($m, $uid)) continue;
+			$values[] = $m;
+			$descs[] = getLL('module_'.$m);
+		}
+		$settings[] = array('desc' => getLL('admin_settings_default_module'),
+			'type' => 'select',
+			'name' => 'sel_default_module_guest',
+			'values' => $values,
+			'descs' => $descs,
+			'value' => ko_get_userpref($uid, 'default_module')
+		);
+		if(ko_module_installed("admin", $uid)) {
+			$descs = $values = array();
+			ko_get_access_all('admin', $uid, $max);
+			$values[] = 'set_layout';
+			$descs[] = 'Layout';
+			if($max > 1) {
+				$values[] = 'set_allgemein';
+				$values[] = 'list_news';
+				$descs[] = getLL('submenu_admin_set_allgemein');
+				$descs[] = getLL('submenu_admin_list_news');
+			}
+			if($max > 3) {
+				$values[] = 'set_show_logins';
+				$values[] = 'show_logs';
+				$descs[] = getLL('submenu_admin_show_logins');
+				$descs[] = getLL('submenu_admin_show_logs');
+			}
+			$settings[] = array('desc' => getLL('module_admin'),
+				'type' => 'select',
+				'name' => 'sel_admin_guest',
+				'values' => $values,
+				'descs' => $descs,
+				'value' => ko_html(ko_get_userpref($uid, 'default_view_admin'))
+			);
+		}
+		if(ko_module_installed("tapes", $uid)) {
+			$settings[] = array('desc' => getLL('module_tapes'),
+				'type' => 'select',
+				'name' => 'sel_tapes_guest',
+				'values' => array('list_tapes', 'list_series'),
+				'descs' => array(getLL('submenu_tapes_list_tapes'), getLL('submenu_tapes_list_series')),
+				'value' => ko_html(ko_get_userpref($uid, 'default_view_tapes'))
+			);
+		}
+		if(ko_module_installed("fileshare", $uid)) {
+			if(ENABLE_FILESHARE) {
+				$values = array('inbox', 'list_webfolders', 'SPECIAL_webfolder');
+				$descs = array(getLL('fileshare_inbox'), getLL('submenu_fileshare_list_webfolders'), getLL('fileshare_default_view_webfolder'));
+			} else {
+				$values = array('list_webfolders', 'SPECIAL_webfolder');
+				$descs = array(getLL('submenu_fileshare_list_webfolders'), getLL('fileshare_default_view_webfolder'));
+			}
+			$settings[] = array('desc' => getLL('module_fileshare'),
+				'type' => 'select',
+				'name' => 'sel_fileshare_guest',
+				'values' => $values,
+				'descs' => $descs,
+				'value' => ko_html(ko_get_userpref($uid, 'default_view_fileshare'))
+			);
+		}
 
-	$smarty->assign("tpl_parts", $parts);
-	$smarty->assign("tpl_action", "save_set_allgemein");
-	$smarty->display("ko_settings.tpl");
-}//ko_show_set_allgemein()
+		if(sizeof($settings) > 0) {
+			$frmgroup[$gc]['titel'] = getLL("admin_settings_default");
+			$colCounter = 0;
+			foreach ($settings as $setting) {
+				$frmgroup[$gc]["row"][$rowcounter]["inputs"][$colCounter++] = $setting;
+				if ($colCounter > 1) {
+					$colCounter = 0;
+					$rowcounter++;
+				}
+			}
+			$gc++;
+		}
+
+
+		//settings for the menu/dropdown
+		$settings = array();
+
+		//menu order
+		$value = ko_get_userpref($uid, "menu_order");  //Wert aus Userpref auslesen...
+		//available modules for this user
+		$values = $descs = $avalues = $adescs = NULL;
+		foreach($MODULES as $m) {
+			if(ko_module_installed($m, $uid)) {
+				$values[] = $m;
+				$descs[] = getLL("module_".$m);
+			}
+		}
+		//selected menus
+		foreach(explode(",", $value) as $m) {
+			$avalues[] = $m;
+			$adescs[] = getLL("module_".$m);
+		}
+		$settings[] = array("desc" => getLL("admin_settings_menu_order").":",
+			"type" => "doubleselect",
+			"js_func_add" => "double_select_add",
+			"show_moves" => TRUE,
+			"name" => "sel_menu_order_guest",
+			"values" => $values,
+			"descs" => $descs,
+			"avalues" => $avalues,
+			"adescs" => $adescs,
+			"avalue" => $value,
+			"params" => 'size="7"',
+		);
+
+		if(sizeof($settings) > 0) {
+			$frmgroup[$gc]['titel'] = getLL("admin_settings_menu");
+			$colCounter = 0;
+			foreach ($settings as $setting) {
+				$frmgroup[$gc]["row"][$rowcounter]["inputs"][$colCounter++] = $setting;
+				if ($colCounter > 1) {
+					$colCounter = 0;
+					$rowcounter++;
+				}
+			}
+			$gc++;
+		}
+
+
+
+		//Diverses
+		$settings = array();
+
+		//Show gsm notes
+		$value = ko_get_userpref($uid, 'download_not_directly');
+		$settings[] = array('desc' => getLL('admin_settings_download_not_directly'),
+			'type' => 'switch',
+			'name' => 'download_not_directly_guest',
+			'label_0' => getLL('no'),
+			'label_1' => getLL('yes'),
+			'value' => $value == '' ? 0 : $value,
+		);
+
+		//Erstellte Dateien in Fileshare-Folder speichern
+		if(ENABLE_FILESHARE && ko_module_installed("fileshare", $uid) && $uid != ko_get_guest_id()) {
+			ko_get_access_all('fileshare', $uid, $max);
+			if($max > 1) {
+				$value = ko_get_userpref($uid, "save_files_as_share");  //Wert aus Userpref auslesen...
+				if(!isset($value)) $value = 2;  //...oder falls nicht definiert auf Nein setzen
+				$settings[] = array("desc" => getLL("admin_settings_misc_save_fileshare"),
+					"type" => "select",
+					"name" => "sel_save_files_as_share_guest",
+					"values" => array("1", "2"),
+					"descs" => array(getLL("yes"), getLL("no")),
+					"value" => $value
+				);
+			}
+		}
+
+		if(sizeof($settings) > 0) {
+			$frmgroup[$gc]['titel'] = getLL("admin_settings_misc");
+			$colCounter = 0;
+			foreach ($settings as $setting) {
+				$frmgroup[$gc]["row"][$rowcounter]["inputs"][$colCounter++] = $setting;
+				if ($colCounter > 1) {
+					$colCounter = 0;
+					$rowcounter++;
+				}
+			}
+			$gc++;
+		}
+	}
 
 
 
 
+	if ($doSomething) {
+		//Allow plugins to add further settings
+		hook_form('admin_settings', $frmgroup, '', '');
 
-function ko_show_set_etiketten($id="") {
-	global $smarty, $BASE_PATH;
+
+		//display the form
+		if ($doOther) {
+			$smarty->assign('tpl_titel', getLL("admin_settings_title"));
+			$smarty->assign('help', '');
+		}
+		else if ($doGeneral) {
+			$smarty->assign('tpl_titel', $titleGeneral);
+			$smarty->assign('help', $helpGeneral);
+		}
+		else if ($doGuest) {
+			$smarty->assign('tpl_titel', $titleGuest);
+			$smarty->assign('help', $helpGuest);
+		}
+		else {
+			$smarty->assign('tpl_titel', $titleLayout);
+			$smarty->assign('help', $helpLayout);
+		}
+		$smarty->assign('tpl_submit_value', getLL('save'));
+		$smarty->assign('tpl_action', 'submit_admin_settings');
+		$smarty->assign('tpl_cancel', 'set_show_logins');
+		$smarty->assign('tpl_groups', $frmgroup);
+
+		$smarty->display('ko_formular.tpl');
+	}
+
+}//ko_admin_settings()
+
+
+
+function ko_show_set_layout($uid) {
+	global $smarty;
+	global $MODULES;
+	global $access;
+
+	if($uid == ko_get_guest_id()) {
+		if($access['admin']['MAX'] < 3) return;
+		$smarty->assign("tpl_titel", getLL("admin_settings_layout_guest"));
+	}
+	else {
+		if($access['admin']['MAX'] < 1) return;
+		$smarty->assign("tpl_titel", getLL("admin_settings_layout"));
+	}
+
+
+	$gc = $rowcounter = 0;
+
+
+
+	//Default-Seiten pro Modul
+	$settings = array();
+	//Default module after login
+	$values = $descs = array('');
+	foreach($MODULES as $m) {
+		if(in_array($m, array('sms', 'kg', 'mailing'))) continue;
+		if(!ko_module_installed($m, $uid)) continue;
+		$values[] = $m;
+		$descs[] = getLL('module_'.$m);
+	}
+	$settings[] = array('desc' => getLL('admin_settings_default_module'),
+		'type' => 'select',
+		'name' => 'sel_default_module',
+		'values' => $values,
+		'descs' => $descs,
+		'value' => ko_get_userpref($uid, 'default_module')
+	);
+	if(ko_module_installed("admin", $uid)) {
+		$descs = $values = array();
+		ko_get_access_all('admin', $uid, $max);
+		$values[] = 'set_layout';
+		$descs[] = 'Layout';
+		if($max > 1) {
+			$values[] = 'set_allgemein';
+			$values[] = 'list_news';
+			$descs[] = getLL('submenu_admin_set_allgemein');
+			$descs[] = getLL('submenu_admin_list_news');
+		}
+		if($max > 3) {
+			$values[] = 'set_show_logins';
+			$values[] = 'show_logs';
+			$descs[] = getLL('submenu_admin_show_logins');
+			$descs[] = getLL('submenu_admin_show_logs');
+		}
+		$settings[] = array('desc' => getLL('module_admin'),
+			'type' => 'select',
+			'name' => 'sel_admin',
+			'values' => $values,
+			'descs' => $descs,
+			'value' => ko_html(ko_get_userpref($uid, 'default_view_admin'))
+		);
+	}
+	if(ko_module_installed("tapes", $uid)) {
+		$settings[] = array('desc' => getLL('module_tapes'),
+			'type' => 'select',
+			'name' => 'sel_tapes',
+			'values' => array('list_tapes', 'list_series'),
+			'descs' => array(getLL('submenu_tapes_list_tapes'), getLL('submenu_tapes_list_series')),
+			'value' => ko_html(ko_get_userpref($uid, 'default_view_tapes'))
+		);
+	}
+	if(ko_module_installed("fileshare", $uid)) {
+		if(ENABLE_FILESHARE) {
+			$values = array('inbox', 'list_webfolders', 'SPECIAL_webfolder');
+			$descs = array(getLL('fileshare_inbox'), getLL('submenu_fileshare_list_webfolders'), getLL('fileshare_default_view_webfolder'));
+		} else {
+			$values = array('list_webfolders', 'SPECIAL_webfolder');
+			$descs = array(getLL('submenu_fileshare_list_webfolders'), getLL('fileshare_default_view_webfolder'));
+		}
+		$settings[] = array('desc' => getLL('module_fileshare'),
+			'type' => 'select',
+			'name' => 'sel_fileshare',
+			'values' => $values,
+			'descs' => $descs,
+			'value' => ko_html(ko_get_userpref($uid, 'default_view_fileshare'))
+		);
+	}
+
+	if(sizeof($settings) > 0) {
+		$group[$gc]['titel'] = getLL("admin_settings_default");
+		$colCounter = 0;
+		foreach ($settings as $setting) {
+			$group[$gc]["row"][$rowcounter]["inputs"][$colCounter++] = $setting;
+			if ($colCounter > 1) {
+				$colCounter = 0;
+				$rowcounter++;
+			}
+		}
+		$gc++;
+	}
+
+
+	//settings for the menu/dropdown
+	$settings = array();
+
+	//menu order
+	$value = ko_get_userpref($uid, "menu_order");  //Wert aus Userpref auslesen...
+	//available modules for this user
+	$values = $descs = $avalues = $adescs = NULL;
+	foreach($MODULES as $m) {
+		if(ko_module_installed($m, $uid)) {
+			$values[] = $m;
+			$descs[] = getLL("module_".$m);
+		}
+	}
+	//selected menus
+	foreach(explode(",", $value) as $m) {
+		$avalues[] = $m;
+		$adescs[] = getLL("module_".$m);
+	}
+	$settings[] = array("desc" => getLL("admin_settings_menu_order").":",
+		"type" => "doubleselect",
+		"js_func_add" => "double_select_add",
+		"show_moves" => TRUE,
+		"name" => "sel_menu_order",
+		"values" => $values,
+		"descs" => $descs,
+		"avalues" => $avalues,
+		"adescs" => $adescs,
+		"avalue" => $value,
+		"params" => 'size="7"',
+	);
+
+	if(sizeof($settings) > 0) {
+		$group[$gc]['titel'] = getLL("admin_settings_menu");
+		$colCounter = 0;
+		foreach ($settings as $setting) {
+			$group[$gc]["row"][$rowcounter]["inputs"][$colCounter++] = $setting;
+			if ($colCounter > 1) {
+				$colCounter = 0;
+				$rowcounter++;
+			}
+		}
+		$gc++;
+	}
+
+
+
+	//Diverses
+	$settings = array();
+
+	//Show gsm notes
+	if($uid != ko_get_guest_id()) {
+		$value = ko_get_userpref($_SESSION['ses_userid'], 'save_kota_filter');
+		$settings[] = array('desc' => getLL('admin_settings_save_kota_filter'),
+			'type' => 'switch',
+			'name' => 'save_kota_filter',
+			'label_0' => getLL('no'),
+			'label_1' => getLL('yes'),
+			'value' => $value == '' ? 0 : $value,
+		);
+		$value = ko_get_userpref($_SESSION['ses_userid'], 'export_table_format');
+		$settings[] = array('desc' => getLL('admin_settings_export_table_format'),
+			'type' => 'select',
+			'name' => 'export_table_format',
+			'values' => array('xlsx', 'xls'),
+			'descs' => array(getLL('admin_settings_export_table_format_xlsx'), getLL('admin_settings_export_table_format_xls')),
+			'value' => $value
+		);
+	}
+	$value = ko_get_userpref($_SESSION['ses_userid'], 'download_not_directly');
+	$settings[] = array('desc' => getLL('admin_settings_download_not_directly'),
+		'type' => 'switch',
+		'name' => 'download_not_directly',
+		'label_0' => getLL('no'),
+		'label_1' => getLL('yes'),
+		'value' => $value == '' ? 0 : $value,
+	);
+
+	//Erstellte Dateien in Fileshare-Folder speichern
+	if(ENABLE_FILESHARE && ko_module_installed("fileshare", $uid) && $uid != ko_get_guest_id()) {
+		ko_get_access_all('fileshare', $uid, $max);
+		if($max > 1) {
+			$value = ko_get_userpref($uid, "save_files_as_share");  //Wert aus Userpref auslesen...
+			if(!isset($value)) $value = 2;  //...oder falls nicht definiert auf Nein setzen
+			$settings[] = array("desc" => getLL("admin_settings_misc_save_fileshare"),
+				"type" => "select",
+				"name" => "sel_save_files_as_share",
+				"values" => array("1", "2"),
+				"descs" => array(getLL("yes"), getLL("no")),
+				"value" => $value
+			);
+		}
+	}
+
+	if(sizeof($settings) > 0) {
+		$group[$gc]['titel'] = getLL("admin_settings_misc");
+		$colCounter = 0;
+		foreach ($settings as $setting) {
+			$group[$gc]["row"][$rowcounter]["inputs"][$colCounter++] = $setting;
+			if ($colCounter > 1) {
+				$colCounter = 0;
+				$rowcounter++;
+			}
+		}
+		$gc++;
+	}
+
+
+	//Allow plugins to add further settings
+	hook_form('admin_layout_settings', $frmgroup, '', '');
+
+
+	//display the form
+	$smarty->assign('tpl_submit_value', getLL('save'));
+	$smarty->assign('tpl_action', 'save_set_allgemein');
+	$smarty->assign('tpl_cancel', 'list_groups');
+	$smarty->assign('tpl_groups', $group);
+
+	if($uid == ko_get_guest_id()) {
+		$smarty->assign("help", ko_get_help("admin", "set_layout_guest"));
+		$smarty->assign("tpl_action", "save_set_layout_guest");
+	} else {
+		$smarty->assign("help", ko_get_help("admin", "set_layout"));
+		$smarty->assign("tpl_action", "save_set_layout");
+	}
+
+	$smarty->display("ko_formular.tpl");
+}//ko_show_set_layout()
+
+
+
+
+function ko_admin_list_labels($output=TRUE) {
+	global $smarty;
 	global $access;
 
 	if($access['admin']['MAX'] < 2) return;
 
-	//Select-Felder füllen
-	$pageformat = array('values' => array('A4', 'A5', 'A6', 'C5'),
-		'output' => array('A4', 'A5', 'A6', 'C5'));
-	$pageorientation = array('values' => array('P', 'L'),
-		'output' => array(getLL('portrait'), getLL('landscape')));
-	$textalignh = array( "values" => array("L", "C", "R"),
-		"output" => array(getLL("left"), getLL("center"), getLL("right")));
-	$textalignv = array( "values" => array("T", "C", "B"),
-		"output" => array(getLL("top"), getLL("center"), getLL("bottom")));
-	$textsizes = array(); for($i=7; $i<=50; $i++) $textsizes[] = $i;
-	$textsize = array( 'values' => $textsizes, 'output' => $textsizes);
-	$ra_textsize = array( 'values' => array(6, 7, 8, 9, 10, 11, 12),
-		'output' => array(6, 7, 8, 9, 10, 11, 12));
-	$_fonts = ko_get_pdf_fonts();
-	$font_output = array(); foreach($_fonts as $font) $font_output[] = $font['name'];
-	$ra_fonts = $fonts = array('values' => array_keys($_fonts), 'output' => $font_output);
+	$es = db_select_data("ko_labels", "WHERE 1=1", "*", "ORDER BY `name` ASC");
+	$rows = sizeof($es);
 
-	//Vorlage-Namen auslesen (für Dropdown-Listen)
-	$vorlagen["values"][] = "";
-	$vorlagen["output"][] = "";
-	ko_get_etiketten_vorlagen($vorlagen_);
-	foreach($vorlagen_ as $v) {
-		$vorlagen["values"][] = $v["vorlage"];
-		$vorlagen["output"][] = $v["value"];
-	}//foreach(vorlagen as v)
+	$list = new kOOL_listview();
 
-	//Werte für anzuzeigende Vorlage auslesen
-	if($id != "") {
-		ko_get_etiketten_vorlage($id, $v);
-		$vorlagen["value"] = $id;
-		$textalignh["value"] = $v["align_horiz"];
-		$textalignv["value"] = $v["align_vert"];
-		$pageformat['value'] = $v['page_format'];
-		$pageorientation['value'] = $v['page_orientation'];
-		$fonts['value'] = $v['font'];
-		$textsize["value"] = $v["textsize"];
-		$ra_fonts['value'] = $v['ra_font'];
-		$ra_textsize["value"] = $v['ra_textsize'];
-		$smarty->assign("txt_per_row", ko_html($v["per_row"]));
-		$smarty->assign("txt_per_col", ko_html($v["per_col"]));
-		$smarty->assign("txt_border_top", ko_html($v["border_top"]));
-		$smarty->assign("txt_border_right", ko_html($v["border_right"]));
-		$smarty->assign("txt_border_bottom", ko_html($v["border_bottom"]));
-		$smarty->assign("txt_border_left", ko_html($v["border_left"]));
-		$smarty->assign("txt_spacing_horiz", ko_html($v["spacing_horiz"]));
-		$smarty->assign("txt_spacing_vert", ko_html($v["spacing_vert"]));
-		$smarty->assign('txt_ra_margin_top', ko_html($v['ra_margin_top']));
-		$smarty->assign('txt_ra_margin_left', ko_html($v['ra_margin_left']));
-		$smarty->assign('txt_pic_x', ko_html($v['pic_x']));
-		$smarty->assign('txt_pic_y', ko_html($v['pic_y']));
-		$smarty->assign('txt_pic_w', ko_html($v['pic_w']));
-		$smarty->assign('pic_file', ko_pic_get_tooltip($v['pic_file']));
-	}//if(id)
+	$list->init("admin", "ko_labels", array("chk", "edit", "delete"), 1, 1000);
+	$list->setTitle(getLL("admin_labels_title"));
+	$list->setAccessRights(FALSE);
+	$list->setActions(array("edit" => array("action" => "edit_label"),
+			"delete" => array("action" => "delete_label", "confirm" => TRUE))
+	);
+	$list->setSort(FALSE);
+	$list->disableMultiedit();
+	$list->setStats($rows, '', '', '', TRUE);
+	if ($access['admin']['ALL'] > 1) $list->setActionNew('new_label');
+
+	//Footer
+	//Totals
+	$list_footer = $smarty->get_template_vars('list_footer');
+	$list->setFooter($list_footer);
 
 
-	$smarty->assign("tpl_titel", getLL("admin_labels_title"));
+	//Output the list
+	if($output) {
+		$list->render($es);
+	} else {
+		print $list->render($es);
+	}
+}//ko_admin_list_labels()
 
-	$smarty->assign("vorlagen", $vorlagen);
 
-	$smarty->assign('page_format', $pageformat);
-	$smarty->assign('page_orientation', $pageorientation);
-	$smarty->assign("textalignh", $textalignh);
-	$smarty->assign("textalignv", $textalignv);
-	$smarty->assign("textsize", $textsize);
-	$smarty->assign('ra_textsize', $ra_textsize);
-	$smarty->assign('font', $fonts);
-	$smarty->assign('ra_font', $ra_fonts);
 
-	//LL-Values
-	$smarty->assign("label_open", getLL("admin_settings_label_open"));
-	$smarty->assign("label_delete", getLL('admin_settings_label_delete'));
-	$smarty->assign("label_delete_confirm", getLL('admin_settings_label_delete_confirm'));
-	$smarty->assign('label_page_format', getLL('admin_settings_label_page_format'));
-	$smarty->assign('label_page_orientation', getLL('admin_settings_label_page_orientation'));
-	$smarty->assign("label_per_row", getLL('admin_settings_label_per_row'));
-	$smarty->assign("label_per_col", getLL('admin_settings_label_per_col'));
-	$smarty->assign("label_border_top", getLL('admin_settings_label_border_top'));
-	$smarty->assign("label_border_right", getLL('admin_settings_label_border_right'));
-	$smarty->assign("label_border_bottom", getLL('admin_settings_label_border_bottom'));
-	$smarty->assign("label_border_left", getLL('admin_settings_label_border_left'));
-	$smarty->assign("label_spacing_horiz", getLL('admin_settings_label_spacing_horiz'));
-	$smarty->assign("label_spacing_vert", getLL('admin_settings_label_spacing_vert'));
-	$smarty->assign("label_align_horiz", getLL('admin_settings_label_align_horiz'));
-	$smarty->assign("label_align_vert", getLL('admin_settings_label_align_vert'));
-	$smarty->assign("label_font", getLL('admin_settings_label_font'));
-	$smarty->assign("label_textsize", getLL('admin_settings_label_textsize'));
-	$smarty->assign("label_ra_font", getLL('admin_settings_label_ra_font'));
-	$smarty->assign('label_ra_size', getLL('admin_settings_label_return_address_size'));
-	$smarty->assign('label_ra_margin_top', getLL('admin_settings_label_return_address_margin_top'));
-	$smarty->assign('label_ra_margin_left', getLL('admin_settings_label_return_address_margin_left'));
-	$smarty->assign('label_pic_file', getLL('admin_settings_label_pic_file'));
-	$smarty->assign('label_pic_x', getLL('admin_settings_label_pic_x'));
-	$smarty->assign('label_pic_y', getLL('admin_settings_label_pic_y'));
-	$smarty->assign('label_pic_w', getLL('admin_settings_label_pic_w'));
-	$smarty->assign("label_or_new", getLL('admin_settings_label_or_new'));
-	$smarty->assign("label_preset", getLL('admin_settings_label_preset'));
 
-	//Add help link
-	$smarty->assign("help", ko_get_help("admin", "set_etiketten"));
 
-	$smarty->assign("tpl_action", "save_etiketten");
-	$smarty->assign("tpl_action_open", "open_etiketten");
-	$smarty->assign('sesid', session_id());
-	$smarty->display("ko_settings_etiketten.tpl");
-}//ko_show_set_etiketten()
+function ko_admin_formular_labels($mode="new", $id='') {
+	global $access;
 
+	if($access['admin']['MAX'] < 2) return;
+
+	if($mode == 'new') {
+		$id = 0;
+	} else if($mode == 'edit') {
+		if(!$id) return FALSE;
+	} else {
+		return FALSE;
+	}
+
+	$form_data['title'] =  $mode == 'new' ? getLL('admin_labels_form_title_new') : getLL('admin_labels_form_title_edit');
+	$form_data['submit_value'] = getLL('save');
+	$form_data['action'] = $mode == 'new' ? 'submit_new_label' : 'submit_edit_label';
+	if($mode == 'edit') {
+		$form_data['action_as_new'] = 'submit_as_new_label';
+		$form_data['label_as_new'] = getLL('admin_labels_form_submit_as_new');
+	}
+	$form_data['cancel'] = 'list_labels';
+
+	ko_multiedit_formular('ko_labels', '', $id, '', $form_data);
+}//ko_formular_etiketten_settings()
 
 
 
@@ -1499,13 +2204,11 @@ function ko_list_leute_pdf($output=TRUE) {
 	$list->setSort(FALSE);
 	$list->disableMultiedit();
 	$list->setStats($rows, '', '', '', TRUE);
+	if ($access['admin']['ALL'] > 4) $list->setActionNew('set_leute_pdf_new');
 
 
 	//Footer
-	//Totals
 	$list_footer = $smarty->get_template_vars('list_footer');
-	$list_footer[] = array("label" => getLL("admin_settings_leute_pdf_new"), "button" => '<input type="submit" onclick="set_action(\'set_leute_pdf_new\');" value="'.getLL("OK").'" />');
-
 	$list->setFooter($list_footer);
 
 
@@ -1741,10 +2444,9 @@ function ko_formular_leute_pdf($mode="new", $layout_id=0) {
 																											 );
 	if (!$LEUTE_NO_FAMILY) {
 		$group[$gc]["row"][$rowcounter++]["inputs"][1] = array("desc" => getLL("leute_export_pdf_show_children"),
-			"type" => "checkbox",
+			"type" => "switch",
 			"name" => "pdf[columns_children]",
-			"value" => "1",
-			"params" => $layout["columns_children"] ? 'checked="checked"' : "",
+			'value' => $layout["columns_children"] ? '1' : '0',
 		);
 	}
 	$group[$gc]["row"][$rowcounter]["inputs"][0] = array("desc" => getLL("admin_settings_leute_pdf_sort"),
@@ -1856,6 +2558,8 @@ function ko_formular_leute_pdf($mode="new", $layout_id=0) {
 																												 );
 
 	$smarty->assign("tpl_titel", getLL("admin_settings_leute_pdf"));
+	$smarty->assign("tpl_submit_as_new", getLL("admin_settings_leute_pdf_submit_as_new"));
+	$smarty->assign("tpl_action_as_new", "submit_as_new_leute_pdf");
 	$smarty->assign("tpl_submit_value", getLL("save"));
 	$smarty->assign("tpl_action", ($mode == "new" ? "submit_new_leute_pdf" : "submit_edit_leute_pdf"));
 	$smarty->assign("tpl_cancel", "set_leute_pdf");
@@ -1869,295 +2573,7 @@ function ko_formular_leute_pdf($mode="new", $layout_id=0) {
 
 
 
-function ko_show_set_layout($uid) {
-	global $smarty;
-	global $FRONTMODULES, $MODULES;
-	global $access;
 
-	if($uid == ko_get_guest_id()) {
-		if($access['admin']['MAX'] < 3) return;
-		$smarty->assign("tpl_titel", getLL("admin_settings_layout_guest"));
-	}
-	else {
-		if($access['admin']['MAX'] < 1) return;
-		$smarty->assign("tpl_titel", getLL("admin_settings_layout"));
-	}
-
-	$partscounter = 0;
-
-	//Front-Modules
-	$values = array("nicht", "left", "center", "right");
-	$output = array(getLL("not"), getLL("left"), getLL("center"), getLL("right"));
-
-	foreach($FRONTMODULES as $fm_i => $fm) {
-		//check for neded modules for this FM
-		if(!ko_check_fm_for_user($fm_i, $uid)) continue;
-
-		if($fm_i == 'adressaenderung') {
-			$rights_all = ko_get_access_all('leute_admin', $uid);
-			if($rights_all >= 2) continue;
-		}
-
-		$checked = "nicht";
-
-		//Bestehende Einstellungen auslesen
-		$fm_left = explode(",", ko_get_userpref($uid, "front_modules_left"));
-		if(in_array($fm_i, $fm_left)) $checked = "left";
-		$fm_center = explode(",", ko_get_userpref($uid, "front_modules_center"));
-		if(in_array($fm_i, $fm_center)) $checked = "center";
-		$fm_right = explode(",", ko_get_userpref($uid, "front_modules_right"));
-		if(in_array($fm_i, $fm_right)) $checked = "right";
-
-		$setting[] = array("desc" => $fm["name"],
-				"type" => "radio",
-				"name" => "rd_fm_$fm_i",
-				"value" => $values,
-				"output" => $output,
-				"checked" => $checked
-				);
-	}
-
-	if(sizeof($setting) > 0) {
-		$parts[$partscounter]["titel"] = getLL("admin_settings_fm");
-		$parts[$partscounter]["settings"] = $setting;
-	}
-
-
-	//Limit-Einstellungen
-	unset($setting);
-	$s_counter = 0;
-	if(ko_module_installed("admin", $uid)) {
-		ko_get_access_all('admin', $uid, $max);
-		if($max > 3) {
-			$setting[$s_counter++] = array("desc" => getLL("admin_settings_limits_numberof_logins"),
-					"type" => "text",
-					"name" => "txt_limit_logins",
-					"value" => ko_html(ko_get_userpref($uid, "show_limit_logins"))
-					);
-		}
-	}
-	if(ko_module_installed("fileshare", $uid)) {
-		$setting[$s_counter++] = array("desc" => getLL("admin_settings_limits_numberof_shares"),
-				"type" => "text",
-				"name" => "txt_limit_fileshare",
-				"value" => ko_html(ko_get_userpref($uid, "show_limit_fileshare"))
-				);
-	}
-	if(ko_module_installed("tapes", $uid)) {
-		$setting[$s_counter++] = array("desc" => getLL("admin_settings_limits_numberof_tapes"),
-				"type" => "text",
-				"name" => "txt_limit_tapes",
-				"value" => ko_html(ko_get_userpref($uid, "show_limit_tapes"))
-				);
-	}
-
-	if(sizeof($setting) > 0) {
-		$parts[++$partscounter]["titel"] = getLL("admin_settings_limits");
-		$parts[$partscounter]["settings"] = $setting;
-	}
-
-
-
-	//Default-Seiten pro Modul
-	unset($setting);
-
-	$m_counter = 0;
-	if(ko_module_installed("admin", $uid)) {
-		$descs = $values = array();
-		ko_get_access_all('admin', $uid, $max);
-		$values[] = 'set_layout';
-		$descs[] = 'Layout';
-		if($max > 1) {
-			$values[] = 'set_allgemein';
-			$values[] = 'list_news';
-			$descs[] = getLL('submenu_admin_set_allgemein');
-			$descs[] = getLL('submenu_admin_list_news');
-		}
-		if($max > 3) {
-			$values[] = 'set_show_logins';
-			$values[] = 'show_logs';
-			$descs[] = getLL('submenu_admin_show_logins');
-			$descs[] = getLL('submenu_admin_show_logs');
-		}
-		$setting[$m_counter++] = array('desc' => getLL('module_admin'),
-				'type' => 'select',
-				'name' => 'sel_admin',
-				'values' => $values,
-				'descs' => $descs,
-				'value' => ko_html(ko_get_userpref($uid, 'default_view_admin'))
-				);
-	}
-	if(ko_module_installed("tapes", $uid)) {
-		$setting[$m_counter++] = array('desc' => getLL('module_tapes'),
-				'type' => 'select',
-				'name' => 'sel_tapes',
-				'values' => array('list_tapes', 'list_series'),
-				'descs' => array(getLL('submenu_tapes_list_tapes'), getLL('submenu_tapes_list_series')),
-				'value' => ko_html(ko_get_userpref($uid, 'default_view_tapes'))
-				);
-	}
-	if(ko_module_installed("fileshare", $uid)) {
-		if(ENABLE_FILESHARE) {
-			$values = array('inbox', 'list_webfolders', 'SPECIAL_webfolder');
-			$descs = array(getLL('fileshare_inbox'), getLL('submenu_fileshare_list_webfolders'), getLL('fileshare_default_view_webfolder'));
-		} else {
-			$values = array('list_webfolders', 'SPECIAL_webfolder');
-			$descs = array(getLL('submenu_fileshare_list_webfolders'), getLL('fileshare_default_view_webfolder'));
-		}
-		$setting[$m_counter++] = array('desc' => getLL('module_fileshare'),
-				'type' => 'select',
-				'name' => 'sel_fileshare',
-				'values' => $values,
-				'descs' => $descs,
-				'value' => ko_html(ko_get_userpref($uid, 'default_view_fileshare'))
-				);
-	}
-
-	//Default module after login
-	$values = $descs = array('');
-	foreach($MODULES as $m) {
-		if(in_array($m, array('sms', 'kg', 'mailing'))) continue;
-		if(!ko_module_installed($m, $uid)) continue;
-		$values[] = $m;
-		$descs[] = getLL('module_'.$m);
-	}
-	$setting[$m_counter++] = array('desc' => getLL('admin_settings_default_module'),
-			'type' => 'select',
-			'name' => 'sel_default_module',
-			'values' => $values,
-			'descs' => $descs,
-			'value' => ko_get_userpref($uid, 'default_module')
-			);
-
-
-	if(sizeof($setting) > 0) {
-		$parts[++$partscounter]["titel"] = getLL("admin_settings_default");
-		$parts[$partscounter]["settings"] = $setting;
-	}
-
-
-	//settings for the menu/dropdown
-	$values = $descs = $avalues = $adescs = NULL;
-	unset($setting);
-	$value = ko_get_userpref($uid, "modules_dropdown");  //Wert aus Userpref auslesen...
-	if(!$value) $value = ko_get_setting("modules_dropdown");  //...oder falls nicht definiert aus Setting holen
-	$setting[] = array("desc" => getLL("admin_settings_menu_submenus").":",
-			"type" => "select",
-			"name" => "sel_modules_dropdown",
-			"values" => array("ja", "nein"),
-			"descs" => array(getLL("admin_settings_menu_submenus_dd"), getLL("admin_settings_menu_submenus_nodd")),
-			"value" => $value
-			);
-
-	//menu order
-	$value = NULL;
-	$value = ko_get_userpref($uid, "menu_order");  //Wert aus Userpref auslesen...
-	//available modules for this user
-	$values = $descs = $avalues = $adescs = NULL;
-	foreach($MODULES as $m) {
-		if(ko_module_installed($m, $uid)) {
-			$values[] = $m;
-			$descs[] = getLL("module_".$m);
-		}
-	}
-	//selected menus
-	foreach(explode(",", $value) as $m) {
-		$avalues[] = $m;
-		$adescs[] = getLL("module_".$m);
-	}
-	$setting[] = array("desc" => getLL("admin_settings_menu_order").":",
-			"type" => "doubleselect",
-		  "js_func_add" => "double_select_add",
-			"show_moves" => TRUE,
-			"name" => "sel_menu_order",
-			"values" => $values,
-			"descs" => $descs,
-			"avalues" => $avalues,
-			"adescs" => $adescs,
-			"avalue" => $value,
-			"params" => 'size="7"',
-			);
-
-	if(sizeof($setting) > 0) {
-		$parts[++$partscounter]["titel"] = getLL("admin_settings_menu");
-		$parts[$partscounter]["settings"] = $setting;
-	}
-
-
-
-	//Diverses
-	unset($setting);
-
-	//Show gsm notes
-	if($uid != ko_get_guest_id()) {
-		$value = ko_get_userpref($_SESSION['ses_userid'], 'show_notes');
-		$setting[] = array('desc' => getLL('admin_settings_show_notes'),
-			'type' => 'switch',
-			'name' => 'show_notes',
-			'label_0' => getLL('no'),
-			'label_1' => getLL('yes'),
-			'value' => $value == '' ? 0 : $value,
-		);
-		$value = ko_get_userpref($_SESSION['ses_userid'], 'save_kota_filter');
-		$setting[] = array('desc' => getLL('admin_settings_save_kota_filter'),
-			'type' => 'switch',
-			'name' => 'save_kota_filter',
-			'label_0' => getLL('no'),
-			'label_1' => getLL('yes'),
-			'value' => $value == '' ? 0 : $value,
-		);
-		$value = ko_get_userpref($_SESSION['ses_userid'], 'export_table_format');
-		$setting[] = array('desc' => getLL('admin_settings_export_table_format'),
-			'type' => 'select',
-			'name' => 'export_table_format',
-			'values' => array('xlsx', 'xls'),
-			'descs' => array(getLL('admin_settings_export_table_format_xlsx'), getLL('admin_settings_export_table_format_xls')),
-			'value' => $value
-		);
-	}
-	$value = ko_get_userpref($_SESSION['ses_userid'], 'download_not_directly');
-	$setting[] = array('desc' => getLL('admin_settings_download_not_directly'),
-		'type' => 'switch',
-		'name' => 'download_not_directly',
-		'label_0' => getLL('no'),
-		'label_1' => getLL('yes'),
-		'value' => $value == '' ? 0 : $value,
-	);
-
-	//Erstellte Dateien in Fileshare-Folder speichern
-	if(ENABLE_FILESHARE && ko_module_installed("fileshare", $uid) && $uid != ko_get_guest_id()) {
-		ko_get_access_all('fileshare', $uid, $max);
-		if($max > 1) {
-			$value = ko_get_userpref($uid, "save_files_as_share");  //Wert aus Userpref auslesen...
-			if(!isset($value)) $value = 2;  //...oder falls nicht definiert auf Nein setzen
-			$setting[] = array("desc" => getLL("admin_settings_misc_save_fileshare"),
-					"type" => "select",
-					"name" => "sel_save_files_as_share",
-					"values" => array("1", "2"),
-					"descs" => array(getLL("yes"), getLL("no")),
-					"value" => $value
-					);
-		}
-	}
-
-	if(sizeof($setting) > 0) {
-		$parts[++$partscounter]["titel"] = getLL("admin_settings_misc");
-		$parts[$partscounter]["settings"] = $setting;
-	}
-
-
-
-	$smarty->assign("tpl_parts", $parts);
-	if($uid == ko_get_guest_id()) {
-		$smarty->assign("help", ko_get_help("admin", "set_layout_guest"));
-		$smarty->assign("tpl_action", "save_set_layout_guest");
-	} else {
-		$smarty->assign("help", ko_get_help("admin", "set_layout"));
-		$smarty->assign("tpl_action", "save_set_layout");
-	}
-
-	$smarty->display("ko_settings.tpl");
-}//ko_show_set_layout()
 
 
 
@@ -2203,36 +2619,38 @@ function ko_change_password() {
 	global $smarty;
 	global $access;
 
-	if($access['admin']['MAX'] < 1) return;
+	if(ko_get_setting("change_password") < 1 || $_SESSION['ses_userid'] == ko_get_guest_id()) return FALSE;
 
-	$smarty->assign("tpl_titel", getLL("admin_change_password"));
+	$gc = $rowcounter = 0;
 
-	$parts[0]["titel"] = getLL("admin_change_password");
-	$setting[0]["desc"] = getLL("admin_change_password_old");
-	$setting[0]["type"] = "password";
-	$setting[0]["name"] = "txt_pwd_old";
-	$setting[0]['params'] = 'size="40" maxlength="40" autocomplete="off"';
-	$setting[0]["value"] = "";
+	$frmgroup[$gc]['row'][$rowcounter++]['inputs'][0] = array('desc' => getLL("admin_change_password_old"),
+		'type' => "password",
+		'name' => "txt_pwd_old",
+		'params' => 'maxlength="40" autocomplete="off"',
+		'value' => '',
+		);
 
-	$setting[1]["desc"] = getLL("admin_change_password_new1");
-	$setting[1]["type"] = "password";
-	$setting[1]["name"] = "txt_pwd_new1";
-	$setting[1]['params'] = 'size="40" maxlength="40" autocomplete="off"';
-	$setting[1]["value"] = "";
+	$frmgroup[$gc]['row'][$rowcounter]['inputs'][0] = array('desc' => getLL("admin_change_password_new1"),
+		'type' => "password",
+		'name' => "txt_pwd_new1",
+		'params' => 'maxlength="40" autocomplete="off"',
+		'value' => '',
+	);
 
-	$setting[2]["desc"] = getLL("admin_change_password_new2");
-	$setting[2]["type"] = "password";
-	$setting[2]["name"] = "txt_pwd_new2";
-	$setting[2]['params'] = 'size="40" maxlength="40" autocomplete="off"';
-	$setting[2]["value"] = "";
+	$frmgroup[$gc]['row'][$rowcounter]['inputs'][1] = array('desc' => getLL("admin_change_password_new2"),
+		'type' => "password",
+		'name' => "txt_pwd_new2",
+		'params' => 'maxlength="40" autocomplete="off"',
+		'value' => '',
+	);
 
-	$parts[0]["settings"] = $setting;
 
 	$smarty->assign("help", ko_get_help("admin", "change_password"));
-
-	$smarty->assign("tpl_parts", $parts);
+	$smarty->assign("tpl_titel", getLL("admin_change_password"));
+	$smarty->assign("tpl_submit_value", getLL("save"));
+	$smarty->assign("tpl_groups", $frmgroup);
 	$smarty->assign("tpl_action", "submit_change_password");
-	$smarty->display("ko_settings.tpl");
+	$smarty->display("ko_formular.tpl");
 }//ko_change_password()
 
 
@@ -2259,6 +2677,7 @@ function ko_list_news($output=TRUE) {
 	$list->setActions(array('edit' => array('action' => 'edit_news'),
 													'delete' => array('action' => 'delete_news', 'confirm' => TRUE))
 										);
+	if ($access['admin']['ALL'] > 1) $list->setActionNew('new_news');
 	$list->setSort(TRUE, 'setsort', $_SESSION['sort_news'], $_SESSION['sort_news_order']);
 	$list->setStats($rows, '', '', '', TRUE);
 
@@ -2300,6 +2719,42 @@ function ko_formular_news($mode, $id='') {
 
 	ko_multiedit_formular('ko_news', '', $id, '', $form_data);
 }//ko_formular_news()
+
+
+
+
+function ko_access_get_kota_columns_form($id, $coltable, $type='login') {
+	global $KOTA;
+
+	ko_include_kota(array($coltable));
+	$col_values = $col_descs = array();
+	foreach($KOTA[$coltable] as $k => $v) {
+		if(substr($k, 0, 1) == '_') continue;
+		if($v['exclude_from_access'] || !isset($v['form'])) continue;
+		$ll = getLL('kota_'.$coltable.'_'.$k);
+		if(!$ll) continue;
+		$col_values[] = $k;
+		$col_descs[] = $ll ? $ll : $k;
+	}
+	$col_adescs = array();
+	$col_avalues = ko_access_get_kota_columns($id, $coltable, $type);
+	foreach($col_avalues as $avalue) {
+		$ll = getLL('kota_'.$coltable.'_'.$avalue);
+		if(!$ll) continue;
+		$col_adescs[] = $ll ? $ll : $avalue;
+	}
+
+	return array('desc' => getLL('admin_logins_kota_columns'),
+		'type' => 'checkboxes',
+		'name' => 'kota_columns_'.$coltable,
+		'values' => $col_values,
+		'descs' => $col_descs,
+		'avalues' => $col_avalues,
+		'avalue' => implode(',', $col_avalues),
+		'size' => min(7, sizeof($col_values)),
+		'colspan' => 'colspan="3"',
+	);
+}//ko_access_get_kota_columns_form()
 
 
 

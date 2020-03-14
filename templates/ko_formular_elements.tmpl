@@ -1,122 +1,235 @@
 {if $input.type == "text"}
-	<input type="text" name="{$input.name}" value="{$input.value}" {$input.params} />
+	<input type="{if $input.html_type}{$input.html_type}{else}text{/if}" class="input-sm form-control {$input.add_class}" name="{$input.name}" value="{$input.value}" {$input.params} />
+
 
 {elseif $input.type == "password"}
-	<input type="password" name="{$input.name}" value="{$input.value}" {$input.params} />
+	<input type="password" class="input-sm form-control {$input.add_class}" name="{$input.name}" value="{$input.value}" {$input.params} />
+
 
 {elseif $input.type == "text_mylist"}
-	<input type="text" name="{$input.name}" value="{$input.value}" {$input.params} />
-	&nbsp;
-	<img src="{$ko_path}images/icon_import_my_list.png" alt="import_my_list" title="{$label_text_mylist_import}" border="0" onclick="javascript:document.getElementsByName('{$input.name}')[0].value += ',{$input.mylist}';" />
+	<div class="input-group input-group-sm">
+		<input type="text" class="input-sm form-control {$input.add_class}" name="{$input.name}" value="{$input.value}" {$input.params} />
+		&nbsp;
+		<button type="button" alt="import_my_list" title="{$label_text_mylist_import}" border="0" onclick="javascript:document.getElementsByName('{$input.name}')[0].value += ',{$input.mylist}';return false;"><span class="glyphicon glyphicon-import"></span></button>
+	</div>
+
 
 {elseif $input.type == "textarea"}
-	<textarea name="{$input.name}" {$input.params}>{$input.value}</textarea>
+	<textarea name="{$input.name}" class="input-sm form-control {$input.add_class}" {$input.params}>{$input.value}</textarea>
+
 
 {elseif $input.type == "richtexteditor"}
-	<textarea name="{$input.name}" class="richtexteditor" {$input.params}>{$input.value}</textarea>
+	<textarea name="{$input.name}" class="richtexteditor {$input.add_class}" {$input.params}>{$input.value}</textarea>
+
 
 {elseif $input.type == "file"}
-	<input type="file" name="{$input.name}" {$input.params} />
+	<input type="file" name="{$input.name}" class="{$input.add_class}" {$input.params}>
 	{if $input.special_value}<br />{$input.special_value}{/if}
 	{if $input.value != '' && $input.value != ' '}<br /><a href="/{$input.value}" target="_blank">{$input.value}</a>{/if}
-	{if $input.value2}<br /><input type="checkbox" name="{$input.name2}" value="1" />{$input.value2}{/if}
+	{if $input.value2}<br /><input type="checkbox" name="{$input.name2}" value="1" class="{$input.add_class}">{$input.value2}{/if}
+
 
 {elseif $input.type == "color"}
-	<input type="text" name="{$input.name}" id="colorpicker" value="{$input.value}" {$input.params} style="float: left; background:#{$input.value};color:{$input.value|contrast};" />
-	<span onclick="cp_show(document.getElementsByName('{$input.name}')[0]);" style="cursor:pointer;" name="pick" id="pick" class="colorpicker">
-		&nbsp;
-		<img src="{$ko_path}images/icon_colorpicker.png" alt="{$label_color_choose}" title="{$label_color_choose}" border="0" />
-	</span>
+	<input type="text" name="{$input.name}" class="input-sm form-control {$input.add_class}" value="{$input.value}" {$input.params}>
+
+	<script>
+      $('input[name="{$input.name}"]').minicolors({ldelim}theme: 'bootstrap'{rdelim});
+    </script>
+
+
+{elseif $input.type == "datepicker"}
+	{if !$input.html_id}
+		{uid loc="id"}
+	{else}
+		{assign var="id" value=$input.html_id}
+	{/if}
+	{if $input.picker_mode}
+		{assign var="picker_mode" value=$input.picker_mode}
+	{else}
+		{assign var="picker_mode" value="date"}
+	{/if}
+	<div class="input-group input-group-sm if-noblur datetimepicker" id="{$id}-input-group" data-picker-mode="{$picker_mode}">
+		<span id="{$id}-addon" class="input-group-addon"><span class="glyphicon glyphicon-calendar"></span></span>
+		<input type="text" id="{$id}-input" name="{$input.name}" class="input-sm form-control {$input.add_class}" value="{$input.value}" data-id="{$id}" {$input.params}>
+	</div>
+	<script type="text/javascript">
+		$('#{$id}-input-group').datetimepicker({ldelim}
+			locale: kOOL.language,
+			format: '{if $picker_mode == 'datetime'}DD.MM.YYYY HH:mm{else}DD.MM.YYYY{/if}',
+			showTodayButton: true,
+			useCurrent: false{if $input.additional_options},
+			{$input.additional_options}{/if}
+		{rdelim});
+		$('#{$id}-input').on('keyup');
+		$('#{$id}-input').on('keydown');
+	</script>
+
 
 {elseif $input.type == "label"}
 	{$input.value}
 
-{elseif $input.type == "checkbox"}
-	<input type="checkbox" name="{$input.name}" value="{$input.value}" {$input.params} />{$input.desc2}
 
-{elseif $input.type == 'switch'}
-	<input type="hidden" name="{$input.name}" id="{$input.name|replace:"[":"_"|replace:"]":"_"}" value="{$input.value}" />{$input.desc2}
-	<div class="input_switch switch_state_{$input.value}" name="switch_{$input.name|replace:"[":"_"|replace:"]":"_"}">
-		<label class="switch_state_label_0" {if $input.value == 1}style="display: none;"{/if}>
-			{if $input.label_0}{$input.label_0}{else}{ll key="no"}{/if}
-		</label>
-		<label class="switch_state_label_1" {if $input.value == 0}style="display: none;"{/if}>
-			{if $input.label_1}{$input.label_1}{else}{ll key="yes"}{/if}
+{elseif $input.type == "checkbox"}
+	<div class="checkbox">
+		<label for="{$input.name}">
+			<input type="checkbox" id="{$input.name}" class="{$input.add_class}" name="{$input.name}" value="{$input.value}" {$input.params}>
+			{$input.desc2}
 		</label>
 	</div>
+
+
+{elseif $input.type == 'switch'}
+	<input type="checkbox" class="switch {$input.add_class}" name="{$input.name}" data-size="small" data-off-text="{if $input.label_0}{$input.label_0}{else}{ll key="no"}{/if}" data-on-text="{if $input.label_1}{$input.label_1}{else}{ll key="yes"}{/if}" {$input.params} value="1"{if $input.value == '1'} checked{/if}>{$input.desc2}
+
+    <script>
+    	$('input[name="{$input.name}"]').bootstrapSwitch();
+    </script>
+
 
 {elseif $input.type == "radio"}
 	{html_radios name=$input.name values=$input.values output=$input.descs selected=$input.value separator=$input.separator}
 
+
 {elseif $input.type == "select"}
-	<table border="0" cellspacing="0" cellpadding="0"><tr><td>
-	<select name="{$input.name}" {$input.params} {if $input.js_func_add}onclick="{$input.js_func_add}(this.options[parseInt(this.selectedIndex)].text, this.options[parseInt(this.selectedIndex)].value, this.name);"{/if}>
-	{foreach from=$input.values item=v key=k}
-		<option value="{$v}" {if $v == $input.value}selected="selected"{/if} {if $v === '_DISABLED_'}disabled="disabled"{/if}>
-			{if $input.descs.$k}{$input.descs.$k}{else}{$input.descs.$v}{/if}
-		</option>
-	{/foreach}
-	</select>
-	</td>
-	{if $input.buttons}
-		<td valign="top" width="16" style="padding-left:3px;">{$input.buttons}</td>
+	{if !$input.html_id}
+		{uid loc="id"}
+	{else}
+		{assign var="id" value=$input.html_id}
 	{/if}
-	</tr></table>
+	{if $input.buttons}
+		<div class="input-group input-group-sm">
+	{/if}
+	{if $input.multiple}
+		<div class="ko-select-wrapper">
+			<input type="hidden" name="{$input.name}" value="{$input.value}" class="{$input.add_class}">
+			<div class="dynselect" name="sel1-{$input.name}" id="{$id}" data-hidden-name="{$input.name}" class="{$input.add_class}" data-js-func-add="{$input.js_func_add}" {if $input.js_func_before_change}data-js-func-before-change="{$input.js_func_before_change}" {/if}{$input.params} data-select="single">
+				{foreach from=$input.values item=v key=k}
+					<div class="select-item{if $v == $input.value} active{/if}{if $v === '_DISABLED_'} disabled{/if}" data-value="{$v}" title="{if $input.descs.$k}{$input.descs.$k}{else}{$input.descs.$v}{/if}">
+						{if $input.descs.$k}{$input.descs.$k}{else}{$input.descs.$v}{/if}
+					</div>
+				{/foreach}
+			</div>
+		</div>
+	{else}
+		<select name="{$input.name}" class="input-sm form-control {$input.add_class}" {$input.params} {if $input.js_func_add}onclick="{$input.js_func_add}(this.options[parseInt(this.selectedIndex)].text, this.options[parseInt(this.selectedIndex)].value, this.name);"{/if}>
+			{foreach from=$input.values item=v key=k}
+				<option value="{$v}" {if $v == $input.value}selected="selected"{/if} {if $v === '_DISABLED_'}disabled{/if}>
+					{if $input.descs.$k}{$input.descs.$k}{else}{$input.descs.$v}{/if}
+				</option>
+			{/foreach}
+		</select>
+	{/if}
+	{if $input.buttons}
+		{$input.buttons}
+		</div>
+	{/if}
 
 {elseif $input.type == "multidateselect"}
-	<table><tr><td valign="top">
-	<input type="hidden" name="{$input.name}" value="{$input.avalue}" />
-	<input type="hidden" name="old_{$input.name}" value="{$input.avalue}" />
-	<div style="font-size:x-small;">{$label_form_ds_objects}:</div>
-	{$input.dateselect}
-	</td><td valign="top">
-	<div style="font-size:x-small;">&nbsp;</div>
-	<img src="{$ko_path}images/ds_del.gif" alt="del" title="{$label_doubleselect_remove}" border="0" onclick="double_select_move('{$input.name}', 'del');"/>
-	</td><td>
-	<div style="font-size:x-small;">{$label_form_ds_assigned}:</div>
-	<select name="sel_ds2_{$input.name}" {$input.params}>
-	{foreach from=$input.avalues item=v key=k}
-		<option value="{$v}">{$input.adescs.$k}</option>
-	{/foreach}
-	</select>
-	</td></tr></table>
+	<table class="ko-select-wrapper">
+		<tr>
+			<td valign="top">
+				<input type="hidden" name="{$input.name}" value="{$input.avalue}">
+				<input type="hidden" name="old_{$input.name}" value="{$input.avalue}">
+				<div style="font-size:x-small;">{$label_form_ds_objects}:</div>
+				<div id="{$input.html_id}-input-group" style="position:relative;width:38px;">
+					<input type="text" name="fake_input_{$input.name}" id="fake_input_{$input.html_id}" class="input-sm form-control {$input.add_class}" value="{$input.avalue}" style="visibility:hidden;width:1px;padding:0px;margin:0px;">
+					<button type="button" class="btn btn-default" id="{$input.html_id}-btn" style="position:absolute;top:0px;left:0px;"><i class="fa fa-calendar"></i></button>
+				</div>
+			</td>
+			<td valign="top">
+				<div style="font-size:x-small;">&nbsp;</div>
+				<button type="button" class="btn btn-default icon-btn" alt="del" title="{$label_doubleselect_remove}" onclick="double_select_move('{$input.name}', 'del');"><i class="fa fa-remove"></i></button>
+			</td>
+			<td class="v-align-t" style="width:50%; min-width:80px;">
+				<div style="font-size:x-small;">{$label_form_ds_assigned}:</div>
+				<div class="doubleselect doubleselect-right" id="{$id}" name="sel_ds2_{$input.name}" {$input.params}>
+					{foreach from=$input.avalues item=v key=k}
+						<div class="select-item" data-value="{$v}" title="{$input.adescs.$k}">{$input.adescs.$k}</div>
+					{/foreach}
+				</div>
+			</td>
+		</tr>
+	</table>
+	<script>
+		$('#fake_input_{$input.html_id}').datetimepicker({ldelim}
+			locale: kOOL.language,
+			format: 'YYYY-MM-DD',
+			showTodayButton: true,
+			useCurrent: false
+		{rdelim});
+		$('#{$input.html_id}-btn').click(function() {ldelim}
+			$('#fake_input_{$input.html_id}').data('DateTimePicker').toggle();
+		{rdelim});
+		$('#fake_input_{$input.html_id}').datetimepicker().on('dp.change', function(e) {ldelim}
+			double_select_add($('#fake_input_{$input.html_id}').val(), $('#fake_input_{$input.html_id}').val(), 'sel_ds2_{$input.name}', '{$input.name}');
+			$('#fake_input_{$input.html_id}').val('');
+		{rdelim});
+	</script>
+
 
 {elseif $input.type == "doubleselect"}
-	<table><tr><td>
-	<input type="hidden" name="{$input.name}" value="{$input.avalue}" />
-	<input type="hidden" name="old_{$input.name}" value="{$input.avalue}" />
-	<div style="font-size:x-small;">{$label_form_ds_objects}:</div>
-	<select id="doubleselect" name="sel_ds1_{$input.name}" {$input.params} onclick="{$input.js_func_add}(this.options[parseInt(this.selectedIndex)].text, this.options[parseInt(this.selectedIndex)].value, 'sel_ds2_{$input.name}', '{$input.name}');" onkeydown="if(event.keyCode == 13 || event.which == 13) {literal}{{/literal}{$input.js_func_add}(this.options[parseInt(this.selectedIndex)].text, this.options[parseInt(this.selectedIndex)].value, 'sel_ds2_{$input.name}', '{$input.name}');{literal}}{/literal}">
-	{foreach from=$input.values item=v key=k}
-		<option value="{$v}">{$input.descs.$k}</option>
-	{/foreach}
-	</select>
-	</td><td valign="top">
-	<div style="font-size:x-small;">&nbsp;</div>
-	{if $input.show_moves}
-		<img src="{$ko_path}images/ds_top.gif" border="0" alt="top" title="{$label_form_ds_top}" onclick="double_select_move('{$input.name}', 'top');" /><br />
-		<img src="{$ko_path}images/ds_up.gif" border="0" alt="up" title="{$label_form_ds_up}" onclick="double_select_move('{$input.name}', 'up');" /><br />
-		<img src="{$ko_path}images/ds_down.gif" border="0" alt="down" title="{$label_form_ds_down}" onclick="double_select_move('{$input.name}', 'down');" /><br />
-		<img src="{$ko_path}images/ds_bottom.gif" border="0" alt="bottom" title="{$label_form_ds_bottom}" onclick="double_select_move('{$input.name}', 'bottom');" /><br />
-		<img src="{$ko_path}images/ds_del.gif" border="0" alt="del" title="{$label_form_ds_del}" onclick="double_select_move('{$input.name}', 'del');" />
+	{if !$input.html_id}
+		{uid loc="id"}
 	{else}
-		<img src="{$ko_path}images/ds_del.gif" alt="del" title="{$label_doubleselect_remove}" border="0" onclick="double_select_move('{$input.name}', 'del');"/>
+		{assign var="id" value=$input.html_id}
 	{/if}
-	</td><td>
-	<div style="font-size:x-small;">{$label_form_ds_assigned}:</div>
-	<select name="sel_ds2_{$input.name}" {$input.params}>
-	{foreach from=$input.avalues item=v key=k}
-		<option value="{$v}">{$input.adescs.$k}</option>
-	{/foreach}
-	</select>
-	</td></tr></table>
+	<table class="ko-select-wrapper">
+		<tr>
+			<td class="v-align-t" style="width:50%;">
+				<input type="hidden" class="{$input.add_class}" name="{$input.name}" value="{$input.avalue}">
+				<input type="hidden" name="old_{$input.name}" value="{$input.avalue}">
+				<div style="font-size:x-small;">{$label_form_ds_objects}:</div>
+				<div class="doubleselect doubleselect-left" id="sel_ds1_{$input.name}" name="sel_ds1_{$input.name}" data-js-func-add="{$input.js_func_add}" data-target-name="sel_ds2_{$input.name}" data-hidden-name="{$input.name}" {$input.params}>
+					{foreach from=$input.values item=v key=k}
+						<div class="select-item" data-value="{$v}" title="{$input.descs.$k}">{$input.descs.$k}</div>
+					{/foreach}
+				</div>
+			</td>
+			<td class="v-align-t btn-column" style="width:1%;">
+				<div style="font-size:x-small;">&nbsp;</div>
+				<div class="btn-group-vertical">
+				{if $input.show_moves}
+					<button type="button" class="btn btn-xs btn-default" alt="top" title="{$label_form_ds_top}" onclick="double_select_move('{$input.name}', 'top');">
+						<i class="fa fa-angle-double-up"></i>
+					</button>
+					<button type="button" class="btn btn-xs btn-default" alt="up" title="{$label_form_ds_up}" onclick="double_select_move('{$input.name}', 'up');">
+						<i class="fa fa-angle-up"></i>
+					</button>
+					<button type="button" class="btn btn-xs btn-default" alt="down" title="{$label_form_ds_down}" onclick="double_select_move('{$input.name}', 'down');">
+						<i class="fa fa-angle-down"></i>
+					</button>
+					<button type="button" class="btn btn-xs btn-default" alt="bottom" title="{$label_form_ds_bottom}" onclick="double_select_move('{$input.name}', 'bottom');">
+						<i class="fa fa-angle-double-down"></i>
+					</button>
+					<button type="button" class="btn btn-xs btn-danger" alt="del" title="{$label_form_ds_del}" onclick="double_select_move('{$input.name}', 'del');">
+						<i class="fa fa-remove"></i>
+					</button>
+				{else}
+					<button type="button" class="btn btn-xs btn-danger" alt="del" title="{$label_doubleselect_remove}" onclick="double_select_move('{$input.name}', 'del');">
+						<i class="fa fa-remove"></i>
+					</button>
+				{/if}
+				</div>
+			</td>
+			<td class="v-align-t" style="width:50%;">
+				<div style="font-size:x-small;">{$label_form_ds_assigned}:</div>
+				<div class="doubleselect doubleselect-right" id="{$id}" name="sel_ds2_{$input.name}" {$input.params}>
+					{foreach from=$input.avalues item=v key=k}
+						<div class="select-item" data-value="{$v}" title="{$input.adescs.$k}">{$input.adescs.$k}</div>
+					{/foreach}
+				</div>
+			</td>
+		</tr>
+	</table>
+
 
 {elseif $input.type == "checkboxes"}
-	{assign var="height" value=$input.size*20}
+	{assign var="height" value=$input.size*22+2}
 	<div class="koi-checkboxes-container" {$input.params} style="height: {$height}px;">
-		<input type="hidden" name="{$input.name}" value="{$input.avalue}" class="koi-checkboxes-value" />
-		<input type="hidden" name="old_{$input.name}" value="{$input.avalue}" />
+		<input type="hidden" class="koi-checkboxes-value {$input.add_class}" name="{$input.name}" value="{$input.avalue}">
+		<input type="hidden" name="old_{$input.name}" value="{$input.avalue}">
 		{foreach from=$input.values item=v key=k}
+			{uid loc="id"}
 			{if in_array($v,$input.avalues)}
 				{assign var="checked" value='checked="checked"'}
 				{assign var="class" value="koi-checkboxes-checked"}
@@ -125,117 +238,226 @@
 				{assign var="class" value=""}
 			{/if}
 			<div class="koi-checkboxes-entry {$class}">
-				<input type="checkbox" name="chk_{$input.name}" value="{$v}" {$checked} />
-				<span>{$input.descs.$k}</span>
+				<label for="chk_{$input.name}_entry_{$id}">
+					<input type="checkbox" id="chk_{$input.name}_entry_{$id}" name="chk_{$input.name}" value="{$v}" {$checked} />
+					{$input.descs.$k}
 			</div>
 		{/foreach}
 	</div>
 
+
+{elseif $input.type == "textplus"}
+	<div class="textplus-wrapper">
+		{if !$input.html_id}
+			{uid loc="id"}
+		{else}
+			{assign var="id" value=$input.html_id}
+		{/if}
+		{if $input.descs}
+		<div class="input-group input-group-sm">
+				{/if}
+				{if $input.descs}
+					<div class="input-group-btn">
+						<button type="button" id="{$id}-button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">
+							{ll key="selection"} <span class="caret"></span>
+						</button>
+						<ul id="{$id}-dropdown" class="dropdown-menu dropdown-menu textplus-list" role="menu">
+							{foreach from=$input.values item=v key=k}
+								{if $v==$input.value}
+									{assign var="valueKey" value=$k}
+								{/if}
+								{if $input.descs.$k}
+									<li><a href="#">{$input.descs.$k}</a></li>
+								{/if}
+							{/foreach}
+						</ul>
+					</div>
+				{/if}
+				<input type="text" class="input-sm form-control textplus-display {$input.add_class}" id="{$id}-input" name="{$input.name}" value="{$input.descs.$valueKey}" {$input.params}>
+			{if $input.descs}
+		</div>
+		{/if}
+	</div>
+
+
+
 {elseif $input.type == "textmultiplus"}
-	<table><tr><td>
-	<input type="hidden" name="{$input.name}" value="{$input.avalue}" />
-	<input type="hidden" name="old_{$input.name}" value="{$input.avalue}" />
-	<div style="font-size:x-small;">{$label_form_ds_objects}:</div>
-	{assign var="size0" value=$input.size-2}
-	<select name="sel_ds1_{$input.name}" size="{$size0}" {$input.params} onclick="{$input.js_func_add}(this.options[parseInt(this.selectedIndex)].text, this.options[parseInt(this.selectedIndex)].value, 'sel_ds2_{$input.name}', '{$input.name}');" onkeydown="if(event.keyCode == 13 || event.which == 13) {literal}{{/literal}{$input.js_func_add}(this.options[parseInt(this.selectedIndex)].text, this.options[parseInt(this.selectedIndex)].value, 'sel_ds2_{$input.name}', '{$input.name}');{literal}}{/literal}">
-	{foreach from=$input.values item=v key=k}
-		<option value="{$v}">{$input.descs.$k}</option>
-	{/foreach}
-	</select>
-	<br />
-	<input type="text" name="new_{$input.name}" class="textmultiplus_new" placeholder="{ll key='textmultiplus_placeholder'}" />
-	</td><td valign="top">
-	<div style="font-size:x-small;">&nbsp;</div>
-	{if $input.show_moves}
-		<img src="{$ko_path}images/ds_top.gif" border="0" alt="top" title="{$label_form_ds_top}" onclick="double_select_move('{$input.name}', 'top');" /><br />
-		<img src="{$ko_path}images/ds_up.gif" border="0" alt="up" title="{$label_form_ds_up}" onclick="double_select_move('{$input.name}', 'up');" /><br />
-		<img src="{$ko_path}images/ds_down.gif" border="0" alt="down" title="{$label_form_ds_down}" onclick="double_select_move('{$input.name}', 'down');" /><br />
-		<img src="{$ko_path}images/ds_bottom.gif" border="0" alt="bottom" title="{$label_form_ds_bottom}" onclick="double_select_move('{$input.name}', 'bottom');" /><br />
-		<img src="{$ko_path}images/ds_del.gif" border="0" alt="del" title="{$label_form_ds_del}" onclick="double_select_move('{$input.name}', 'del');" />
+	{if !$input.html_id}
+		{uid loc="id"}
 	{else}
-		<img src="{$ko_path}images/ds_del.gif" alt="del" title="{$label_doubleselect_remove}" border="0" onclick="double_select_move('{$input.name}', 'del');"/>
+		{assign var="id" value=$input.html_id}
 	{/if}
-	</td><td>
-	<div style="font-size:x-small;">{$label_form_ds_assigned}:</div>
-	<select name="sel_ds2_{$input.name}" {$input.params} size="{$input.size}">
-	{foreach from=$input.avalues item=v key=k}
-		<option value="{$v}">{$input.adescs.$k}</option>
-	{/foreach}
-	</select>
-	</td></tr></table>
+	<table class="ko-select-wrapper">
+		<tr>
+			<td class="v-align-t" style="width:50%;">
+				<input type="hidden" class="{$input.add_class}" name="{$input.name}" value="{$input.avalue}">
+				<input type="hidden" name="old_{$input.name}" value="{$input.avalue}">
+				<div style="font-size:x-small;">{$label_form_ds_objects}:</div>
+				{assign var="size0" value=$input.size-1}
+				<div class="doubleselect doubleselect-left" style="border-bottom:0px;border-bottom-left-radius:0px;border-bottom-right-radius:0px;" id="sel_ds1_{$input.name}" size="{$size0}" name="sel_ds1_{$input.name}" data-js-func-add="{$input.js_func_add}" data-target-name="sel_ds2_{$input.name}" data-hidden-name="{$input.name}" {$input.params}>
+					{foreach from=$input.values item=v key=k}
+						<div class="select-item" data-value="{$v}" title="{$input.descs.$k}">{$input.descs.$k}</div>
+					{/foreach}
+				</div>
+				<input class="input-sm form-control textmultiplus-new" style="border-top-left-radius:0px;border-top-right-radius:0px;height:18px;" type="text" name="new_{$input.name}" placeholder="{ll key='textmultiplus_placeholder'}">
+			</td>
+			<td class="v-align-t btn-column" style="width:1%;">
+				<div style="font-size:x-small;">&nbsp;</div>
+				<div class="btn-group-vertical">
+					{if $input.show_moves}
+						<button type="button" class="btn btn-xs btn-default" alt="top" title="{$label_form_ds_top}" onclick="double_select_move('{$input.name}', 'top');">
+							<i class="fa fa-angle-double-up"></i>
+						</button>
+						<button type="button" class="btn btn-xs btn-default" alt="up" title="{$label_form_ds_up}" onclick="double_select_move('{$input.name}', 'up');">
+							<i class="fa fa-angle-up"></i>
+						</button>
+						<button type="button" class="btn btn-xs btn-default" alt="down" title="{$label_form_ds_down}" onclick="double_select_move('{$input.name}', 'down');">
+							<i class="fa fa-angle-down"></i>
+						</button>
+						<button type="button" class="btn btn-xs btn-default" alt="bottom" title="{$label_form_ds_bottom}" onclick="double_select_move('{$input.name}', 'bottom');">
+							<i class="fa fa-angle-double-down"></i>
+						</button>
+						<button type="button" class="btn btn-xs btn-danger" alt="del" title="{$label_form_ds_del}" onclick="double_select_move('{$input.name}', 'del');">
+							<i class="fa fa-remove"></i>
+						</button>
+					{else}
+						<button type="button" class="btn btn-xs btn-danger" alt="del" title="{$label_doubleselect_remove}" onclick="double_select_move('{$input.name}', 'del');">
+							<i class="fa fa-remove"></i>
+						</button>
+					{/if}
+				</div>
+			</td>
+			<td class="v-align-t" style="width:50%;">
+				<div style="font-size:x-small;">{$label_form_ds_assigned}:</div>
+				<div class="doubleselect doubleselect-right" id="{$input.id}" name="sel_ds2_{$input.name}" {$input.params}>
+					{foreach from=$input.avalues item=v key=k}
+						<div class="select-item" data-value="{$v}" title="{$input.sdescs.$k}">{$input.adescs.$k}</div>
+					{/foreach}
+				</div>
+			</td>
+		</tr>
+	</table>
 
 {elseif $input.type == "dyndoubleselect"}
-	<table><tr><td>
-	<input type="hidden" name="{$input.name}" value="{$input.avalue}" />
-	<input type="hidden" name="old_{$input.name}" value="{$input.avalue}" />
-	<select name="sel_ds1_{$input.name}" {$input.params} size="10" onclick="{if !$input.nochecklist}if(!checkList(1)) return false;{/if}double_select_add(this.options[parseInt(this.selectedIndex)].text, this.options[parseInt(this.selectedIndex)].value, 'sel_ds2_{$input.name}', '{$input.name}');">
-	</select>
-	</td><td valign="top">
-	<img src="{$ko_path}images/ds_del.gif" alt="del" title="{$label_doubleselect_remove}" border="0" onclick="double_select_move('{$input.name}', 'del');"/>
-	</td><td>
-	<select name="sel_ds2_{$input.name}" {$input.params} size="10">
-	{foreach from=$input.avalues item=v key=k}
-		<option value="{$v}">{$input.adescs.$k}</option>
-	{/foreach}
-	</select>
-	</td></tr></table>
+	{if !$input.html_id}
+		{uid loc="id"}
+	{else}
+		{assign var="id" value=$input.html_id}
+	{/if}
+	<table class="ko-select-wrapper">
+		<tr>
+			<td class="v-align-t" style="width:50%;">
+				<input type="hidden" class="{$input.add_class}" name="{$input.name}" value="{$input.avalue}">
+				<input type="hidden" name="old_{$input.name}" value="{$input.avalue}">
+				<div style="font-size:x-small;">{$label_form_ds_objects}:</div>
+				<div class="dyndoubleselect ko-select" id="sel_ds1_{$input.name}" name="sel_ds1_{$input.name}" data-target-name="sel_ds2_{$input.name}" data-hidden-name="{$input.name}" data-nocheck-list="{if $input.nochecklist}1{else}0{/if}" {$input.params}>
+				</div>
+			</td>
+			<td class="v-align-t">
+				<div style="font-size:x-small;">&nbsp;</div>
+				<button type="button" class="btn btn-xs btn-danger" alt="del" title="{$label_doubleselect_remove}" onclick="double_select_move('{$input.name}', 'del');">
+					<i class="fa fa-remove"></i>
+				</button>
+			</td>
+			<td class="v-align-t" style="width:50%;">
+				<div style="font-size:x-small;">{$label_form_ds_assigned}:</div>
+				<div class="doubleselect doubleselect-right" id="{$id}" name="sel_ds2_{$input.name}" {$input.params}>
+					{foreach from=$input.avalues item=v key=k}
+						<div class="select-item" data-value="{$v}" title="{$input.adescs.$k}">{$input.adescs.$k}</div>
+					{/foreach}
+				</div>
+			</td>
+		</tr>
+	</table>
 
 
 {elseif $input.type == "peoplesearch"}
-	<table><tr><td valign="top">
-	<div class="peoplesearchwrap">
-		<input type="text" class="peoplesearch" name="txt_{$input.name}" autocomplete="off" placeholder="{ll key='peoplesearch_placeholder'}" /><br />
-		<select class="peoplesearchresult" size="{if $input.sizeresults}{$input.sizeresults}{else}4{/if}" name="sel_ds1_{$input.name}">
-	</div>
-	</td><td valign="top">
-		<img src="{$ko_path}images/ds_del.gif" alt="del" title="{$label_doubleselect_remove}" border="0" onclick="double_select_move('{$input.name}', 'del');" />
-	</td><td valign="top">
-		<input type="hidden" name="{$input.name}" value="{$input.avalue}" />
-		<input type="hidden" name="old_{$input.name}" value="{$input.avalue}" />
-		<select name="sel_ds2_{$input.name}" {$input.params} size="{if $input.sizeact}{$input.sizeact}{else}7{/if}" class="peoplesearchact">
-		{foreach from=$input.avalues item=v key=k}
-			{if $v}
-				<option value="{$v}">{$input.adescs.$k}</option>
-			{/if}
-		{/foreach}
-		</select>
-	</td></tr></table>
+	{if !$input.html_id}
+		{assign var="id" value=$input.name}
+	{else}
+		{assign var="id" value=$input.html_id}
+	{/if}
+
+	<input type="hidden" class="{$input.add_class}" name="{$input.name}" id="{$id}">
+	<script>
+		$('#{$id}').peoplesearch({ldelim}
+			multiple: {if $input.single}false{else}true{/if}{if $input.data},
+			selectedPeople: {$input.data}{elseif $input.avalues},
+			avalues: {$input.avalues|@json_encode},
+			adescs: {utf8_encode_array arr=$input.adescs var="encArray"}{$encArray|@json_encode}{/if}{if $input.exclude},
+			exclude: '{$input.exclude}'{/if}{if $input.exclude_sql},
+			excludeSql: '{$input.exclude_sql}'{/if}
+		{rdelim});
+	</script>
+
+
+{elseif $input.type == "groupsearch"}
+	{if !$input.html_id}
+		{assign var="id" value=$input.name}
+	{else}
+		{assign var="id" value=$input.html_id}
+	{/if}
+
+	<input type="hidden" class="{$input.add_class}" name="{$input.name}" id="{$id}">
+	<script>
+		$('#{$id}').groupsearch({ldelim}
+			multiple: {if $input.single}false{else}true{/if}{if $input.data},
+			selectedGroups: {$input.data}{elseif $input.avalues},
+			avalues: {if $input.avalues}{$input.avalues|@json_encode}{/if}{if $input.avalue},
+			avalue: {$input.avalue}{/if},
+			adescs: {utf8_encode_array arr=$input.adescs var="encArray"}{$encArray|@json_encode}{/if}{if $input.exclude},
+			exclude: '{$input.exclude}'{/if}{if $input.exclude_sql},
+			excludeSql: '{$input.exclude_sql}'{/if}{if $input.include_roles},
+			includeRoles: true{/if}{if $input.show_removal_warning === FALSE},
+			showRemovalWarning: false{/if}
+			{rdelim});
+	</script>
 
 
 {elseif $input.type == "peoplefilter"}
-	<table><tr><td valign="top">
-	<input type="hidden" name="{$input.name}" value="{$input.avalue}" class="peoplefilter-value" />
-	<input type="hidden" name="old_{$input.name}" value="{$input.avalue}" />
-	<div style="font-size:x-small;">{ll key="form_peoplefilter_filter"}:</div>
-	<select name="peoplefilter_type_{$input.name}" size="0" {$input.params} class="sel-peoplefilter">
-	<option value=""></option>
-	{foreach from=$input.filters item=v key=k}
-		<option value="{$k}">{$v}</option>
-	{/foreach}
-	</select>
-	<br />
-	<div id="peoplefilter_vars_{$input.name}" name="peoplefilter_vars_{$input.name}"></div>
-	<input type="button" name="submit_peoplefilter_{$input.name}" value="{ll key='filter_add'}" class="peoplefilter-submit" />
-	</td><td valign="top">
-	<div style="font-size:x-small;">&nbsp;</div>
-	<img src="{$ko_path}images/ds_del.gif" alt="del" title="{$label_doubleselect_remove}" border="0" onclick="double_select_move('{$input.name}', 'del');"/>
-	</td><td valign="top">
-	<div style="font-size:x-small;">{$label_form_ds_assigned}:</div>
-	<select name="sel_ds2_{$input.name}" {$input.params} size="{$input.size}" class="peoplefilter-act">
-	{foreach from=$input.avalues item=v key=k}
-		<option value="{$v}">{$input.adescs.$k}</option>
-	{/foreach}
-	</select>
-	</td></tr></table>
+	<table class="ko-select-wrapper">
+		<tr>
+			<td class="v-align-t">
+				<input type="hidden" class="{$input.add_class} peoplefilter-value" name="{$input.name}" value="{$input.avalue}">
+				<input type="hidden" name="old_{$input.name}" value="{$input.avalue}">
+				<div style="font-size:x-small;">{ll key="form_peoplefilter_filter"}:</div>
+
+				<div class="doubleselect sel-peoplefilter" name="peoplefilter_type_{$input.name}" {$input.params} size="{$input.size}">
+					<div class="select-item" data-value=""></div>
+					{foreach from=$input.filters item=v key=k}
+						<div class="select-item" data-value="{$k}" title="{$v}">{$v}</div>
+					{/foreach}
+				</div>
+
+				<div id="peoplefilter_vars_{$input.name}" name="peoplefilter_vars_{$input.name}"></div>
+				<button type="button" class="btn btn-sm btn-primary peoplefilter-submit" name="submit_peoplefilter_{$input.name}" value="{ll key='filter_add'}">
+					{ll key='filter_add'}
+				</button>
+			</td>
+			<td class="btn-column v-align-t">
+				<div style="font-size:x-small;">&nbsp;</div>
+				<button type="button" class="btn btn-xs btn-danger" alt="del" title="{$label_doubleselect_remove}" onclick="double_select_move('{$input.name}', 'del');">
+					<i class="fa fa-remove"></i>
+				</button>
+			</td>
+			<td class="v-align-t">
+				<div style="font-size:x-small;">{$label_form_ds_assigned}:</div>
+				<div class="doubleselect doubleselect-right peoplefilter-act" name="sel_ds2_{$input.name}" {$input.params} size="{$input.size}">
+					{foreach from=$input.avalues item=v key=k}
+						<div class="select-item" data-value="{$v}" title="{$input.adescs.$k}">{$input.adescs.$k}</div>
+					{/foreach}
+				</div>
+			</td>
+		</tr>
+	</table>
 
 
 {elseif $input.type == "foreign_table"}
-	<span class="form_ft_new" data-field="{$ft_field}" data-after="0" data-pid="{$ft_pid}">
-	<img src="{$ko_path}images/icon_plus.png" border="0" />
-	{$label_form_ft_new}
-	</span>
+	<div class="btn-group btn-group-sm">
+	<button type="button" class="btn btn-sm btn-success form_ft_new" data-field="{$ft_field}" data-after="0" data-pid="{$ft_pid}">
+		<i class="fa fa-plus"></i>&nbsp;{$label_form_ft_new}
+	</button>
 	{if $ft_preset_table != null}
-		<span style="margin-left:20px;">
 			<script>
 				<!--
 				if (window.kota_ft_alert_no_join_value === undefined) {ldelim}
@@ -244,19 +466,19 @@
 				window.kota_ft_alert_no_join_value['{$ft_field}'] = '{$ft_alert_no_join_value}';
 				//-->
 			</script>
-			<button class="form_ft_load_preset" data-field="{$ft_field}" data-after="0" data-pid="{$ft_pid}" data-preset-table="{$ft_preset_table}" data-preset-join-value-local="{$ft_preset_join_value_local}" data-preset-join-column-foreign="{$ft_preset_join_column_foreign}">
-				{ll key="form_ft_button_load_presets"}
+			<button class="btn btn-sm btn-default form_ft_load_preset" data-field="{$ft_field}" data-after="0" data-pid="{$ft_pid}" data-preset-table="{$ft_preset_table}" data-preset-join-value-local="{$ft_preset_join_value_local}" data-preset-join-column-foreign="{$ft_preset_join_column_foreign}">
+				<span class="glyphicon glyphicon-open"></span>&nbsp;{ll key="form_ft_button_load_presets"}
 			</button>
-		</span>
 	{/if}
-	<div id="ft_content_{$ft_field}" name="ft_content_{$ft_field}">{$ft_content}</div>
+	</div>
+	<div id="ft_content_{$ft_field}" name="ft_content_{$ft_field}" style="margin-top:5px;">{$ft_content}</div>
 
 
 {elseif $input.type == "html"}
 	{$input.value}
 
 {elseif $input.type == "hidden"}
-	<input type="hidden" name="{$input.name}" value="{$input.ovalue}" />
+	<input type="hidden" class="{$input.add_class}" name="{$input.name}" value="{$input.ovalue}" />
 	{$input.value}
 
 {elseif $input.type == "   "}

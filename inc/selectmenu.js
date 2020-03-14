@@ -1,1 +1,217 @@
-var smListPool={},itemSepRE=/\s*,\s*/,rangeSepRE=/\s*:\s*/;function smTrimIt(a){return a.replace(/^\s+/,"").replace(/\s+$/,"")}function smGetItems(e){var a=new Array();var c=smTrimIt(e).split(itemSepRE);for(var f=0;f<c.length;f++){if(c[f].indexOf(":")==-1){a[a.length]=c[f]}else{var b=c[f].split(rangeSepRE);for(var d=parseInt(b[0],10);d<=parseInt(b[1],10);d++){a[a.length]=d}}}return a}function smListOBJ(d,c,b,a){this.id=d;this.non_item_tag=c;this.sub_tag=b;this.back_tag=a;this.list=null;this.top_idx=0;this.top_list=[];this.item_pool={};this.path={}}function smOptionItemOBJ(d,a,b,c){this.type="I";this.id=d;this.num=a;this.value=b;this.desc=c}function smSubListItemOBJ(e,c,a,d,b){this.type="M";this.id=e;this.num=c;this.idx=a;this.desc=d;this.item_pool=smGetItems(b)}function smEmptyList(c){var b=smListPool[c].list;for(var a=b.options.length-1;a>=0;a--){b.options[a]=null}}function smUpdateList(){var d=this.list,c=smListPool[d],b=this.value;if(b==c.back_tag){smEmptyList(d);smSetTopList(d,-1)}else{if(b.substring(0,c.sub_tag.length)==c.sub_tag){var a=b.substring(c.sub_tag.length+1);smEmptyList(d);smSetSubList(d,a)}else{smSetCookie(d+"-idx",this.selectedIndex)}}}function optionOBJ(b,a){this.text=b;this.value=a}function smSetList(d,a,c){for(var b=0;b<a.length;b++){d.options[b]=new Option(a[b].text,a[b].value);d.options[b].title=a[b].text}if(c>=0){d.selectedIndex=c}}function smGetList(f,b){var c=smListPool[f],a=new Array(),e=c.top_list;if(b!=""&&c.item_pool[b]&&c.item_pool[b].type=="M"){e=c.item_pool[b].item_pool}for(i=0;i<e.length;i++){var d=c.item_pool[e[i]];if(d){if(d.type=="I"){a[i]=new optionOBJ(d.desc,d.value)}else{a[i]=new optionOBJ(d.desc,c.sub_tag+":"+d.num)}}}return a}function smSetTopList(f,e){var c=smListPool[f],b=smGetList(f,"");if(e==-1){smSetList(c.list,b,-1);smSetCookie(f+"-type","");smSetCookie(f+"-idx","")}else{var d=smGetCookie(f+"-type"),a=smGetCookie(f+"-idx");if(e==0&&d!=""&&a!=""){b=smGetList(f,d);smSetList(c.list,b,parseInt(a,10));return}smSetList(c.list,b,c.top_idx);smSetCookie(f+"-type","top");smSetCookie(f+"-idx",c.top_idx)}}function smSetSubList(d,c){var b=smListPool[d],a=smGetList(d,c);smSetList(b.list,a,b.item_pool[c].idx);smSetCookie(d+"-type",c);smSetCookie(d+"-idx",b.item_pool[c].idx)}function _setCookie(a,b){document.cookie=a+"="+b}function smSetCookie(a,b){setTimeout("_setCookie('"+a+"','"+b+"')",0)}function smGetCookie(a){var b=new RegExp(a+"=([^;]+)");if(document.cookie.search(b)!=-1){return RegExp.$1}else{return""}}function addList(d,c,b,a){smListPool[d+""]=new smListOBJ(d+"",c,b,a)}function addItem(d,a,b,c){if(smListPool[d+""]){smListPool[d+""].item_pool[a+""]=new smOptionItemOBJ(d+"",a+"",b,c||b)}}function addSubList(e,c,a,d,b){if(smListPool[e+""]){smListPool[e+""].item_pool[c+""]=new smSubListItemOBJ(e+"",c+"",a-1,d,b)}}function addTopList(c,a,b){if(smListPool[c+""]){smListPool[c+""].top_idx=a-1;smListPool[c+""].top_list=smGetItems(b)}}function initList(b,a){if(smListPool[b+""]&&a){smListPool[b+""].list=a;a.list=b+"";a.onchange=smUpdateList;smEmptyList(b+"");smSetTopList(b+"",0)}}function resetList(a){smEmptyList(a+"");smSetTopList(a+"",1)}function checkList(c){var b=smListPool[c+""],a=b.list.value;return(a!=b.back_tag&&a!=b.non_item_tag&&a.substring(0,b.sub_tag.length)!=b.sub_tag)};
+// Select Menu 3
+
+// Copyright Xin Yang 2004
+// Web Site: www.yxScripts.com
+// EMail: m_yangxin@hotmail.com
+// Last Updated: 2004-07-22
+
+// This script is free as long as the copyright notice remains intact.
+
+// ------
+var smListPool={}, itemSepRE=/\s*,\s*/, rangeSepRE=/\s*:\s*/;
+
+function smTrimIt(string) {
+  return string.replace(/^\s+/, "").replace(/\s+$/, "");
+}
+
+function smGetItems(item_list) {
+  var item_pool=new Array();
+
+  var items=smTrimIt(item_list).split(itemSepRE);
+  for (var i=0; i<items.length; i++) {
+    if (items[i].indexOf(":")==-1) {
+      item_pool[item_pool.length]=items[i];
+    }
+    else {
+      var range=items[i].split(rangeSepRE);
+      for (var j=parseInt(range[0],10); j<=parseInt(range[1],10); j++) {
+        item_pool[item_pool.length]=j;
+      }
+    }
+  }
+
+  return item_pool;
+}
+
+function smListOBJ(id, non_item_tag, sub_tag, back_tag) {
+  this.id=id;
+  this.non_item_tag=non_item_tag;
+  this.sub_tag=sub_tag;
+  this.back_tag=back_tag;
+
+  this.list=null;
+  this.top_idx=0; this.top_list=[];
+  this.item_pool={}; this.path={};
+}
+
+function smOptionItemOBJ(id, num, value, desc) {
+  this.type="I";
+  this.id=id;
+  this.num=num;
+  this.value=value;
+  this.desc=desc;
+}
+
+function smSubListItemOBJ(id, num, idx, desc, item_list) {
+  this.type="M";
+  this.id=id;
+  this.num=num;
+  this.idx=idx;
+  this.desc=desc;
+
+  this.item_pool=smGetItems(item_list);
+}
+
+function smEmptyList(id) {
+  var list=smListPool[id].list;
+  $(list).html('');
+}
+
+function smUpdateList() {
+  var $this = $(this);
+  var id=this.list, list=smListPool[id], option=$this.data('value')+"";
+
+  if (option==list.back_tag) {
+    smEmptyList(id);
+    smSetTopList(id, -1);
+  }
+  else if (option.substring(0,list.sub_tag.length)==list.sub_tag) {
+    var sub=option.substring(list.sub_tag.length+1);
+    smEmptyList(id);
+    smSetSubList(id, sub);
+  }
+  else {
+    smSetCookie(id+"-idx", $this.children().index($this.children('.active')[0]));
+  }
+}
+
+function optionOBJ(text, value) {
+  this.text=text; this.value=value;
+}
+
+function smSetList(list, options, selected) {
+  var $list = $(list);
+  for (var i=0; i<options.length; i++) {
+    $list.append(getSelectOption(options[i].value, options[i].text));
+  }
+  if (selected>=0) {
+    $($list.children()[selected]).addClass(doubleSelectActiveClass);
+  }
+}
+
+function smGetList(id, num) {
+  var pool=smListPool[id], options=new Array(), list=pool.top_list;
+
+  if (num!="" && pool.item_pool[num] && pool.item_pool[num].type=="M") {
+    list=pool.item_pool[num].item_pool;
+  }
+
+  for (i=0; i<list.length; i++) {
+    var item=pool.item_pool[list[i]];
+    if (item) {
+      if (item.type=="I") {
+        options[i]=new optionOBJ(item.desc, item.value);
+      }
+      else {
+        options[i]=new optionOBJ(item.desc, pool.sub_tag+":"+item.num);
+      }
+    }
+  }
+
+  return options;
+}
+
+// mode: 0:use cookie index or default if cookie not found, 1:use default, -1:no selected
+function smSetTopList(id, mode) {
+  var pool=smListPool[id], options=smGetList(id, "");
+
+  if (mode==-1) {
+    smSetList(pool.list, options, -1);
+    smSetCookie(id+"-type", ""); smSetCookie(id+"-idx", "");
+  }
+  else {
+    var type=smGetCookie(id+"-type"), idx=smGetCookie(id+"-idx");
+
+    if (mode==0 && type!="" && idx!="") {
+      options=smGetList(id, type);
+      smSetList(pool.list, options, parseInt(idx,10));
+      return;
+    }
+
+    smSetList(pool.list, options, pool.top_idx);
+    smSetCookie(id+"-type", "top"); smSetCookie(id+"-idx", pool.top_idx);
+  }
+}
+
+function smSetSubList(id, sub) {
+  var pool=smListPool[id], options=smGetList(id, sub);
+  smSetList(pool.list, options, pool.item_pool[sub].idx);
+  smSetCookie(id+"-type", sub); smSetCookie(id+"-idx", pool.item_pool[sub].idx);
+}
+
+function _setCookie(name, value) {
+  document.cookie=name+"="+value;
+}
+function smSetCookie(name, value) {
+  setTimeout("_setCookie('"+name+"','"+value+"')",0);
+}
+
+function smGetCookie(name) {
+  var cookieRE=new RegExp(name+"=([^;]+)");
+  if (document.cookie.search(cookieRE)!=-1) {
+    return RegExp.$1;
+  }
+  else {
+    return "";
+  }
+}
+
+// ------
+function addList(id, non_item_tag, sub_tag, back_tag) {
+  smListPool[id+""]=new smListOBJ(id+"", non_item_tag, sub_tag, back_tag);
+}
+
+function addItem(id, num, value, desc) {
+  if (smListPool[id+""]) {
+    smListPool[id+""].item_pool[num+""]=new smOptionItemOBJ(id+"", num+"", value, desc||value);
+  }
+}
+
+function addSubList(id, num, idx, desc, item_list) {
+  if (smListPool[id+""]) {
+    smListPool[id+""].item_pool[num+""]=new smSubListItemOBJ(id+"", num+"", idx-1, desc, item_list);
+  }
+}
+
+function addTopList(id, idx, item_list) {
+  if (smListPool[id+""]) {
+    smListPool[id+""].top_idx=idx-1;
+    smListPool[id+""].top_list=smGetItems(item_list);
+  }
+}
+
+function initList(id,list) {
+  if (smListPool[id+""] && list) {
+    smListPool[id+""].list=list;
+
+    list.list=id+"";
+    list.onchange=smUpdateList;
+
+    smEmptyList(id+"");
+    smSetTopList(id+"",0);
+  }
+}
+
+function resetList(id) {
+  smEmptyList(id+"");
+  smSetTopList(id+"", 1);
+}
+
+function checkList(id) {
+
+  var list=smListPool[id+""];
+  var $list = $(list.list);
+  var value= $list.data('value')+"";
+
+  return (value!=list.back_tag && value!=list.non_item_tag && value.substring(0,list.sub_tag.length)!=list.sub_tag);
+}

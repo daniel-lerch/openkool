@@ -1,0 +1,151 @@
+//== Top header
+//
+//##
+@top-header-height:                  52px;
+
+
+
+//== Navbar
+//
+//##
+@navbar-border-radius:                  none;
+@nav-link-padding:                      10px 15px;
+@nav-link-padding-sm-horizontal:        11px;
+@nav-link-padding-xs-horizontal:        7px;
+
+
+//== Secondary secondary-navbar
+//
+//##
+@secondary-navbar-color:                @kool-p-brightest;
+@secondary-navbar-bg:                   @navbar-inverse-link-active-bg;
+@secondary-navbar-height:               @navbar-height;
+@secondary-navbar-padding-horizontal:   floor((@grid-gutter-width / 2));
+@secondary-navbar-padding-vertical:     ((@secondary-navbar-height - @line-height-computed) / 2);
+
+// Inverted secondary-navbar links
+@secondary-navbar-link-color:           @kool-brightest;
+@secondary-navbar-link-hover-color:     @secondary-navbar-link-color;
+@secondary-navbar-link-hover-bg:        darken(@kool-p-darkest, 5%);
+@secondary-navbar-link-active-color:    @secondary-navbar-link-hover-color;
+@secondary-navbar-link-active-bg:       @secondary-navbar-link-hover-bg;
+@secondary-navbar-link-disabled-color:  @kool-p-brighter;
+@secondary-navbar-link-disabled-bg:     transparent;
+
+// danger state
+@secondary-navbar-link-danger-bg:           darken(@brand-danger, 15%);
+@secondary-navbar-link-danger-hover-bg:     darken(@secondary-navbar-link-danger-bg, 7%);
+@secondary-navbar-link-danger-active-bg:    @secondary-navbar-link-danger-hover-bg;
+
+@secondary-navbar-border:               @secondary-navbar-link-hover-bg;
+
+// Toggle button
+@secondary-navbar-toggle-border-color:  @kool-brightest;
+@secondary-navbar-toggle-hover-bg:      darken(@kool-p-darkest, 5%);
+@secondary-navbar-toggle-icon-bar-bg:   @kool-brightest;
+
+
+
+//== Sidebar
+//
+//##
+@sidebar-width:                             240px;
+@sidebar-bg:                                @secondary-navbar-bg;
+@sidebar-panel-heading-bg:                  @sidebar-bg;
+@sidebar-panel-heading-color:               @kool-brightest;
+@sidebar-panel-padding-horizontal:          8px;
+@sidebar-panel-body-padding-vertical:       3px;
+@sidebar-panel-body-padding-horizontal:     0px;
+@sidebar-panel-link-color:                  @dropdown-link-color;
+@sidebar-panel-link-hover-color:            @dropdown-link-hover-color;
+@sidebar-panel-link-hover-bg:               @dropdown-link-hover-bg;
+@sidebar-panel-link-active-color:           @dropdown-link-active-color;
+@sidebar-panel-link-active-bg:              @dropdown-link-active-bg;
+@sidebar-panel-link-disabled-color:         @dropdown-link-disabled-color;
+@sidebar-panel-link-disabled-bg:            @navbar-default-link-disabled-bg;
+@sidebar-panel-link-disabled-cursor:        @link-disabled-cursor;
+@sidebar-panel-seperator-height:            (2 * @sidebar-panel-body-padding-vertical);
+@sidebar-panel-heading-padding-vertical:    7px;
+@sidebar-panel-link-padding-vertical:       3px;
+
+
+
+//== Itemlist
+//
+//##
+@itemlist-padding:          5px;
+@itemlist-border:           1px solid #bce8f1;
+@itemlist-border-radius:    5px;
+@itemlist-height:           250px;
+
+
+//== Tables
+//
+//##
+@kool-table-heading-bg:     @state-info-bg;
+@kool-table-footer-bg:      @kool-table-heading-bg;
+@kool-table-row-hover-bg:   @kool-p-brightest;
+
+
+//== Alert
+//
+//##
+@alert-margin-bottom:       5px;
+
+
+//== List
+//
+//##
+
+
+//== Formular
+//
+//##
+@datafields-header-bg:              @state-success-bg;
+@datafields-header-border-radius:   @border-radius-base;
+@datafields-header-border-color:    @state-success-border;
+@datafields-header-color:           @state-success-text;
+
+
+
+//== Submenu Leute
+//
+//##
+// filter
+@leute-filter-heading-bg:           #fff;
+@leute-filter-heading-color:        @kool-p-darkest;
+@leute-filter-heading-active-bg:    darken(@state-info-bg, 15%);
+@leute-filter-button-bg:            @state-info-bg;
+@leute-filter-button-color:         auto;
+@leute-filter-button-hover-bg:      darken(@state-info-bg, 15%);
+@leute-filter-button-hover-color:   auto;
+
+
+
+//== Footer
+//
+//##
+@footer-height:             @navbar-height;
+@footer-bg:                 @navbar-inverse-bg;
+@footer-color:              #fff;
+@footer-link-color:         @kool-p-darkest;
+@footer-link-color-hover:   darken(@footer-link-color, 20%);
+
+
+
+@row-danger-bg:             darken(@alert-danger-bg, 8%);
+@row-success-bg:            darken(@alert-success-bg, 8%);
+@row-warning-bg:            darken(@alert-warning-bg, 8%);
+@row-primary-bg:            lighten(@btn-primary-bg, 20%);
+@row-info-bg:               @alert-info-bg;
+@row-inactive-bg:           darken(@gray-lighter, 3%);
+@row-inactive-color:        lighten(@gray-light, 5%);
+@row-inactive-link-color:   lighten(@link-color, 25%);
+
+
+@double-select-item-height:         18px;
+
+
+
+// Types
+@state-highlight-text:      #ffdd05;

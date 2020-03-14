@@ -1,0 +1,81 @@
+// Navbar vertical align
+//
+// Vertically center elements in the navbar.
+// Example: an element has a height of 30px, so write out `.navbar-vertical-align(30px);` to calculate the appropriate top margin.
+
+.secondary-navbar-vertical-align(@element-height) {
+    .vertical-align(@element-height, @secondary-navbar-height)
+}
+
+.top-header-vertical-align(@element-height) {
+    .vertical-align(@element-height, @top-header-height)
+}
+
+.vertical-align(@element-height, @container-height) {
+    margin-top: ((@container-height - @element-height) / 2);
+    margin-bottom: ((@container-height - @element-height) / 2);
+}
+
+.kool-navbar-toggle(@container-height) {
+    .navbar-toggle,
+    .sidebar-toggle {
+        position: relative;
+        margin-right: @navbar-padding-horizontal;
+        padding: 6px 7px;
+        .vertical-align(26px, @container-height);
+        background-color: transparent;
+        background-image: none; // Reset unusual Firefox-on-Android default style; see https://github.com/necolas/normalize.css/issues/214
+        border: 1px solid transparent;
+        border-radius: @border-radius-base;
+
+        // We remove the `outline` here, but later compensate by attaching `:hover`
+        // styles to `:focus`.
+        &:focus {
+            outline: 0;
+        }
+
+        // Bars
+        .icon-bar {
+            display: block;
+            width: 18px;
+            height: 2px;
+            border-radius: 1px;
+        }
+        .icon-bar + .icon-bar {
+            margin-top: 3px;
+        }
+    }
+
+    .sidebar-toggle {
+        float:left;
+    }
+    .navbar-toggle {
+        float:right;
+    }
+
+    .navbar-toggle,
+    .sidebar-toggle {
+        border-color: @secondary-navbar-toggle-border-color;
+        &:hover,
+        &.active {
+            background-color: @secondary-navbar-toggle-hover-bg;
+        }
+        &:focus {
+            border-color: darken(@secondary-navbar-toggle-border-color, 5%);
+        }
+        .icon-bar {
+            background-color: @secondary-navbar-toggle-icon-bar-bg;
+        }
+    }
+}
+
+.contextual-badge(@color) {
+    color: #fff;
+    background-color: @color;
+    &[href] {
+        &:hover,
+        &:focus {
+            background-color: darken(@color, 10%);
+        }
+    }
+}

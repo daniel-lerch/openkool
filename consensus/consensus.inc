@@ -26,7 +26,7 @@
 
 
 function ko_consensus_list_consensus () {
-	global $smarty, $personId, $start, $span, $DATETIME, $BASE_PATH, $SMARTY_RENDER_TEMPLATE;
+	global $KOTA, $smarty, $personId, $start, $span, $team_ids, $DATETIME, $BASE_PATH, $SMARTY_RENDER_TEMPLATE;
 
 	require_once($BASE_PATH . 'inc/kotafcn.php');
 
@@ -35,9 +35,14 @@ function ko_consensus_list_consensus () {
 	// sort out teams which don't support consensus
 	$noConsensusAllowed = array();
 	foreach ($teams as $k => $team) {
-		if ($team['allow_consensus'] == 0) {
-			$noConsensusAllowed[] = $team['name'];
+		if ($team_ids !== NULL && !in_array($team['id'], $team_ids)) {
 			unset($teams[$k]);
+
+		} else {
+			if ($team['allow_consensus'] == 0) {
+				$noConsensusAllowed[] = $team['name'];
+				unset($teams[$k]);
+			}
 		}
 	}
 
@@ -70,7 +75,7 @@ function ko_consensus_list_consensus () {
 	foreach ($events as $k => $event) {
 		$found = false;
 		foreach ($teams as $team) {
-			if (in_array($event['eventgruppen_id'], $team['eg_ids']) && trim($team['rotatype']) == 'event') {
+			if (in_array($event['eventgruppen_id'], $team['eg_ids']) && trim($team['rotatype']) == 'event' && !ko_rota_is_scheduling_disabled($event['id'], $team['id'])) {
 				$found = $team['id'];
 			}
 		}
@@ -83,7 +88,7 @@ function ko_consensus_list_consensus () {
 			$events[$k]['_processed'] = $processedEvent;
 			$events[$k]['startingDate'] = strftime('%A ' . $DATETIME['dmy'], strtotime($event['startdatum'] . ' ' . $event['startzeit']));
 			$events[$k]['startingTime'] = ($event['startzeit'] == '00:00:00' && $event['endzeit'] == '00:00:00') ? getLL('time_all_day') : strftime('%H:%M', strtotime($event['startdatum'] . ' ' . $event['startzeit']));
-			$eventStatus = ko_rota_get_status($found, $event['id']);
+			$eventStatus = ko_rota_get_status($event['id']);
 			$events[$k]['status'] = $eventStatus;
 			$events[$k]['_processed']['eventgruppen_name'] = $eventGroups[$event['eventgruppen_id']]['name'];
 		}
@@ -186,8 +191,19 @@ function ko_rota_get_teams($id) {
 
 
 function ko_consensus_update_cell ($eventId, $teamId, $personId, $answer, $force = false) {
-	if ($force == false && ko_rota_get_status($teamId, $eventId) != 1) {
-		return;
+	if ($force == false && ko_rota_get_status($eventId) != 1) {
+		return 'event_closed';
+	}
+	$team = db_select_data('ko_rota_teams', "WHERE `id` = '{$teamId}'", '*', '', '', TRUE);
+	if ($force == false && $team['consensus_disable_maybe_option'] && $answer == 'maybe') {
+		return 'maybe_option_disabled';
+	}
+	$maxPromises = $team['consensus_max_promises'];
+	if ($force == false && $maxPromises > 0 && $answer == 'yes') {
+		$promises = db_get_count('ko_rota_consensus', 'person_id', "AND `team_id` = '{$teamId}' AND `event_id` = '{$eventId}' AND `person_id` <> '{$personId}' AND `answer` = 3");
+		if ($promises >= $maxPromises) {
+			return 'max_promises_reached';
+		}
 	}
 
 	$am = array ('no_answer' => 0, 'no' => 1, 'maybe' => 2, 'yes' => 3);
@@ -199,6 +215,8 @@ function ko_consensus_update_cell ($eventId, $teamId, $personId, $answer, $force
 	else {
 		db_update_data('ko_rota_consensus', 'where event_id = \'' . $eventId . '\' and team_id = ' . $teamId . ' and person_id = ' . $personId, array('answer' => $am[$answer]));
 	}
+
+	return 0;
 } // ko_consensus_update_cell ()
 
 
@@ -226,7 +244,7 @@ function ko_consensus_get_cell_contents($mode, $eventId, $teamId, $personId) {
  * @param $eventId
  * @param $teamId
  * @param string $id
- * @return array: $mode == 'person' ? 0, 1, 2, 3 : array(no_answer s, no s, maybe s, yes s)
+ * @return array|int: $mode == 'person' ? 0, 1, 2, 3 : array(no_answer s, no s, maybe s, yes s)
  */
 function ko_consensus_get_answers($mode = 'person', $eventId, $teamId, $id = '') {
 	if ($mode == 'person') {
@@ -257,7 +275,7 @@ function ko_consensus_get_answers($mode = 'person', $eventId, $teamId, $id = '')
 
 
 function ko_consensus_get_cell_contents_inner ($mode, $eventId, $teamId, $personId) {
-	$status = ko_rota_get_status($teamId, $eventId);
+	$status = ko_rota_get_status($eventId);
 	// status map
 	$sm = array(1 => 'open', 2 => 'closed');
 
@@ -268,16 +286,47 @@ function ko_consensus_get_cell_contents_inner ($mode, $eventId, $teamId, $person
 	$answerPerson = ko_consensus_get_answers('person', $eventId, $teamId, $personId);
 	$answersTeam = ko_consensus_get_answers('team', $eventId, $teamId);
 
-	$htmlPerson =
-	'<div id="person_' . $eventId . '_' . $teamId . '_' . $personId . '" class="person ' . $am[$answerPerson] . ' ' . $sm[$status] . '">
-		<p id="' . $eventId . '_' . $teamId . '_' . $personId . '_yes" class="button yes ' . ($am[$answerPerson] == 'yes' ? ' active' : '') . '">'.$amLL[2].'</p>
-		<p id="' . $eventId . '_' . $teamId . '_' . $personId . '_maybe" class="button maybe ' . ($am[$answerPerson] == 'maybe' ? ' active' : '') . '">'.$amLL[1].'</p>
-		<p id="' . $eventId . '_' . $teamId . '_' . $personId . '_no" class="button no' . ($am[$answerPerson] == 'no' ? ' active' : '') . '">'.$amLL[0].'</p>
-	</div>';
+	$isScheduled = ko_rota_person_is_scheduled($teamId, $eventId, $personId);
+	$isLocked = $status == 2;
+
+	$team = db_select_data('ko_rota_teams', "WHERE `id` = '{$teamId}'", '*', '', '', TRUE);
+	$disableMaybeOption = $team['consensus_disable_maybe_option'];
+
+	$editable = $isScheduled || $isLocked ? ' not-editable' : ' editable';
+	$editable1 = $editable;
+	$editable2 = $editable;
+	$editable3 = $editable;
+
+	$tt1 = '';
+	$maxPromises = $team['consensus_max_promises'];
+	if ($maxPromises > 0 && $editable == ' editable' && $answerPerson != 3) {
+		$promises = db_get_count('ko_rota_consensus', 'person_id', "AND `team_id` = '{$teamId}' AND `event_id` = '{$eventId}' AND `answer` = 3");
+		if ($promises >= $maxPromises) {
+			$editable1 = ' not-editable';
+			$tt1 = $tooltip = ' onmouseover="tooltip.show(\''.getLL('ko_consensus_max_promises_reached_warning').'\');" onmouseout="tooltip.hide();"';
+		}
+	}
+
+	$tooltip = '';
+	if ($isLocked) {
+		$tooltip = ' onmouseover="tooltip.show(\''.getLL('ko_consensus_event_closed_warning').'\');" onmouseout="tooltip.hide();"';
+	} else if ( $isScheduled) {
+		$tooltip = ' onmouseover="tooltip.show(\''.getLL('ko_consensus_already_scheduled_warning').'\');" onmouseout="tooltip.hide();"';
+	}
+
+	$htmlPerson = '<div id="person_' . $eventId . '_' . $teamId . '_' . $personId . '" class="person ' . $am[$answerPerson] . ' ' . $sm[$status] . '"' . $tooltip . '>';
+	$htmlPerson .= '<p id="' . $eventId . '_' . $teamId . '_' . $personId . '_yes" class="button yes ' . ($am[$answerPerson] == 'yes' ? ' active' : '') . $editable1 . '" '.$tt1.'>'.$amLL[2].'</p>';
+	if (!$disableMaybeOption) {
+		$htmlPerson .= '<p id="' . $eventId . '_' . $teamId . '_' . $personId . '_maybe" class="button maybe ' . ($am[$answerPerson] == 'maybe' ? ' active' : '') . $editable2 . '">'.$amLL[1].'</p>';
+	}
+	$htmlPerson .= '<p id="' . $eventId . '_' . $teamId . '_' . $personId . '_no" class="button no' . ($am[$answerPerson] == 'no' ? ' active' : '') . $editable3 . '">'.$amLL[0].'</p>';
+	$htmlPerson .= '</div>';
 
 	$htmlTeam = '<ul class="team">';
 	for ($i = 3; $i > 0; $i--) {
-		$htmlTeam .= '<li><p class="team_members ' . $am[$i] . '">' . $answersTeam[$i] . '</p></li>';
+		if ($i != 2 || !$disableMaybeOption) {
+			$htmlTeam .= '<li><p class="team_members ' . $am[$i] . '">' . $answersTeam[$i] . '</p></li>';
+		}
 	}
 	$htmlTeam .= '</ul>';
 
@@ -287,26 +336,25 @@ function ko_consensus_get_cell_contents_inner ($mode, $eventId, $teamId, $person
 
 
 function ko_consensus_get_end($start, $ts) {
-	global $DATETIME;
+	switch(substr($ts, -1)) {
+		case 'd':
+			$inc = substr($ts, 0, -1);
+			$eT = strtotime(add2date(add2date($start, 'day', $inc, TRUE), 'day', -1, TRUE));
+		break;
 
-	switch($ts) {
-		case '1d':
-			break;
-
-		case '1w':
-		case '2w':
+		case 'w':
 			$inc = substr($ts, 0, -1);
 			$eT = strtotime(add2date(add2date($start, 'week', $inc, TRUE), 'day', -1, TRUE));
-			break;
+		break;
 
-		case '1m':
-		case '2m':
-		case '3m':
-		case '6m':
-		case '12m':
+		case 'm':
 			$inc = substr($ts, 0, -1);
 			$eT = strtotime(add2date(add2date($start, 'month', $inc, TRUE), 'day', -1, TRUE));
-			break;
+		break;
+
+		default:
+			$eT = strtotime(add2date(add2date($start, 'day', 1, TRUE), 'day', -1, TRUE));
+		break;
 	}
 
 	$r = strftime("%Y-%m-%d", $eT);
@@ -322,38 +370,40 @@ function ko_consensus_get_end($start, $ts) {
 function ko_consensus_timespan_title($start, $ts) {
 	global $DATETIME;
 
-	switch($ts) {
-		case '1d':
-			$sT = $eT = strtotime($start);
-			break;
+	switch(substr($ts, -1)) {
+		case 'd':
+			$inc = substr($ts, 0, -1);
+			$sT = strtotime($start);
+			$eT = strtotime(add2date(add2date($start, 'day', $inc, TRUE), 'day', -1, TRUE));
+		break;
 
-		case '1w':
-		case '2w':
+		case 'w':
 			$inc = substr($ts, 0, -1);
 			$sT = strtotime($start);
 			$eT = strtotime(add2date(add2date($start, 'week', $inc, TRUE), 'day', -1, TRUE));
-			break;
+		break;
 
-		case '1m':
-		case '2m':
-		case '3m':
-		case '6m':
-		case '12m':
+		case 'm':
 			$inc = substr($ts, 0, -1);
 			$sT = strtotime($start);
 			$eT = strtotime(add2date(add2date($start, 'month', $inc, TRUE), 'day', -1, TRUE));
-			break;
+		break;
+
+		default:
+			$sT = strtotime($start);
+			$eT = strtotime(add2date(add2date($start, 'day', 1, TRUE), 'day', -1, TRUE));
+		break;
 	}
 
-		if($sT == $eT) {
-			$r = strftime($DATETIME['DdMY'], $sT);
-		} else if(date('m', $sT) == date('m', $eT)) {
-			$r = strftime('%e.', $sT).' - '.strftime($DATETIME['dbY'], $eT);
-		} else if(date('Y', $sT) == date('Y', $eT)) {
-			$r = strftime($DATETIME['db'], $sT).' - '.strftime($DATETIME['dbY'], $eT);
-		} else {
-			$r = strftime($DATETIME['dbY'], $sT).' - '.strftime($DATETIME['dbY'], $eT);
-		}
+	if($sT == $eT) {
+		$r = strftime($DATETIME['DdMY'], $sT);
+	} else if(date('m', $sT) == date('m', $eT)) {
+		$r = strftime('%d.', $sT).' - '.strftime($DATETIME['dMY'], $eT);
+	} else if(date('Y', $sT) == date('Y', $eT)) {
+		$r = strftime($DATETIME['dM'], $sT).' - '.strftime($DATETIME['dMY'], $eT);
+	} else {
+		$r = strftime($DATETIME['dMY'], $sT).' - '.strftime($DATETIME['dMY'], $eT);
+	}
 
 	return $r;
 }//ko_rota_timespan_title()

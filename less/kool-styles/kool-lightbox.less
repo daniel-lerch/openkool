@@ -1,0 +1,32 @@
+.tbox {
+    position: absolute;
+    display: none;
+    padding: 20px;
+    background: #fff;
+    z-index: @zindex-tooltip;
+    border-radius: @border-radius-base;
+}
+.tinner {
+    background: #fff url(images/tbox_preload.gif) no-repeat 50% 50%;
+}
+.tmask {
+    position: absolute;
+    display: none;
+    top: 0px;
+    left: 0px;
+    height: 100%;
+    width: 100%;
+    background: #000;
+    z-index: @zindex-tooltip;
+}
+.tclose {
+    .close {
+        font-size: 20px;
+    }
+    position: absolute;
+    top: 0px;
+    right: 5px;
+}
+.tclose:hover {
+    background-position: 0 -30px;
+}

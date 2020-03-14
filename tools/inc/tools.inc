@@ -28,6 +28,52 @@
 require_once($BASE_PATH.'inc/class.kOOL_listview.php');
 
 
+
+function ko_tools_mailing_mails($output=TRUE) {
+  $rows = db_get_count('ko_mailing_mails', 'id');
+  if($_SESSION['show_start'] > $rows) $_SESSION['show_start'] = 1;
+  $z_limit = 'LIMIT '.($_SESSION['show_start']-1).', '.$_SESSION['show_limit'];
+  $es = db_select_data('ko_mailing_mails', '', '*', 'ORDER BY id DESC', $z_limit);
+
+  $access_check = $access_delete = array();
+  foreach($es as $k => $e) {
+    if($e['status'] == 1) {  //new
+      $access_check[$k] = TRUE;
+      $access_delete[$k] = TRUE;
+    } else if($e['status'] == 2) {  //confirmed
+      $access_check[$k] = FALSE;
+      $access_delete[$k] = TRUE;
+    } else {
+      $access_check[$k] = FALSE;
+      $access_delete[$k] = FALSE;
+    }
+  }
+
+  $list = new kOOL_listview();
+
+  $list->init('tools', 'ko_mailing_mails', array('chk', 'check', 'delete'), $_SESSION['show_start'], $_SESSION['show_limit']);
+  $list->setTitle(getLL('tools_mailing_mails_list_title'));
+  $list->setManualAccess('check', $access_check);
+  $list->setManualAccess('delete', $access_delete);
+  $list->setActions(array('check' => array('action' => 'mailing_confirm', 'confirm' => TRUE),
+                          'delete' => array('action' => 'mailing_delete', 'confirm' => TRUE))
+                    );
+  $list->setStats($rows);
+  $list->setSort(FALSE);
+  $list->setRowClass("ko_list_hidden", 'return STATUS == 3;');
+
+  //Output the list
+  if($output) {
+    $list->render($es);
+  } else {
+    print $list->render($es);
+  }
+}//ko_tools_mailing_mails()
+
+
+
+
+
 function ko_show_testmail () {
 	global $MAIL_TRANSPORT, $BASE_URL;
 
@@ -87,8 +133,8 @@ function beautyfy_telephone($fields = array(), $do_01_044 = FALSE, $do_10_to_spa
 		$sql = $base_sql.$sql_limit;
 
 		//Daten einlesen, anpassen und wieder schreiben
-		$result = mysql_query($sql);
-		while($row = mysql_fetch_assoc($result)) {
+		$result = mysqli_query(db_get_link(), $sql);
+		while($row = mysqli_fetch_assoc(db_get_link(), $result)) {
 			$sql_update = "";
 			foreach($fields as $f) {
 				$changed = FALSE;
@@ -122,7 +168,7 @@ function beautyfy_telephone($fields = array(), $do_01_044 = FALSE, $do_10_to_spa
 			}//foreach(fields as f)
 			if($sql_update) {
 				$sql = "UPDATE `ko_leute` SET ".substr($sql_update, 0, -2)." WHERE `id` = '".$row["id"]."' LIMIT 1";
-				$result2 = mysql_query($sql);
+				$result2 = mysqli_query(db_get_link(), $sql);
 				if(!$result2) {
 					print "ERROR! <br />";
 					exit;
@@ -186,128 +232,12 @@ function ko_tools_add_submenu($sm, $users, $module, $pos_="") {
 
 
 
-function ko_tools_list_submenus($output=TRUE) {
-	global $smarty, $ko_path;
-	global $MODULES;
-
-	$show_modules = $show_module_names = array();
-	foreach($MODULES as $m) {
-		if($m != "sms" && $m != "kg") {
-			$show_modules[] = $m;
-			$show_module_names[] = getLL("module_".$m);
-		}
-	}
-  $rows = db_get_count("ko_admin");
-  $z_where = "";
-  $z_limit = "";
-  ko_get_logins($login, $z_where, $z_limit, "ORDER BY `login` ASC");
-
-  //Statistik über Suchergebnisse und Anzeige
-  $smarty->assign('tpl_stats', "1 - ".$rows." ".getLL("list_oftotal")." ".$rows);
-
-  //Links für Prev und Next-Page vorbereiten
-  $smarty->assign('tpl_prevlink_link', '');
-  $smarty->assign('tpl_nextlink_link', '');
-
-	//Header-Informationen
-  $smarty->assign("tpl_show_3cols", TRUE);
-
-  $show_cols = array_merge(array(getLL("login")), $show_module_names);
-  $sort_cols = array();
-  foreach($show_cols as $c_i => $c) {
-    $tpl_table_header[$c_i]["sort"] = $sort_cols[$c_i];
-    $tpl_table_header[$c_i]["name"] = $show_cols[$c_i];
-  }
-  $smarty->assign("tpl_table_header", $tpl_table_header);
-  $smarty->assign("show_sort", FALSE);
-
-
-	//Logins in Liste einfüllen
-  foreach($login as $l_i => $l) {
-    //Checkbox
-    $tpl_list_data[$l_i]["show_checkbox"] = TRUE;
-
-    //Edit-Button
-    $tpl_list_data[$l_i]["show_edit_button"] = FALSE;
-
-    //Delete-Button
-    $tpl_list_data[$l_i]["show_delete_button"] = FALSE;
-
-    //Index
-    $tpl_list_data[$l_i]["id"] = $l_i;
-
-		//Login-Name
-		$tpl_list_data[$l_i][1] = "<b>".ko_html($l["login"])."</b> (".$l_i.")";
-
-		//Daten-Submenus
-		$counter = 1;
-		foreach($show_modules as $m) {
-			//Vorhandene Submenu anzeigen
-			$sm = ko_tools_get_submenus($l_i, $m);
-			$data  = str_replace(",", ", ", $sm["submenu_".$m."_left"]);
-			$data .= ' <font color="green">('.str_replace(",", ", ", $sm["submenu_".$m."_left_closed"]);
-			$data .= ")</font><br />".str_replace(",", ", ", $sm["submenu_".$m."_right"]);
-			$data .= ' <font color="green">('.str_replace(",", ", ", $sm["submenu_".$m."_right_closed"]).")</font>";
-
-			//Fehlende anzeigen
-			$sm_shown = array_unique(array_merge(explode(",", $sm["submenu_".$m."_left"]), explode(",", $sm["submenu_".$m."_left_closed"]), explode(",", $sm["submenu_".$m."_right"]), explode(",", $sm["submenu_".$m."_right_closed"])));
-			$sm_all = ko_get_submenus($m);
-			$diff = array_diff($sm_all, $sm_shown);
-			$add = "";
-			foreach($diff as $d) {
-				if($d) {
-					$add .= '<font color="red">';
-					$add .= '<a href="index.php?action=add_sm&amp;sm='.$d.'&amp;lid='.$l_i.'&amp;mid='.$m.'&amp;pos=left"><font color="red">';
-					$add .= substr($d, 0, 2)."</font></a>";
-					$add .= substr($d, 2, -2);
-					$add .= '<a href="index.php?action=add_sm&amp;sm='.$d.'&amp;lid='.$l_i.'&amp;mid='.$m.'&amp;pos=right"><font color="red">';
-					$add .= substr($d, -2, 2)."</font></a>";
-					$add .= '</font>, ';
-				}
-			}
-			if($add) $data .= '<br />'.substr($add, 0, -2);
-
-			$tpl_list_data[$l_i][++$counter] = $data;
-		}//foreach(MODULES as m)
-
-	}//foreach(login as l)
-
-	$tpl_list_cols = array(1);
-	$counter = 1;
-	foreach($show_modules as $m) {
-		$tpl_list_cols[] = ++$counter;
-	}
-
-	//Optionen für Anpassung ganzer Module anzeigen:
-  $button_code  = '<select name="sel_add_modul" size="0">';
-	foreach($show_modules as $m) {
-		$button_code .= '<option value="'.$m.'">'.getLL("module_".$m).'</option>';
-	}
-	$button_code .= '</select>&nbsp;&nbsp;<input type="submit" onclick="set_action(\'add_to_modul\');" value="'.getLL("ok").'" />';
-
-	$list_footer[] = array("label" => getLL("tools_list_footer_complete"),
-												 "button" => $button_code);
-	$smarty->assign("show_list_footer", TRUE);
-	$smarty->assign("list_footer", $list_footer);
-
-	$smarty->assign('tpl_list_cols', $tpl_list_cols);
-  $smarty->assign('tpl_list_data', $tpl_list_data);
-	$smarty->assign('hide_listlimiticons', TRUE);
-	if($output) {
-	  $smarty->display('ko_list.tpl');
-	} else {
-	  print $smarty->fetch('ko_list.tpl');
-	}
-}//ko_tools_list_submenus()
-
-
-
 
 function ko_tools_get_submenus($id, $type) {
 	$r = array();
 	$query = "SELECT * FROM `ko_userprefs` WHERE `user_id` = '$id' AND `key` REGEXP 'submenu_$type'";
-	$result = mysql_query($query);
-	while($row = mysql_fetch_assoc($result)) {
+	$result = mysqli_query(db_get_link(), $query);
+	while($row = mysqli_fetch_assoc($result)) {
 		$r[$row["key"]] = $row["value"];
 	}
 	return $r;
@@ -329,9 +259,9 @@ function ko_tools_list_leute_db() {
 	$col_names = unserialize(ko_get_setting("leute_col_name"));
 	ko_get_filters($filters, "leute");
 
-	print '<table border="0"><tr>';
+	print '<table class="table table-condensed"><tr>';
 	print '<td style="font-weight:bold;">&nbsp;</td>';
-	print '<td style="font-weight:bold;">'.getLL("tools_listheader_people_field").'</td>';
+	print '<td style="font-weight:bold;width:20%;">'.getLL("tools_listheader_people_field").'</td>';
 	foreach($WEB_LANGS as $lang) print '<td style="font-weight:bold;">'.getLL("tools_listheader_people_name")." ".strtoupper(substr($lang, 0, 2)).'</td>';
 	print '<td style="font-weight:bold;">'.getLL("tools_listheader_people_filter").'</td>';
 	print '</tr>';
@@ -340,11 +270,11 @@ function ko_tools_list_leute_db() {
 	foreach($table_cols as $c) {
 		if(!in_array($c["Field"], array("deleted"))) {
 			print '<tr>';
-			print '<td><input type="image" src="'.$ko_path.'images/button_delete.gif" alt="'.getLL("tools_people_del_col").'" title="'.getLL("tools_people_del_col").'" onclick="c=confirm('."'".getLL("tools_people_del_col_confirm")."'".');if(!c) return false;set_hidden_value('."'id', '".$c["Field"]."');".'set_action('."'delete_leute_col'".');" /></td>';
-			print '<td>'.$c["Field"].'</td>';
+			print '<td style="vertical-align:middle;"><button type="submit" class="btn btn-sm btn-default" alt="'.getLL("tools_people_del_col").'" title="'.getLL("tools_people_del_col").'" onclick="c=confirm('."'".getLL("tools_people_del_col_confirm")."'".');if(!c) return false;set_hidden_value('."'id', '".$c["Field"]."');".'set_action('."'delete_leute_col'".');"><i class="fa fa-remove icon-line-height" ></i></button></td>';
+			print '<td style="vertical-align:middle;">'.$c["Field"].'</td>';
 			foreach($WEB_LANGS as $lang) {
 				list($l, $l2) = explode('_', $lang);
-				print '<td><input type="text" value="'.$col_names[$l][$c["Field"]].'" name="txt_col_name['.$l.']['.$c["Field"].']" tabindex="'.$tabindex.'" /></td>';
+				print '<td style="vertical-align:middle;"><input class="input-sm form-control" type="text" style="min-width:100px;" value="'.$col_names[$l][$c["Field"]].'" name="txt_col_name['.$l.']['.$c["Field"].']" tabindex="'.$tabindex.'" /></td>';
 				$tabindex++;
 			}
 
@@ -358,19 +288,20 @@ function ko_tools_list_leute_db() {
 			}
 			if($fid != 0) {
 				ko_get_filter_by_id($fid, $f);
-				print '<td>';
-				print '<input type="image" src="'.$ko_path.'images/button_delete.gif" alt="'.getLL("tools_people_del_filter").'" title="'.getLL("tools_people_del_filter").'" onclick="c=confirm('."'".getLL("tools_people_del_filter_confirm")."'".');if(!c) return false;set_hidden_value('."'id', $fid);".'set_action('."'delete_leute_filter'".');">';
-				print "&nbsp;";
-				print '<input type="image" src="'.$ko_path.'images/icon_reload.png" alt="'.getLL("tools_people_renew_filter").'" title="'.getLL("tools_people_renew_filter").'" onclick="c=confirm('."'".getLL("tools_people_renew_filter_confirm")."'".');if(!c) return false;set_hidden_value('."'fid', $fid);set_hidden_value('id', '".$c["Field"]."'".');set_action('."'reload_leute_filter'".');">';
-				print "&nbsp;";
+				print '<td style="vertical-align:middle;">';
+				print '<table><tr><td>';
+				print '<div class="btn-group"><button class="btn btn-sm btn-danger" type="submit" src="'.$ko_path.'images/button_delete.gif" alt="'.getLL("tools_people_del_filter").'" title="'.getLL("tools_people_del_filter").'" onclick="c=confirm('."'".getLL("tools_people_del_filter_confirm")."'".');if(!c) return false;set_hidden_value('."'id', $fid);".'set_action('."'delete_leute_filter'".');"><i class="fa fa-remove icon-line-height"></i></button>';
+				print '<button class="btn btn-default btn-sm" type="submit" src="'.$ko_path.'images/icon_reload.png" alt="'.getLL("tools_people_renew_filter").'" title="'.getLL("tools_people_renew_filter").'" onclick="c=confirm('."'".getLL("tools_people_renew_filter_confirm")."'".');if(!c) return false;set_hidden_value('."'fid', $fid);set_hidden_value('id', '".$c["Field"]."'".');set_action('."'reload_leute_filter'".');"><i class="fa fa-refresh icon-line-height"></i></button></div>';
+				print '</td><td>';
 				print ko_tools_get_filter_group_select($f);
-				print "&nbsp;";
-				print $f["name"].": ".$f["sql1"]." (".$f["code1"].")";
+				print '</td><td>';
+				print '<table><tr><td style="white-space:nowrap;">&nbsp;'.$f["name"].": ".$f["sql1"].' (</td><td style="white-space:nowrap;">'.$f["code1"].'</td></tr></table>';
+				print '</td></tr></table>';
 				print '</td>';
 				unset($filters[$fid]);
 			} else {
-				print '<td>';
-				print '<input type="image" src="'.$ko_path.'images/icon_plus.png" alt="'.getLL("tools_people_add_filter").'" title="'.getLL("tools_people_add_filter").'" onclick="set_hidden_value('."'id', '".$c["Field"]."');".'set_action('."'add_leute_filter'".');">';
+				print '<td style="vertical-align:middle;">';
+				print '<button type="submit" class="btn btn-sm btn-success" src="'.$ko_path.'images/icon_plus.png" alt="'.getLL("tools_people_add_filter").'" title="'.getLL("tools_people_add_filter").'" onclick="set_hidden_value('."'id', '".$c["Field"]."');".'set_action('."'add_leute_filter'".');"><i class="fa fa-plus icon-line-height"></i></button>';
 				print '</td>';
 			}
 			print '</tr>';
@@ -383,12 +314,12 @@ function ko_tools_list_leute_db() {
 		print '<tr><td>&nbsp;</td><td>&nbsp;</td>';
 		foreach($WEB_LANGS as $lang) print '<td>&nbsp;</td>';
 		print '<td>';
-		print '<input type="image" src="'.$ko_path.'images/button_delete.gif" alt="'.getLL("tools_people_del_filter").'" title="'.getLL("tools_people_del_filter").'" onclick="c=confirm('."'".getLL("tools_people_del_filter_confirm")."'".');if(!c) return false;set_hidden_value('."'id', ".$f["id"].");".'set_action('."'delete_leute_filter'".');">';
-		print "&nbsp;";
+		print '<table><tr><td><button class="btn btn-sm btn-danger" alt="'.getLL("tools_people_del_filter").'" title="'.getLL("tools_people_del_filter").'" onclick="c=confirm('."'".getLL("tools_people_del_filter_confirm")."'".');if(!c) return false;set_hidden_value('."'id', ".$f["id"].");".'set_action('."'delete_leute_filter'".');"><i class="fa fa-remove icon-line-height"></i></button></td>';
+		print "<td>";
 		print ko_tools_get_filter_group_select($f);
-		print "&nbsp;";
-		print $f["name"].": ".$f["sql1"]." (".$f["code1"].")";
-		print '</td></tr>';
+		print "</td><td>";
+		print '<table><tr><td style="white-space:nowrap;">&nbsp;'.$f["name"]."&nbsp;: ".$f["sql1"]." (</td><td>".$f["code1"]."</td><td>)</td></tr></table>";
+		print '</td></tr></table></td></tr>';
 	}
 
 	print '</table>';
@@ -403,7 +334,7 @@ function ko_tools_get_filter_group_select($filter) {
 	global $ko_path;
 
 	//Select to change the filter's group
-	$filter_groups = '<select name="filter_group" size="0" onchange="sendReq(\''.$ko_path.'/tools/inc/ajax.php\', \'action,id,group,sesid\', \'setfiltergroup,'.$filter['id'].',\'+this.options[this.selectedIndex].value+\','.session_id().'\', do_element);">';
+	$filter_groups = '<select name="filter_group" class="input-sm form-control" onchange="sendReq(\''.$ko_path.'/tools/inc/ajax.php\', \'action,id,group,sesid\', \'setfiltergroup,'.$filter['id'].',\'+this.options[this.selectedIndex].value+\','.session_id().'\', do_element);">';
 	$filter_groups .= '<option value=""></option>';
 	$gids = db_select_distinct('ko_filter', '`group`');
 	foreach($gids as $gid) {
@@ -732,101 +663,108 @@ function ko_tools_plugins_get_installed(&$plugins_available) {
 }//ko_tools_plugins_get_installed()
 
 
+
 function ko_tools_plugins_list($output=TRUE) {
-	global $ko_path, $smarty;
+	global $ko_path, $smarty, $PLUGIN_CONF, $UPDATER_CONF;
 
 	$plugins_available = ko_tools_plugins_get_available();
 	$plugins_installed = ko_tools_plugins_get_installed($plugins_available);
 
 	$rows = sizeof($plugins_available);
-	//Statistik über Suchergebnisse und Anzeige
-  $smarty->assign('tpl_stats', "1 - ".$rows." ".getLL("list_oftotal")." ".$rows);
-	$smarty->assign('tpl_prevlink_link', '');
-	$smarty->assign('tpl_nextlink_link', '');
-	$smarty->assign("tpl_list_title", getLL("tools_plugins"));
 
-	//Header-Informationen
-	$smarty->assign("tpl_show_3cols", TRUE);
+	$manual_access = array('add' => array(), 'remove' => array());
 
-	$show_cols = array(getLL("tools_plugins_listheader_key"), getLL("tools_plugins_listheader_title"), getLL("tools_plugins_listheader_description"), getLL("tools_plugins_listheader_dependencies"), getLL("tools_plugins_listheader_version"), getLL("tools_plugins_listheader_state"));
-  $sort_cols = array();
-  foreach($show_cols as $c_i => $c) {
-    $tpl_table_header[$c_i]["sort"] = $sort_cols[$c_i];
-    $tpl_table_header[$c_i]["name"] = $show_cols[$c_i];
-  }
-  $smarty->assign("tpl_table_header", $tpl_table_header);
-  $smarty->assign("sort", array("show" => FALSE));
-	$smarty->assign("tpl_show_editrow", FALSE);
+	require_once($ko_path.'inc/class.dbStructUpdater.php');
+	$updater = new dbStructUpdater($UPDATER_CONF);
 
-	//Liste ausgeben
-	$p_counter = 0;
-	foreach($plugins_available as $plugin) {
+	$es = array();
+	foreach ($plugins_available as $plugin) {
 		//Conf-Datei einlesen
 		$hidden = FALSE;
 		$conf_file = $ko_path."plugins/".$plugin."/config.php";
 		if(!file_exists($conf_file)) $hidden = TRUE;
 		else include($conf_file);
-
-		$p_counter++;
 		$installed = in_array($plugin, $plugins_installed);
 
-		//Mark not installed ones
-		$tpl_list_data[$p_counter]["rowclass"] = $installed ? "" : "ko_list_hidden";
-
-		//Checkbox
-		$tpl_list_data[$p_counter]["show_checkbox"] = FALSE;
-
-		//Edit-Button
-		if(!$installed && !$hidden) {
-			$tpl_list_data[$p_counter]["show_check_button"] = TRUE;
-			$tpl_list_data[$p_counter]["alt_edit"] = getLL("tools_plugins_install");
-			$tpl_list_data[$p_counter]["onclick_edit"] = "javascript:set_action('plugins_install');set_hidden_value('id', '$plugin');this.submit";
-		}
-
-		//Delete-Button
-		if($installed && !$hidden) {
-			$tpl_list_data[$p_counter]["show_delete_button"] = TRUE;
-			$tpl_list_data[$p_counter]["alt_delete"] = getLL("tools_plugins_delete");
-			$tpl_list_data[$p_counter]["onclick_delete"] = "javascript:c = confirm('".getLL("tools_plugins_delete_confirm")."');if(!c) return;set_action('plugins_delete');set_hidden_value('id', '$plugin');";
-		}
-
-		//Index
-		$tpl_list_data[$p_counter]["id"] = $plugin;
-
-		//Key
 		$link1 = $hidden?"":'<a href="?action=plugins_'.($installed?"delete":"install").'&amp;id='.$plugin.'">';
 		$link2 = $hidden?"":'</a>';
 		$pre  = '<div class="'.($installed?"plugins_installed":"").($hidden?" plugins_hidden":"").'">';
 		$post = '</div>';
-		$tpl_list_data[$p_counter][1] = $link1.$pre.ko_html($plugin).$post.$link2;
-		
-		//Title
-		$tpl_list_data[$p_counter][2] = ko_html($PLUGIN_CONF[$plugin]["title"]);
-		
-		//Description
-		$tpl_list_data[$p_counter][3] = ko_html($PLUGIN_CONF[$plugin]["description"]);
-		
-		//Dependencies
-		$tpl_list_data[$p_counter][4] = ko_html($PLUGIN_CONF[$plugin]["dependencies"]);
-		
-		//Version
-		$tpl_list_data[$p_counter][5] = ko_html($PLUGIN_CONF[$plugin]["version"]);
-		
-		//State
-		$tpl_list_data[$p_counter][6] = ko_html($PLUGIN_CONF[$plugin]["state"]);
-		
-	}//foreach(plugins)
 
-	$smarty->assign('tpl_list_cols', array(1, 2, 3, 4, 5, 6));
-  $smarty->assign('tpl_list_data', $tpl_list_data);
-	$smarty->assign('hide_listlimiticons', TRUE);
-	if($output) {
-		$smarty->display('ko_list.tpl');
-	} else {
-		print $smarty->fetch('ko_list.tpl');
+		if ($installed && file_exists($ko_path."plugins/".$plugin."/db.sql")) {
+			$sqlDiffs = $updater->getAllSQL(file_get_contents($ko_path."plugins/".$plugin."/db.sql"));
+			$sqlDiffs = array_merge($sqlDiffs['inserts'], array_merge($sqlDiffs['updates'], $sqlDiffs['alters']));
+			if (sizeof($sqlDiffs) > 0) $sqlDiffsHtml = "<a href=\"?action=plugins_show_sql_diffs&plugin={$plugin}\" ".ko_get_tooltip_code(implode("<br>---------------------------------------------<br>", $sqlDiffs))."><i class=\"fa fa-refresh\"></i></a>";
+			else $sqlDiffsHtml = '';
+		} else {
+			$sqlDiffsHtml = '';
+		}
+
+		$es[$plugin] = array(
+			'id' => $plugin,
+			'sql_diffs' => $sqlDiffsHtml,
+			'key' => $link1.$pre.ko_html($plugin).$post.$link2,
+			'title' => ko_html($PLUGIN_CONF[$plugin]["title"]),
+			'description' => ko_html($PLUGIN_CONF[$plugin]["description"]),
+			'dependencies' => ko_html($PLUGIN_CONF[$plugin]["dependencies"]),
+			'version' => ko_html($PLUGIN_CONF[$plugin]["version"]),
+			'status' => ko_html($PLUGIN_CONF[$plugin]["state"]),
+			'installed' => $installed ? '1' : '0',
+		);
+
+		$manual_access['add'][$plugin] = $installed ? FALSE : TRUE;
+		$manual_access['remove'][$plugin] = $installed ? TRUE : FALSE;
 	}
 
+	$list = new kOOL_listview();
+
+	$list->init('tools', 'ko_plugins', array('chk', 'add', 'remove'), 1, sizeof($es));
+	$list->setTitle(getLL("tools_plugins"));
+	$list->setManualAccess('add', $manual_access['add']);
+	$list->setManualAccess('remove', $manual_access['remove']);
+	$list->setActions(
+		array(
+			'add' => array('action' => 'plugins_install'),
+			'remove' => array('action' => 'plugins_delete', 'confirm' => TRUE)
+		)
+	);
+	$list->setStats($rows, '', '', '', TRUE);
+	$list->setSort(FALSE);
+	$list->setRowClass('row-success', 'return (INSTALLED == 1);');
+
+	//Output the list
+	if($output) {
+		$list->render($es);
+	} else {
+		print $list->render($es);
+	}
 }//ko_tools_plugins_list()
+
+
+
+function ko_tools_list_sql_diffs($plugin) {
+	global $ko_path, $UPDATER_CONF;
+
+	require_once($ko_path.'inc/class.dbStructUpdater.php');
+	$updater = new dbStructUpdater($UPDATER_CONF);
+
+	$sqlDiffs = $updater->getAllSQL(file_get_contents($ko_path."plugins/".$plugin."/db.sql"));
+	$sqlDiffs = array_merge($sqlDiffs['inserts'], array_merge($sqlDiffs['updates'], $sqlDiffs['alters']));
+
+	$html = "<h3>SQL Differences for Plugin {$plugin}</h3>";
+	$html .= "<table class=\"table table-condensed\"><tbody>";
+	$html .= '<table><tr><td style="vertical-align:top;text-align:right;"><a href="#" onclick="$(\'input[type=&quot;checkbox&quot;]\').each(function(){$(this).prop(\'checked\', !$(this).prop(\'checked\'));});return false;"><i class="fa fa-check-square-o"></i></a></td><td></td></tr>';
+	foreach ($sqlDiffs as $sqlDiff) {
+		$html .= '<tr>';
+		$html .= '<td style="vertical-align:top;text-align:right"><input type="checkbox" checked="checked" name="'.md5($sqlDiff).'"></td>';
+		$html .= '<td style="vertical-align:top;text-align:left">'.$sqlDiff.'</td>';
+		$html .= '</tr>';
+	}
+	$html .= '</tbody></table>';
+	$html .= '<div class="btn-field"><button class="btn btn-primary" type="submit" onclick="$(\'input[name=&quot;id&quot;]\').val(\''.$plugin.'\');set_action(\'submit_plugins_sql_diffs\', this);">OK&nbsp;<i class="fa fa-check"></i></button>';
+
+	print $html;
+}
 
 
 
@@ -836,19 +774,17 @@ function ko_list_tasks($output=TRUE) {
 	global $access;
 
 	$rows = db_get_count('ko_scheduler_tasks', 'id');
-	if($_SESSION['show_start'] > $rows) $_SESSION['show_start'] = 1;
-  $z_limit = 'LIMIT '.($_SESSION['show_start']-1).', '.$_SESSION['show_limit'];
-	$es = db_select_data('ko_scheduler_tasks', '', '*', 'ORDER BY name ASC', $z_limit);
+	$es = db_select_data('ko_scheduler_tasks', '', '*', 'ORDER BY name ASC');
 
 	$list = new kOOL_listview();
 
-	$list->init('tools', 'ko_scheduler_tasks', array('chk', 'edit', 'delete'), $_SESSION['show_start'], $_SESSION['show_limit']);
+	$list->init('tools', 'ko_scheduler_tasks', array('chk', 'edit', 'delete'), 1, sizeof($es));
 	$list->setTitle(getLL('tools_scheduler_tasks_list_title'));
 	$list->setAccessRights(FALSE);
 	$list->setActions(array('edit' => array('action' => 'edit_task'),
-													'delete' => array('action' => 'delete_task', 'confirm' => TRUE))
-										);
-	$list->setStats($rows);
+			'delete' => array('action' => 'delete_task', 'confirm' => TRUE))
+	);
+	$list->setStats($rows, '', '', '', TRUE);
 	$list->setSort(TRUE, 'setsort', $_SESSION['sort_tasks'], $_SESSION['sort_tasks_order']);
 	$list->setRowClass("ko_list_hidden", 'return STATUS == 0;');
 
@@ -890,10 +826,9 @@ function ko_formular_task($mode, $id='') {
 function ko_tools_typo3_connection() {
 	global $smarty, $ko_path;
 
-	$smarty->assign('tpl_titel', getLL('tools_typo3_connection'));
+	$gc = $rowcounter = $colCounter = 0;
 
-	$pc = 0;
-	$parts[$pc]['titel'] = getLL('tools_typo3_connection_title');
+	$groups[$gc]['titel'] = getLL('tools_typo3_connection_title');
 	$fields = array('typo3_host', 'typo3_db', 'typo3_user', 'typo3_pwd');
 	$cc = 0;
 	$setting = array();
@@ -901,7 +836,6 @@ function ko_tools_typo3_connection() {
 		$setting[$cc]['desc'] = getLL('tools_typo3_connection_'.$field);
 		$setting[$cc]['type'] = 'text';
 		$setting[$cc]['name'] = $field;
-		$setting[$cc]['params'] = 'size="40"';
 
 		if($field == 'typo3_pwd') {
 			$pwd_enc = ko_get_setting('typo3_pwd');
@@ -921,11 +855,21 @@ function ko_tools_typo3_connection() {
 		$cc++;
 	}
 
-	$parts[$pc]['settings'] = $setting;
+	foreach ($setting as $s) {
+		$groups[$gc]['row'][$rowcounter]['inputs'][$colCounter] = $s;
 
-	$smarty->assign('tpl_parts', $parts);
+		$colCounter++;
+		if ($colCounter > 1) {
+			$rowcounter ++;
+			$colCounter = 0;
+		}
+	}
+
+	$smarty->assign('tpl_titel', getLL('tools_typo3_connection'));
+	$smarty->assign('tpl_groups', $groups);
+	$smarty->assign('tpl_submit_value', getLL('save'));
 	$smarty->assign('tpl_action', 'submit_typo3_connection');
-	$smarty->display('ko_settings.tpl');
+	$smarty->display('ko_formular.tpl');
 }//ko_tools_typo3_connection()
 
 

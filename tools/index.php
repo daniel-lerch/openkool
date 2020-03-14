@@ -24,6 +24,8 @@
 *  This copyright notice MUST APPEAR in all copies of the script!
 ***************************************************************/
 
+header('Content-Type: text/html; charset=ISO-8859-1');
+
 ob_start();  //Ausgabe-Pufferung starten
 
 $ko_path = "../";
@@ -51,7 +53,7 @@ ko_get_access('tools');
 require($ko_path.'inc/smarty.inc');
 
 //kOOL Table Array
-ko_include_kota(array('ko_scheduler_tasks'));
+ko_include_kota(array('ko_scheduler_tasks', 'ko_plugins', 'ko_mailing_mails'));
 
 
 //*** Plugins einlesen:
@@ -72,6 +74,39 @@ if($_POST["action"]) {
 
 
 switch($do_action) {
+
+	case 'mailing_mails':
+		$_SESSION['show'] = 'mailing_mails';
+	break;
+
+
+	case 'mailing_confirm':
+		$mid = format_userinput($_POST['id'], 'uint');
+		if(!$mid) continue;
+
+		$mail = db_select_data('ko_mailing_mails', "WHERE `id` = '$mid'", '*', '', '', TRUE);
+		if(!$mail['id'] || $mail['status'] > 1) continue;
+		if(intval($mail['user_id']) > 0) {
+			ko_get_login(intval($mail['user_id']), $login);
+		} else {
+			$login = array();
+		}
+		if(!$login['id'] || $login['id'] != $mail['user_id']) $login = array();
+
+		require_once($ko_path.'mailing.php');
+		ko_mailing_mail_confirmed($login, $mail['code']);
+  break;
+
+
+  case 'mailing_delete':
+		$mid = format_userinput($_POST['id'], 'uint');
+    if(!$mid) continue;
+
+    db_delete_data('ko_mailing_mails', "WHERE `id` = '$mid'");
+    db_delete_data('ko_mailing_recipients', "WHERE `mail_id` = '$mid'");
+  break;
+
+
 
 	case "testmail":
 		if (!isset($MAIL_TRANSPORT)) {
@@ -115,7 +150,7 @@ switch($do_action) {
 			$notifier->addError(9);
 		}
 		else {
-			$success = ko_send_mail('noreply@churchtool.org', $_POST['testmail']['receiver'], $_POST['testmail']['subject'], $_POST['testmail']['text']);
+			$success = ko_send_mail(ko_get_setting('info_email'), $_POST['testmail']['receiver'], $_POST['testmail']['subject'], $_POST['testmail']['text']);
 			if (!$notifier->hasNotifications(koNotifier::DEBUG | koNotifier::ERROR) && $success) {
 				$notifier->addInfo(6, '', array($_POST['testmail']['receiver']));
 			}
@@ -125,11 +160,6 @@ switch($do_action) {
 
 		}
 		break;
-
-	case "list_submenus":
-  	$_SESSION["show_start"] = 1;
-		$_SESSION["show"] = "list_submenus";
-	break;
 
 
 	case "show_leute_db":
@@ -222,8 +252,16 @@ switch($do_action) {
 		//check for DB-Query to be performed for this extension
 		$sql_filename = $ko_path."plugins/".$new_plugin."/db.sql";
 		if(file_exists($sql_filename)) {
+			require_once($ko_path.'inc/class.dbStructUpdater.php');
+			$updater = new dbStructUpdater($UPDATER_CONF);
 			$sql = file_get_contents($sql_filename);
-			db_import_sql($sql);
+			$sqlDiffs = $updater->getAllSQL($sql);
+			$sqlDiffs = array_merge($sqlDiffs['inserts'], array_merge($sqlDiffs['updates'], $sqlDiffs['alters']));
+			if (sizeof($sqlDiffs) > 0) {
+				$plugin_id = $new_plugin;
+				$_SESSION['show'] = 'plugins_show_sql_diffs';
+			}
+			//db_import_sql($sql);
 		}
 
 		if(!$notifier->hasErrors()) {
@@ -270,6 +308,71 @@ switch($do_action) {
 			$data .= ');'."\n";
 			ko_update_ko_config("plugins", $data);
 		}
+	break;
+
+
+	case 'plugins_show_sql_diffs':
+		$plugin_id = $_GET['plugin'];
+		if (!$plugin_id) continue;
+
+		$plugins_available = ko_tools_plugins_get_available();
+		$plugins_installed = ko_tools_plugins_get_installed($plugins_available);
+
+		if (!in_array($plugin_id, $plugins_installed)) continue;
+
+		$_SESSION['show_back'] = $_SESSION['show'];
+		$_SESSION['show'] = 'plugins_show_sql_diffs';
+	break;
+
+
+	case 'submit_plugins_sql_diffs':
+
+		$plugin = $_POST['id'];
+		if (!$plugin) continue;
+
+		$plugins_available = ko_tools_plugins_get_available();
+		$plugins_installed = ko_tools_plugins_get_installed($plugins_available);
+		if (!in_array($plugin, $plugins_installed)) continue;
+
+		require_once($ko_path.'inc/class.dbStructUpdater.php');
+		$updater = new dbStructUpdater($UPDATER_CONF);
+
+		$sqlDiffs = $updater->getAllSQL(file_get_contents($ko_path."plugins/".$plugin."/db.sql"));
+		$sqlDiffs = array_merge($sqlDiffs['inserts'], array_merge($sqlDiffs['updates'], $sqlDiffs['alters']));
+
+		$postKeys = array_keys($_POST);
+		$fail = array();
+		$ok = array();
+		for ($i = 0; $i < 2; $i++) {
+			if ($i == 1) $sqlDiffs = $updater->getModTabUpdates();
+			foreach ($sqlDiffs as $sqlDiff) {
+				if ($i == 1 || in_array(md5($sqlDiff), $postKeys)) {
+					$val = $_POST[md5($sqlDiff)];
+					if ($i == 1 || $val == 'on') {
+						mysqli_query(db_get_link(), $sqlDiff);
+						$err = mysqli_error(db_get_link());
+						if ($err) {
+							$fail[] = array('sql' => $sqlDiff, 'msg' => $err);
+						} else {
+							$ok[] = $sqlDiff;
+						};
+					}
+				}
+			}
+		}
+
+		if (sizeof($ok) > 0) {
+			$notifier->addTextInfo('Successfully executed the following statements:<br>'.implode('<br>', $ok));
+		}
+		if (sizeof($fail) > 0) {
+			$err = array();
+			foreach ($fail as $f) {
+				$err[] = $f['sql'].': '.$f['msg'];
+			}
+			$notifier->addTextError('Got an error when executing the following statements:<br>'.implode('<br>', $err));
+		}
+
+		$_SESSION['show'] = 'plugins_list';
 	break;
 
 
@@ -384,7 +487,7 @@ switch($do_action) {
 
 		//Spalte aus DB löschen
 		$query = "ALTER TABLE `ko_leute` DROP `$value`";
-		mysql_query($query);
+		mysqli_query(db_get_link(), $query);
 
 		//Eintrag in leute_col_namen löschen
 		foreach($LIB_LANGS as $lang) {
@@ -432,7 +535,7 @@ switch($do_action) {
 
 		//Spalte aus DB löschen
 		$query = "ALTER TABLE `ko_familie` DROP `$value`";
-		mysql_query($query);
+		mysqli_query(db_get_link(), $query);
 
 		//Eintrag in familie_col_namen löschen
 		foreach($LIB_LANGS as $lang) {
@@ -495,7 +598,7 @@ switch($do_action) {
 		switch($type) {
 			//Enum-Filter mit Select
 			case "enum":
-				if($fid != "") mysql_query($del_query);
+				if($fid != "") mysqli_query(db_get_link(), $del_query);
 				$code1  = '<select name="var1" size="0"><option value=""></option>';
 				$enums = explode("','",preg_replace("/(enum|set)\('(.+?)'\)/","\\2",$col["Type"]));
 				foreach($enums as $e) {
@@ -504,9 +607,21 @@ switch($do_action) {
 				$code1 .= '</select>';
 				$query  = "INSERT INTO `ko_filter` (`id`,`typ`,`dbcol`,`name`,`allow_neg`,`sql1`,`numvars`,`var1`,`code1`)";
 				$query .= " VALUES ('$fid', 'leute', '".$col['Field']."', '$col_name', '1', '".$col["Field"]." REGEXP ''[VAR1]''', '1', '$col_name', '$code1')";
-				mysql_query($query);
+				mysqli_query(db_get_link(), $query);
 				$notifier->addInfo(4, $do_action);
 			break;
+
+			//Boolean --> select
+			case "tinyint":
+				if($fid != "") mysqli_query(db_get_link(), $del_query);
+				$query  = "INSERT INTO `ko_filter` (`id`,`typ`,`dbcol`,`name`,`allow_neg`,`sql1`,`numvars`,`var1`,`code1`)";
+				$query .= " VALUES ('$fid', 'leute', '".$col['Field']."', '$col_name', '1', '".$col["Field"]." = ''[VAR1]''', '1', '$col_name', '<select size=\"0\" name=\"var1\" ><option value=\"1\">".getLL('yes')."</option><option value=\"0\">".getLL('no')."</option></select>');";
+				mysqli_query(db_get_link(), $query);
+				$notifier->addInfo(4, $do_action);
+			break;
+
+
+
 			//Text-Filter mit Textfeld
 			case "varchar":
 			case "tinytext":
@@ -514,23 +629,22 @@ switch($do_action) {
 			case "text":
 			case "longtext":
 			case "blob":
-			case "tinyint":
 			case "smallint":
 			case "int":
 			case "mediumint":
 			case "bigint":
-				if($fid != "") mysql_query($del_query);
+				if($fid != "") mysqli_query(db_get_link(), $del_query);
 				$query  = "INSERT INTO `ko_filter` (`id`,`typ`,`dbcol`,`name`,`allow_neg`,`sql1`,`numvars`,`var1`,`code1`)";
 				$query .= " VALUES ('$fid', 'leute', '".$col['Field']."', '$col_name', '1', '".$col["Field"]." REGEXP ''[VAR1]''', '1', '$col_name', '<input type=\"text\" name=\"var1\" size=\"12\" maxlength=\"$max_length\" onkeydown=\"if ((event.which == 13) || (event.keyCode == 13)) { this.form.submit_filter.click(); return false;} else return true;\" />');";
-				mysql_query($query);
+				mysqli_query(db_get_link(), $query);
 				$notifier->addInfo(4, $do_action);
 			break;
 			//Datums-Filter mit Ober- und Untergrenze
 			case "date":
-				if($fid != "") mysql_query($del_query);
+				if($fid != "") mysqli_query(db_get_link(), $del_query);
 				$query  = "INSERT INTO `ko_filter` (`id`, `typ`,`dbcol`,`name`,`allow_neg`,`sql1`,`sql2`,`numvars`,`var1`,`code1`,`var2`,`code2`)";
 				$query .= " VALUES ('$fid', 'leute', '".$col['Field']."', '$col_name', '1', '".$col['Field']." >= \'[VAR1]\'', '".$col["Field"]." <= \'[VAR2]\'', '2', 'lower (YYYY-MM-DD)', '<input type=\"text\" name=\"var1\" size=\"12\" maxlength=\"10\" />', 'upper (YYYY-MM-DD)', '<input type=\"text\" name=\"var2\" size=\"12\" maxlength=\"10\" />');";
-				mysql_query($query);
+				mysqli_query(db_get_link(), $query);
 				$notifier->addInfo(4, $do_action);
 			break;
 			default:
@@ -773,16 +887,6 @@ switch($do_action) {
 	break;
 
 
-
-
-
-	//Submenus
-  case "move_sm_left":
-  case "move_sm_right":
-    ko_submenu_actions("tools", $do_action);
-  break;
-
-
 	//Default:
   default:
 		if(!hook_action_handler($do_action))
@@ -800,8 +904,7 @@ if(!$_SESSION["show_start"]) {
   $_SESSION["show_start"] = 1;
 }
 
-$_SESSION["show_limit"] = ko_get_userpref($_SESSION["ses_userid"], "show_limit_logins");
-if(!$_SESSION["show_limit"]) $_SESSION["show_limit"] = ko_get_setting("show_limit_logins");
+$_SESSION["show_limit"] = 20;
 
 if($_SESSION["sort_tools"] == "") {
   $_SESSION["sort_tools"] = "login";
@@ -819,10 +922,11 @@ ko_set_submenues();
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="<?php print $_SESSION["lang"]; ?>" lang="<?php print $_SESSION["lang"]; ?>">
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1" />
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
 <title><?php print "$HTML_TITLE: ".getLL("module_".$ko_menu_akt); ?></title>
 <?php
 print ko_include_css();
-print ko_include_js(array($ko_path.'inc/jquery/jquery.js', $ko_path.'inc/kOOL.js'));
+print ko_include_js();
 include($ko_path.'inc/js-sessiontimeout.inc');
 //include("inc/js-tools.inc");
 ?>
@@ -835,24 +939,14 @@ include($ko_path.'inc/js-sessiontimeout.inc');
  * Gibt bei erfolgreichem Login das Menü aus, sonst einfach die Loginfelder
  */
 include($ko_path . "menu.php");
+
+ko_get_outer_submenu_code('tools');
+
 ?>
-
-
-<table width="100%">
-<tr> 
-
-<!-- Submenu -->
-<td class="main_left" name="main_left" id="main_left">
-<?php
-print ko_get_submenu_code("tools", "left");
-?>
-&nbsp;
-</td>
 
 
 <!-- Hauptbereich -->
-<td class="main">
-
+<main class="main">
 <form action="index.php" method="post" name="formular">
 <input type="hidden" name="action" id="action" value="" />
 <input type="hidden" name="id" id="id" value="" />
@@ -867,12 +961,12 @@ if($notifier->hasNotifications(koNotifier::ALL)) {
 hook_show_case_pre($_SESSION["show"]);
 
 switch($_SESSION["show"]) {
+	case 'mailing_mails':
+    ko_tools_mailing_mails();
+  break;
+
 	case "testmail":
 		ko_show_testmail();
-	break;
-
-	case "list_submenus":
-		ko_tools_list_submenus();
 	break;
 
 	case "show_leute_db":
@@ -907,6 +1001,11 @@ switch($_SESSION["show"]) {
 
 	case "plugins_list":
 		ko_tools_plugins_list();
+	break;
+
+	case "plugins_show_sql_diffs":
+		if (!$plugin_id) continue;
+		ko_tools_list_sql_diffs($plugin_id);
 	break;
 
 	case 'scheduler_add':
@@ -944,23 +1043,13 @@ switch($_SESSION["show"]) {
 hook_show_case_add($_SESSION["show"]);
 
 ?>
-&nbsp;
 </div>
 </form>
-</td>
+</main>
 
-<td class="main_right" name="main_right" id="main_right">
-
-<?php
-print ko_get_submenu_code("tools", "right");
-?>
-&nbsp;
-</td>
-</tr>
+</div>
 
 <?php include($ko_path . "footer.php"); ?>
-
-</table>
 
 </body>
 </html>

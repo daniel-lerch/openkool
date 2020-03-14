@@ -151,13 +151,13 @@ class SMS {
 							'    <PhoneNumber>%s</PhoneNumber>'."\r\n".
 							'    <TransRefNumber>%s</TransRefNumber>'."\r\n".
 							'  </Recipient>'."\r\n",
-							htmlspecialchars($re['number']),
-							htmlspecialchars($re['transaction']));
+							htmlspecialchars($re['number'], ENT_COMPAT | ENT_HTML401, 'ISO-8859-1'),
+							htmlspecialchars($re['transaction'], ENT_COMPAT | ENT_HTML401, 'ISO-8859-1'));
 				} else {
 					$recipients .= sprintf('  <Recipient>'."\r\n".
 							'    <PhoneNumber>%s</PhoneNumber>'."\r\n".
 							'  </Recipient>'."\r\n",
-							htmlspecialchars($re['number']));
+							htmlspecialchars($re['number'], ENT_COMPAT | ENT_HTML401, 'ISO-8859-1'));
 				}
 			}
 		}
@@ -165,15 +165,15 @@ class SMS {
 		$notify = '';
 		if (isset($this->notification['buffered'])) {
 			$notify .= sprintf("  <URLBufferedMessageNotification>%s</URLBufferedMessageNotification>\r\n",
-					htmlspecialchars($this->notification['buffered']));
+					htmlspecialchars($this->notification['buffered'], ENT_COMPAT | ENT_HTML401, 'ISO-8859-1'));
 		}
 		if (isset($this->notification['delivery'])) {
 			$notify .= sprintf("  <URLDeliveryNotification>%s</URLDeliveryNotification>\r\n",
-					htmlspecialchars($this->notification['delivery']));
+					htmlspecialchars($this->notification['delivery'], ENT_COMPAT | ENT_HTML401, 'ISO-8859-1'));
 		}
 		if (isset($this->notification['nondelivery'])) {
 			$notify .= sprintf("  <URLNonDeliveryNotification>%s</URLNonDeliveryNotification>\r\n",
-					htmlspecialchars($this->notification['nondelivery']));
+					htmlspecialchars($this->notification['nondelivery'], ENT_COMPAT | ENT_HTML401, 'ISO-8859-1'));
 		}
 
 		if (isset($this->deferred)) {
@@ -219,12 +219,12 @@ class SMS {
 	}
 
 	function sendVCard($name, $phone) {
-		$content = sprintf("<VCard><VName>%s</VName><VPhoneNumber>%s</VPhoneNumber></VCard>", htmlspecialchars($name), htmlspecialchars($phone));
+		$content = sprintf("<VCard><VName>%s</VName><VPhoneNumber>%s</VPhoneNumber></VCard>", htmlspecialchars($name, ENT_COMPAT | ENT_HTML401, 'ISO-8859-1'), htmlspecialchars($phone, ENT_COMPAT | ENT_HTML401, 'ISO-8859-1'));
 		return $this->send($this->getXML($content, 'SendVCard'));
 	}
 
 	function sendSMS() {
-		return $this->send($this->getXML('<MessageData>'.htmlspecialchars($this->content).'</MessageData>', 'SendTextSMS'));
+		return $this->send($this->getXML('<MessageData>'.htmlspecialchars($this->content, ENT_COMPAT | ENT_HTML401, 'ISO-8859-1').'</MessageData>', 'SendTextSMS'));
 	}
 
 	function sendLogo() {
@@ -270,7 +270,7 @@ class SMS {
 	function sendToServer($msg, $host, $port) {
 		if ($this->debug) {
 			print '<pre>';
-			print nl2br(htmlentities($msg));
+			print nl2br(htmlentities($msg, ENT_COMPAT | ENT_HTML401, 'iso-8859-1'));
 			print '</pre>';
 			return 1;
 		} else {

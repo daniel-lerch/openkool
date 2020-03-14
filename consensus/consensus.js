@@ -35,13 +35,12 @@ function sendReq(serverFileName, variableNames, variableValues, handleResponse) 
     }
 
     var jqxhr = $.post( serverFileName, params, function(data) {
-        console.log(data);
         var res = jQuery.parseJSON(data);
         if (res.status == 1) {
             handleResponse(res);
         }
         else {
-            alert(data.content);
+            alert(res.message);
         }
     })
         .done(function() {

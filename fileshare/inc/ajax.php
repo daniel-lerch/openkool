@@ -37,6 +37,8 @@ $ko_path = "../../";
 require($ko_path."inc/ko.inc");
 $ko_path = "../";
 
+array_walk_recursive($_GET,'utf8_decode_array');
+
 //Get acces rights
 ko_get_access_all('fileshare');
 if($access['fileshare']['MAX'] < 1) exit;

@@ -74,24 +74,36 @@ switch($_GET["action"]) {
 </head>
 
 <body>
-<?php
-print '<br /><table width="100%" cellspacing="0"><tr><td class="subpart_header">'.getLL("download_file_header").'</td><td>&nbsp;</td></tr>';
-print '<tr><td class="subpart" colspan="2">'.getLL("download_file").'<br /><br />';
-print '<b>' . getLL('download_file_file') . '</b> <a href="'.$BASE_URL.$_GET["file"].'" target="_blank">'.ko_html($dateiname).'</a>';
-print '</td></tr></table>';
+<div class="panel panel-primary nomargin">
+	<!-- Default panel contents -->
+	<div class="panel-heading"><?= getLL("download_file_header") ?></div>
+	<div class="panel-body">
+		<p>
+			<?= getLL("download_file") ?>
+		</p>
+		<br>
+		<p>
+			<b><?= getLL('download_file_file') ?></b>
+			<a href="<?= $BASE_URL.$_GET["file"]?>" target="_blank"><?= ko_html($dateiname) ?></a>
+		</p>
+		<br>
+		<p align="center">
+			<a href="javascript:TINY.box.hide()"><?= getLL("download_close_window") ?></a>
+		</p>
 
-print '<br /><p align="center"><a href="javascript:TINY.box.hide()">'.getLL("download_close_window").'</a></p>';
+		<?php if (!ko_get_userpref($_SESSION['ses_userid'], 'download_not_directly')) { ?>
+		<iframe src="<?= $BASE_URL.$_GET['file'] ?>" style="display: none;"></iframe>
+		<?php } ?>
 
-//Open file directly unless userpref
-if(!ko_get_userpref($_SESSION['ses_userid'], 'download_not_directly')) {
-	print '<iframe src="'.$BASE_URL.$_GET['file'].'" style="display: none;"></iframe>';
-}
+		<?php if (isset($_GET['send'])) { ?>
+		<p>
+			<a href="?action=show_filesend&file=<?= $_GET['file']?>&filetype=<?=$_GET['filetype']?>">
+				<b>&raquo;&nbsp;<?= getLL('download_send')?></b>
+			</a>
+		</p>
+		<?php } ?>
+	</div>
+</div>
 
-
-
-if(isset($_GET['send'])) {
-	print '<p><a href="?action=show_filesend&file='.$_GET['file'].'&filetype='.$_GET['filetype'].'"><b>&raquo;&nbsp;'.getLL('download_send').'</b></a></p>';
-}
-?>
 </body>
 </html>

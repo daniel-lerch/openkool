@@ -24,24 +24,32 @@
 *  This copyright notice MUST APPEAR in all copies of the script!
 ***************************************************************/
 
+error_reporting(0);
+
 //Set session id from GET (session will be started in ko.inc)
-if(!isset($_GET["sesid"])) exit;
-if(FALSE === session_id($_GET["sesid"])) exit;
+if(!isset($_GET["sesid"]) && !isset($_POST["sesid"])) exit;
+if (isset($_GET["sesid"])) $sesid = $_GET["sesid"];
+if (!$sesid && isset($_POST["sesid"])) $sesid = $_POST["sesid"];
+if(FALSE === session_id($sesid)) exit;
 
 //Send headers to ensure latin1 charset
 header('Content-Type: text/html; charset=ISO-8859-1');
 
-error_reporting(0);
 $ko_menu_akt = 'leute';
 $ko_path = "../../";
 require($ko_path."inc/ko.inc");
 $ko_path = "../";
+
+array_walk_recursive($_GET,'utf8_decode_array');
 
 ko_get_access('leute');
 ko_get_access('groups');
 if(ko_module_installed('kg')) ko_get_access('kg');
 
 ko_include_kota(array('ko_leute', 'ko_kleingruppen'));
+
+//get notifier instance
+$notifier = koNotifier::Instance();
 
 //Smarty-Templates-Engine laden
 require($BASE_PATH."inc/smarty.inc");
@@ -60,8 +68,9 @@ if(sizeof($hooks) > 0) foreach($hooks as $hook) include($hook);
 
 hook_show_case_pre($_SESSION['show']);
 
-if(isset($_GET) && isset($_GET["action"])) {
+if((isset($_GET) && isset($_GET["action"])) || (isset($_POST) && isset($_POST["action"]))) {
 	$action = format_userinput($_GET["action"], "alphanum");
+	if (!$action) $action = format_userinput($_POST["action"], "alphanum");
 
 	hook_ajax_pre($ko_menu_akt, $action);
 
@@ -71,9 +80,6 @@ if(isset($_GET) && isset($_GET["action"])) {
 		case "leutesavefilterset":
 		case "leutedelfilterset":
 			if($access['leute']['MAX'] < 1) continue;
-			//Position des Filter-SM finden
-			if(in_array("filter", explode(",", $_SESSION["submenu_left"]))) $pos = "left";
-			else $pos = "right";
 
 			if($action == "leutefilterform") {
 				//Neuen Filter aktiv setzen
@@ -94,11 +100,23 @@ if(isset($_GET) && isset($_GET["action"])) {
 					unset($_SESSION['filter']['sort_order']);
 				}
 				$new_value = serialize($_SESSION["filter"]);
+
+				ko_get_login($_SESSION['ses_userid'], $l);
+				$name = format_userinput($_GET["name"], "js")." (".$l['login'].")";
+
 				//Save filter for all selected logins
 				if($access['leute']['MAX'] > 3) {
 					$for_logins = format_userinput(str_replace("MULTIPLE", ",", $_GET["logins"]), "intlist");
 					foreach(explode(",", $for_logins) as $login) {
-						if($login) ko_save_userpref($login, format_userinput($_GET["name"], "js"), $new_value, "filterset");
+						if($login) {
+							$n = $name;
+							$c = 0;
+							while (ko_get_userpref($login, $n, "filterset")) {
+								$c++;
+								$n = $name . ' - ' . $c;
+							}
+							ko_save_userpref($login, $n, $new_value, "filterset");
+						}
 					}
 				}
 				//Set user_id to -1 if to be stored globally
@@ -119,7 +137,7 @@ if(isset($_GET) && isset($_GET["action"])) {
 			}
 
 			//Neuen HTML-Code für SM ausgeben
-			print submenu_leute("filter", $pos, "open", 2);
+			print submenu_leute("filter", "open", 2);
 
 			//group filter
 			ko_get_filter_by_id($_SESSION["filter_akt"], $akt_filter);
@@ -184,10 +202,6 @@ if(isset($_GET) && isset($_GET["action"])) {
 		case "leuteopenfilterset":
 			if($access['leute']['MAX'] < 1) continue;
 
-			//Position des Filter-SM finden
-			if(in_array("filter", explode(",", $_SESSION["submenu_left"]))) $pos = "left";
-			else $pos = "right";
-
 			//Filter löschen, falls Neu Anwenden geklickt wurde
 			if($action == "leutefilternew" || $action == "leutefilterdelall") {
 				//Link speichern
@@ -201,10 +215,11 @@ if(isset($_GET) && isset($_GET["action"])) {
 			if($_SESSION['show'] == 'show_my_list') $_SESSION['show'] = 'show_all';
 
 			if($action == "leutefilter" || $action == "leutefilternew") {
-				//Daten auslesen
-				$data["var1"] = format_userinput($_GET["var1"], "text");
-				$data["var2"] = format_userinput($_GET["var2"], "text");
-				$data["var3"] = format_userinput($_GET["var3"], "text");
+				//Apply urldecode()
+				$data['var1'] = format_userinput(urldecode($_GET['var1']), 'text');
+				$data['var2'] = format_userinput(urldecode($_GET['var2']), 'text');
+				$data['var3'] = format_userinput(urldecode($_GET['var3']), 'text');
+				$data['var4'] = format_userinput(urldecode($_GET['var4']), 'text');
 				if(isset($_GET["neg"]) && $_GET["neg"] == "true") $neg = 1;
 				else $neg = 0;
 
@@ -218,6 +233,7 @@ if(isset($_GET) && isset($_GET["action"])) {
 				$_SESSION["filter"][] = array($_SESSION["filter_akt"], $vars, $neg);
 				$_SESSION["show_start"] = 1;
 				$_SESSION['filter']['use_link_adv'] = FALSE;
+
 			}
 			//Delete a single selected filter
 			else if($action == "leutefilterdel") {
@@ -249,7 +265,7 @@ if(isset($_GET) && isset($_GET["action"])) {
 			else if($action == "leuteschnellfilter") {
 				$fast_filter = ko_get_fast_filter();
 				foreach($fast_filter as $id) {
-					if($_GET["fastfilter".$id]) $_SESSION["filter"][] = array($id, array('', str_replace("*", ".*", format_userinput($_GET["fastfilter".$id], "text"))), 0);
+					if($_GET["fastfilter".$id]) $_SESSION["filter"][] = array($id, array('', str_replace("*", ".*", format_userinput(urldecode($_GET["fastfilter".$id]), "text"))), 0);
 				}
 				$_SESSION["show_start"] = 1;  //Liste von vorne her anzeigen
 				if($_SESSION["show"] != "show_all" && $_SESSION["show"] != "show_adressliste") {
@@ -289,11 +305,21 @@ if(isset($_GET) && isset($_GET["action"])) {
 
 			//Neuen HTML-Code für SM ausgeben
 			print "@@@";
-			print submenu_leute("filter", $pos, "open", 2);
+			print submenu_leute("filter", "open", 2);
 
 			//Redraw cols-submenu
 			print "@@@";
-			print submenu_leute("itemlist_spalten", $pos, "open", 2);
+			print submenu_leute("itemlist_spalten", "open", 2);
+
+			//Redraw general filter input
+			print "@@@";
+			print 'general-search-li@@@';
+			print ko_get_searchbox_code('leute', 'general_only');
+
+			// Redraw searchbox
+			print "@@@";
+			print 'searchbox-li@@@';
+			print ko_get_searchbox_code('leute', 'searchbox_only');
 
 			//group filter
 			ko_get_filter_by_id($_SESSION["filter_akt"], $akt_filter);
@@ -471,6 +497,7 @@ if(isset($_GET) && isset($_GET["action"])) {
 					}
 
 				}
+
 				//Save userpref
 				ko_save_userpref($_SESSION["ses_userid"], "show_leute_cols", implode(",", $_SESSION["show_leute_cols"]));
 
@@ -479,9 +506,7 @@ if(isset($_GET) && isset($_GET["action"])) {
 
 				//Redraw itemlist if needed (if clicked in table header)
 				if($redraw) {
-					if(in_array('itemlist_spalten', explode(',', $_SESSION['submenu_left']))) $pos = 'left';
-					else $pos = "right";
-					print '@@@'.submenu_leute('itemlist_spalten', $pos, 'open', 2);
+					print '@@@'.submenu_leute('itemlist_spalten', 'open', 2);
 				}
 			}
 
@@ -566,36 +591,69 @@ if(isset($_GET) && isset($_GET["action"])) {
 			else if($_SESSION['show'] == 'geburtstagsliste') $mode = 'birthdays';
 			else $mode = "liste";
 
-			//Find position of submenu for redraw
-			if(in_array("itemlist_spalten", explode(",", $_SESSION["submenu_left"]))) $pos = "left";
-			else $pos = "right";
-
 			//save new value
 			if($_GET["name"] == "") continue;
 			$global = $_GET['global'] == 'true';
+			$name = format_userinput($_GET["name"], "js", FALSE, 0, array("allquotes"));
+			$for_logins = format_userinput($_GET["logins"], "intlist");
+
 			if($_SESSION["show"] == "list_kg") {
 				if($global) $kg_all_rights = ko_get_access_all('kg', '', $kg_max_rights);
 				$new_value = implode(",", $_SESSION["kota_show_cols_ko_kleingruppen"]);
 				//Set user_id to -1 if to be stored globally
 				$user_id = ($global && $kg_max_rights > 2) ? '-1' : $_SESSION['ses_userid'];
-				ko_save_userpref($user_id, format_userinput($_GET["name"], "js", FALSE, 0, array("allquotes")), $new_value, "leute_kg_itemset");
+				ko_save_userpref($user_id, $name, $new_value, "leute_kg_itemset");
 
-				print submenu_leute("itemlist_spalten_kg", $pos, "open", 2);
+				print submenu_leute("itemlist_spalten_kg", "open", 2);
 			} else if($_SESSION["show"] == "chart") {
 				if($access['leute']['MAX'] < 1) continue;
 				$new_value = implode(",", $_SESSION["show_leute_chart"]);
-				$user_id = ($access['leute']['MAX'] > 3 && $global) ? '-1' : $_SESSION['ses_userid'];
-				ko_save_userpref($user_id, format_userinput($_GET["name"], "js", FALSE, 0, array("allquotes")), $new_value, "leute_chart_itemset");
 
-				print submenu_leute("itemlist_chart", $pos, "open", 2);
+				//Save cols for all selected logins
+				if($access['leute']['MAX'] > 3) {
+					foreach(explode(",", $for_logins) as $login) {
+						if($login) {
+							if ($login == ko_get_root_id() || $login == $_SESSION['ses_userid']) continue;
+							$n = $name;
+							$c = 0;
+							while (ko_get_userpref($login, $n, "leute_chart_itemset")) {
+								$c++;
+								$n = $name . ' - ' . $c;
+							}
+							ko_save_userpref($login, $n, $new_value, "leute_chart_itemset");
+						}
+					}
+				}
+
+				$user_id = ($access['leute']['MAX'] > 3 && $global) ? '-1' : $_SESSION['ses_userid'];
+				ko_save_userpref($user_id, $name, $new_value, "leute_chart_itemset");
+
+				print submenu_leute("itemlist_chart", "open", 2);
 			} else {
 				if($access['leute']['MAX'] < 1) continue;
 				$new_value = implode(",", $_SESSION["show_leute_cols"]);
+
+				//Save cols for all selected logins
+				if($access['leute']['MAX'] > 3) {
+					foreach(explode(",", $for_logins) as $login) {
+						if($login) {
+							if ($login == ko_get_root_id() || $login == $_SESSION['ses_userid']) continue;
+							$n = $name;
+							$c = 0;
+							while (ko_get_userpref($login, $n, "leute_itemset")) {
+								$c++;
+								$n = $name . ' - ' . $c;
+							}
+							ko_save_userpref($login, $n, $new_value, "leute_itemset");
+						}
+					}
+				}
+
 				//Set user_id to -1 if to be stored globally
 				$user_id = ($access['leute']['MAX'] > 3 && $global) ? '-1' : $_SESSION['ses_userid'];
-				ko_save_userpref($user_id, format_userinput($_GET["name"], "js", FALSE, 0, array("allquotes")), $new_value, "leute_itemset");
+				ko_save_userpref($user_id, $name, $new_value, "leute_itemset");
 
-				print submenu_leute("itemlist_spalten", $pos, "open", 2);
+				print submenu_leute("itemlist_spalten", "open", 2);
 			}
 
 		break;
@@ -606,10 +664,6 @@ if(isset($_GET) && isset($_GET["action"])) {
 			if($_SESSION["show"] == "show_my_list") $mode = "my_list";
 			else if($_SESSION['show'] == 'geburtstagsliste') $mode = 'birthdays';
 			else $mode = "liste";
-
-			//Find position of submenu for redraw
-			if(in_array("itemlist_spalten", explode(",", $_SESSION["submenu_left"]))) $pos = "left";
-			else $pos = "right";
 
 			//save new value
 			$name = format_userinput($_GET["name"], "js", FALSE, 0, array(), '@');
@@ -635,7 +689,7 @@ if(isset($_GET) && isset($_GET["action"])) {
 				print "main_content@@@";
 				print ko_list_kg(FALSE);
 				print "@@@";
-				print submenu_leute("itemlist_spalten_kg", $pos, "open", 2);
+				print submenu_leute("itemlist_spalten_kg", "open", 2);
 			} else if($_SESSION["show"] == "chart") {
 				if($access['leute']['MAX'] < 1) continue;
 				if($name == '_all_') {
@@ -652,7 +706,7 @@ if(isset($_GET) && isset($_GET["action"])) {
 				print "main_content@@@";
 				print ko_leute_chart();
 				print "@@@";
-				print submenu_leute("itemlist_chart", $pos, "open", 2);
+				print submenu_leute("itemlist_chart", "open", 2);
 			} else {
 				if($access['leute']['MAX'] < 1) continue;
 				if($name == '_all_') {
@@ -675,7 +729,7 @@ if(isset($_GET) && isset($_GET["action"])) {
 				print "main_content@@@";
 				print ko_list_personen($mode, FALSE);
 				print "@@@";
-				print submenu_leute("itemlist_spalten", $pos, "open", 2);
+				print submenu_leute("itemlist_spalten", "open", 2);
 			}
 
 		break;
@@ -687,10 +741,6 @@ if(isset($_GET) && isset($_GET["action"])) {
 			else if($_SESSION['show'] == 'geburtstagsliste') $mode = 'birthdays';
 			else $mode = "liste";
 
-			//Find position of submenu for redraw
-			if(in_array("itemlist_spalten", explode(",", $_SESSION["submenu_left"]))) $pos = "left";
-			else $pos = "right";
-
 			//save new value
 			$name = format_userinput($_GET["name"], "js", FALSE, 0, array(), '@');
 			if($name == "") continue;
@@ -700,19 +750,19 @@ if(isset($_GET) && isset($_GET["action"])) {
 					$kg_all_rights = ko_get_access_all('kg', '', $kg_max_rights);
 					if($kg_max_rights > 2) ko_delete_userpref('-1', substr($name, 3), "leute_kg_itemset");
 				} else ko_delete_userpref($_SESSION['ses_userid'], $name, "leute_kg_itemset");
-				print submenu_leute("itemlist_spalten_kg", $pos, "open", 2);
+				print submenu_leute("itemlist_spalten_kg", "open", 2);
 			} else if($_SESSION["show"] == "chart") {
 				if($access['leute']['MAX'] < 1) continue;
 				if(substr($name, 0, 3) == '@G@') {
 					if($access['leute']['MAX'] > 3) ko_delete_userpref('-1', substr($name, 3), "leute_chart_itemset");
 				} else ko_delete_userpref($_SESSION['ses_userid'], $name, "leute_chart_itemset");
-				print submenu_leute("itemlist_chart", $pos, "open", 2);
+				print submenu_leute("itemlist_chart", "open", 2);
 			} else {
 				if($access['leute']['MAX'] < 1) continue;
 				if(substr($name, 0, 3) == '@G@') {
 					if($access['leute']['MAX'] > 3) ko_delete_userpref('-1', substr($name, 3), "leute_itemset");
 				} else ko_delete_userpref($_SESSION['ses_userid'], $name, "leute_itemset");
-				print submenu_leute("itemlist_spalten", $pos, "open", 2);
+				print submenu_leute("itemlist_spalten", "open", 2);
 			}
 
 		break;
@@ -747,6 +797,11 @@ if(isset($_GET) && isset($_GET["action"])) {
 			$_SESSION['show_start'] = 1;
 			print "main_content@@@";
 			print ko_list_personen($mode, FALSE);
+
+			// redraw searchbox
+			print '@@@';
+			print 'searchbox-li@@@';
+			print ko_get_searchbox_code('leute', 'searchbox_only');
 		break;  //showdeleted
 
 
@@ -765,7 +820,80 @@ if(isset($_GET) && isset($_GET["action"])) {
 
 			print "main_content@@@";
 			print ko_list_personen($mode, FALSE);
+
+			// redraw searchbox
+			print '@@@';
+			print 'searchbox-li@@@';
+			print ko_get_searchbox_code('leute', 'searchbox_only');
 		break;  //showhidden
+
+
+		case 'hideperson':
+			$id = format_userinput($_GET['id'], 'uint');
+			if ($access['leute']['ALL'] < 3 && $access['leute'][$id] < 3) continue;
+
+			ko_get_person_by_id($id, $person);
+			if (!is_array($person) || $person['id'] != $id) continue;
+
+			if (!$person['hidden']) {
+				ko_save_leute_changes($person['id']);
+				db_update_data('ko_leute', "WHERE `id` = '{$id}'", array('hidden' => '1'));
+			}
+
+			print "main_content@@@";
+			switch($_SESSION["show"]) {
+				case "show_all":
+					ko_list_personen('liste', FALSE);
+				break;
+
+				case "show_adressliste":
+					ko_list_personen("adressliste", FALSE);
+				break;
+
+				case "show_my_list":
+					ko_list_personen("my_list", FALSE);
+				break;
+
+				case "geburtstagsliste":
+					//ko_list_geburtstage();
+					ko_list_personen('birthdays', FALSE);
+				break;
+			}
+		break;
+
+
+		case 'unhideperson':
+			$id = format_userinput($_GET['id'], 'uint');
+			if ($access['leute']['ALL'] < 3 && $access['leute'][$id] < 3) continue;
+
+			ko_get_person_by_id($id, $person);
+			if (!is_array($person) || $person['id'] != $id) continue;
+
+			if ($person['hidden']) {
+				ko_save_leute_changes($person['id']);
+				db_update_data('ko_leute', "WHERE `id` = '{$id}'", array('hidden' => '0'));
+			}
+
+			print "main_content@@@";
+			switch($_SESSION["show"]) {
+				case "show_all":
+					ko_list_personen('liste', FALSE);
+				break;
+
+				case "show_adressliste":
+					ko_list_personen("adressliste", FALSE);
+				break;
+
+				case "show_my_list":
+					ko_list_personen("my_list", FALSE);
+				break;
+
+				case "geburtstagsliste":
+					//ko_list_geburtstage();
+					ko_list_personen('birthdays', FALSE);
+				break;
+			}
+		break;
 
 
 
@@ -774,7 +902,7 @@ if(isset($_GET) && isset($_GET["action"])) {
 
 			$limit = 30;
 
-			$string = format_userinput(utf8_decode($_GET['string']), 'text');
+			$string = format_userinput($_GET['string'], 'text');
 			if(!$string || strlen($string) < 3) {
 				print '';
 				continue;
@@ -788,16 +916,15 @@ if(isset($_GET) && isset($_GET["action"])) {
 			}
 
 			$input_name = format_userinput(substr($_GET['name'], 0, strrpos($_GET['name'], '[')), 'text');
-			$name = str_replace('txt_', 'sel_ds1_', $input_name);
+			$name = 'sel_ds1_' . $input_name;
 			$filter = unserialize(ko_get_setting('ps_filter_'.$name));
 			apply_leute_filter($filter, $base_where, ($access['leute']['ALL'] < 1 && !$accessAll));
-
 
 			//Apply filters set in KOTA
 			list($temp, $table, $field) = explode('[', $input_name);
 			$table = substr($table, 0, -1);
 			$field = substr($field, 0, -1);
-			if(!isset($KOTA[$table][$field])) {
+			if($table && !isset($KOTA[$table][$field])) {
 				ko_include_kota(array($table));
 			}
 			if($KOTA[$table][$field]['form']['additional_where']) {
@@ -805,6 +932,7 @@ if(isset($_GET) && isset($_GET["action"])) {
 			} else {
 				$kota_where = '';
 			}
+
 
 
 			$parts = explode(' ', $string);
@@ -825,12 +953,336 @@ if(isset($_GET) && isset($_GET["action"])) {
 					$title  = $p['firm'].' '.$p['vorname'].' '.$p['nachname'];
 					$title .= $p['adresse'] != '' ? ' - '.$p['adresse'] : '';
 					$title .= $p['plz'] != '' || $p['ort'] != '' ? ' - '.$p['plz'].' '.$p['ort'] : '';
+					$title .= ' (ID: '.$p['id'].')';
 					$title = trim(format_userinput($title, 'js'));
 					$label = trim(format_userinput($p['firm'].' '.$p['vorname'].' '.$p['nachname'], 'js'));
 					print '<option class="peoplesearchresultentry '.$class.'" value="'.$p['id'].'" label="'.$label.'" title="'.$title.'">'.$label.'</option>';
 
 					$class = $class == 'odd' ? 'even' : 'odd';
 				}
+			}
+		break;
+
+
+		case "peoplesearchnew":
+			if($access['leute']['MAX'] < 1) continue;
+
+			$limit = 30;
+
+			$string = format_userinput($_GET['query'], 'text');
+			if(!$string || strlen($string) < 3) {
+				print '[]';
+				continue;
+			}
+
+
+			list($mode, $token) = explode('-', $_GET['token']);
+			if($mode == 'all' && $token != '' && $token == $_SESSION['peoplesearch_access_token']) {
+				$accessAll = TRUE;
+			} else {
+				$accessAll = FALSE;
+			}
+
+			$input_name = format_userinput(substr($_GET['name'], 0, strrpos($_GET['name'], '[')), 'text');
+			$name = 'sel_ds1_' . $input_name;
+			$filter = unserialize(ko_get_setting('ps_filter_'.$name));
+			apply_leute_filter($filter, $base_where, ($access['leute']['ALL'] < 1 && !$accessAll));
+
+			//Apply filters set in KOTA
+			list($temp, $table, $field) = explode('[', $input_name);
+			$table = substr($table, 0, -1);
+			$field = substr($field, 0, -1);
+			if(!isset($KOTA[$table][$field])) {
+				ko_include_kota(array($table));
+			}
+			if($KOTA[$table][$field]['form']['additional_where']) {
+				$kota_where = $KOTA[$table][$field]['form']['additional_where'];
+			} else {
+				$kota_where = '';
+			}
+
+			$excludeIds = format_userinput($_GET['exclude'], 'intlist');
+			$excludeIds = array_filter(array_map(function($el) {return trim($el);}, explode(',', $excludeIds)), function($el) {return $el != '';});
+			$exclude_where = '';
+			if (sizeof($excludeIds) > 0) {
+				$exclude_where .= " AND `id` NOT IN ('".implode("','", $excludeIds)."') ";
+			}
+			$excludeSql = str_replace(array('#', '--', '/*', '//'), array('', '', '', ''), $_GET['excludesql']);
+
+			if ($excludeSql) {
+				$exclude_where .= " AND ({$excludeSql})";
+			}
+
+			$parts = explode(' ', $string);
+			$where_parts = array();
+			foreach($parts as $s) {
+				if(!$s) continue;
+				$where_parts[] = " (`vorname` LIKE '%$s%' OR `nachname` LIKE '%$s%' OR `firm` LIKE '%$s%') ";
+			}
+			$z_where = implode(' AND ', $where_parts).' '.$base_where.' '.$kota_where.' '.$exclude_where;
+
+			$people = db_select_data('ko_leute', "WHERE $z_where", '*', 'ORDER BY nachname, vorname ASC');
+
+			$result = array();
+			foreach($people as $p) {
+				if ($access['leute']['ALL'] < 1 && $access['leute'][$p['id']] < 1 && !$accessAll) continue;
+				$title  = $p['firm'].' '.$p['vorname'].' '.$p['nachname'];
+				$title .= $p['adresse'] != '' ? ' - '.$p['adresse'] : '';
+				$title .= $p['plz'] != '' || $p['ort'] != '' ? ' - '.$p['plz'].' '.$p['ort'] : '';
+				$title .= ' (ID: '.$p['id'].')';
+				$title = trim(format_userinput($title, 'js'));
+				$label = trim(format_userinput($p['firm'].' '.$p['vorname'].' '.$p['nachname'], 'js'));
+				$result[] = array('id' => utf8_encode($p['id']), 'name' => utf8_encode($label), 'title' => utf8_encode($title));
+			}
+
+			print json_encode($result);
+		break;
+
+
+		case "getfamilies":
+			if ($access['leute']['MAX'] < 1) continue;
+
+			$result = array();
+
+			$member_ids = explode(',', format_userinput($_GET['memberids'], 'text'));
+
+			$people = array();
+			if (sizeof($member_ids) > 0) {
+				ko_get_leute($people, " AND `id` in (".implode(',', $member_ids).")");
+			}
+			$people_famids = array();
+			foreach ($people as $person) {
+				if ($person['id'] && $person['famid']) {
+					$people_famids[$person['famid']] = $person['id'];
+				}
+			}
+
+			ko_get_familien($families);
+
+			foreach($families as $f) {
+				if (!array_key_exists($f['famid'], $people_famids)) continue;
+				$result[] = array(
+					'memberid' => utf8_encode($people_famids[$f['famid']]),
+					'id' => utf8_encode($f['famid']),
+					'title' => utf8_encode($f['detailed_id']),
+					'desc' => utf8_encode($f['id']),
+					''
+				);
+			}
+
+			print json_encode($result);
+		break;
+
+
+		case "getfamily":
+			if ($access['leute']['MAX'] < 1) continue;
+
+			$famid = format_userinput($_GET['famid'], 'text');
+
+			$familie = ko_get_familie($famid);
+
+			$values = array();
+
+			if ($familie['id']) {
+				$familie_col_name = ko_get_family_col_name();
+				$familien_cols = db_get_columns("ko_familie");
+
+				foreach($familien_cols as $col_) {
+					$col = $col_["Field"];
+					if(!in_array($col, array_merge($FAMILIE_EXCLUDE))) {
+						$value = $familie[$col];
+						$values["input_".$col] = utf8_encode($value);
+					}
+				}//foreach(familien_cols)
+			}
+
+			print json_encode($values);
+		break;
+
+
+		case "crm":
+			if (!ko_module_installed('crm')) continue;
+			$leute_id = format_userinput($_GET["id"], "uint");
+			if (!$leute_id) continue;
+			if (!isset($access['crm'])) ko_get_access('crm');
+			if ($access['crm']['MAX'] < 1) continue;
+			ko_include_kota(array('ko_crm_contacts'));
+
+			$html = leute_get_crm_entries_html($leute_id);
+
+			print $html;
+		break;
+
+
+		case "editcrmentry":
+		case "addcrmentry":
+
+			$error_result = json_encode(array('status' => 'error'));
+			if (!ko_module_installed('crm')) continue;
+			if (!isset($access['crm'])) ko_get_access('crm');
+			if ($access['crm']['MAX'] < 1) continue;
+			$leute_id = format_userinput($_GET['leute_id'], 'uint');
+			if (!$leute_id) continue;
+			ko_include_kota(array('ko_crm_contacts'));
+
+			if ($action == 'editcrmentry') {
+				$mode = 'edit';
+				$id = format_userinput($_GET['contact_id'], 'uint');
+			}
+			else {
+				$mode = 'new';
+			}
+			$no_form = array('leute_ids', 'reference');
+
+			$show_form_elements = array();
+			foreach ($KOTA['ko_crm_contacts']['_listview'] as $k => $kotaEntry) {
+				if (!in_array($kotaEntry['name'], $no_form)) $show_form_elements[] = $kotaEntry['name'];
+			}
+			foreach ($KOTA['ko_crm_contacts'] as $k => $kota_entry) {
+				if (substr($k, 0, 1) == '_') continue;
+				if (!in_array($k, $show_form_elements)) unset($KOTA['ko_crm_contacts'][$k]);
+			}
+
+			if($mode == 'new') {
+				if($access['crm']['MAX'] < 2) continue;
+				$id = 0;
+			} else if($mode == 'edit') {
+				if(!$id) continue;
+
+				ko_get_crm_contacts($contact, " AND `id` = '" . $id . "'", '', '', TRUE, TRUE);
+				// check access
+				if (!ko_get_crm_contacts_access($contact, 'edit')) continue;
+			} else continue;
+
+			$form_data['title'] =  $mode == 'new' ? getLL('crm_contacts_form_title_new') : getLL('crm_contacts_form_title_edit');
+			$form_data['submit_value'] = getLL('save');
+			$form_data['action'] = $mode == 'new' ? 'submit_new_contact' : 'submit_edit_contact';
+			if($access['crm']['ALL'] >= 5) {
+				$form_data['action_as_new'] = 'submit_as_new_contact';
+				$form_data['label_as_new'] = getLL('crm_contacts_form_submit_as_new');
+			}
+			$form_data['cancel'] = 'list_contacts';
+
+			$groups = ko_multiedit_formular('ko_crm_contacts', '', $id, '', $form_data, TRUE);
+			$group = $groups[0];
+			$inputs_unordered = array();
+			foreach ($group['row'] as $k1 => $row) {
+				foreach ($row['inputs'] as $k2 => $input) {
+					$inputs_unordered[$input['colname']] = $input;
+					$inputs_unordered[$input['colname']]['add_class'] = 'leute-crm-entry-'.$id.'-form-element form-element-inline';
+				}
+			}
+			$inputs = array();
+			$new = array();
+			foreach ($KOTA['ko_crm_contacts']['_listview'] as $form_element) {
+				$k = $form_element['name'];
+				$inputs[] = $inputs_unordered[$k];
+				if($KOTA['ko_crm_contacts'][$k]['form']['ignore_test']) continue;
+				if($KOTA['ko_crm_contacts'][$k]['form']['type'] == 'foreign_table') continue;
+				if(in_array($k, $no_form)) continue;
+				$new[] = $k;
+			}
+			$columns = $new;
+			$ids = array($id);
+
+			//Controll-Hash
+			sort($columns);
+			sort($ids);
+			//print $mysql_pass.$table.implode(":", $columns).implode(":", $ids);
+			$hash_code = md5(md5($mysql_pass.'ko_crm_contacts'.implode(":", $columns).implode(":", $ids)));
+			$hash = $table."ko_crm_contacts@".implode(",", $columns)."@".implode(",", $ids)."@".$hash_code;
+
+			$smarty->assign('inputs', $inputs);
+			$smarty->assign('mode', $mode);
+			$smarty->assign('ko_path', $ko_path);
+			$smarty->assign('layout_mode', 'form_row');
+			$smarty->assign('hash', $hash);
+			$smarty->assign('parent_row_id', $leute_id);
+			$smarty->assign('id', $id);
+			$form_row = $smarty->fetch('ko_leute_crm_entries.tpl');
+
+			$form_row = preg_replace('/class="([^"]*input-group[^"]*)"/', 'class="$1 form-element-inline"', $form_row);
+
+			$form_row = preg_replace('/<\/tr>( |\t|\n)*$/', '', $form_row);
+			print $form_row;
+			require ($ko_path . '../crm/inc/js-selproject.inc');
+			print '</tr>';
+		break;
+
+
+		case "submitaddcrmentry":
+			if (!ko_module_installed('crm')) continue;
+			if (!isset($access['crm'])) ko_get_access('crm');
+			if($access['crm']['MAX'] < 2) continue;
+			ko_include_kota(array('ko_crm_contacts'));
+
+			$leute_id = $_POST['leute_id'];
+
+			array_walk_recursive($_POST, 'utf8_decode_array');
+			$newId = kota_submit_multiedit('', 'new_crm_contact');
+
+			if(!$notifier->hasErrors()) {
+				$html = leute_get_crm_entries_html($leute_id, TRUE);
+				print $html;
+			}
+			else {
+				$notifier->notify();
+				continue;
+			}
+		break;
+
+
+		case "submiteditcrmentry":
+			if (!ko_module_installed('crm')) continue;
+			if (!isset($access['crm'])) ko_get_access('crm');
+			if($access['crm']['MAX'] < 2) continue;
+			ko_include_kota(array('ko_crm_contacts'));
+			list($t1, $t2, $editId) = explode('@', $_POST['id']);
+
+			ko_get_crm_contacts($contact, " AND `id` = '" . $editId . "'", '', '', TRUE, TRUE);
+
+			// check access
+			if (!ko_get_crm_contacts_access($contact, 'edit')) continue;
+
+			$leute_id = format_userinput($_POST['leute_id'], 'uint');
+
+			array_walk_recursive($_POST, 'utf8_decode_array');
+			kota_submit_multiedit('', 'edit_crm_contact');
+
+			if(!$notifier->hasErrors()) {
+				$html = leute_get_crm_entries_html($leute_id, TRUE);
+				print $html;
+			}
+			else {
+				$notifier->notify();
+				continue;
+			}
+		break;
+
+
+		case "deletecrmentry":
+			$id = format_userinput($_GET['contact_id'], 'uint');
+			$leute_id = format_userinput($_GET['leute_id'], 'uint');
+
+			if (!$id || !$leute_id) continue;
+
+			ko_get_crm_contacts($contact, " AND `id` = '" . $id . "'", '', '', TRUE, TRUE);
+
+			if(!$contact['id'] || $contact['id'] != $id ) continue;
+
+			// check access
+			if (!ko_get_crm_contacts_access($contact, 'delete')) continue;
+
+			db_delete_data('ko_crm_contacts', "WHERE `id` = '$id'");
+			ko_log_diff('del_crm_contact', $contact);
+
+			if(!$notifier->hasErrors()) {
+				$html = leute_get_crm_entries_html($leute_id, TRUE);
+				print $html;
+			}
+			else {
+				$notifier->notify();
+				continue;
 			}
 		break;
 
@@ -900,7 +1352,7 @@ if(isset($_GET) && isset($_GET["action"])) {
 						$row_value .= '</td>';
 						//change date
 						$row_value .= '<td width="80">';
-						$row_value .= '<span title="'.strftime('%H:%M', strtotime($version['date'])).' '.getLL('time_oclock').'">'.strftime($DATETIME["dmY"], strtotime($version["date"])).'</span>';
+						$row_value .= '<span '.ko_get_tooltip_code(strftime('%H:%M', strtotime($version['date'])).' '.getLL('time_oclock')).'>'.strftime($DATETIME["dmY"], strtotime($version["date"])).'</span>';
 						$row_value .= '</td><td width="140">';
 						//change user
 						ko_get_login($version["user_id"], $login);
@@ -947,7 +1399,7 @@ if(isset($_GET) && isset($_GET["action"])) {
 								$do_row = TRUE;
 							}
 							//Exclude unwanted cols (like hidden, lastchange, etc)
-							if(in_array($c, $LEUTE_EXCLUDE) && $c != 'famid') continue;
+							if(in_array($c, $LEUTE_EXCLUDE) && !in_array($c, array('famid', 'father', 'mother', 'spouse'))) continue;
 
 							//special columns
 							//groups
@@ -1059,7 +1511,7 @@ if(isset($_GET) && isset($_GET["action"])) {
 								$do_row = TRUE;
 							}
 							//Exclude unwanted cols (like hidden, lastchange, etc)
-							if(in_array($c, $LEUTE_EXCLUDE) && $c != 'famid') continue;
+							if(in_array($c, $LEUTE_EXCLUDE) && !in_array($c, array('famid', 'father', 'mother', 'spouse'))) continue;
 
 							//special columns
 							//groups
@@ -1241,21 +1693,22 @@ if(isset($_GET) && isset($_GET["action"])) {
 			if($access['leute']['MAX'] < 1) continue;
 			if(!ko_module_installed('mailing')) continue;
 
-			//Position des Filter-SM finden
-			if(in_array('filter', explode(',', $_SESSION['submenu_left']))) $pos = 'left';
-			else $pos = 'right';
-
 			//Get preset id
 			$fpid = format_userinput($_GET['fpid'], 'uint');
 			if(!$fpid) continue;
 
 			//Get alias and check for uniqueness
 			$alias = str_replace('@', '', format_userinput($_GET['alias'], 'email'));
-			$ok = kota_mailing_check_unique_alias($alias, array('table' => 'ko_userprefs', 'id' => $fpid));
+
+			$delete = $alias == '';
+			if (!$delete) $ok = kota_mailing_check_unique_alias($alias, array('table' => 'ko_userprefs', 'id' => $fpid));
+			else $ok = TRUE;
+
 			if(!$ok) {
 				print 'ERROR@@@'.getLL('mailing_error_7');
 				continue;
 			}
+
 
 			//Get filterset and check for valid
 			$filterset = db_select_data('ko_userprefs', "WHERE `id` = '$fpid'", '*', '', '', TRUE);
@@ -1268,7 +1721,61 @@ if(isset($_GET) && isset($_GET["action"])) {
 			$GLOBALS['kOOL']['ko_userprefs']['TYPE@filterset'][$filterset['key']] = $filterset;
 
 			//Redraw whole submenu
-			print submenu_leute('filter', $pos, 'open', 2);
+			print submenu_leute('filter', 'open', 2);
+		break;
+
+
+		case 'submitgeneralsearch':
+			if($access['leute']['MAX'] < 1) continue;
+			$value = format_userinput($_GET['value'], 'text');
+
+			$_SESSION['filter'] = array();
+
+			if ($value != '') {
+				/*$fast_filter = ko_get_fast_filter();
+				foreach($fast_filter as $id) {
+					$_SESSION['filter'][] = array($id, array('', str_replace('*', '.*', $value)), 0);
+				}*/
+				$fast_filter = db_select_data('ko_filter', "WHERE `typ` = 'leute' AND `name` = 'fastfilter'", 'id', '', '', TRUE, TRUE);
+				if ($fast_filter['id']) $_SESSION['filter'][] = array($fast_filter['id'], array('', str_replace('*', '.*', $value)), 0);
+			}
+
+			//$_SESSION['filter']['link'] = 'or';
+
+			print 'general-search-li@@@';
+			print ko_get_searchbox_code('leute', 'general_only');
+
+			// redraw searchbox
+			print '@@@';
+			print 'searchbox-li@@@';
+			print ko_get_searchbox_code('leute', 'searchbox_only');
+
+			// redraw people list
+			print '@@@';
+			print 'main_content@@@';
+			print ko_list_personen('liste', FALSE);
+
+			// redraw whole filter submenu
+			print '@@@';
+			print submenu_leute('filter', 'open', 2);
+		break;
+
+
+		case 'getimportmappings':
+			if ($access['leute']['MAX'] < 1) continue;
+
+			$k = format_userinput($_GET['k'], 'uint');
+			$field = format_userinput($_GET['field'], 'text');
+
+			$context = &$_SESSION['leute_import'];
+
+			unset($context['mappings'][$k]);
+
+			// initialize mapping
+			$html = ko_leute_import_get_mapping_html($context, $k, $field);
+
+			print 'leute-import-mapping-'.$k.'@@@';
+			print $html;
 		break;
 
 	}//switch(action);

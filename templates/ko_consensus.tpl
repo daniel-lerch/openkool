@@ -29,6 +29,11 @@
 				{foreach from=$tpl_events item=event}
 					<th colspan="2">
 						<div class="event_header {if $event.status == 1}open{else}closed{/if}">
+							{if $event.status == 2}
+								<div class="closed_overlay">
+									<i class="fa fa-lock"></i>
+								</div>
+							{/if}
 							<h3>{$event.startingDate}<br />{$event.startingTime}</h3>
 							<div style="cursor:pointer;" onmouseover="tooltip.show('{$event._processed.eventgruppen_name}');" onmouseout="tooltip.hide();" class="event_comment">{$event._processed.eventgruppen_name}</div>
 							{foreach from=$tpl_show_eventfields item=field}

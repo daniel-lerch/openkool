@@ -63,6 +63,9 @@ function ko_list_kg($output=TRUE, $mode='html') {
 										);
 	$list->setSort(TRUE, 'setsortkg', $_SESSION['sort_kg'], $_SESSION['sort_kg_order']);
 	$list->setStats($rows, '', '', 'setstartkg');
+	if ($access['kg']['ALL'] > 3) $list->setActionNew('neue_kg');
+
+	$list->showColItemlist();
 
 
 	$manual_access = array();
@@ -209,8 +212,8 @@ function ko_kg_chart_types() {
 
 	$value = $lavel = array();
 	$query = "SELECT `type`, COUNT(`id`) AS num FROM `ko_kleingruppen` GROUP BY `type` ORDER BY `num` DESC";
-	$result = mysql_query($query);
-	while($row = mysql_fetch_assoc($result)) {
+	$result = mysqli_query(db_get_link(), $query);
+	while($row = mysqli_fetch_assoc($result)) {
 		$label[] = $row["type"] != "" ? $row["type"] : getLL("leute_chart_none");
 		$value[] = $row["num"];
 	}
@@ -234,8 +237,8 @@ function ko_kg_chart_regions() {
 
 	$value = $lavel = array();
 	$query = "SELECT `region`, COUNT(`id`) AS num FROM `ko_kleingruppen` GROUP BY `region` ORDER BY `num` DESC";
-	$result = mysql_query($query);
-	while($row = mysql_fetch_assoc($result)) {
+	$result = mysqli_query(db_get_link(), $query);
+	while($row = mysqli_fetch_assoc($result)) {
 		$label[] = $row["region"] != "" ? $row["region"] : getLL("leute_chart_none");
 		$value[] = $row["num"];
 	}

@@ -1,0 +1,177 @@
+#leuteFilter {
+    margin:5px 0px;
+
+    div.panel {
+        margin-top:0px;
+        border-radius:0px;
+
+        &:first-child {
+            border-top-left-radius: @border-radius-base;
+            border-top-right-radius: @border-radius-base;
+        }
+        &:last-child {
+            border-bottom-left-radius: @border-radius-base;
+            border-bottom-right-radius: @border-radius-base;
+        }
+
+        div.panel-heading {
+            border-radius:0px;
+            padding: 5px 8px;
+            background-color: @leute-filter-heading-bg;
+            color: @leute-filter-heading-color;
+
+            &.active {
+                background-color: @leute-filter-heading-active-bg;
+            }
+
+            .panel-title {
+                font-size:14px;
+                font-weight:normal;
+
+                a {
+                    display:block;
+                }
+            }
+        }
+
+        div.panel-body {
+            padding: 3px;
+
+            div.filter-button {
+                float: left;
+                background: @leute-filter-button-bg;
+                color: @leute-filter-button-color;
+                height: 18px;
+                padding: 1px 3px;
+                font-size: 90%;
+                cursor: pointer;
+                width: 50%;
+                overflow: hidden;
+                white-space: nowrap;
+
+                &:hover,
+                &.active {
+                    background: @leute-filter-button-hover-bg;
+                    color: @leute-filter-button-hover-color;
+                }
+
+                div.filter-text {
+                    position: relative;
+                    overflow: hidden;
+                    white-space: nowrap;
+                    width: 100%;
+                    height: 100%;
+
+                    span {
+                        position: absolute;
+                        top: 0;
+                        left: 0;
+                    }
+                }
+            }
+        }
+
+        & + div.panel {
+            border-top:0px;
+        }
+    }
+}
+#leute-actions-icons {
+    width: 100%;
+
+    div.btn-group {
+        width: 100%;
+        margin-bottom: 2px;
+
+        .btn {
+            width: 33.3333333%;
+        }
+    }
+}
+div.action-icons {
+    width: 100%;
+
+    div.btn-group {
+        width: 100%;
+        margin-bottom: 2px;
+    }
+
+    &.action-icons-1 {
+        div.btn-group .btn {
+            width: 100%;
+        }
+    }
+    &.action-icons-2 {
+        div.btn-group .btn {
+            width: 50%;
+        }
+    }
+    &.action-icons-3 {
+        div.btn-group .btn {
+            width: 33.3333333%;
+        }
+    }
+    &.action-icons-4 {
+        div.btn-group .btn {
+            width: 25%;
+        }
+    }
+    &.action-icons-5 {
+        div.btn-group .btn {
+            width: 20%;
+        }
+    }
+}
+
+
+
+// itemlist
+ul.gtree,
+ul.gtree_datafield {
+    padding: 0;
+    margin: 0;
+}
+ul.gtree li {
+    list-style-type: none;
+    padding: 0 0 0 12px;
+    background: transparent url('images/toggle_minus.png') top left no-repeat;
+    cursor: default;
+
+    &.gtree_state_closed {
+        background: transparent url('images/toggle_plus.png') top left no-repeat;
+    }
+
+    input {
+        margin-right: 3px;
+    }
+}
+ul.gtree_state_closed {
+    display: none;
+}
+li.gtree_leaf {
+    background-image: none !important;
+}
+
+li.gtree_datafield {
+    background-color: #9aea9a !important;
+    background-image: none !important;
+    padding: 0 !important;
+}
+
+li.gtree_0  { background-color: #fff !important; }
+li.gtree_1  { background-color: #eee !important; }
+li.gtree_2  { background-color: #ddd !important; }
+li.gtree_3  { background-color: #ccc !important; }
+li.gtree_4  { background-color: #bbb !important; }
+li.gtree_5  { background-color: #aaa !important; }
+li.gtree_6  { background-color: #999 !important; }
+li.gtree_7  { background-color: #888 !important; }
+li.gtree_8  { background-color: #777 !important; }
+li.gtree_9  { background-color: #666 !important; }
+li.gtree_10 { background-color: #555 !important; }
+
+
+.dropdown-icon {
+    float: right;
+    line-height: inherit;
+}

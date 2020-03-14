@@ -24,6 +24,8 @@
 *  This copyright notice MUST APPEAR in all copies of the script!
 ***************************************************************/
 
+header('Content-Type: text/html; charset=ISO-8859-1');
+
 ob_start();
 
 $ko_path = '../';
@@ -95,6 +97,10 @@ switch($do_action) {
 		ko_save_userpref($_SESSION['ses_userid'], 'default_view_rota', format_userinput($_POST['sel_rota_default_view'], 'js'));
 		ko_save_userpref($_SESSION['ses_userid'], 'rota_delimiter', format_userinput($_POST['txt_delimiter'], 'text'));
 		ko_save_userpref($_SESSION['ses_userid'], 'rota_markempty', format_userinput($_POST['markempty'], 'uint'));
+		ko_save_userpref($_SESSION['ses_userid'], 'rota_show_participation', format_userinput($_POST['sel_show_participation'], 'alphanum'));
+		if($_SESSION['ses_userid'] != ko_get_guest_id()) {
+			ko_save_userpref($_SESSION['ses_userid'], 'rota_ical_deadline', format_userinput($_POST['sel_ical_deadline'], 'int', FALSE));
+		}
 		if($access['rota']['MAX'] > 2) {
 			ko_save_userpref($_SESSION['ses_userid'], 'rota_orderby', format_userinput($_POST['orderby'], 'alpha'));
 			ko_save_userpref($_SESSION['ses_userid'], 'rota_pdf_names', format_userinput($_POST['pdf_names'], 'uint'));
@@ -144,6 +150,7 @@ switch($do_action) {
 			// Save consensus settings
 			ko_set_setting('consensus_eventfields', format_userinput($_POST['consensus_eventfields'], 'alphanumlist'));
 			ko_set_setting('consensus_description', format_userinput($_POST['consensus_description'], 'text'));
+			ko_set_setting('consensus_restrict_link', format_userinput($_POST['consensus_restrict_link'], 'uint'));
 		}
 
 		$_SESSION['show'] = $_SESSION['show_back'] ? $_SESSION['show_back'] : 'settings';
@@ -305,6 +312,12 @@ switch($do_action) {
 	break;
 
 
+	case 'ical_links':
+		if($access['rota']['MAX'] < 1) continue;
+
+		$_SESSION['show'] = 'ical_links';
+	break;
+
 
 
 
@@ -359,7 +372,8 @@ switch($do_action) {
 
 
 	case 'filesend':
-		if($access['rota']['MAX'] < 4) continue;
+
+		/*
 
 		//Get logged in person and he's email addresses
 		$p = ko_get_logged_in_person();
@@ -383,7 +397,8 @@ switch($do_action) {
 			$send_files[$file] = basename($file);
 		}
 
-
+		$restrict_consensus_link = ko_get_setting('consensus_restrict_link') == 1 ? TRUE : FALSE;
+		$restrict_to_teams = NULL;
 		//Get recipients according to recipients mode
 		if(in_array($_POST['recipients'], array('schedulled', 'selectedschedulled', 'manualschedulled'))) {
 			if(substr($_POST['filetype'], 0, 5) == 'event') {
@@ -398,8 +413,10 @@ switch($do_action) {
 			//Only include shown rota teams
 			if($_POST['recipients'] == 'selectedschedulled') {
 				$team_ids = $_SESSION['rota_teams'];
+				if ($restrict_consensus_link) $restrict_to_teams = $team_ids;
 			} else if($_POST['recipients'] == 'manualschedulled') {
 				$team_ids = $_POST['sel_teams_schedulled'];
+				if ($restrict_consensus_link) $restrict_to_teams = $team_ids;
 			} else {
 				$team_ids = '';
 			}
@@ -420,13 +437,18 @@ switch($do_action) {
 			switch($_POST['recipients']) {
 				case 'selectedmembers':
 					$teams = $_SESSION['rota_teams'];
+					if ($restrict_consensus_link) $restrict_to_teams = $teams;
 				break;
 				case 'selectedleaders':
 					$teams = $_SESSION['rota_teams'];
+					if ($restrict_consensus_link) $restrict_to_teams = $teams;
 					$roleid = ko_get_setting('rota_leaderrole');
 				break;
 				case 'allrotamembers':
 					$teams = array_keys(db_select_data('ko_rota_teams', 'WHERE 1'));
+				break;
+				case 'allrotamembersconsensus':
+					$teams = array_keys(db_select_data('ko_rota_teams', 'WHERE `allow_consensus` = "1"'));
 				break;
 				case 'allrotaleaders':
 					$teams = array_keys(db_select_data('ko_rota_teams', 'WHERE 1'));
@@ -434,16 +456,18 @@ switch($do_action) {
 				break;
 				case 'manualmembers':
 					$teams = $_POST['sel_teams_members'];
+					if ($restrict_consensus_link) $restrict_to_teams = $teams;
 				break;
 				case 'manualleaders':
 					$teams = $_POST['sel_teams_leaders'];
+					if ($restrict_consensus_link) $restrict_to_teams = $teams;
 					$roleid = ko_get_setting('rota_leaderrole');
 				break;
 			}
 			$recipients = array();
-			foreach($teams as $team) {
-				if($access['rota']['ALL'] < 4 && $access['rota'][$team['id']] < 4) continue;
-				$rec = ko_rota_get_team_members($team, TRUE, $roleid);
+			foreach($teams as $teamID) {
+				if($access['rota']['ALL'] < 4 && $access['rota'][$teamID] < 4) continue;
+				$rec = ko_rota_get_team_members($teamID, TRUE, $roleid);
 				$recipients = array_merge($recipients, $rec['people']);
 			}
 		}
@@ -467,6 +491,20 @@ switch($do_action) {
 			ko_save_userpref($_SESSION['ses_userid'], 'rota_recipients_group', '');
 		}
 
+		// If set, check all teams that should be visible in consensus for access of user
+		if($restrict_consensus_link) {
+			if($restrict_to_teams === NULL) {
+				$all_teams = db_select_data('ko_rota_teams', 'WHERE 1=1');
+				$restrict_to_teams = array_keys($all_teams);
+			}
+			if($access['rota']['ALL'] < 3) {
+				foreach($restrict_to_teams as $k => $t) {
+					if($access['rota'][$t] < 3) unset($restrict_to_teams[$k]);
+				}
+			}
+		}
+
+
 		//Remove double entries
 		$rec_ids = array();
 		foreach($recipients as $k => $v) {
@@ -474,29 +512,41 @@ switch($do_action) {
 			$rec_ids[] = $v['id'];
 		}
 
-		//Save text as template
-		if($_POST['save_preset']) {
-			$uid = $access['rota']['MAX'] > 4 && $_POST['chk_global'] ? -1 : $_SESSION['ses_userid'];
-			ko_save_userpref($uid, format_userinput($_POST['save_preset'], 'js'), $_POST['text'], 'rota_emailtext_presets');
-		}
+		*/
 
+		if($access['rota']['MAX'] < 4) continue;
+		ko_rota_filesend_parse_post('SEND', $text, $subject, $recipients, $eventid, $restrict_to_teams, $from, $send_files);
 
 		//Send file to recipients
-		$subject = strtr($_POST['subject'], array("\n" => '', "\r" => ''));
+		$subject = strtr($subject, array("\n" => '', "\r" => ''));
 
-		$no_email = $email_recipients = $noemail_recipients = array();
+
+		$no_email = $email_recipients = $noemail_recipients = $failed = array();
 		foreach($recipients as $recipient) {
-			$found = ko_get_leute_email($recipient, $emails);
-			if($found) {
-				//Email text
-				$emailtext = strtr($_POST['text'], ko_rota_get_placeholders($recipient, $eventid));
+			if($recipient['_has_mail']) {
+				$success = ko_rota_filesend_send_mail('SEND', $text, $subject, $recipient, $send_files, $eventid, $from, $restrict_to_teams);
 
-				ko_send_html_mail($from, $emails[0], $subject, ko_emailtext($emailtext), $send_files);
-				$email_recipients[] = $emails[0].' ('.$recipient['id'].')';
+				if ($success) $email_recipients[] = $success['email'].' ('.$recipient['id'].')';
+				else $failed[] = $recipient;
 			} else {
 				$no_email[] = $recipient;
 				$noemail_recipients[] = $recipient['vorname'].' '.$recipient['nachname'].' ('.$recipient['id'].')';
 			}
+		}
+
+		$msgF = array();
+		if (sizeof($failed) > 0) {
+			foreach ($failed as $f) {
+				$msgF[] = "{$f['vorname']} {$f['nachname']} ({$f['id']})";
+			}
+			$notifier->addWarning(1, '', array(implode(', ', $msgF)));
+		}
+		$msgNE = array();
+		if (sizeof($no_email) > 0) {
+			foreach ($no_email as $f) {
+				$msgNE[] = "{$f['vorname']} {$f['nachname']} ({$f['id']})";
+			}
+			$notifier->addWarning(2, '', array(implode(', ', $msgNE)));
 		}
 
 		if (!$notifier->hasErrors()) {
@@ -519,19 +569,12 @@ switch($do_action) {
 			}
 		}
 
-		ko_log('rota_sendfile', 'From: '.$from_email.', Subject: '.$subject.', Raw text: '.$_POST['text'].', File: '.$filetype.' ('.$filename.'), Recipients type: '.$_POST['recipients'].', Recipients: '.implode(', ', $email_recipients).', No Email: '.implode(', ', $noemail_recipients));
+		ko_log('rota_sendfile', 'From: '.$from.', Subject: '.$subject.', Raw text: '.$_POST['text'].', File: '.$filetype.' ('.implode(',', array_keys($send_files)).'), Recipients type: '.$_POST['recipients'].', Recipients: '.implode(', ', $email_recipients).', No Email: '.implode(', ', $noemail_recipients).', Failed: '.implode(', ', $msgF), $log_id);
+
+		ko_create_crm_contact_from_post(TRUE, array('reference' => 'ko_log:'.$log_id, 'leute_ids' => implode(',', $rec_ids)));
 
 		$_SESSION['show'] = 'schedule';
 	break;
-
-
-
-
-	//Submenus
-  case 'move_sm_left':
-  case 'move_sm_right':
-    ko_submenu_actions('rota', $do_action);
-  break;
 
 
 	//Default:
@@ -563,6 +606,12 @@ if(!isset($_SESSION['rota_teams']) || $_SESSION['rota_teams'] == '') {
     $_SESSION['rota_teams'] = explode(',', $user_teams);
   } else {
 		$all_teams = db_select_data('ko_rota_teams');
+		//Access check
+		if($access['rota']['ALL'] < 1) {
+			foreach($all_teams as $tid => $team) {
+				if($access['rota'][$tid] < 1) unset($all_teams[$tid]);
+			}
+		}
     $_SESSION['rota_teams'] = array_keys($all_teams);
   }
 	foreach($_SESSION['rota_teams'] as $k => $v) if($v == '') unset($_SESSION['rota_teams'][$k]);
@@ -607,33 +656,34 @@ ko_set_submenues();
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="<?php print $_SESSION['lang']; ?>" lang="<?php print $_SESSION['lang']; ?>">
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1" />
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1" />
 <title><?php print $HTML_TITLE.': '.getLL('module_'.$ko_menu_akt); ?></title>
 <?php
-print ko_include_js(array($ko_path.'inc/jquery/jquery.js', $ko_path.'inc/jquery/jquery-ui.js', $ko_path.'inc/kOOL.js', $ko_path.'inc/ckeditor/ckeditor.js', $ko_path.'inc/ckeditor/adapters/jquery.js'));
+if ($_SESSION['show'] == 'show_filesend' && ko_module_installed('crm')) {
+	include($ko_path.'crm/inc/js-selproject.inc');
+}
+print ko_include_js(array($ko_path.'inc/ckeditor/ckeditor.js', $ko_path.'inc/ckeditor/adapters/jquery.js'));
 
 print ko_include_css();
 include($ko_path.'inc/js-sessiontimeout.inc');
 include($ko_path.'rota/inc/js-rota.inc');
-$js_calendar->load_files();
 ?>
 </head>
 
 <body onload="session_time_init();<?php if(isset($onload_code)) print $onload_code; ?>">
 
-<?php include($ko_path . 'menu.php'); ?>
-
-
-<table width="100%">
-<tr>
-
-<td class="main_left" name="main_left" id="main_left">
 <?php
-print ko_get_submenu_code('rota', 'left');
+/*
+ * Gibt bei erfolgreichem Login das Menü aus, sonst einfach die Loginfelder
+ */
+include($ko_path . "menu.php");
+ko_get_outer_submenu_code('rota');
+
 ?>
-</td>
 
 
-<td class="main">
+<main class="main">
 <form action="index.php" method="post" name="formular" enctype="multipart/form-data">
 <input type="hidden" name="action" id="action" value="" />
 <input type="hidden" name="id" id="id" value="" />
@@ -676,6 +726,10 @@ switch($_SESSION['show']) {
 		ko_rota_send_file_form($get_data);
 	break;
 
+	case 'ical_links':
+		ko_rota_ical_links();
+	break;
+
 
 	default:
     hook_show_case($_SESSION['show']);
@@ -687,20 +741,11 @@ hook_show_case_add($_SESSION['show']);
 ?>
 </div>
 </form>
-</td>
+	</main>
 
-<td class="main_right" name="main_right" id="main_right">
+	</div>
 
-<?php
-print ko_get_submenu_code('rota', 'right');
-?>
-
-</td>
-</tr>
-
-<?php include($ko_path.'footer.php'); ?>
-
-</table>
+	<?php include($ko_path . "footer.php"); ?>
 
 </body>
 </html>

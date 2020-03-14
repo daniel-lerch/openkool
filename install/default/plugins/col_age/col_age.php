@@ -1,8 +1,9 @@
 <?php
 function my_leute_add_column_col_age(&$r) {
 	$las = ko_get_leute_admin_spalten($_SESSION['ses_userid'], 'all');
-	if($las === FALSE || (is_array($las['view']) && in_array('geburtsdatum', $las['view']))) {
+	if($las === FALSE || (is_array($las['view']) && in_array('geburtsdatum', $las['view'])) || !isset($las['view'])) {
 		$r['MODULEplugincol_age_age'] = getLL('my_col_age_age');
+		$r['MODULEplugincol_age_ageendofyear'] = getLL('my_col_age_ageendofyear');
 	}
 }//my_leute_add_column()
 
@@ -28,6 +29,29 @@ function my_leute_column_map_col_age_age($data, $col, &$p) {
 
 	$age = (int)$todayY - (int)substr($p['geburtsdatum'], 0, 4);
 	if((int)(substr($p['geburtsdatum'], 5, 2).substr($p['geburtsdatum'], 8, 2)) > (int)($todayMD)) $age--;
+
+	return $age.$suffix;
+}//my_leute_column_map()
+
+
+
+
+function my_leute_column_map_col_age_ageendofyear($data, $col, &$p) {
+	$age = '';
+
+	if($p['geburtsdatum'] == '0000-00-00') return $age;
+
+	//Check for death field
+	$df = ko_get_setting('my_col_age_deathfield');
+	if($df && isset($p[$df]) && $p[$df] != '0000-00-00') {
+		$todayY = substr($p[$df], 0, 4);
+		$suffix = '&nbsp;&dagger;';
+	} else {
+		$todayY = date('Y');
+		$suffix = '';
+	}
+
+	$age = (int)$todayY - (int)substr($p['geburtsdatum'], 0, 4);
 
 	return $age.$suffix;
 }//my_leute_column_map()

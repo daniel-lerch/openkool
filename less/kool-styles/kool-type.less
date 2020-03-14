@@ -1,0 +1,29 @@
+.text-deleted {
+    text-decoration: line-through;
+}
+.text-highlight {
+    .text-emphasis-variant(@state-highlight-text);
+}
+.text-hidden {
+    color: #888888;
+
+    &a {
+        color: #888888;
+
+        &:hover {
+            color: darken(#888888, 15%);
+        }
+    }
+}
+
+a.text-hover-danger {
+    &:hover {
+        color: darken(@state-danger-text, 5%);
+    }
+}
+
+
+mark,
+.mark {
+    background-color: #fff030;
+}

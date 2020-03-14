@@ -37,6 +37,8 @@ $ko_path = '../../';
 require($ko_path.'inc/ko.inc');
 $ko_path = '../';
 
+array_walk_recursive($_GET,'utf8_decode_array');
+
 //Get access rights
 ko_get_access('tracking');
 if($access['tracking']['MAX'] < 1) exit;
@@ -123,14 +125,14 @@ if(isset($_GET) && isset($_GET['action'])) {
 				$value = '';
 			} else {
 				if(isset($_GET['value'])) {
-					$value = mysql_real_escape_string($_GET['value']);
+					$value = mysqli_real_escape_string(db_get_link(), $_GET['value']);
 				} else {
 					$value = 1;
 				}
 			}
 
 			if(isset($_GET['type'])) {
-				$type = mysql_real_escape_string($_GET['type']);
+				$type = mysqli_real_escape_string(db_get_link(), $_GET['type']);
 			} else {
 				$type = '';
 			}
@@ -217,7 +219,7 @@ if(isset($_GET) && isset($_GET['action'])) {
 			ko_log_diff('enter_tracking', $data);
 
 			print 'tstate_'.$data['lid'].'_'.$data['date'].'@@@';
-			print '<img src="'.$ko_path.'images/button_check.png" width="16" height="16" alt="OK" />';
+			print 'tracking-status-cell-success';
 		break;
 
 
@@ -231,11 +233,7 @@ if(isset($_GET) && isset($_GET['action'])) {
 			$data['lid'] = format_userinput($_GET['lid'], 'int');
 			$data['date'] = format_userinput($_GET['date'], 'date');
 			$data['value'] = format_userinput($_GET['value'], 'float');
-			if($action == 'settrackingtype') {
-				$data['type'] = utf8_decode($_GET['type']);
-			} else {
-				$data['type'] = $_GET['type'];
-			}
+			$data['type'] = $_GET['type'];
 
 			$entry = db_select_data('ko_tracking_entries', "WHERE `tid` = '".$data['tid']."' AND `lid` = '".$data['lid']."' AND `date` = '".$data['date']."' AND `type` = '".$data['type']."'", '*', '', '', TRUE);
 			if(isset($entry['id']) && $entry['id'] > 0) {
@@ -332,7 +330,7 @@ if(isset($_GET) && isset($_GET['action'])) {
 			if($access['tracking']['ALL'] < 2 && $access['tracking'][$data['tid']] < 2) continue;
 			$data['lid'] = format_userinput($_GET['lid'], 'uint');
 			$data['date'] = format_userinput($_GET['date'], 'date');
-			$data['type'] = utf8_decode($_GET['type']);
+			$data['type'] = $_GET['type'];
 
 			db_update_data('ko_tracking_entries', "WHERE `tid` = '".$data['tid']."' AND `lid` = '".$data['lid']."' AND `date` = '".$data['date']."' AND `type` = '".$data['type']."'", array('status' => '0', 'last_change' => date('Y-m-d H:i:s')));
 			ko_log_diff('confirm_entered_tracking', $data);
@@ -417,7 +415,7 @@ if(isset($_GET) && isset($_GET['action'])) {
 			$tid = format_userinput($_GET['tid'], 'uint');
 			if($access['tracking']['ALL'] < 2 && $access['tracking'][$data['tid']] < 2) continue;
 			$eid = format_userinput($_GET['eid'], 'uint');
-			$comment = format_userinput(utf8_decode($_GET['comment']), 'text');
+			$comment = format_userinput($_GET['comment'], 'text');
 
 			db_update_data('ko_tracking_entries', "WHERE `id` = '$eid'", array('comment' => $comment, 'last_change' => date('Y-m-d H:i:s')));
 
@@ -459,25 +457,39 @@ if(isset($_GET) && isset($_GET['action'])) {
 
 
 		case 'itemlistsave':
-			//Find position of submenu for redraw
-			if(in_array('itemlist_trackinggroups', explode(',', $_SESSION['submenu_left']))) $pos = 'left';
-			else $pos = 'right';
-
 			//save new value
 			if($_GET['name'] == '') continue;
 			$new_value = implode(',', $_SESSION['show_tracking_groups']);
 			$user_id = $access['tracking']['MAX'] > 3 && $_GET['global'] == 'true' ? '-1' : $_SESSION['ses_userid'];
-			ko_save_userpref($user_id, format_userinput($_GET['name'], 'js', FALSE, 0, array('allquotes')), $new_value, 'tracking_itemset');
+			$name = format_userinput($_GET['name'], 'js', FALSE, 0, array('allquotes'));
+			ko_save_userpref($user_id, $name, $new_value, 'tracking_itemset');
 
-			print submenu_tracking('itemlist_trackinggroups', $pos, 'open', 2);
+			ko_get_login($_SESSION['ses_userid'], $loggedIn);
+			$nameForOthers = "{$name} ({$loggedIn['login']})";
+
+			$logins = trim($_GET['logins']);
+			if ($logins) {
+				$logins = explode(',', $logins);
+				foreach ($logins as $lid) {
+					$lid = format_userinput($lid, 'uint');
+					if (!$lid) continue;
+					if ($lid == ko_get_root_id() || $lid == $_SESSION['ses_userid']) continue;
+
+					$n = $nameForOthers;
+					$c = 0;
+					while (ko_get_userpref($lid, $n, 'tracking_itemset')) {
+						$c++;
+						$n = "{$nameForOthers} - {$c}";
+					}
+					ko_save_userpref($lid, $n, $new_value, 'tracking_itemset');
+				}
+			}
+
+			print submenu_tracking('itemlist_trackinggroups', 'open', 2);
 		break;
 
 
 		case 'itemlistopen':
-			//Find position of submenu for redraw
-			if(in_array('itemlist_trackinggroups', explode(',', $_SESSION['submenu_left']))) $pos = 'left';
-			else $pos = 'right';
-
 			//save new value
 			$name = format_userinput($_GET['name'], 'js', FALSE, 0, array(), '@');
 			if($name == '') continue;
@@ -494,17 +506,13 @@ if(isset($_GET) && isset($_GET['action'])) {
 			}
 			ko_save_userpref($_SESSION['ses_userid'], 'show_tracking_groups', implode(',', $_SESSION['show_tracking_groups']));
 
-			print submenu_tracking('itemlist_trackinggroups', $pos, 'open', 2);
+			print submenu_tracking('itemlist_trackinggroups', 'open', 2);
 			print '@@@main_content@@@';
 			ko_list_trackings(FALSE);
 		break;
 
 
 		case 'itemlistdelete':
-			//Find position of submenu for redraw
-			if(in_array('itemlist_trackinggroups', explode(',', $_SESSION['submenu_left']))) $pos = 'left';
-			else $pos = 'right';
-
 			//Get name
 			$name = format_userinput($_GET['name'], 'js', FALSE, 0, array(), '@');
 			if($name == '') continue;
@@ -513,17 +521,13 @@ if(isset($_GET) && isset($_GET['action'])) {
 				if($access['tracking']['MAX'] > 3) ko_delete_userpref('-1', substr($name, 3), 'tracking_itemset');
 			} else ko_delete_userpref($_SESSION['ses_userid'], $name, 'tracking_itemset');
 
-			print submenu_tracking('itemlist_trackinggroups', $pos, 'open', 2);
+			print submenu_tracking('itemlist_trackinggroups', 'open', 2);
 		break;
 
 
 
 
 		case 'filterpresetsave':
-			//Find position of submenu for redraw
-			if(in_array('filter', explode(',', $_SESSION['submenu_left']))) $pos = 'left';
-			else $pos = 'right';
-
 			//save new value
 			if($_GET['name'] == '') continue;
 			if ($_SESSION['tracking_filter']['date1'] == '' OR $_SESSION['tracking_filter']['date2'] == '') continue;
@@ -531,14 +535,10 @@ if(isset($_GET) && isset($_GET['action'])) {
 			$user_id = $access['tracking']['MAX'] > 3 && $_GET['global'] == 'true' ? '-1' : $_SESSION['ses_userid'];
 			ko_save_userpref($user_id, format_userinput($_GET['name'], 'js', FALSE, 0, array('allquotes')), $new_value, 'tracking_filterpreset');
 
-			print submenu_tracking('filter', $pos, 'open', 2);
+			print submenu_tracking('filter', 'open', 2);
 		break;
 
 		case 'filterpresetopen':
-			//Find position of submenu for redraw
-			if(in_array('filter', explode(',', $_SESSION['submenu_left']))) $pos = 'left';
-			else $pos = 'right';
-
 			//save new value
 			$name = format_userinput($_GET['name'], 'js', FALSE, 0, array(), '@');
 			if($name == '') continue;
@@ -564,7 +564,7 @@ if(isset($_GET) && isset($_GET['action'])) {
 
 			//ko_save_userpref($_SESSION['ses_userid'], 'show_tracking_groups', implode(',', $_SESSION['show_tracking_groups']));
 
-			print submenu_tracking('filter', $pos, 'open', 2);
+			print submenu_tracking('filter', 'open', 2);
 			print '@@@main_content@@@';
 			if($_SESSION['show'] == 'enter_tracking') {
 				ko_tracking_enter_form(FALSE);
@@ -574,10 +574,6 @@ if(isset($_GET) && isset($_GET['action'])) {
 		break;
 
 		case 'filterpresetdelete':
-			//Find position of submenu for redraw
-			if(in_array('filter', explode(',', $_SESSION['submenu_left']))) $pos = 'left';
-			else $pos = 'right';
-
 			//Get name
 			$name = format_userinput($_GET['name'], 'js', FALSE, 0, array(), '@');
 			if($name == '') continue;
@@ -586,14 +582,10 @@ if(isset($_GET) && isset($_GET['action'])) {
 				if($access['tracking']['MAX'] > 3) ko_delete_userpref('-1', substr($name, 3), 'tracking_filterpreset');
 			} else ko_delete_userpref($_SESSION['ses_userid'], $name, 'tracking_filterpreset');
 
-			print submenu_tracking('filter', $pos, 'open', 2);
+			print submenu_tracking('filter', 'open', 2);
 		break;
 
 		case 'setfilterhidden':
-			//Find position of submenu for redraw
-			if(in_array('filter', explode(',', $_SESSION['submenu_left']))) $pos = 'left';
-			else $pos = 'right';
-
 			$showHidden = $_GET['showhidden'];
 
 			if ($showHidden == 'true') {
@@ -603,7 +595,7 @@ if(isset($_GET) && isset($_GET['action'])) {
 				$_SESSION['tracking_filter']['show_hidden'] = 0;
 			}
 
-			print submenu_tracking('trackings', $pos, 'open', 2);
+			print submenu_tracking('trackings', 'open', 2);
 			print '@@@main_content@@@';
 			ko_list_trackings(FALSE);
 		break;

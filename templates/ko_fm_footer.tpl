@@ -1,1 +1,3 @@
-</td></tr></table>
+		</div>
+		{if !$tpl_guest}</div>{/if}
+</div>

@@ -32,7 +32,7 @@
  * It takes the definitions from $KOTA to render the list.
  */
 class kOOL_listview {
-	var $_editColumns = array('chk', 'chk2', 'edit', 'delete', 'check', 'forward', 'undelete', 'tracking_show', 'tracking_add', 'mailing', 'add', 'remove', 'send');
+	var $_editColumns = array('chk', 'chk2', 'edit', 'delete', 'check', 'forward', 'undelete', 'tracking_show', 'tracking_add', 'mailing', 'add', 'remove', 'send', 'stats', 'overlay');
 	var $tmpl = array();  //Holds the values to be submitted to smarty on rendering
 	var $doFooter = FALSE;
 	var $disableMultiedit = FALSE;
@@ -60,6 +60,10 @@ class kOOL_listview {
 	}//init()
 
 
+	function disableHeader() {
+		$this->tmpl['tpl_hide_header'] = TRUE;
+	}//disableHeader()
+
 	function disableMultiedit() {
 		$this->disableMultiedit = TRUE;
 	}//disableMultiedit()
@@ -85,6 +89,10 @@ class kOOL_listview {
 	function setWarning($text) {
 		if($text != '') $this->tmpl['list_warning'] = $text;
 	}//setWarning()
+
+	function setActionNew($action) {
+		$this->tmpl["action_new"] = $action;
+	}//setActionNew()
 
 
 	/**
@@ -213,6 +221,12 @@ class kOOL_listview {
 	 */
 	function render($data, $mode="html", $file_prefix="") {
 		global $KOTA, $smarty, $ko_path;
+
+		$returnHtml = FALSE;
+		if ($mode == 'html_fetch') {
+			$mode = 'html';
+			$returnHtml = TRUE;
+		}
 
 		//Sort listview for the key
 		ksort($KOTA[$this->table]["_listview"], SORT_NUMERIC);
@@ -360,9 +374,9 @@ class kOOL_listview {
 
 			//Add foreign_table columns here as they are not set in _listview or show_cols
 			if($mode == 'xls') {
-				foreach($KOTA[$this->table] as $kota_col) {
+				foreach($KOTA[$this->table] as $kota_col_id => $kota_col) {
 					$addRows = array();
-					if(substr($kota_col, 0, 1) == '_') continue;
+					if(substr($kota_col_id, 0, 1) == '_') continue;
 					if($kota_col['form']['type'] != 'foreign_table') continue;
 					$ft_table = $kota_col['form']['table'];
 					if(!$ft_table) continue;
@@ -399,7 +413,11 @@ class kOOL_listview {
 		//Render as HTML (default)
 		if($mode == "html") {
 			$this->smarty_assign();
-			$smarty->display("ko_list2.tpl");
+			if ($returnHtml) {
+				return $smarty->fetch("ko_list2.tpl");
+			} else {
+				$smarty->display("ko_list2.tpl");
+			}
 		}
 		//Create XLS file and store filename in this->xls_file
 		else if($mode == "xls") {
@@ -453,7 +471,7 @@ class kOOL_listview {
 		foreach($this->rowClasses as $class => $cond) {
 			$condition = strtr($cond, $map);
 			if($condition != "" && eval($condition)) {
-				$r .= " ".$class;
+				$r .= " ".strtr($class, $map);;
 			}
 		}
 		return $r;
@@ -644,12 +662,18 @@ class kOOL_listview {
 			"alt_undelete" => getLL("list_label_undelete_entry"),
 			"alt_delete" => getLL("list_label_delete_entry"),
 			"confirm_delete" => getLL("list_label_confirm_delete"),
+			"confirm_check" => getLL("list_label_confirm_check"),
 			'kota_filter' => getLL('list_label_kota_filter'),
 			'alt_tracking_add' => getLL('tracking_group_add'),
 			'alt_tracking_show' => getLL('tracking_group_show'),
 			'alt_mailing' => getLL('mailing_send_email'),
 		);
 		$smarty->assign("label", $label);
+
+		if($this->showColItemlist) {
+			$smarty->assign('show_flyout_header', TRUE);
+			$smarty->assign('label_flyout_header', getLL('kota_listview_flyout_header'));
+		}
 
 		if($this->disableListCheckAll) $smarty->assign("list_check_disabled", TRUE);
 

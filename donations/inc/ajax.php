@@ -37,6 +37,8 @@ $ko_path = "../../";
 require($ko_path."inc/ko.inc");
 $ko_path = "../";
 
+array_walk_recursive($_GET,'utf8_decode_array');
+
 ko_get_access('donations');
 if($access['donations']['MAX'] < 1) exit;
 ko_include_kota(array('ko_donations', 'ko_donations_accounts'));
@@ -130,17 +132,36 @@ if(isset($_GET) && isset($_GET["action"])) {
 
 
 		case "itemlistsave":
-			//Find position of submenu for redraw
-			if(in_array("itemlist_accounts", explode(",", $_SESSION["submenu_left"]))) $pos = "left";
-			else $pos = "right";
 
 			//save new value
 			if($_GET["name"] == "") continue;
 			$new_value = implode(",", $_SESSION["show_accounts"]);
 			$user_id = ($access['donations']['MAX'] > 3 && $_GET['global'] == 'true') ? '-1' : $_SESSION['ses_userid'];
-			ko_save_userpref($user_id, format_userinput($_GET["name"], "js", FALSE, 0, array("allquotes")), $new_value, "accounts_itemset");
+			$name = format_userinput($_GET["name"], "js", FALSE, 0, array("allquotes"));
+			ko_save_userpref($user_id, $name, $new_value, "accounts_itemset");
 
-			print submenu_donations("itemlist_accounts", $pos, "open", 2);
+			ko_get_login($_SESSION['ses_userid'], $loggedIn);
+			$nameForOthers = "{$name} ({$loggedIn['login']})";
+
+			$logins = trim($_GET['logins']);
+			if ($logins) {
+				$logins = explode(',', $logins);
+				foreach ($logins as $lid) {
+					$lid = format_userinput($lid, 'uint');
+					if (!$lid) continue;
+					if ($lid == ko_get_root_id() || $lid == $_SESSION['ses_userid']) continue;
+
+					$n = $nameForOthers;
+					$c = 0;
+					while (ko_get_userpref($lid, $n, "accounts_itemset")) {
+						$c++;
+						$n = "{$nameForOthers} - {$c}";
+					}
+					ko_save_userpref($lid, $n, $new_value, "accounts_itemset");
+				}
+			}
+
+			print submenu_donations("itemlist_accounts", "open", 2);
 		break;
 
 
@@ -175,7 +196,7 @@ if(isset($_GET) && isset($_GET["action"])) {
 				break;
 			}
 			print "@@@";
-			print submenu_donations("itemlist_accounts", $pos, "open", 2);
+			print submenu_donations("itemlist_accounts", "open", 2);
 		break;
 
 
@@ -192,7 +213,7 @@ if(isset($_GET) && isset($_GET["action"])) {
 				if($kg_edit) ko_delete_userpref('-1', substr($name, 3), "accounts_itemset");
 			} else ko_delete_userpref($_SESSION['ses_userid'], $name, "accounts_itemset");
 
-			print submenu_donations("itemlist_accounts", $pos, "open", 2);
+			print submenu_donations("itemlist_accounts", "open", 2);
 		break;
 
 	}//switch(action);
