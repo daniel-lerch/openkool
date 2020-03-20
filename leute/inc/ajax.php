@@ -42,7 +42,7 @@ if(ko_module_installed('kg')) ko_get_access('kg');
 ko_include_kota(array('ko_leute', 'ko_kleingruppen', 'ko_taxonomy'));
 
 //get notifier instance
-$notifier = koNotifier::Instance();
+$notifier = \kOOL\Notifier::Instance();
 
 require __DIR__ . '/leute.inc.php';
 if(ko_module_installed("kg")) require __DIR__ . '/kg.inc.php';

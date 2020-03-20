@@ -27,7 +27,6 @@ $ko_menu_akt = 'rota';
 
 require __DIR__ . '/../inc/ko.inc.php';
 require __DIR__ . '/inc/rota.inc.php';
-use OpenKool\koNotifier;
 
 //Redirect to SSL if needed
 ko_check_ssl();
@@ -37,7 +36,7 @@ if(!ko_module_installed('rota')) { header('Location: '.$BASE_URL.'index.php'); e
 ob_end_flush();
 
 $onload_code = '';
-$notifier = koNotifier::Instance();
+$notifier = \kOOL\Notifier::Instance();
 
 //Get access rights
 ko_get_access('daten');
@@ -516,7 +515,7 @@ ko_get_outer_submenu_code('rota');
 <div name="main_content" id="main_content">
 
 <?php
-if($notifier->hasNotifications(koNotifier::ALL)) {
+if($notifier->hasNotifications(\kOOL\Notifier::ALL)) {
 	$notifier->notify();
 }
 

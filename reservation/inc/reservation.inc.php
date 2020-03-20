@@ -18,8 +18,6 @@
 *
 *******************************************************************************/
 
-use OpenKool\ListView;
-
 function ko_list_reservations() {
 	global $smarty, $access;
 
@@ -55,7 +53,7 @@ function ko_list_reservations() {
 	}
 
 
-	$list = new ListView();
+	$list = new \kOOL\ListView();
 	$list->init('reservation', 'ko_reservation', array('chk', 'edit', 'delete'), $_SESSION['show_start'], $_SESSION['show_limit']);
 	$list->showColItemlist();
 	$list->setTitle(getLL('res_list_title'));
@@ -243,7 +241,7 @@ function ko_show_res_liste($type="res") {
 		}
 	}//foreach(es)
 
-	$list = new ListView();
+	$list = new \kOOL\ListView();
 	$list->init('reservation', 'ko_reservation_mod', array('chk', 'check', 'edit', 'delete'), $_SESSION['show_start'], $_SESSION['show_limit']);
 	$list->setTitle(getLL('res_mod_list_title'));
 	$list->setAccessRights(array('check' => 4, 'edit' => 4, 'delete' => 4), $access['reservation']);
@@ -303,7 +301,7 @@ function ko_show_items_liste() {
 	$z_limit = "LIMIT " . ($_SESSION["show_start"]-1) . ", " . $_SESSION["show_limit"];
 	ko_get_resitems($res, $z_limit, 'WHERE 1 '.$z_where);
 
-	$list = new ListView();
+	$list = new \kOOL\ListView();
 	$list->init('reservation', 'ko_resitem', array('chk', 'edit', 'delete'), $_SESSION['show_start'], $_SESSION['show_limit']);
 	$list->setTitle(getLL('res_items_list_title'));
 	$list->setAccessRights(array('edit' => 4, 'delete' => 4), $access['reservation']);
@@ -861,11 +859,11 @@ function ko_res_mod_approve($ids, $notification=TRUE) {
 		db_delete_data("ko_reservation_mod", "WHERE `id` = '{$sId}'");
 	}
 	if($double_error_txt) {
-		koNotifier::Instance()->addError(4, $do_action);
-		koNotifier::Instance()->addTextError(getLL('res_collision').' <i>'.$double_error_txt.'</i><br />', $do_action);
+		\kOOL\Notifier::Instance()->addError(4, $do_action);
+		\kOOL\Notifier::Instance()->addTextError(getLL('res_collision').' <i>'.$double_error_txt.'</i><br />', $do_action);
 	}
 	else {
-		koNotifier::Instance()->addInfo(6, $do_action);
+		\kOOL\Notifier::Instance()->addInfo(6, $do_action);
 	}
 
 	//Show email form to send notification

@@ -18,7 +18,7 @@
 *
 *******************************************************************************/
 
-use OpenKool\koNotifier;
+use \kOOL\Notifier;
 
 /**
   * Liefert Select-Werte für einzelne Tabelle-Spalten
@@ -732,7 +732,7 @@ function kota_submit_multiedit($rights_level='', $log_type="", &$changes = null,
 	global $KOTA, $mysql_pass;
 	global $access;
 
-	$notifier = koNotifier::Instance();
+	$notifier = Notifier::Instance();
 
 	list($table, $columns, $ids, $hash) = explode("@", $_POST["id"]);
 	if(!$table || !$columns || $ids == "" || mb_strlen($hash) != 32) $notifier->addError(58);
@@ -1202,7 +1202,7 @@ function kota_post_ko_reservation($ids, $columns, $old, $do_save) {
  * @param $action
  */
 function kota_post_async_form_submit($module, $action) {
-	if (!koNotifier::Instance()->hasErrors()) {
+	if (!Notifier::Instance()->hasErrors()) {
 		?><?php
 	}
 }
@@ -1612,7 +1612,7 @@ function kota_mailing_check_unique_alias(&$value, $data) {
 	//Check for disallowed aliases
 	if(ko_mailing_check_disallowed_alias_patterns($value)) {
 		$value = '';
-		koNotifier::Instance()->addError(66);
+		Notifier::Instance()->addError(66);
 		return FALSE;
 	}
 
@@ -1635,7 +1635,7 @@ function kota_mailing_check_unique_alias(&$value, $data) {
 	//Unset alias if already present
 	if(in_array($value, $aliases)) {
 		$value = '';
-		koNotifier::Instance()->addError(67);
+		Notifier::Instance()->addError(67);
 		return FALSE;
 	}
 	return TRUE;
@@ -1855,9 +1855,7 @@ function kota_listview_html(&$value, $data) {
 		$value = '<p>'.str_replace("\n", '</p><p>', $value).'</p>';
 	}
 
-	require_once($BASE_PATH . 'inc/class.html2text.php');
-
-	$html2Text = new html2text($value);
+	$html2Text = new \kOOL\Html2Text($value);
 	$value = preg_replace("/\n+/", '<br>', trim($html2Text->get_text()));
 }//kota_listview_html()
 
@@ -1870,9 +1868,7 @@ function kota_html_to_text(&$value, $data) {
 		$value = '<p>'.str_replace("\n", '</p><p>', $value).'</p>';
 	}
 
-	require_once($ko_path . 'inc/class.html2text.php');
-
-	$html2Text = new html2text($value);
+	$html2Text = new \kOOL\Html2Text($value);
 	$value = trim($html2Text->get_text());
 }//kota_html_to_text()
 
@@ -3880,7 +3876,7 @@ function kota_process_data($table, &$data, $modes, &$log = null, $id=0, $new_ent
 			}
 
 			if ($_FILES['koi']['error'][$table][$col][$id] > 0 && $_FILES['koi']['error'][$table][$col][$id] != 4) {
-				koNotifier::Instance()->addTextWarning(getLL("warning_upload_error_code_" . $_FILES['koi']['error'][$table][$col][$id]));
+				Notifier::Instance()->addTextWarning(getLL("warning_upload_error_code_" . $_FILES['koi']['error'][$table][$col][$id]));
 			}
 
 			if($tmp_file) {

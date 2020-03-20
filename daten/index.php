@@ -33,7 +33,7 @@ if(ko_module_installed("reservation"))
 if(ko_module_installed("rota"))
 	include_once __DIR__ . "/../rota/inc/rota.inc.php";
 
-$notifier = koNotifier::Instance();
+$notifier = \kOOL\Notifier::Instance();
 
 //Redirect to SSL if needed
 ko_check_ssl();
@@ -1252,7 +1252,7 @@ switch($do_action) {
 						ko_daten_insert_new_event($do_action, array('koi' => array('ko_event' => $row)));
 						if ($notifier->hasErrors()) {
 							$failures[] = $row_;
-							$notifier->dropNotifications(koNotifier::ERROR);
+							$notifier->dropNotifications(\kOOL\Notifier::ERROR);
 						}
 					}
 					foreach ($failures as $failure) {
@@ -2025,7 +2025,7 @@ ko_get_outer_submenu_code('daten');
 <div name="main_content" id="main_content">
 
 <?php
-if($notifier->hasNotifications(koNotifier::ALL)) {
+if($notifier->hasNotifications(\kOOL\Notifier::ALL)) {
 	$notifier->notify();
 }
 

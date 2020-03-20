@@ -24,7 +24,6 @@ $ko_path = "./";
 $ko_menu_akt = "home";
 
 require __DIR__ . '/inc/ko.inc.php';
-use OpenKool\koNotifier;
 
 //Redirect to SSL if needed
 ko_check_ssl();
@@ -34,7 +33,7 @@ ko_check_login();
 
 $_SESSION["show"] = "";
 
-$notifier = koNotifier::Instance();
+$notifier = \kOOL\Notifier::Instance();
 
 
 //*** Plugins einlesen:
@@ -364,7 +363,7 @@ switch($do_action) {
 print '<main class="main">';
 
 //Infos ausgeben
-if($notifier->hasNotifications(koNotifier::ALL)) {
+if($notifier->hasNotifications(\kOOL\Notifier::ALL)) {
 	$notifier->notify();
 }
 

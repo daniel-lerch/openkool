@@ -18,9 +18,6 @@
 *
 *******************************************************************************/
 
-use OpenKool\ListView;
-
-
 function ko_list_donations($mode="html", $dontApplyLimit=FALSE) {
 	global $smarty, $KOTA;
 	global $access;
@@ -39,7 +36,7 @@ function ko_list_donations($mode="html", $dontApplyLimit=FALSE) {
 	if($dontApplyLimit) $z_limit = "";
 	$es = db_select_data('ko_donations', 'WHERE 1 '.$z_where, '*', $order, $z_limit);
 
-	$list = new ListView();
+	$list = new \kOOL\ListView();
 
 	if($_SESSION['donations_filter']['promise'] == 1) {
 		$icons = array('chk', 'check', 'edit', 'delete');
@@ -354,7 +351,7 @@ function ko_list_accounts() {
 		if($access['donations'][$k] < 1) unset($es[$k]);
 	}
 
-	$list = new ListView();
+	$list = new \kOOL\ListView();
 
 	$list->init("donations", "ko_donations_accounts", array("chk", "edit", "delete"), $_SESSION["show_start"], $_SESSION["show_limit"]);
 	$list->setTitle(getLL("donations_accounts_list_title"));
@@ -384,7 +381,7 @@ function ko_list_accountgroups() {
   $z_limit = 'LIMIT '.($_SESSION['show_start']-1).', '.$_SESSION['show_limit'];
 	$es = db_select_data('ko_donations_accountgroups', '', '*', 'ORDER BY `title` ASC', $z_limit);
 
-	$list = new kOOL_listview();
+	$list = new \kOOL\ListView();
 
 	$list->init("donations", "ko_donations_accountgroups", array("chk", "edit", "delete"), $_SESSION["show_start"], $_SESSION["show_limit"]);
 	$list->setTitle(getLL("donations_accountgroups_list_title"));
@@ -457,7 +454,7 @@ function ko_list_reoccuring_donations() {
 	}
 
 
-	$list = new ListView();
+	$list = new \kOOL\ListView();
 
 	$list->init("donations", "ko_donations", array("chk", "check", "delete"), 1, $rows);
 	$list->setTitle(getLL("donations_reoccuring_list_title"));

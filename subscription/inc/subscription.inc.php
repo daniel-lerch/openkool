@@ -78,7 +78,7 @@ function ko_subscription_form_list() {
 	if($where != '') $where = 'WHERE '.$where;
 	$es = db_select_data('ko_subscription_forms', $where, '*', 'ORDER BY '.$sortCol.' '.$sortOrder, $z_limit);
 
-	$list = new ListView();
+	$list = new \kOOL\ListView();
 
 	$list->init('subscription', 'ko_subscription_forms', array('edit', 'delete'), $_SESSION["show_start"], $_SESSION["show_limit"]);
 	$list->setTitle(getLL("subscription_forms_list_title"));
@@ -162,7 +162,7 @@ function ko_subscription_form_group_list() {
 
 	$es = db_select_data('ko_subscription_form_groups', $where, '*', 'ORDER BY `name` ASC');
 
-	$list = new ListView();
+	$list = new \kOOL\ListView();
 	$list->init('subscription', 'ko_subscription_form_groups', array('log', 'edit', 'delete'), $_SESSION["show_start"], $_SESSION["show_limit"]);
 	$list->setTitle(getLL("subscription_form_groups_list_title"));
 	$list->setActions(array('edit' => array('action' => 'edit_form_group'),

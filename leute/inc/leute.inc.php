@@ -314,8 +314,7 @@ function ko_formular_leute_mailing() {
 	$sentEmails = array();
 	$sentEmailsJSON = array();
 	$cnt = 0;
-	require_once($BASE_PATH . 'inc/class.html2text.php');
-	$html2text = new html2text('<body></body>');
+	$html2text = new \kOOL\Html2Text('<body></body>');
 	foreach ($ups as $up) {
 		$sentEmail = json_decode($up['value'], true);
 		array_walk_recursive($sentEmail, 'utf8_decode_array');

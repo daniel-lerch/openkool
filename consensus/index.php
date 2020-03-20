@@ -28,9 +28,8 @@ require __DIR__ . '/../inc/ko.inc.php';
 require __DIR__ . '/../rota/inc/rota.inc.php';
 ko_include_kota(['ko_rota_teams', 'ko_event']);
 require_once __DIR__ . '/consensus.inc.php';
-use OpenKool\koNotifier;
 
-$notifier = koNotifier::Instance();
+$notifier = \kOOL\Notifier::Instance();
 
 error_reporting(0);
 

@@ -18,8 +18,6 @@
 *
 *******************************************************************************/
 
-use OpenKool\ListView;
-
 /**
  * List currently available trackings
  */
@@ -46,7 +44,7 @@ function ko_list_trackings() {
 		}
 	}
 
-	$list = new ListView();
+	$list = new \kOOL\ListView();
 
 	$list->init('tracking', 'ko_tracking', array('chk', 'edit', 'delete'), $_SESSION['show_start'], $_SESSION['show_limit']);
 	$list->setTitle(getLL('tracking_list_title'));
@@ -114,7 +112,7 @@ function ko_list_tracking_entries() {
 	}
 	$es = db_select_data('ko_tracking_entries', "WHERE `status` = '0' $z_where", '*', $order, $z_limit);
 
-	$list = new kOOL_listview();
+	$list = new \kOOL\ListView();
 
 	$list->init('tracking', 'ko_tracking_entries', array('chk', 'edit', 'delete'), $_SESSION['show_start'], $_SESSION['show_limit']);
 	$list->setTitle(getLL('tracking_entries_list_title').' '.$tracking['name']);
@@ -168,7 +166,7 @@ function ko_list_tracking_mod_entries() {
 		$manualAccess['edit'][$te['id']] = $edit;
 	}
 
-	$list = new ListView();
+	$list = new \kOOL\ListView();
 
 	$list->init('tracking', 'ko_tracking_entries', array('chk', 'edit', 'check', 'delete'), $_SESSION['show_start'], $_SESSION['show_limit']);
 	$list->setTitle(getLL('tracking_entries_list_title'));
@@ -1709,7 +1707,7 @@ function ko_tracking_export($mode, $filename, $id, $address_columns='name', $dat
 		$cols_fitting_with_sum = floor((float)($pdf->layout['page_width_usable'] - $num_cols * $col_width - $num_sum_cols*$sum_width) / (float)$data_width_min);
 
 		if($cols_fitting < 1) {
-			koNotifier::Instance()->addError(5);
+			\kOOL\Notifier::Instance()->addError(5);
 			return FALSE;
 		}
 

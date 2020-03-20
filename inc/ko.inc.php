@@ -28,7 +28,7 @@ use PhpOffice\PhpSpreadsheet\Cell\Coordinate;
 use Mika56\SPFCheck\SPFCheck;
 use Mika56\SPFCheck\DNSRecordGetter;
 
-use OpenKool\koNotifier;
+use kOOL\Notifier;
 use OpenKool\Localizer;
 
 define('VERSION', '2.0.0-preview.0');
@@ -448,7 +448,7 @@ if($ko_menu_akt != 'ldap') {
 	// Configure autoloading
 	require __DIR__ . '/../vendor/autoload.php';
 	spl_autoload_register(function($class) {
-		$prefix = 'OpenKool\\';
+		$prefix = 'kOOL\\';
 		$prefixLength = mb_strlen($prefix);
 		if (mb_substr($class, 0, $prefixLength) === $prefix) {
 			include __DIR__ . '/../src/' . str_replace('\\', '/', mb_substr($class, $prefixLength)) . '.php';
@@ -456,9 +456,9 @@ if($ko_menu_akt != 'ldap') {
 	});
 
 	//Set default notification levels
-	$NOTIFIER_LEVEL_DISPLAY = koNotifier::ERRS | koNotifier::INFO | koNotifier::WARNING;
-	$NOTIFIER_LEVEL_LOG_TO_DB = koNotifier::ALL ^ koNotifier::DEBUG ^ koNotifier::INFO;
-	$NOTIFIER_LEVEL_LOG_TO_FILE = koNotifier::DEBUG;
+	$NOTIFIER_LEVEL_DISPLAY = Notifier::ERRS | Notifier::INFO | Notifier::WARNING;
+	$NOTIFIER_LEVEL_LOG_TO_DB = Notifier::ALL ^ Notifier::DEBUG ^ Notifier::INFO;
+	$NOTIFIER_LEVEL_LOG_TO_FILE = Notifier::DEBUG;
 	$NOTIFIER_LOG_FILE_NAME = 'log.txt';
 }
 
@@ -616,10 +616,10 @@ if($ko_menu_akt != 'ldap') {
 
 if($ko_menu_akt != 'ldap') {
 	//set notification levels
-	koNotifier::Instance()->setDisplayLevel($NOTIFIER_LEVEL_DISPLAY);
-	koNotifier::Instance()->setLogToDBLevel($NOTIFIER_LEVEL_LOG_TO_DB);
-	koNotifier::Instance()->setLogToFileLevel($NOTIFIER_LEVEL_LOG_TO_FILE);
-	koNotifier::Instance()->setLogFileName($NOTIFIER_LOG_FILE_NAME);
+	Notifier::Instance()->setDisplayLevel($NOTIFIER_LEVEL_DISPLAY);
+	Notifier::Instance()->setLogToDBLevel($NOTIFIER_LEVEL_LOG_TO_DB);
+	Notifier::Instance()->setLogToFileLevel($NOTIFIER_LEVEL_LOG_TO_FILE);
+	Notifier::Instance()->setLogFileName($NOTIFIER_LOG_FILE_NAME);
 
 	// include google cloud print api definition
 	require_once("{$ko_path}inc/googleCloudPrint/koGoogleCloudPrint.php");
@@ -14203,7 +14203,7 @@ function ko_export_to_xlsx($header, $data, $filename, $title = '', $format="land
 		return $filename;
 
 	} catch (\PhpOffice\PhpSpreadsheet\Exception $e) {
-		koNotifier::Instance()->addTextError('Excel error ' . $e->getCode() . ': ' . $e->getMessage());
+		Notifier::Instance()->addTextError('Excel error ' . $e->getCode() . ': ' . $e->getMessage());
 	}
 
 	return FALSE;
@@ -15144,7 +15144,7 @@ function ko_export_cal_weekly_view_resource($_size='', $_start='') {
 		$hour_start = "0" . $hour_start . ":00";
 		if (ko_has_time_format($hour_start) != 1) {
 			$timeDelimiter[] = "00:00";
-			koNotifier::Instance()->addNotice(1, $do_action, array($hour_start, 'first', '00:00'));
+			Notifier::Instance()->addNotice(1, $do_action, array($hour_start, 'first', '00:00'));
 		}
 		else {
 			$timeDelimiter[] = $hour_start;
@@ -15154,7 +15154,7 @@ function ko_export_cal_weekly_view_resource($_size='', $_start='') {
 		$hour_start = $hour_start . ":00";
 		if (ko_has_time_format($hour_start) != 1) {
 			$timeDelimiter[] = "00:00";
-			koNotifier::Instance()->addNotice(1, $do_action, array($hour_start, 'first', '00:00'));
+			Notifier::Instance()->addNotice(1, $do_action, array($hour_start, 'first', '00:00'));
 		}
 		else {
 			$timeDelimiter[] = $hour_start;
@@ -15162,7 +15162,7 @@ function ko_export_cal_weekly_view_resource($_size='', $_start='') {
 	}
 	else {
 		$timeDelimiter[] = "00:00";
-		koNotifier::Instance()->addNotice(1, $do_action, array($hour_start, 'first', '00:00'));
+		Notifier::Instance()->addNotice(1, $do_action, array($hour_start, 'first', '00:00'));
 	}
 
 	// add intermediate times
@@ -15185,7 +15185,7 @@ function ko_export_cal_weekly_view_resource($_size='', $_start='') {
 		$hour_end = "0" . $hour_end . ":00";
 		if (ko_has_time_format($hour_end) != 1) {
 			$timeDelimiter[] = "23:59";
-			koNotifier::Instance()->addNotice(1, $do_action, array($hour_end, 'last', '23:59'));
+			Notifier::Instance()->addNotice(1, $do_action, array($hour_end, 'last', '23:59'));
 		}
 		else {
 			$timeDelimiter[] = $hour_end;
@@ -15195,7 +15195,7 @@ function ko_export_cal_weekly_view_resource($_size='', $_start='') {
 		$hour_end = $hour_end . ":00";
 		if (ko_has_time_format($hour_end) != 1) {
 			$timeDelimiter[] = "23:59";
-			koNotifier::Instance()->addNotice(1, $do_action, array($hour_end, 'last', '23:59'));
+			Notifier::Instance()->addNotice(1, $do_action, array($hour_end, 'last', '23:59'));
 		}
 		else {
 			$timeDelimiter[] = $hour_end;
@@ -15203,7 +15203,7 @@ function ko_export_cal_weekly_view_resource($_size='', $_start='') {
 	}
 	else {
 		$timeDelimiter[] = "23:59";
-		koNotifier::Instance()->addNotice(1, $do_action, array($hour_end, 'last', '23:59'));
+		Notifier::Instance()->addNotice(1, $do_action, array($hour_end, 'last', '23:59'));
 	}
 
 	$rows = sizeof($timeDelimiter) - 1;
@@ -18140,8 +18140,7 @@ function plugin_connect_TYPO3() {
 
 	//Get password and decrypt
 	$pwd_enc = ko_get_setting('typo3_pwd');
-	require_once($BASE_PATH.'inc/class.openssl.php');
-	$crypt = new openssl('AES-256-CBC');
+	$crypt = new \kOOL\OpenSsl('AES-256-CBC');
 	$crypt->setKey(KOOL_ENCRYPTION_KEY);
 	$pwd = trim($crypt->decrypt($pwd_enc));
 
@@ -18253,8 +18252,7 @@ function ko_get_ics_for_res($res, $forceDetails=FALSE) {
 		if($desc) {
 			$allowed_html_tags_in_ical = "<b><strong><i><u><ul><li><a><mark>";
 			$desc = ko_unhtml(strip_tags($desc, $allowed_html_tags_in_ical));
-			require_once($BASE_PATH . 'inc/class.html2text.php');
-			$html2text = new html2text($desc);
+			$html2text = new \kOOL\Html2Text($desc);
 			$description_plain = $html2text->getText();
 
 			$ical .= 'DESCRIPTION:'.strtr(trim($description_plain), $mapping).CRLF;
@@ -18850,7 +18848,7 @@ function send_aspsms($recipients, $text, $from, &$num, &$credits, &$log_id) {
 	if($error != 1) {
 		$error_message = $sms->getErrorDescription();
 		$my_error_txt = $error . ': ' . $error_message;
-		koNotifier::Instance()->addTextError($my_error_txt);
+		Notifier::Instance()->addTextError($my_error_txt);
 		return FALSE;
 	}
 	$num = sizeof($sent);
@@ -18948,7 +18946,7 @@ function send_sms($recipients, $text, $from, $climsgid, $msg_type, &$success, &$
 function send_telegram_message($recipients, $text) {
 	global $BASE_PATH;
 
-	$notifier = koNotifier::Instance();
+	$notifier = Notifier::Instance();
 	require_once($BASE_PATH.'inc/TelegramBot/bot.php');
 
 	try {
@@ -19009,7 +19007,7 @@ function ko_task_get_new_telegram_registrations() {
 		$bot->processMessages();
 		ko_set_setting('telegram_updateid', $bot->getLastUpdateId());
 	} catch (Exception $e) {
-		koNotifier::Instance()->addTextError($e);
+		Notifier::Instance()->addTextError($e);
 		return FALSE;
 	}
 }
@@ -19334,7 +19332,7 @@ function ko_task_reminder($reminderId = null) {
 
 			// No reminders to send for this reminder entry
 			if ($events === null) {
-				if ($reminderId !== null) koNotifier::Instance()->addError(11);
+				if ($reminderId !== null) Notifier::Instance()->addError(11);
 				continue;
 			}
 
@@ -19647,8 +19645,7 @@ function ko_vesr_process_emails(&$vesrFiles, &$report, &$log) {
 	$koVesrImapUser = ko_get_setting('vesr_import_email_user');
 	$koVesrImapPassEnc = ko_get_setting('vesr_import_email_pass');
 	// decrypt password
-	require_once($BASE_PATH.'inc/class.openssl.php');
-	$crypt = new openssl('AES-256-CBC');
+	$crypt = new \kOOL\OpenSsl('AES-256-CBC');
 	$crypt->setKey(KOOL_ENCRYPTION_KEY);
 	$koVesrImapPass = trim($crypt->decrypt($koVesrImapPassEnc));
 	$koVesrImapSSL = ko_get_setting('vesr_import_email_ssl');
@@ -19887,7 +19884,7 @@ function ko_vesr_create_reportattachment($vesrfiles, $total, $done, $importtype,
 			$table_problems = '<h2>' . getLL('vesr_camt_list_title') . '</h2>';
 
 
-			$list = new kOOL_listview();
+			$list = new \kOOL\ListView();
 			$list->init('admin', 'ko_vesr_camt', array(), 1, 1000);
 			$list->setTitle('');
 			$list->setSort(FALSE);
@@ -19925,7 +19922,7 @@ function ko_vesr_create_reportattachment($vesrfiles, $total, $done, $importtype,
 		if($issues) {
 			$table_problems = '<h2>'.getLL('vesr_v11_list_title').'</h2>';
 
-			$list = new kOOL_listview();
+			$list = new \kOOL\ListView();
 			$list->init('admin', 'ko_vesr', array(), 1, 1000);
 			$list->setTitle('');
 			$list->setSort(FALSE);
@@ -20217,7 +20214,7 @@ function ko_vesr_camt_overview($total, $done, $output=TRUE, $reportIssues=FALSE)
 			$rows = db_get_count('ko_vesr_camt', 'id');
 			$es = db_select_data('ko_vesr_camt', "WHERE 1=1{$z_where}", '*', $order);
 
-			$list = new kOOL_listview();
+			$list = new \kOOL\ListView();
 			$list->init('admin', 'ko_vesr_camt', array(), 1, 1000);
 			$list->setTitle('');
 			$list->setSort(FALSE);
@@ -20335,7 +20332,7 @@ function ko_vesr_v11_overview($data, $done, $output=true, $reportIssues=false) {
 			$rows = db_get_count('ko_vesr', 'id');
 			$es = db_select_data('ko_vesr', "WHERE 1=1{$z_where}", '*', $order);
 
-			$list = new kOOL_listview();
+			$list = new \kOOL\ListView();
 			$list->init('admin', 'ko_vesr', array(), 1, 1000);
 			$list->setTitle('');
 			$list->setSort(FALSE);
@@ -20413,7 +20410,7 @@ function ko_vesr_import ($file, &$data, &$done, $reportOnly = false){
 			$data['totals']['none'] = $none;
 		}
 	} else {
-		koNotifier::Instance()->addError(18);
+		Notifier::Instance()->addError(18);
 		return 20;
 	}
 }
@@ -20424,7 +20421,7 @@ function ko_vesr_parse_v11($data, &$r) {
 
 	$lines = explode("\n", $data);
 	if(sizeof($lines) < 2) {
-		koNotifier::Instance()->addError(11);
+		Notifier::Instance()->addError(11);
 		return FALSE;
 	}
 
@@ -20469,7 +20466,7 @@ function ko_vesr_parse_v11($data, &$r) {
 
 	//Check
 	if($check['num'] != $num) {
-		koNotifier::Instance()->addError(20);
+		Notifier::Instance()->addError(20);
 		return FALSE;
 	}
 
@@ -23183,10 +23180,10 @@ function ko_send_mail($from, $to, $subject, $body, $files = array(), $cc = array
 		$message = ko_prepare_mail($from, $to, $subject, $body, $files, $cc, $bcc, $replyTo);
 	} catch (Exception $e) {
 		if ($e->getCode() != 0) {
-			koNotifier::Instance()->addTextError('Swiftmailer error ' . $e->getCode() . ': ' . $e->getMessage());
+			Notifier::Instance()->addTextError('Swiftmailer error ' . $e->getCode() . ': ' . $e->getMessage());
 		}
 		else {
-			koNotifier::Instance()->addError($e->getCode(), '', array($e->getMessage()), 'swiftmailer');
+			Notifier::Instance()->addError($e->getCode(), '', array($e->getMessage()), 'swiftmailer');
 		}
 		return FALSE;
 	}
@@ -23200,15 +23197,15 @@ function ko_send_html_mail($from, $to, $subject, $body, $files = array(), $cc = 
 	try {
 		$message = ko_prepare_mail($from, $to, $subject, $body, $files, $cc, $bcc, $replyTo);
 		$message->setContentType('text/html');
-		$html2text = new OpenKool\html2text($body);
+		$html2text = new \kOOL\Html2Text($body);
 		$plainText = $html2text->get_text();
 		$message->addPart($plainText, 'text/plain');
 	} catch (Exception $e) {
 		if ($e->getCode() != 0) {
-			koNotifier::Instance()->addTextError('Swiftmailer error ' . $e->getCode() . ': ' . $e->getMessage());
+			Notifier::Instance()->addTextError('Swiftmailer error ' . $e->getCode() . ': ' . $e->getMessage());
 		}
 		else {
-			koNotifier::Instance()->addError($e->getCode(), '', array($e->getMessage()), 'swiftmailer');
+			Notifier::Instance()->addError($e->getCode(), '', array($e->getMessage()), 'swiftmailer');
 		}
 		return FALSE;
 	}
@@ -23430,16 +23427,16 @@ function ko_process_mail(Swift_Message $msg) {
 		$sent = $mailer->send($msg, $failures);
 	} catch (Exception $e) {
 		if ($e->getCode() != 0) {
-			koNotifier::Instance()->addTextError('Swiftmailer error ' . $e->getCode() . ': ' . $e->getMessage());
+			Notifier::Instance()->addTextError('Swiftmailer error ' . $e->getCode() . ': ' . $e->getMessage());
 		}
 		else {
-			koNotifier::Instance()->addError($e->getCode(), '', array($e->getMessage()), 'swiftmailer');
+			Notifier::Instance()->addError($e->getCode(), '', array($e->getMessage()), 'swiftmailer');
 		}
 		return FALSE;
 	}
 
 	if(!$sent) {
-		koNotifier::Instance()->addTextError('Swiftmailer error, could not send mail to the following addresses: ' . implode(',', $failures) . ';');
+		Notifier::Instance()->addTextError('Swiftmailer error, could not send mail to the following addresses: ' . implode(',', $failures) . ';');
 		return FALSE;
 	}
 
@@ -23719,8 +23716,7 @@ function ko_check_login() {
 	if(ALLOW_SSO && KOOL_ENCRYPTION_KEY && $_GET["sso"] && $_GET["sig"]) {
 		$ssoError = FALSE;
 		//Decrypt SSO data
-		require_once($BASE_PATH.'inc/class.openssl.php');
-		$crypt = new openssl('AES-256-CBC');
+		$crypt = new \kOOL\OpenSsl('AES-256-CBC');
 		$crypt->setKey(KOOL_ENCRYPTION_KEY);
 		list($kool_user, $timestamp, $ssoID, $user) = explode("@@@", $crypt->decrypt(base64_decode($_GET["sig"])));
 		$kool_user = trim(format_userinput($kool_user, "js")); $timestamp = trim($timestamp); $ssoID = trim($ssoID); $user = trim($user);
@@ -23808,7 +23804,7 @@ function ko_check_login() {
 		}
 		else {  //Wrong login
 			ko_log('loginfailed', "Username: '".format_userinput($_POST['username'], 'text')."' from ".ko_get_user_ip());
-			koNotifier::Instance()->addError(1);
+			Notifier::Instance()->addError(1);
 			return FALSE;
 		}
 	}//if(POST[login])

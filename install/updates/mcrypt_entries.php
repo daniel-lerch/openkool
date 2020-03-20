@@ -35,8 +35,7 @@ function ko_update_mcrypt_entries() {
 	$cryptM = new mcrypt('aes');
 	$cryptM->setKey(KOOL_ENCRYPTION_KEY);
 
-	include_once($BASE_PATH.'inc/class.openssl.php');
-	$crypt = new openssl('AES-256-CBC');
+	$crypt = new \kOOL\OpenSsl('AES-256-CBC');
 	$crypt->setKey(KOOL_ENCRYPTION_KEY);
 
 

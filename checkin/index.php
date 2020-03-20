@@ -11,7 +11,7 @@ require_once __DIR__ . '/../tracking/inc/tracking.inc.php';
 require_once __DIR__ . '/../inc/googleCloudPrint/koGoogleCloudPrint.php';
 
 $onload_code = '';
-$notifier = koNotifier::Instance();
+$notifier = \kOOL\Notifier::Instance();
 
 //Redirect to SSL if needed
 ko_check_ssl();

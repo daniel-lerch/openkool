@@ -19,7 +19,6 @@
 *******************************************************************************/
 
 require_once __DIR__ . '/../../consensus/consensus.inc.php';
-use OpenKool\ListView;
 
 /**
  * Show scheduling for events
@@ -657,7 +656,7 @@ function ko_rota_list_teams() {
 	$es = db_select_data('ko_rota_teams', 'WHERE 1=1 '.$z_where, '*', $order);
 
 
-	$list = new ListView();
+	$list = new \kOOL\ListView();
 
 	$list->init('rota', 'ko_rota_teams', array('chk', 'edit', 'delete'), 1, 9999);
 	$list->setTitle(getLL('rota_teams_list_title'));
@@ -1655,12 +1654,11 @@ function ko_rota_export_landscape_pdf() {
 		}
 
 		if (sizeof($event_fields) > 0) {
-			require_once($BASE_PATH . 'inc/class.html2text.php');
 			foreach ($event_fields as $field) {
 				$comments[$crow][] = getLL('kota_ko_event_' . $field);
 				foreach ($events as $event) {
 					$value = strip_tags(html_entity_decode($processed_events[$event['id']][$field], ENT_COMPAT | ENT_HTML401, 'iso-8859-1'), '<br><br/>');
-					$html2text = new html2text($value);
+					$html2text = new \kOOL\Html2Text($value);
 					$value = $html2text->get_text();
 					$comments[$crow][] = $value;
 				}

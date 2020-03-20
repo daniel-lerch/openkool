@@ -11,7 +11,7 @@ require __DIR__ . '/checkin.inc.php';
 require_once __DIR__ . '/../../tracking/inc/tracking.inc.php';
 
 $onload_code = '';
-$notifier = koNotifier::Instance();
+$notifier = \kOOL\Notifier::Instance();
 
 
 //Get access rights

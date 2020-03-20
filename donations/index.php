@@ -27,7 +27,7 @@ $ko_menu_akt = "donations";
 
 require __DIR__ . '/../inc/ko.inc.php';
 require __DIR__ . '/inc/donations.inc.php';
-use OpenKool\koNotifier;
+use \kOOL\Notifier;
 
 //Redirect to SSL if needed
 ko_check_ssl();
@@ -42,7 +42,7 @@ $onload_code = "";
 $infos = array();
 $info_txt_add = '';
 
-$notifier = koNotifier::Instance();
+$notifier = Notifier::Instance();
 
 //*** Rechte auslesen
 ko_get_access('donations');
@@ -811,7 +811,7 @@ switch($do_action) {
 			}
 		}
 
-		koNotifier::Instance()->addInfo(6, '', array($nUpdated));
+		Notifier::Instance()->addInfo(6, '', array($nUpdated));
 	break;
 
 
@@ -838,7 +838,7 @@ switch($do_action) {
 			}
 		}
 
-		koNotifier::Instance()->addInfo(7);
+		Notifier::Instance()->addInfo(7);
 	break;
 
 
@@ -986,7 +986,7 @@ ko_get_outer_submenu_code('donations');
 foreach ($infos as $info) {
 	$notifier->addInfo($info, $do_action, array($info_txt_add));
 }
-if ($notifier->hasNotifications(koNotifier::ALL)) {
+if ($notifier->hasNotifications(Notifier::ALL)) {
 	$notifier->notify();
 }
 

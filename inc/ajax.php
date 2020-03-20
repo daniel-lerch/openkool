@@ -32,7 +32,6 @@ error_reporting(0);
 $ko_menu_akt = 'home';
 $ko_path = "../";
 require __DIR__ . '/ko.inc.php';
-use OpenKool\koNotifier;
 
 array_walk_recursive($_GET, 'rawurldecode_array');
 
@@ -648,9 +647,9 @@ if (isset($_GET) && isset($_GET["action"])) {
 			$_POST['id'] = $table . '@' . $col . '@' . $id . '@' . $hash;
 			kota_submit_multiedit('', 'inline_edit');
 
-			if (koNotifier::Instance()->hasErrors()) {
+			if (\kOOL\Notifier::Instance()->hasErrors()) {
 				print 'ERROR@@@';
-				koNotifier::Instance()->display(TRUE);
+				\kOOL\Notifier::Instance()->display(TRUE);
 				break;
 			}
 

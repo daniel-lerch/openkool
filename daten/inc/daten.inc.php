@@ -18,6 +18,8 @@
 *
 *******************************************************************************/
 
+use \kOOL\Notifier;
+
 /**
  * @param String &$z_where filter for sql
  * @param String &$z_limit limit for sql
@@ -192,7 +194,7 @@ function ko_list_events($method, $mode='html', $dontApplyLimit=FALSE, $showForei
 		$z_where.= " AND `ko_event`.`id` IN ('".implode("','", $filter_ids)."') ";
 	}
 
-	$list = new ListView();
+	$list = new \kOOL\ListView();
 
 	$rows = db_get_count("ko_event", "id", $z_where);
 	if($_SESSION['show_start'] > $rows) {
@@ -381,7 +383,7 @@ function ko_list_mod_events($mode) {
 	}
 	if($rows == 0) return;
 
-	$list = new ListView();
+	$list = new \kOOL\ListView();
 
 	//Build fake accessRights arrays (TODO: Only show check if no "Doppelbelegung" for new)
 	$mod_access = array('ALL' => $access['daten']['ALL'] == 4 ? 5 : $access['daten']['ALL']);
@@ -451,7 +453,7 @@ function ko_list_reminders($mode='html') {
 
 	$rows = sizeof($es);
 
-	$list = new ListView();
+	$list = new \kOOL\ListView();
 
 	$list->init('daten', 'ko_reminder', array('chk', 'send', 'edit', 'delete'), 1, 1000);
 	$list->setTitle(getLL('ko_event_reminder_list_title'));
@@ -560,7 +562,7 @@ function ko_list_rooms() {
 		$tpl_list_data[$row++]["rowclass"] = $room["hidden"] ? "row-inactive" : "";
 	}
 
-	$list = new ListView();
+	$list = new \kOOL\ListView();
 	$list->init("daten", "ko_event_rooms", array("chk", "edit", "delete"), $_SESSION["show_start"], $_SESSION["show_limit"]);
 	$list->setTitle(getLL("daten_rooms_list_title"));
 	$list->setAccessRights(array('edit' => '2', 'delete' => 'ALL3'), $access['daten']);
@@ -598,7 +600,7 @@ function ko_list_groups() {
 
 	if($access['daten']['MAX'] < 3) return;
 
-	$list = new ListView();
+	$list = new \kOOL\ListView();
 
 	//Nur die erlaubten Termingruppen anzeigen
 	if($access['daten']['ALL'] < 3) {
@@ -1842,7 +1844,7 @@ function ko_daten_settings() {
 function check_daten_entries(&$data) {
 	global $KOTA;
 
-	$notifier = koNotifier::Instance();
+	$notifier = Notifier::Instance();
 
 	ko_get_eventgruppe_by_id($data["eventgruppen_id"], $eventgroup);
 	if(!$eventgroup["name"]) {
@@ -1947,7 +1949,7 @@ function do_del_termin($del_id) {
 	if($access['daten'][$del_event['eventgruppen_id']] < 2) return FALSE;
 	ko_get_eventgruppe_by_id($del_event["eventgruppen_id"], $del_eventgruppe);
 	if ($del_eventgruppe['type'] == 3) {
-		koNotifier::Instance()->addWarning(1);
+		Notifier::Instance()->addWarning(1);
 		return FALSE;
 	}
 
@@ -2158,7 +2160,7 @@ function ko_daten_update_event($id, &$data, $forceIgnoreRes = FALSE) {
 					//Overlapping check (Don't move event if reservations can not be stored)
 					if (FALSE === ko_res_check_double($resitem_id, $data['res_startdatum'], $data['res_enddatum'], $data['res_startzeit'], $data['res_endzeit'], $double_error_txt, $res_id)) {
 						$ok = FALSE;
-						koNotifier::Instance()->addError(4, '', [$double_error_txt], 'reservation');
+						Notifier::Instance()->addError(4, '', [$double_error_txt], 'reservation');
 						$error = TRUE;
 					}
 					$update_reservations[$res_id] = $update_res;
@@ -2223,7 +2225,7 @@ function ko_daten_update_event($id, &$data, $forceIgnoreRes = FALSE) {
 				//Check for res colision
 				ko_res_check_double($resitem_id, $res_data["startdatum"], $res_data["enddatum"], $res_data["startzeit"], $res_data["endzeit"], $double_error_txt);
 				if ($double_error_txt) {
-					koNotifier::Instance()->addError(4, '', [$double_error_txt], 'reservation');
+					Notifier::Instance()->addError(4, '', [$double_error_txt], 'reservation');
 					$error = TRUE;
 				} else {
 					//Check for moderation
@@ -2618,13 +2620,13 @@ function ko_daten_store_event(&$data, $modResForConflicts=FALSE) {
 				ko_res_check_double($r, $res_data["startdatum"], $res_data["enddatum"], $res_data["startzeit"], $res_data["endzeit"], $double_error_txt);
 				if($double_error_txt) {
 					if (!$modResForConflicts) {
-						koNotifier::Instance()->addError(4, 'submit_neuer_termin', '', 'reservation');
-						koNotifier::Instance()->addTextError('<b>'.$res_data['startdatum'].'</b>: '.getLL('res_collision').' <i>'.$double_error_txt.'</i><br />', 'submit_neuer_termin');
+						Notifier::Instance()->addError(4, 'submit_neuer_termin', '', 'reservation');
+						Notifier::Instance()->addTextError('<b>'.$res_data['startdatum'].'</b>: '.getLL('res_collision').' <i>'.$double_error_txt.'</i><br />', 'submit_neuer_termin');
 
 						$do_res = FALSE;
 						$error = true;
 					} else { // save as moderated res
-						koNotifier::Instance()->addWarning(1, 'submit_neuer_termin', array('<br><b>'.$res_data['startdatum'].'</b>: '.getLL('res_collision').' <i>'.$double_error_txt.'</i><br />'), 'reservation');
+						Notifier::Instance()->addWarning(1, 'submit_neuer_termin', array('<br><b>'.$res_data['startdatum'].'</b>: '.getLL('res_collision').' <i>'.$double_error_txt.'</i><br />'), 'reservation');
 						$saveModerated = TRUE;
 					}
 				}
@@ -3957,7 +3959,7 @@ function ko_daten_list_export_presets() {
 	$es = db_select_data('ko_pdf_layout', "WHERE `type` = 'daten'", '*', 'ORDER BY `name` ASC');
 	$rows = sizeof($es);
 
-	$list = new ListView();
+	$list = new \kOOL\ListView();
 
 	$list->init('daten', 'ko_pdf_layout', array('chk', 'edit', 'delete'), 1, 1000);
 	$list->setTitle(getLL('submenu_daten_export_presets'));
@@ -4237,8 +4239,8 @@ function ko_daten_insert_new_event($do_action, $ep) {
 		$repeat, ($ep["txt_num_repeats"] ? $ep["txt_num_repeats"] : ""),
 		format_userinput($ep['sel_repeat_eg'], 'uint'));
 
-	if(sizeof($repeat) <= 0) koNotifier::Instance()->addError(5, $do_action);
-	if(koNotifier::Instance()->hasErrors()) return FALSE;
+	if(sizeof($repeat) <= 0) Notifier::Instance()->addError(5, $do_action);
+	if(Notifier::Instance()->hasErrors()) return FALSE;
 
 
 	//Find moderation from event group
@@ -4291,16 +4293,16 @@ function ko_daten_insert_new_event($do_action, $ep) {
 				}
 			}
 
-			koNotifier::Instance()->addInfo(1, $do_action);
+			Notifier::Instance()->addInfo(1, $do_action);
 		}
 	}
 	if (sizeof($mod_data) > 0) {
 		ko_daten_store_moderation($mod_data, $do_action=='submit_manual_moderation');
-		koNotifier::Instance()->addWarning(9, $do_action);
+		Notifier::Instance()->addWarning(9, $do_action);
 	}
 
 	// delete program with dummy pid
-	if (!koNotifier::Instance()->hasErrors() && ko_get_setting('activate_event_program') == 1 && $do_action == 'submit_neuer_termin') {
+	if (!Notifier::Instance()->hasErrors() && ko_get_setting('activate_event_program') == 1 && $do_action == 'submit_neuer_termin') {
 		db_delete_data('ko_event_program', "where `pid` = '" . $data['programEntries'] . "'");
 	}
 
@@ -4330,7 +4332,7 @@ function ko_daten_list_absence($mode = "html") {
 		$notifier->notify();
 	}
 
-	$list = new ListView();
+	$list = new \kOOL\ListView();
 	$filter = kota_apply_filter("ko_event_absence");
 
 	if(!empty($filter)) {

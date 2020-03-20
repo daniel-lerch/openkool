@@ -27,7 +27,6 @@ $ko_menu_akt = 'tracking';
 
 require __DIR__ . '/../inc/ko.inc.php';
 require __DIR__ . '/inc/tracking.inc.php';
-use OpenKool\koNotifier;
 
 //Redirect to SSL if needed
 ko_check_ssl();
@@ -39,7 +38,7 @@ if(!ko_module_installed('tracking')) {
 ob_end_flush();  //Puffer flushen
 
 $onload_code = '';
-$notifier = koNotifier::Instance();
+$notifier = \kOOL\Notifier::Instance();
 
 //Get access rights
 ko_get_access('tracking');
@@ -674,7 +673,7 @@ ko_get_outer_submenu_code('tracking');
 <div name="main_content" id="main_content">
 
 <?php
-if($notifier->hasNotifications(koNotifier::ALL)) {
+if($notifier->hasNotifications(\kOOL\Notifier::ALL)) {
 	$notifier->notify();
 }
 

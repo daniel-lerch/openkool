@@ -43,8 +43,7 @@ if($no_enc) {
 //Use encryption
 else {
 	if((isset($_POST['ssl']) && $_POST['ssl']) || (isset($_GET['ssl']) && $_GET['ssl'])) {
-		require_once($ko_path."inc/class.openssl.php");
-		$crypt = new openssl('AES-256-CBC');
+		$crypt = new \kOOL\OpenSsl('AES-256-CBC');
 	} else {
 		require_once($ko_path."inc/class.mcrypt.php");
 		$crypt = new mcrypt("aes");

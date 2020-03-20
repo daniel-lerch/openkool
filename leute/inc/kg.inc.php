@@ -18,8 +18,6 @@
 *
 *******************************************************************************/
 
-use OpenKool\ListView;
-
 //Define basic chart types for smallgroup module (may be extended by plugins)
 $KG_CHART_TYPES = array("members", "frequency", "weekday", "ages", "types", "regions", "gender");
 
@@ -45,7 +43,7 @@ function ko_list_kg($output=TRUE, $mode='html') {
 	$rows = db_get_count('ko_kleingruppen', 'id', $z_where);
 	ko_get_kleingruppen($es, $z_limit, '', 'WHERE 1=1'.$z_where);
 
-	$list = new ListView();
+	$list = new \kOOL\ListView();
 	$list->init('leute', 'ko_kleingruppen', array('chk', 'edit', 'delete', 'tracking_show', 'tracking_add', 'mailing'), $_SESSION['show_kg_start'], $_SESSION['show_kg_limit']);
 	$list->setTitle(getLL('kg_list_title'));
 	$list->setAccessRights(array('edit' => 3, 'delete' => 4), $access['kg']);

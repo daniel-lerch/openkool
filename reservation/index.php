@@ -27,11 +27,10 @@ $ko_menu_akt = "reservation";
 
 require_once __DIR__ . '/../inc/ko.inc.php';
 require_once __DIR__ . '/inc/reservation.inc.php';
-use OpenKool\koNotifier;
 use OpenKool\Localizer;
 
 //get notifier instance
-$notifier = koNotifier::Instance();
+$notifier = \kOOL\Notifier::Instance();
 
 //Redirect to SSL if needed
 ko_check_ssl();
@@ -1692,7 +1691,7 @@ ko_get_outer_submenu_code('reservation');
 
 <?php
 
-if ($notifier->hasNotifications(koNotifier::ALL)) {
+if ($notifier->hasNotifications(\kOOL\Notifier::ALL)) {
 	$notifier->notify();
 }
 

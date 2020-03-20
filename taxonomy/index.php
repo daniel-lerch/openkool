@@ -44,7 +44,7 @@ if(!ko_module_installed("taxonomy") || $_SESSION['ses_userid'] == ko_get_checkin
 
 ob_end_flush();  //Puffer flushen
 
-$notifier = koNotifier::Instance();
+$notifier = \kOOL\Notifier::Instance();
 
 //Get access rights
 ko_get_access('taxonomy');
@@ -175,7 +175,7 @@ ko_get_outer_submenu_code('taxonomy');
 		<div name="main_content" id="main_content">
 
 		<?php
-			if($notifier->hasNotifications(koNotifier::ALL)) {
+			if($notifier->hasNotifications(\kOOL\Notifier::ALL)) {
 				$notifier->notify();
 			}
 

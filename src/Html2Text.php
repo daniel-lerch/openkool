@@ -21,9 +21,9 @@
  * GNU General Public License for more details.
  */
 
-namespace OpenKool;
+namespace kOOL;
 
-class html2text
+class Html2Text
 {
     const ENCODING = 'UTF-8';
 

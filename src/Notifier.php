@@ -18,11 +18,11 @@
 *
 *******************************************************************************/
 
-namespace OpenKool;
+namespace kOOL;
 
 use ReflectionClass;
 
-class koNotifier {
+class Notifier {
 
 	const
 		EMERGENCY = 1,

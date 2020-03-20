@@ -66,8 +66,7 @@ class Message
 
 	protected function html2text($html) {
 		global $BASE_PATH;
-		require_once($BASE_PATH.'inc/class.html2text.php');
-		$html2text = new \html2text($html);
+		$html2text = new \kOOL\Html2Text($html);
 		return $html2text->get_text();
 	}
 

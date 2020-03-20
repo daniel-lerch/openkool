@@ -18,8 +18,6 @@
 *
 *******************************************************************************/
 
-use OpenKool\ListView;
-
 function ko_set_logins_list() {
 	global $smarty;
 	global $access;
@@ -45,7 +43,7 @@ function ko_set_logins_list() {
 
 	ko_get_logins($es, $z_where, $z_limit);
 
-	$list = new ListView();
+	$list = new \kOOL\ListView();
 
 	$list->init('admin', 'ko_admin', ['chk', 'edit', 'delete'], $_SESSION["show_start"], $_SESSION["show_limit"]);
 	$list->setTitle(getLL("admin_logins_list_title"));
@@ -100,7 +98,7 @@ function ko_list_admingroups() {
 		$es[$k]['logins'] = '';
 	}
 
-	$list = new ListView();
+	$list = new \kOOL\ListView();
 
 	$list->init('admin', 'ko_admingroups', ['chk', 'edit', 'delete'], 1, 1000);
 	$list->setTitle(getLL('admin_admingroups_list_title'));
@@ -175,7 +173,7 @@ function ko_show_logs() {
 	$order = 'ORDER BY ' . $_SESSION['sort_logs'] . ' ' . $_SESSION['sort_logs_order'] . ', id ' . $_SESSION['sort_logs_order'];
 	$es = db_select_data('ko_log', 'WHERE 1 ' . $z_where, '*', $order, $z_limit);
 
-	$list = new ListView();
+	$list = new \kOOL\ListView();
 
 	$list->init('admin', 'ko_log', '', $_SESSION['show_logs_start'], $_SESSION['show_logs_limit']);
 	$list->setTitle(getLL('admin_log_list_title'));
@@ -247,7 +245,7 @@ function ko_show_telegram_log() {
 	}
 
 
-	$list = new ListView();
+	$list = new \kOOL\ListView();
 	$list->init('admin', '_ko_telegram_log', array(), $_SESSION['show_start'], $_SESSION['show_limit']);
 	$list->setTitle(getLL("admin_telegram_log_list_title"));
 	$list->setAccessRights(FALSE);
@@ -317,7 +315,7 @@ function ko_show_sms_log() {
 		$c++;
 	}
 
-	$list = new ListView();
+	$list = new \kOOL\ListView();
 
 	$list->init('admin', '_ko_sms_log', [], $_SESSION['show_start'], $_SESSION['show_limit']);
 	$list->setTitle(getLL("admin_sms_log_list_title"));
@@ -413,7 +411,7 @@ function ko_list_google_cloud_printers() {
 
 	$es = ko_get_available_google_cloud_printers();
 
-	$list = new ListView();
+	$list = new \kOOL\ListView();
 	$list->init('admin', 'ko_google_cloud_printers', [], 1, sizeof($es));
 	$list->setTitle(getLL("admin_google_cloud_printers_list_title"));
 	$list->setSort(FALSE);
@@ -1595,7 +1593,7 @@ function ko_login_formular($mode, $id = 0, $type = "login") {
 		hook_form('ko_admingroups', $group, $mode, $id, ['type' => $type]);
 	}
 	catch(Exception $e) {
-		koNotifier::Instance()->addTextError('Admin Error: ' . $e->getMessage());
+		\kOOL\Notifier::Instance()->addTextError('Admin Error: ' . $e->getMessage());
 	}
 
 	if ($type == "login") {
@@ -1681,7 +1679,7 @@ function ko_show_vesr_import() {
 		$rows = db_get_count('ko_vesr', 'id');
 		$es = db_select_data('ko_vesr', 'WHERE 1=1', '*', $order);
 
-		$list = new ListView();
+		$list = new \kOOL\ListView();
 		$list->init('admin', 'ko_vesr', ['delete'], 1, 1000);
 		$list->setTitle(getLL('vesr_v11_list_title'));
 		$list->setActions(['delete' => ['action' => 'delete_v11', 'confirm' => TRUE]]);
@@ -1701,7 +1699,7 @@ function ko_show_vesr_import() {
 		$rows = db_get_count('ko_vesr_camt', 'id');
 		$es = db_select_data('ko_vesr_camt', 'WHERE 1=1', '*', $order);
 
-		$list = new ListView();
+		$list = new \kOOL\ListView();
 		$list->init('admin', 'ko_vesr_camt', ['delete'], 1, 1000);
 		$list->setTitle(getLL('vesr_camt_list_title'));
 		$list->setActions(['delete' => ['action' => 'delete_camt', 'confirm' => TRUE]]);
@@ -1747,8 +1745,7 @@ function ko_vesr_settings() {
 
 	$value = ko_get_setting('vesr_import_email_pass');
 	// decrypt password
-	require_once($BASE_PATH.'inc/class.openssl.php');
-	$crypt = new openssl('AES-256-CBC');
+	$crypt = new \kOOL\OpenSsl('AES-256-CBC');
 	$crypt->setKey(KOOL_ENCRYPTION_KEY);
 	$value = trim($crypt->decrypt($value));
 	$frmgroup[$gc]['row'][$rowcounter++]['inputs'][1] = ['desc' => getLL('vesr_settings_import_email_pass'),
@@ -2740,7 +2737,7 @@ function ko_admin_list_detailed_person_exports() {
 	$es = db_select_data("ko_detailed_person_exports", "WHERE 1=1", "*", "ORDER BY `name` ASC");
 	$rows = sizeof($es);
 
-	$list = new ListView();
+	$list = new \kOOL\ListView();
 
 	$list->init("admin", "ko_detailed_person_exports", ["chk", "edit", "delete"], 1, 1000);
 	$list->setTitle(getLL("admin_detailed_person_export_title"));
@@ -2799,7 +2796,7 @@ function ko_admin_list_labels() {
 	$es = db_select_data("ko_labels", "WHERE 1=1", "*", "ORDER BY `name` ASC");
 	$rows = sizeof($es);
 
-	$list = new ListView();
+	$list = new \kOOL\ListView();
 
 	$list->init("admin", "ko_labels", ["chk", "edit", "delete"], 1, 1000);
 	$list->setTitle(getLL("admin_labels_title"));
@@ -2858,7 +2855,7 @@ function ko_list_leute_pdf() {
 	$es = db_select_data("ko_pdf_layout", "WHERE `type` = 'leute'", "*", "ORDER BY `name` ASC");
 	$rows = sizeof($es);
 
-	$list = new ListView();
+	$list = new \kOOL\ListView();
 
 	$list->init("admin", "ko_pdf_layout", ["chk", "edit", "delete"], 1, 1000);
 	$list->setTitle(getLL("admin_pdf_list_title"));
@@ -3308,7 +3305,7 @@ function ko_list_news() {
 	$rows = db_get_count('ko_news', 'id', '');
 	$es = db_select_data('ko_news', 'WHERE 1=1', '*', $order);
 
-	$list = new ListView();
+	$list = new \kOOL\ListView();
 
 	$list->init('admin', 'ko_news', ['chk', 'edit', 'delete'], 1, 100);
 	$list->disableMultiedit();

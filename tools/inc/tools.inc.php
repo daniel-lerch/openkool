@@ -18,9 +18,6 @@
 *
 *******************************************************************************/
 
-use OpenKool\ListView;
-
-
 function ko_tools_mailing_mails() {
   $rows = db_get_count('ko_mailing_mails', 'id');
   if($_SESSION['show_start'] > $rows) $_SESSION['show_start'] = 1;
@@ -41,7 +38,7 @@ function ko_tools_mailing_mails() {
     }
   }
 
-  $list = new ListView();
+  $list = new \kOOL\ListView();
 
   $list->init('tools', 'ko_mailing_mails', array('chk', 'check', 'delete'), $_SESSION['show_start'], $_SESSION['show_limit']);
   $list->setTitle(getLL('tools_mailing_mails_list_title'));
@@ -751,7 +748,7 @@ function ko_tools_plugins_list() {
 		$manual_access['remove'][$plugin] = $installed ? TRUE : FALSE;
 	}
 
-	$list = new kOOL_listview();
+	$list = new \kOOL\ListView();
 
 	$list->init('tools', 'ko_plugins', array('add', 'remove'), 1, sizeof($es));
 	$list->setTitle(getLL("tools_plugins"));
@@ -825,7 +822,7 @@ function ko_list_updates() {
 	$rows = db_get_count('ko_updates', 'id');
 	$es = db_select_data('ko_updates', '', '*', 'ORDER BY `status` ASC, `crdate` DESC');
 
-	$list = new kOOL_listview();
+	$list = new \kOOL\ListView();
 
 	$list->init('tools', 'ko_updates', array('chk', 'check'), 1, sizeof($es));
 	$list->setTitle(getLL('tools_updates_list_title'));
@@ -851,7 +848,7 @@ function ko_list_tasks() {
 	$rows = db_get_count('ko_scheduler_tasks', 'id');
 	$es = db_select_data('ko_scheduler_tasks', '', '*', 'ORDER BY name ASC');
 
-	$list = new ListView();
+	$list = new \kOOL\ListView();
 
 	$list->init('tools', 'ko_scheduler_tasks', array('chk', 'edit', 'delete'), 1, sizeof($es));
 	$list->setTitle(getLL('tools_scheduler_tasks_list_title'));
@@ -912,8 +909,7 @@ function ko_tools_typo3_connection() {
 		if($field == 'typo3_pwd') {
 			$pwd_enc = ko_get_setting('typo3_pwd');
 			if($pwd_enc != '') {
-				require_once($BASE_PATH.'inc/class.openssl.php');
-				$crypt = new openssl('AES-256-CBC');
+				$crypt = new \kOOL\OpenSsl('AES-256-CBC');
 				$crypt->setKey(KOOL_ENCRYPTION_KEY);
 				$pwd = trim($crypt->decrypt($pwd_enc));
 			} else {
@@ -997,7 +993,7 @@ function ko_tools_misc() {
 		$c.= '</div></div>';
 	}
 
-	if ($notifier->hasNotifications(koNotifier::ALL)) {
+	if ($notifier->hasNotifications(\kOOL\Notifier::ALL)) {
 		$notifier->notify();
 	}
 

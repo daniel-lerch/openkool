@@ -102,7 +102,7 @@ function ko_groups_list($highlight=NULL) {
 		ko_get_groups($es, $z_where, $z_limit);
 	}
 
-	$list = new kOOL_listview();
+	$list = new \kOOL\ListView();
 	$actions = array('chk', 'edit', 'delete');
 	if ($show_tracking) {
 		$actions[] = 'tracking_show';
@@ -456,7 +456,7 @@ function ko_groups_list_datafields() {
 	}
 
 
-	$list = new ListView();
+	$list = new \kOOL\ListView();
 
 	$list->init('groups', 'ko_groups_datafields', array('chk', 'edit', 'delete'), 1, 1000);
 	$list->setTitle(getLL('groups_datafields_list_title'));
@@ -513,7 +513,7 @@ function ko_groups_list_roles() {
 	}
 
 
-	$list = new ListView();
+	$list = new \kOOL\ListView();
 
 	$list->init('groups', 'ko_grouproles', array('chk', 'edit', 'delete'), 1, 1000);
 	$list->setTitle(getLL('groups_roles_list_title'));

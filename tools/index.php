@@ -27,7 +27,7 @@ $ko_menu_akt = "tools";
 
 require __DIR__ . '/../inc/ko.inc.php';
 require __DIR__ . '/inc/tools.inc.php';
-use OpenKool\koNotifier;
+use \kOOL\Notifier;
 
 //Redirect to SSL if needed
 ko_check_ssl();
@@ -38,7 +38,7 @@ if(!ko_module_installed("tools") || $_SESSION["ses_username"] != "root") {
 
 ob_end_flush();  //Puffer flushen
 
-$notifier = koNotifier::Instance();
+$notifier = Notifier::Instance();
 $default_lang = $LIB_LANGS[0];
 
 ko_get_access('tools');
@@ -142,10 +142,10 @@ switch($do_action) {
 		}
 		else {
 			$success = ko_send_mail('', $_POST['testmail']['receiver'], $_POST['testmail']['subject'], $_POST['testmail']['text']);
-			if (!$notifier->hasNotifications(koNotifier::DEBUG | koNotifier::ERROR) && $success) {
+			if (!$notifier->hasNotifications(Notifier::DEBUG | Notifier::ERROR) && $success) {
 				$notifier->addInfo(6, '', array($_POST['testmail']['receiver']));
 			}
-			else if (!$notifier->hasNotifications(koNotifier::DEBUG | koNotifier::ERROR) && !$success) {
+			else if (!$notifier->hasNotifications(Notifier::DEBUG | Notifier::ERROR) && !$success) {
 				$notifier->addError(10);
 			}
 
@@ -871,8 +871,7 @@ switch($do_action) {
 		ko_set_setting('typo3_user', format_userinput($_POST['typo3_user'], 'text'));
 
 		//Store password encrypted
-		require_once($BASE_PATH.'inc/class.openssl.php');
-		$crypt = new openssl('AES-256-CBC');
+		$crypt = new \kOOL\OpenSsl('AES-256-CBC');
 		$crypt->setKey(KOOL_ENCRYPTION_KEY);
 		$pwd_enc = $crypt->encrypt($_POST['typo3_pwd']);
 		ko_set_setting('typo3_pwd', $pwd_enc);
@@ -1016,7 +1015,7 @@ ko_get_outer_submenu_code('tools');
 <div name="main_content" id="main_content">
 
 <?php
-if($notifier->hasNotifications(koNotifier::ALL)) {
+if($notifier->hasNotifications(Notifier::ALL)) {
 	$notifier->notify();
 }
 

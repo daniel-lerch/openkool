@@ -31,9 +31,8 @@ $ko_path = "../";
 $ko_menu_akt = "install";
 
 require __DIR__ . '/../inc/ko.inc.php';
-use OpenKool\koNotifier;
 
-$notifier = koNotifier::Instance();
+$notifier = \kOOL\Notifier::Instance();
 
 ob_end_flush();  //Puffer flushen
 

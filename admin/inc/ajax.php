@@ -216,7 +216,7 @@ if(isset($_GET) && isset($_GET["action"])) {
 
 						echo '<h2>'.getLL('payment_list_not_mapped_title').'</h2>';
 
-						$list = new kOOL_listview();
+						$list = new \kOOL\ListView();
 						$list->init('admin', 'ko_vesr_camt', array(), 1, 1000);
 						$list->setTitle('');
 						$list->setSort(FALSE);
@@ -265,7 +265,7 @@ if(isset($_GET) && isset($_GET["action"])) {
 
 						echo '<h2>'.getLL('payment_list_not_mapped_title').'</h2>';
 
-						$list = new kOOL_listview();
+						$list = new \kOOL\ListView();
 						$list->init('admin', 'ko_vesr', array(), 1, 1000);
 						$list->setTitle('');
 						$list->setSort(FALSE);

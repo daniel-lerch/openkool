@@ -27,7 +27,6 @@ $ko_menu_akt = "groups";
 
 require __DIR__ . '/../inc/ko.inc.php';
 require __DIR__ . '/inc/groups.inc.php';
-use OpenKool\koNotifier;
 
 //Redirect to SSL if needed
 ko_check_ssl();
@@ -43,7 +42,7 @@ if($_SESSION['ses_userid'] == ko_get_checkin_user_id()) {
 
 ob_end_flush();  //Puffer flushen
 
-$notifier = koNotifier::Instance();
+$notifier = \kOOL\Notifier::Instance();
 
 //Get access rights
 ko_get_access('groups');
@@ -1048,7 +1047,7 @@ ko_get_outer_submenu_code('groups');
 <div name="main_content" id="main_content">
 
 <?php
-if($notifier->hasNotifications(koNotifier::ALL)) {
+if($notifier->hasNotifications(\kOOL\Notifier::ALL)) {
 	$notifier->notify();
 }
 

@@ -18,7 +18,7 @@
 *
 *******************************************************************************/
 
-namespace OpenKool;
+namespace kOOL;
 
 /**
  * Class to render list views
@@ -734,5 +734,5 @@ class ListView {
 		$smarty->assign("help", ko_get_help($this->module, $_SESSION["show"]));
 	}//smarty_assign()
 
-}//kOOL_listview
+}
 ?>

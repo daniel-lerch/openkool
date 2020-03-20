@@ -28,10 +28,9 @@ $ko_menu_akt = "leute";
 
 require __DIR__ . '/../inc/ko.inc.php';
 require __DIR__ . '/inc/leute.inc.php';
-use OpenKool\koNotifier;
 
 //get notifier instance
-$notifier = koNotifier::Instance();
+$notifier = \kOOL\Notifier::Instance();
 
 //Redirect to SSL if needed
 ko_check_ssl();
@@ -794,7 +793,7 @@ switch($do_action) {
 			foreach($columns as $column) {
 				$do_columns[] = $column;
 			}
-			if(sizeof($do_columns) < 1) koNotifier::Instance()->addError(4);
+			if(sizeof($do_columns) < 1) \kOOL\Notifier::Instance()->addError(4);
 
 			//Zu bearbeitende Einträge
 			$do_ids = array();
@@ -2629,8 +2628,7 @@ switch($do_action) {
 			$message = ko_prepare_mail($from, $replyTo, $subject, $text, $files, array(), array(), array($replyTo));
 			$message->setContentType('text/html');
 			//$message->getHeaders()->addTextHeader('Content-Transfer-Encoding', 'quoted-printable');
-			require_once($BASE_PATH . 'inc/class.html2text.php');
-			$html2text = new html2text($text);
+			$html2text = new \kOOL\Html2Text($text);
 			$plainText = $html2text->get_text();
 			$message->addPart($plainText, 'text/plain');
 
@@ -3911,7 +3909,7 @@ ko_get_outer_submenu_code('leute');
 
 <?php
 
-if ($notifier->hasNotifications(koNotifier::ALL)) {
+if ($notifier->hasNotifications(\kOOL\Notifier::ALL)) {
 	$notifier->notify();
 }
 

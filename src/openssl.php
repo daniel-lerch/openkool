@@ -1,8 +1,8 @@
 <?php
 
-namespace OpenKool;
+namespace kOOL;
 
-class openssl
+class OpenSsl
 {
 	protected $algo;
 	protected $secret;

@@ -32,6 +32,7 @@ error_reporting(0);
 $ko_menu_akt = 'home';
 $ko_path = "../";
 require __DIR__ . '/ko.inc.php';
+use \kOOL\Notifier;
 
 //Include plugin code
 $hooks = hook_include_main('_all');
@@ -90,10 +91,10 @@ if ($_POST['async_form'] == 1) {
 	}
 	$_SESSION = $sessionBackup;
 
-	if (!koNotifier::Instance()->hasErrors()) {
+	if (!Notifier::Instance()->hasErrors()) {
 		$showForm = FALSE;
-		if (!koNotifier::Instance()->hasInfos()) {
-			koNotifier::Instance()->addTextInfo(getLL('kota_async_form_info_entry_created'));
+		if (!Notifier::Instance()->hasInfos()) {
+			Notifier::Instance()->addTextInfo(getLL('kota_async_form_info_entry_created'));
 		}
 	}
 }
@@ -170,8 +171,8 @@ if ($_POST['async_form'] == 1) {
 
 <?php
 if ($showForm) {
-	if (koNotifier::Instance()->hasNotifications(koNotifier::ALL)) {
-		koNotifier::Instance()->notify();
+	if (Notifier::Instance()->hasNotifications(Notifier::ALL)) {
+		Notifier::Instance()->notify();
 	}
 
 	if (isset($KOTA[$table]['_form']['redraw']['mode_map'][$mode])) $mode = $KOTA[$table]['_form']['redraw']['mode_map'][$mode];
@@ -194,7 +195,7 @@ if ($showForm) {
 
 } else {
 	$return = array(
-		'notifications' => koNotifier::Instance()->notify(koNotifier::NOTIFYALL, FALSE),
+		'notifications' => Notifier::Instance()->notify(Notifier::NOTIFYALL, FALSE),
 		'table' => $table,
 		'target' => $target,
 		'tag' => $tag,
@@ -202,7 +203,7 @@ if ($showForm) {
 		'mode' => $mode,
 		'actions' => array(),
 	);
-	if (koNotifier::Instance()->hasErrors()) {
+	if (Notifier::Instance()->hasErrors()) {
 		$return['status'] = 'error';
 	} else {
 		$return['status'] = 'success';

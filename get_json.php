@@ -52,8 +52,7 @@ if($no_enc) {
 }
 //Use encryption
 else {
-	require_once($ko_path."inc/class.openssl.php");
-	$crypt = new openssl('AES-256-CBC');
+	$crypt = new \kOOL\OpenSsl('AES-256-CBC');
 	$crypt->setKey(KOOL_ENCRYPTION_KEY);
 	$request_json = $crypt->decrypt(base64_decode($q));
 	//Don't allow direct db access to these tables

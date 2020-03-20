@@ -157,7 +157,7 @@ function ko_fm_absence($uid, $pos) {
 		if(count($absences) > 0) {
 			$_SESSION['kota_show_cols_ko_event_absence'] = ['type', 'from_date', 'to_date',];
 
-			$list = new kOOL_listview();
+			$list = new \kOOL\ListView();
 			$list->init('daten', 'ko_event_absence', ['edit'], 1, 5);
 			$list->setAccessRights(FALSE);
 			$list->setActions(['edit' => ['action' => 'edit_absence']]);
@@ -290,7 +290,7 @@ function ko_fm_absence($uid, $pos) {
 			if(count($absences) > 0) {
 				$_SESSION['kota_show_cols_ko_event_absence'] = ['type', 'from_date', 'to_date',];
 
-				$list = new kOOL_listview();
+				$list = new \kOOL\ListView();
 				$list->init('daten', 'ko_event_absence', ['edit', 'delete'], 1, 1000);
 				$list->setAccessRights(FALSE);
 				$list->setActions(['edit' => ['action' => 'edit_absence'],

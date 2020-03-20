@@ -46,7 +46,7 @@ ob_end_flush();  //Puffer flushen
 
 $onload_code = "";
 
-$notifier = koNotifier::Instance();
+$notifier = \kOOL\Notifier::Instance();
 
 //*** Rechte auslesen
 ko_get_access('crm');
@@ -549,7 +549,7 @@ ko_get_outer_submenu_code('crm');
 			foreach ($infos as $info) {
 				$notifier->addInfo($info, $do_action, array($info_txt_add));
 			}
-			if ($notifier->hasNotifications(koNotifier::ALL)) {
+			if ($notifier->hasNotifications(\kOOL\Notifier::ALL)) {
 				$notifier->notify();
 			}
 

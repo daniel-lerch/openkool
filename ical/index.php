@@ -258,8 +258,7 @@ if($_GET['absences']) {
 		$description = preg_replace("/\r/", '', $description);
 		$description = str_replace("\\n","<br />", $description);
 
-		require_once($BASE_PATH . 'inc/class.html2text.php');
-		$html2text = new html2text($description, ['width' => 0]);
+		$html2text = new \kOOL\Html2Text($description, ['width' => 0]);
 		$description_plain = $html2text->getText();
 		$ical .= 'DESCRIPTION:'.strtr(trim($description_plain), $mapping).CRLF;
 
@@ -355,8 +354,7 @@ if($_GET['absences']) {
 		$description = preg_replace("/\r/", '', $description);
 		$description = str_replace("\\n","<br />", $description);
 
-		require_once($BASE_PATH . 'inc/class.html2text.php');
-		$html2text = new html2text($description, ['width' => 0]);
+		$html2text = new \kOOL\Html2Text($description, ['width' => 0]);
 		$description_plain = $html2text->getText();
 
 		$ical .= 'DESCRIPTION:' . strtr(trim($description_plain), $mapping) . CRLF;

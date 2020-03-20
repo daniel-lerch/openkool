@@ -27,9 +27,8 @@ $ko_menu_akt = "admin";
 
 require __DIR__ . '/../inc/ko.inc.php';
 require __DIR__ . '/inc/admin.inc.php';
-use OpenKool\koNotifier;
 
-$notifier = koNotifier::Instance();
+$notifier = \kOOL\Notifier::Instance();
 
 //Redirect to SSL if needed
 ko_check_ssl();
@@ -1480,8 +1479,7 @@ switch($do_action) {
 		ko_set_setting('vesr_import_email_host', format_userinput($_POST['txt_vesr_import_email_host'], 'text'));
 		ko_set_setting('vesr_import_email_user', format_userinput($_POST['txt_vesr_import_email_user'], 'text'));
 		// encrypt password
-		require_once($BASE_PATH.'inc/class.openssl.php');
-		$crypt = new openssl('AES-256-CBC');
+		$crypt = new \kOOL\OpenSsl('AES-256-CBC');
 		$crypt->setKey(KOOL_ENCRYPTION_KEY);
 		$value = trim($crypt->encrypt(format_userinput($_POST['txt_vesr_import_email_pass'], 'text')));
 		ko_set_setting('vesr_import_email_pass', $value);
@@ -1636,7 +1634,7 @@ ko_get_outer_submenu_code('admin');
 <div name="main_content" id="main_content">
 
 <?php
-if($notifier->hasNotifications(koNotifier::ALL)) {
+if($notifier->hasNotifications(\kOOL\Notifier::ALL)) {
 	$notifier->notify();
 }
 

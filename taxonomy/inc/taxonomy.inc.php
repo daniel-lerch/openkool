@@ -46,7 +46,7 @@ function ko_taxonomy_list($output=TRUE, $highlight=NULL) {
 		$terms[$key]['used_in'] = $key;
 	}
 
-	$list = new ListView();
+	$list = new \kOOL\ListView();
 
 	$list->init('taxonomy', 'ko_taxonomy_terms', array('chk', 'edit', 'delete'), $_SESSION['show_start'], $_SESSION['show_limit']);
 	$list->disableMultiedit();
