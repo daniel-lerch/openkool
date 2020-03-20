@@ -1196,8 +1196,7 @@ function ko_mailing_store_crm_contact($rawMail,$projectId,$loginId,$msgno,$mailI
 	}
 
 	if(!$contact) {
-		require_once($BASE_PATH.'inc/MimeMailParser/Message.php');
-		$message = new kOOL\MimeMailParser\Message('latin1');
+		$message = new \kOOL\MimeMailParser\Message('latin1');
 		$message->parse($rawMail);
 
 		$mailtext = implode("\n\n".str_repeat('-',40)."\n\n",array_filter(array_map('trim',$message->getAllTextBodies(true))));

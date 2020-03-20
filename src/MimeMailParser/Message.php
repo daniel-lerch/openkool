@@ -1,8 +1,6 @@
 <?php
 namespace kOOL\MimeMailParser;
 
-require __DIR__.'/MimePart.php';
-
 class Message
 {
 	protected $part;

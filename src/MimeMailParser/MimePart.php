@@ -1,9 +1,7 @@
 <?php
 namespace kOOL\MimeMailParser;
 
-include __DIR__.'/LineIterator.php';
-
-class  MimePart
+class MimePart
 {
 	protected $headers;
 	protected $origHeaders;
