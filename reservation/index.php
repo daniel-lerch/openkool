@@ -849,7 +849,7 @@ switch($do_action) {
 	case "new_event_selected":
 		if($access['daten']['MAX'] < 2) break;
 		$eventgroup_id = format_userinput($_POST['sel_eventgroup'], 'uint');
-		include_once("../daten/inc/daten.inc");
+		require_once __DIR__ . '/../daten/inc/daten.inc.php';
 
 		ko_get_eventgruppe_by_id($eventgroup_id,$eventgroup );
 
@@ -1108,7 +1108,7 @@ switch($do_action) {
 		$_SESSION['show'] = 'ical_links';
 	break;
 	case 'ical_links_revoke':
-		require_once($BASE_PATH.'admin/inc/admin.inc');
+		require_once __DIR__ . '/../admin/inc/admin.inc.php';
 		$login['ical_hash'] = ko_admin_revoke_ical_hash($_SESSION['ses_userid']);
 		$notifier->addTextInfo(getLL("ical_links_revoked"));
 		$_SESSION['show'] = 'ical_links';

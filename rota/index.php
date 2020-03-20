@@ -486,7 +486,7 @@ ko_set_submenues();
 <title><?php print $HTML_TITLE.': '.getLL('module_'.$ko_menu_akt); ?></title>
 <?php
 if ($_SESSION['show'] == 'show_filesend' && ko_module_installed('crm')) {
-	include($ko_path.'crm/inc/js-selproject.inc');
+	include __DIR__ . '/../crm/inc/js-selproject.inc.php';
 }
 print ko_include_js(array($ko_path.'inc/ckeditor/ckeditor.js', $ko_path.'inc/ckeditor/adapters/jquery.js'));
 

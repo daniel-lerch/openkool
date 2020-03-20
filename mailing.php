@@ -30,7 +30,7 @@ if (isset($argc) && $argc >= 1) {
 			die("This script can only be called from console for testing purposes. Usage >> php mailing.php -t <mail_id> <recipient_mail|recipient_id> \n");
 		} else {
 			$ko_path = './';
-			require_once('inc/ko.inc');
+			require __DIR__ . '/inc/ko.inc.php';
 			print (ko_mailing_main (true, $mail_id_in, $recipient_in)."\n");
 			exit;
 		}

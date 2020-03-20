@@ -121,7 +121,7 @@ function ko_consensus_list_consensus() {
 						' . '<div class="event_date">' . $event['startingDate'] . ' ' . $event['startingTime'] . '</div> 
 						<div class="event_title">' . $event['_processed']['eventgruppen_name'] . '</div>';
 
-		require_once($BASE_PATH . 'daten/inc/daten.inc');
+		require_once __DIR__ . '/../daten/inc/daten.inc.php';
 		$absences = array_pop(ko_daten_get_absence_by_leute_id($personId, $event['startdatum']));
 		if (!empty($absences)) {
 			$event_header .= '<div class="status_absent" title="' .
@@ -264,7 +264,7 @@ function ko_consensus_list_consensus() {
 
 function ko_consensus_get_answers_for_days($teams, $start, $end, $personId) {
 	global $BASE_PATH;
-	require_once($BASE_PATH . 'daten/inc/daten.inc');
+	require_once __DIR__ . '/../daten/inc/daten.inc.php';
 
 	$start_monday = date_find_last_monday($start);
 	$end_sunday = date_find_next_sunday($end);
@@ -348,7 +348,7 @@ function ko_consensus_get_week_code($team, $team_id, $week_id, $person_id) {
 		$tooltips[$counter] = "<strong>" . sql2datum($date) . "</strong><br>";
 		$absences_flag[$counter] = FALSE;
 
-		require_once($ko_path . "daten/inc/daten.inc");
+		require_once __DIR__ . '/../daten/inc/daten.inc.php';
 		$absences = ko_daten_get_absence_by_leute_id($person_id, $date);
 		if (!empty($absences)) {
 			$absence_text = [];

@@ -18,8 +18,6 @@
 *
 *******************************************************************************/
 
-require_once($BASE_PATH."inc/class.kOOL_listview.php");
-
 /**
  * @param String &$z_where filter for sql
  * @param String &$z_limit limit for sql
@@ -538,7 +536,7 @@ function ko_formular_room($mode, $id='') {
 
 
 /**
- * Get all rooms, apply kota_filter and return in kOOL_listview
+ * Get all rooms, apply kota_filter and return in ListView
  */
 function ko_list_rooms() {
 	global $access;
@@ -562,7 +560,7 @@ function ko_list_rooms() {
 		$tpl_list_data[$row++]["rowclass"] = $room["hidden"] ? "row-inactive" : "";
 	}
 
-	$list = new kOOL_listview();
+	$list = new ListView();
 	$list->init("daten", "ko_event_rooms", array("chk", "edit", "delete"), $_SESSION["show_start"], $_SESSION["show_limit"]);
 	$list->setTitle(getLL("daten_rooms_list_title"));
 	$list->setAccessRights(array('edit' => '2', 'delete' => 'ALL3'), $access['daten']);
@@ -2895,7 +2893,7 @@ function ko_daten_ical_links() {
 	ko_get_login($_SESSION['ses_userid'], $login);
 
 	if(empty($login['ical_hash'])) {
-		require_once($BASE_PATH.'admin/inc/admin.inc');
+		require_once __DIR__ . '/../../admin/inc/admin.inc.php';
 		$login['ical_hash'] = ko_admin_revoke_ical_hash($_SESSION['ses_userid']);
 	}
 
@@ -4332,7 +4330,7 @@ function ko_daten_list_absence($mode = "html") {
 		$notifier->notify();
 	}
 
-	$list = new kOOL_listview();
+	$list = new ListView();
 	$filter = kota_apply_filter("ko_event_absence");
 
 	if(!empty($filter)) {

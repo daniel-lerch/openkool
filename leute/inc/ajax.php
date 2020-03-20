@@ -1216,7 +1216,7 @@ if((isset($_GET) && isset($_GET["action"])) || (isset($_POST) && isset($_POST["a
 
 			$form_row = preg_replace('/<\/tr>( |\t|\n)*$/', '', $form_row);
 			print $form_row;
-			require ($ko_path . '../crm/inc/js-selproject.inc');
+			require __DIR__ . '/../../crm/inc/js-selproject.inc.php';
 			print '</tr>';
 		break;
 

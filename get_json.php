@@ -3,6 +3,7 @@
 *  Copyright notice
 *
 *  (c) 2003-2020 Renzo Lauper (renzo@churchtool.org)
+*  (c) 2019-2020 Daniel Lerch
 *  All rights reserved
 *
 *  This script is part of the kOOL project. The kOOL project is
@@ -37,6 +38,8 @@ if(isset($_POST['q'])) $q = $_POST['q'];
 if(isset($_GET['q'])) $q = $_GET['q'];
 if(!$q) exit;
 
+require __DIR__ . '/inc/ko.inc.php';
+
 //Decrypt request
 if(!KOOL_ENCRYPTION_KEY) exit;
 $no_enc = defined("KOOL_NO_ENCRYPTION") && KOOL_NO_ENCRYPTION;
@@ -56,8 +59,6 @@ else {
 	//Don't allow direct db access to these tables
 	$deny_tables = array("ko_admin");
 }
-
-include($ko_path."inc/ko.inc");
 
 //Parse JSON into an array
 $req = json_decode($request_json,true);
@@ -268,7 +269,7 @@ switch($action) {
 		$start = $req['start'] ? $req['start'] : date('Y-m-d');
 		$limit = $req['limit'] ? $req['limit'] : 100;
 
-		include($ko_path.'tracking/inc/tracking.inc');
+		require_once __DIR__ . '/tracking/inc/tracking.inc.php';
 		$dates = ko_tracking_get_dates($tracking, $start, $limit, $prev, $next, $prev1, FALSE);
 		$r['TRACKING_DATES'] = $dates;
 	break;
@@ -285,7 +286,7 @@ switch($action) {
 		$filter = $tracking['filter'];
 		if(!$filter) break;
 
-		include($ko_path.'tracking/inc/tracking.inc');
+		require_once __DIR__ . '/tracking/inc/tracking.inc.php';
 		$people = ko_tracking_get_people($filter, $dates, $tid, FALSE);
 		$r['TRACKING_PEOPLE'] = $people;
 	break;
@@ -303,7 +304,7 @@ switch($action) {
 			}
 		}
 
-		include($ko_path.'reservation/inc/reservation.inc');
+		require_once __DIR__ . '/reservation/inc/reservation.inc.php';
 
 		if($moderated) {
 			ko_res_store_moderation($res, FALSE);
@@ -327,7 +328,7 @@ switch($action) {
 			break;
 		}
 
-		include($ko_path.'reservation/inc/reservation.inc');
+		require_once __DIR__ . '/reservation/inc/reservation.inc.php';
 
 		ko_get_res_by_id($id, $r_); $r = $r_[$id];
 		db_delete_data("ko_reservation", "WHERE `id` = '$id'");
@@ -512,7 +513,7 @@ switch($action) {
 		else if($action == "getPersonPDF") {
 			$layout_id = $req["pdf_layout_id"];
 			if(!$layout_id) return FALSE;
-			include($ko_path."leute/inc/leute.inc");
+			require_once __DIR__ . '/leute/inc/leute.inc.php';
 
 			//Get layout
 			$_layout = db_select_data("ko_pdf_layout", "WHERE `id` = '$layout_id'", "*", "", "", TRUE);

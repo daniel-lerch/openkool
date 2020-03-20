@@ -103,7 +103,6 @@ $js_files = array(
 );
 print ko_include_js($js_files);
 include __DIR__ . '/inc/js-sessiontimeout.inc.php';
-include("{$ko_path}js-home.inc");
 ?>
 </head>
 
@@ -343,7 +342,7 @@ switch($do_action) {
 		break;
 
 	case 'delete_absence':
-		require_once($ko_path.'daten/inc/daten.inc');
+		require_once __DIR__ . '/daten/inc/daten.inc.php';
 		if(ko_daten_delete_absence(format_userinput($_REQUEST['id'],"uint"))) {
 			$notifier->addTextInfo(getLL('ko_event_absence_info_deleted'));
 		} else {
@@ -359,11 +358,6 @@ switch($do_action) {
 	case 'login':
 		//Handled in ko_check_login();
 	break;
-
-	//Default:
-	default:
-		$abuse = true;
-	break;
 }//switch(do_action)
 
 
@@ -375,82 +369,77 @@ if($notifier->hasNotifications(koNotifier::ALL)) {
 }
 
 
-if ($abuse && $do_action) {
-	include($ko_path."inc/abuse.inc");
+$linearFrontModules = array();
+foreach ($FRONTMODULES_LAYOUT as $frontModule) {
+	$linearFrontModules = array_merge($linearFrontModules, $frontModule);
+}
+$frontModulesUPOld = explode(',', ko_get_userpref($_SESSION['ses_userid'], 'front_modules'));
+$frontModulesUP = array();
+foreach ($frontModulesUPOld as $name) {
+	if (!$name) continue;
+	if (in_array($name, $linearFrontModules)) {
+		$frontModulesUP[] = $name;
+	}
+}
+ko_save_userpref($_SESSION['ses_userid'], 'front_modules', implode(',', $frontModulesUP));
+
+print '<div class="row" id="front-modules-container">';
+if ($aa_display) {
+	print '<div class="col col-xs-12 col-sm-6 col-sm-offset-3 col-md-4 col-md-offset-4 col-lg-4 col-lg-offset-4">';
+	print $aa_content;
+	print '</div>';
 }
 else {
-	$linearFrontModules = array();
-	foreach ($FRONTMODULES_LAYOUT as $frontModule) {
-		$linearFrontModules = array_merge($linearFrontModules, $frontModule);
-	}
-	$frontModulesUPOld = explode(',', ko_get_userpref($_SESSION['ses_userid'], 'front_modules'));
-	$frontModulesUP = array();
-	foreach ($frontModulesUPOld as $name) {
-		if (!$name) continue;
-		if (in_array($name, $linearFrontModules)) {
-			$frontModulesUP[] = $name;
-		}
-	}
-	ko_save_userpref($_SESSION['ses_userid'], 'front_modules', implode(',', $frontModulesUP));
-
-	print '<div class="row" id="front-modules-container">';
-	if ($aa_display) {
-		print '<div class="col col-xs-12 col-sm-6 col-sm-offset-3 col-md-4 col-md-offset-4 col-lg-4 col-lg-offset-4">';
-		print $aa_content;
-		print '</div>';
-	}
-	else {
-		$i = 0;
-		foreach ($FRONTMODULES_LAYOUT as $fmCol) {
-			$code = '';
-			foreach ($fmCol as $fm) {
-				if (!ko_check_fm_for_user($fm, $_SESSION['ses_userid'])) continue;
-				$cont = FALSE;
-				switch ($fm) {
-					case 'adressaenderung':
-						if (!is_array($access['leute'])) ko_get_access('leute');
-						if ($access['leute']['ALL'] >= 2) $cont = TRUE;
-					break;
-					case 'daten_cal':
-						if (!is_array($access['daten'])) ko_get_access('daten');
-						if ($access['daten']['MAX'] < 1) $cont = TRUE;
-					break;
-				}
-				$state = in_array($fm, $frontModulesUP) ? 'open' : 'closed';
-				if ($state == 'open' || $_SESSION['ses_userid'] != ko_get_guest_id()) {
-					$fmContent = ko_front_module($_SESSION["ses_userid"], $fm, $i, 0, $state);
-					if ($fmContent !== False) {
-						$code .= $fmContent;
-					}
+	$i = 0;
+	foreach ($FRONTMODULES_LAYOUT as $fmCol) {
+		$code = '';
+		foreach ($fmCol as $fm) {
+			if (!ko_check_fm_for_user($fm, $_SESSION['ses_userid'])) continue;
+			$cont = FALSE;
+			switch ($fm) {
+				case 'adressaenderung':
+					if (!is_array($access['leute'])) ko_get_access('leute');
+					if ($access['leute']['ALL'] >= 2) $cont = TRUE;
+				break;
+				case 'daten_cal':
+					if (!is_array($access['daten'])) ko_get_access('daten');
+					if ($access['daten']['MAX'] < 1) $cont = TRUE;
+				break;
+			}
+			$state = in_array($fm, $frontModulesUP) ? 'open' : 'closed';
+			if ($state == 'open' || $_SESSION['ses_userid'] != ko_get_guest_id()) {
+				$fmContent = ko_front_module($_SESSION["ses_userid"], $fm, $i, 0, $state);
+				if ($fmContent !== False) {
+					$code .= $fmContent;
 				}
 			}
-			if ($code != '') {
-				switch ($i) {
-					case 0:
-						print '<div class="col col-xs-12 col-sm-3 col-md-2">';
-					break;
-					case 1:
-						print '<div class="col col-xs-12 col-sm-6 col-md-8">';
-						print '<div class="col col-sm-12 col-md-6">';
-					break;
-					case 2:
-						print '<div class="col col-sm-12 col-md-6">';
-					break;
-					case 3:
-						print '<div class="col col-xs-12 col-sm-3 col-md-2">';
-					break;
-				}
-				print $code;
-				print '</div>';
-				if ($i == 2) print '</div>';
-			}
-			$i ++;
 		}
+		if ($code != '') {
+			switch ($i) {
+				case 0:
+					print '<div class="col col-xs-12 col-sm-3 col-md-2">';
+				break;
+				case 1:
+					print '<div class="col col-xs-12 col-sm-6 col-md-8">';
+					print '<div class="col col-sm-12 col-md-6">';
+				break;
+				case 2:
+					print '<div class="col col-sm-12 col-md-6">';
+				break;
+				case 3:
+					print '<div class="col col-xs-12 col-sm-3 col-md-2">';
+				break;
+			}
+			print $code;
+			print '</div>';
+			if ($i == 2) print '</div>';
+		}
+		$i ++;
 	}
-	print '</div>';
-
-	print '</div>';
 }
+print '</div>';
+
+print '</div>';
 
 
 print '</main>';

@@ -137,7 +137,7 @@ function ko_fm_fastfilter($uid) {
 function ko_fm_absence($uid, $pos) {
 	global $smarty, $mysql_pass, $BASE_PATH, $BASE_URL, $access;
 
-	require_once($BASE_PATH.'daten/inc/daten.inc');
+	require_once __DIR__ . '/../daten/inc/daten.inc.php';
 	ko_include_kota(["ko_event_absence"]);
 
 	ko_get_access('daten');

@@ -50,7 +50,7 @@ function ko_formular_leute($mode, $id=0, $show_save_as_new=true) {
 
 	// If this is a form to add persons during check-in, adapt the form accordingly
 	if (isset($ASYNC_FORM_TAG) && $ASYNC_FORM_TAG == 'checkin_add_person') {
-		require_once("{$ko_path}checkin/inc/checkin.inc");
+		require_once __DIR__ . '/../../checkin/inc/checkin.inc.php';
 		ko_checkin_set_leute_form($_SESSION['checkin_tracking_id']);
 	}
 

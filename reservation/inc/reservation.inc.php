@@ -20,8 +20,6 @@
 
 use OpenKool\ListView;
 
-use OpenKool\ListView;
-
 function ko_list_reservations() {
 	global $smarty, $access;
 
@@ -1704,7 +1702,7 @@ function do_del_res($id, $del_serie=FALSE, $delEvent=FALSE) {
 		ko_log_diff("delete_res", $r);
 
 		if (trim($id) && $delEvent && ko_module_installed('daten')) {
-			require_once("{$BASE_PATH}daten/inc/daten.inc");
+			require_once __DIR__ . '/../../daten/inc/daten.inc.php';
 			ko_get_access('daten');
 
 			$events = db_select_data('ko_event', "WHERE `reservationen` REGEXP '(^|,){$id}(,|$)'");
@@ -1729,7 +1727,7 @@ function do_del_res($id, $del_serie=FALSE, $delEvent=FALSE) {
 			foreach($all_res as $r) {
 				$id = $r['id'];
 				if (trim($id) && $delEvent && ko_module_installed('daten')) {
-					require_once("{$BASE_PATH}daten/inc/daten.inc");
+					require_once __DIR__ . '/../../daten/inc/daten.inc.php';
 					ko_get_access('daten');
 
 					$events = db_select_data('ko_event', "WHERE `reservationen` REGEXP '(^|,){$id}(,|$)'");
@@ -1830,7 +1828,7 @@ function ko_res_ical_links() {
 	ko_get_login($_SESSION['ses_userid'], $login);
 
 	if(empty($login['ical_hash'])) {
-		require_once($BASE_PATH.'admin/inc/admin.inc');
+		require_once __DIR__ . '/../../admin/inc/admin.inc.php';
 		$login['ical_hash'] = ko_admin_revoke_ical_hash($_SESSION['ses_userid']);
 	}
 
@@ -1945,7 +1943,7 @@ function ko_reservation_export_months($num, $month, $year) {
 
 		//Absence
 		if(ko_module_installed('daten') && $_SESSION['show_absences_res']) {
-			require_once($BASE_PATH . 'daten/inc/daten.inc');
+			require_once __DIR__ . '/../../daten/inc/daten.inc.php';
 			$absenceEvents = ko_get_absences_for_calendar(date("Y-m-d", $startstamp), date("Y-m-d", $endstamp), "ko_reservation");
 			if(sizeof($absenceEvents) > 0) {
 				$items['absence'] = [

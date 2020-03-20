@@ -157,7 +157,7 @@ function ko_rota_schedule() {
 
 function ko_rota_prepare_events(&$events, $type = "schedule") {
 	global $smarty, $access, $BASE_PATH;
-	include_once($BASE_PATH . "/daten/inc/daten.inc");
+	require_once __DIR__ . '/../../daten/inc/daten.inc.php';
 
 	$exports = array();
 	if($access['rota']['MAX'] > 1) {
@@ -443,7 +443,7 @@ function ko_rota_planning_list() {
 	ko_rota_prepare_events($events, 'planning');
 	$smarty->assign("events", $events);
 	ko_rota_get_eventfields();
-	include_once($BASE_PATH . "/daten/inc/daten.inc");
+	require_once __DIR__ . '/../../daten/inc/daten.inc.php';
 
 	$columns = "concat(team_id,'_',event_id) AS id, schedule";
 	$db_schedules = db_select_data("ko_rota_schedulling", "WHERE schedule != ''", $columns);

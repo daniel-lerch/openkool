@@ -3,6 +3,7 @@
  *  Copyright notice
  *
  *  (c) 2003-2020 Renzo Lauper (renzo@churchtool.org)
+ *  (c) 2019-2020 Daniel Lerch
  *  All rights reserved
  *
  *  This script is part of the kOOL project. The kOOL project is
@@ -31,8 +32,8 @@ ob_start();  //Ausgabe-Pufferung starten
 $ko_path = "../";
 $ko_menu_akt = "taxonomy";
 
-include_once($ko_path . "inc/ko.inc");
-include_once("inc/taxonomy.inc");
+require __DIR__ . '/../inc/ko.inc.php';
+require __DIR__ . '/inc/taxonomy.inc.php';
 
 //Redirect to SSL if needed
 ko_check_ssl();
@@ -150,7 +151,6 @@ ko_set_submenues();
 	print ko_include_js($js_files);
 
 	include __DIR__ . '/../inc/js-sessiontimeout.inc.php';
-	include('inc/js-taxonomy.inc');
 
 	?>
 </head>

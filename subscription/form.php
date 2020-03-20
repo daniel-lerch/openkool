@@ -5,10 +5,10 @@ header('Content-Type: text/html; charset=UTF-8');
 $ko_path = "../";
 $ko_menu_akt = "subscription";
 
-include($ko_path . "inc/ko.inc");
-require_once($ko_path.'subscription/inc/Form.php');
-require_once($ko_path.'subscription/inc/FormException.php');
-require_once($ko_path.'subscription/inc/subscription.inc');
+require __DIR__ . '/../inc/ko.inc.php';
+require_once __DIR__ . '/inc/Form.php';
+require_once __DIR__ . '/inc/FormException.php';
+require_once __DIR__ . '/inc/subscription.inc.php';
 
 
 try {

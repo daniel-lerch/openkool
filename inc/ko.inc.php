@@ -805,7 +805,7 @@ $FRONTMODULES_LAYOUT = array(
 );
 
 
-require_once($ko_path."taxonomy/inc/taxonomy.inc");
+require_once __DIR__ . '/../taxonomy/inc/taxonomy.inc.php';
 include __DIR__ . '/front_modules.inc.php';
 
 //Read in settings etc
@@ -6092,8 +6092,8 @@ function apply_leute_filter($filter, &$where_code, $add_admin_filter=TRUE, $admi
 				$f_sql.= str_replace("[VAR2]",$toDate, $f_['sql2']);
 			}
 			else if ($f_['_name'] == "taxonomy") {
-				require_once($BASE_PATH.'groups/inc/groups.inc');
-				require_once($BASE_PATH.'taxonomy/inc/taxonomy.inc');
+				require_once __DIR__ . '/../groups/inc/groups.inc.php';
+				require_once __DIR__ . '/../taxonomy/inc/taxonomy.inc.php';
 				$term_id = format_userinput($f[1][1], 'int');
 				$search_role = format_userinput($f[1][2], 'int');
 
@@ -7141,7 +7141,7 @@ function map_leute_daten($data, $col, &$p = null, &$all_datafields = null, $forc
 		}
 		//subscription
 		else if(substr($col,6,13) == 'subscription_') {
-			require_once($BASE_PATH.'subscription/inc/subscription.inc');
+			require_once __DIR__ . '/../subscription/inc/subscription.inc.php';
 			static $subscriptionForms = [];
 			$formId = substr($col,19);
 			if(!isset($subscriptionForms[$formId])) {
@@ -8755,7 +8755,7 @@ function ko_rota_get_days($rota_teams=null, $start = '', $stop = '', $includeDis
 		}
 	}
 
-	require_once($BASE_PATH . "rota/inc/rota.inc");
+	require_once __DIR__ . '/../rota/inc/rota.inc.php';
 	$days = [];
 
 	$timezone = new DateTimeZone("Europe/Zurich");
@@ -8862,7 +8862,7 @@ function ko_rota_get_schedulling_code_days($week) {
 	$all_teams = $GLOBALS['kOOL']['rota_teams_table'];
 
 	$schedulling_teams = [];
-	require_once($BASE_PATH . 'daten/inc/daten.inc');
+	require_once __DIR__ . '/../daten/inc/daten.inc.php';
 	foreach($week['days'] AS $key => $day) {
 		foreach($day['teams'] AS $team_id) {
 			$members = ko_rota_get_team_members($team_id);
@@ -9080,7 +9080,7 @@ function ko_rota_get_schedulling_code($event, $mode = 'event', $_teams = []) {
 
 	$all_teams = $GLOBALS['kOOL']['rota_teams_table'];
 
-	require_once($BASE_PATH.'daten/inc/daten.inc');
+	require_once __DIR__ . '/../daten/inc/daten.inc.php';
 	$absences = ko_daten_get_absence_by_date($event['startdatum'], $event['stopdatum']);
 
 	//Get all people scheduled in this event for double checks
@@ -14705,7 +14705,7 @@ function ko_export_cal_weekly_view($module, $_size = 0, $_start='', $pages='') {
 
 			//Absence
 			if($_SESSION['show_absence' . ($table=="ko_reservation" ? "_res" : "")]) {
-				require_once($BASE_PATH.'/daten/inc/daten.inc');
+				require_once __DIR__ . '/../daten/inc/daten.inc.php';
 				$absenceEvents = ko_get_absences_for_calendar($date, $date, $table);
 				if(sizeof($absenceEvents) > 0) {
 					$items['absence'] = [
@@ -15285,7 +15285,7 @@ function ko_export_cal_weekly_view_resource($_size='', $_start='') {
 
 
 	if ($_SESSION['show_absences_res'] && ko_module_installed('leute')) {
-		require_once('../../daten/inc/daten.inc');
+		require_once __DIR__ . '/../daten/inc/daten.inc.php';
 		if(!isset($endDate)) $endDate = $startDate;
 		$absences = ko_get_absences_for_calendar($startDate, $endDate, "resource");
 		foreach($absences AS $absence) {
@@ -16048,7 +16048,7 @@ function ko_export_cal_weekly_view_resource_2($_size='', $_start='') {
 			$currDate = strftime('%Y-%m-%d', strtotime("+{$i} days", $startStamp));
 
 			if($item['id'] == "absences") {
-				require_once('../../daten/inc/daten.inc');
+				require_once __DIR__ . '/../daten/inc/daten.inc.php';
 				if(!isset($endDate)) $endDate = $startDate;
 				$absences = ko_get_absences_for_calendar($currDate, $currDate, "resource");
 				$reservations = [];
@@ -16647,7 +16647,7 @@ function ko_export_cal_pdf_year($module, $_month, $_year, $_months=0) {
 
 		//Absence
 		if($_SESSION['show_absence' . ($module=="reservation" ? "_res" : "")]) {
-			require_once($BASE_PATH.'daten/inc/daten.inc');
+			require_once __DIR__ . '/../daten/inc/daten.inc.php';
 			$absenceEvents = ko_get_absences_for_calendar($year.'-'.$month.'-01', $endyear.'-'.$endmonth.'-01', $db_table);
 			foreach($absenceEvents as $aeK => $ae) {
 				if($ae['duration'] < 3) unset($absenceEvents[$aeK]);
@@ -16794,7 +16794,7 @@ function ko_export_cal_pdf_year($module, $_month, $_year, $_months=0) {
 
 		//Absence
 		if($_SESSION['show_absence' . ($module=="reservation" ? "_res" : "")]) {
-			require_once($BASE_PATH.'daten/inc/daten.inc');
+			require_once __DIR__ . '/../daten/inc/daten.inc.php';
 			$absenceEvents = ko_get_absences_for_calendar($year.'-'.$month.'-01', $endyear.'-'.$endmonth.'-01', $db_table);
 			foreach($absenceEvents as $aeK => $ae) {
 				if($ae['duration'] > 2) unset($absenceEvents[$aeK]);

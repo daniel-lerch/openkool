@@ -1339,8 +1339,7 @@ if((isset($_GET) && isset($_GET["action"])) || (isset($_POST) && isset($_POST["a
 
 		//Default:
 		default:
-			if(!hook_action_handler($do_action))
-				include($ko_path.'inc/abuse.inc');
+			hook_action_handler($do_action);
 		break;
 
 	}//switch(action);

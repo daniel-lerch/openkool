@@ -3861,7 +3861,7 @@ include __DIR__ . '/inc/js-leute.inc.php';
 $list_id = 1;
 
 if (ko_module_installed('crm') && in_array($_SESSION['show'], array('etiketten_optionen', 'mobil_versand', 'xls_settings', 'email_versand'))) {
-	include($ko_path.'crm/inc/js-selproject.inc');
+	include __DIR__ . '/../crm/inc/js-selproject.inc.php';
 }
 if($_SESSION["show"] == "neue_person" || $_SESSION["show"] == "edit_person") {
 	// This code is copied in /inc/form.php (marked by **LEUTE_INDEX_SNIPPET_1**)

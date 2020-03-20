@@ -1406,7 +1406,7 @@ function ko_login_formular($mode, $id = 0, $type = "login") {
 			$this->addField($field);
 			$this->newRow();
 
-			include_once($ko_path . 'groups/inc/groups.inc');
+			require_once __DIR__ . '/../../groups/inc/groups.inc.php';
 			ko_get_groups($all_groups);
 
 			foreach (['view', 'new', 'edit', 'del'] as $level_num => $rights_level) {

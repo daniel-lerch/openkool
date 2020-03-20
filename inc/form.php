@@ -73,7 +73,7 @@ if (!isset($KOTA[$table]) || !isset($KOTA[$table]['_form']['redraw']['fcn'])) {
 }
 
 $module = $KOTA[$table]['_form']['module'];
-require_once($ko_path . $module . '/inc/' . $module . '.inc');
+require_once __DIR__ . "/../$module/inc/$module.inc.php";
 
 // get access
 ko_get_access($module);

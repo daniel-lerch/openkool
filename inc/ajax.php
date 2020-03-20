@@ -311,7 +311,7 @@ if (isset($_GET) && isset($_GET["action"])) {
 			}
 
 			if ($table == "ko_event_absence") {
-				require_once('../daten/inc/daten.inc');
+				require_once __DIR__ . '/../daten/inc/daten.inc.php';
 				$absence = ko_daten_get_absence_by_id($id);
 				if ($access['daten']['ABSENCE'] <= 2 && ko_get_logged_in_id() != $absence['leute_id']) {
 					return FALSE;
@@ -335,7 +335,7 @@ if (isset($_GET) && isset($_GET["action"])) {
 			} else if ($table == "ko_event" && $col == "room") {
 				unset($KOTA['ko_event']['room']['form']['async_form']);
 
-				require_once($ko_path . 'daten/inc/daten.inc');
+				require_once __DIR__ . '/../daten/inc/daten.inc.php';
 				$hidden_rooms = ko_get_event_rooms("", "WHERE hidden = 1");
 				foreach ($KOTA[$table]["room"]["form"]["values"] AS $key => $room_in_select) {
 					if (in_array($room_in_select, array_column($hidden_rooms, "id")) && $room_in_select != $entry['room']) {
@@ -962,7 +962,7 @@ if (isset($_GET) && isset($_GET["action"])) {
 			ko_get_access($module);
 			if (isset($KOTA[$table]['_supermodule'])) $supermodule = $KOTA[$table]['_supermodule'];
 			else $supermodule = $module;
-			require_once __DIR__ . "/../$supermodule/inc/$module.inc";
+			require_once __DIR__ . "/../$supermodule/inc/$module.inc.php";
 
 			//save new value
 			$name = format_userinput($_GET['name'], 'js', FALSE, 0, [], '@');
@@ -996,7 +996,7 @@ if (isset($_GET) && isset($_GET["action"])) {
 			ko_get_access($module);
 			if (isset($KOTA[$table]['_supermodule'])) $supermodule = $KOTA[$table]['_supermodule'];
 			else $supermodule = $module;
-			require_once __DIR__ . "/../$supermodule/inc/$module.inc";
+			require_once __DIR__ . "/../$supermodule/inc/$module.inc.php";
 
 			//save new value
 			$name = format_userinput($_GET['name'], 'js', FALSE, 0, [], '@');
@@ -1347,7 +1347,7 @@ if (isset($_GET) && isset($_GET["action"])) {
 			}
 
 			print 'main_content@@@';
-			require_once __DIR__ . "/../$module/inc/$module.inc";
+			require_once __DIR__ . "/../$module/inc/$module.inc.php";
 			eval($KOTA[$table]['_inlineform']['redraw']['fcn']);
 			break;
 

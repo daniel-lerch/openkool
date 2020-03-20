@@ -953,7 +953,7 @@ function ko_tools_typo3_connection() {
 function ko_tools_misc() {
 	global $PLUGINS, $notifier;
 
-	include_once("cleanup.inc");
+	include_once __DIR__ . '/cleanup.inc.php';
 	$functions = get_defined_functions();
 	$call_function = FALSE;
 	$sel_cleanup_functions = '<select name="call" class="input-sm form-control">';

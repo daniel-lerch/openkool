@@ -401,7 +401,7 @@ switch($do_action) {
 		$_SESSION['show'] = 'ical_links';
 	break;
 	case 'ical_links_revoke':
-		require_once($BASE_PATH.'admin/inc/admin.inc');
+		require_once __DIR__ . '/../admin/inc/admin.inc.php';
 		$login['ical_hash'] = ko_admin_revoke_ical_hash($_SESSION['ses_userid']);
 		$notifier->addTextInfo(getLL("ical_links_revoked"));
 		$_SESSION['show'] = 'ical_links';
@@ -1998,8 +1998,10 @@ include __DIR__ . '/../inc/js-sessiontimeout.inc.php';
 include __DIR__ . '/inc/js-daten.inc.php';
 
 //Include JS from rota module when editing an event
-if(in_array($_SESSION['show'], array('edit_termin')) && ko_module_installed('rota')) include($ko_path.'rota/inc/js-rota.inc');
-if(in_array($_SESSION["show"], array("neuer_termin", "edit_termin"))) include("inc/js-seleventgroup.inc");
+if(in_array($_SESSION['show'], array('edit_termin')) && ko_module_installed('rota'))
+	include __DIR__ . '/../rota/inc/js-rota.inc.php';
+if(in_array($_SESSION["show"], array("neuer_termin", "edit_termin")))
+	include __DIR__ . '/inc/js-seleventgroup.inc.php';
 ?>
 </head>
 

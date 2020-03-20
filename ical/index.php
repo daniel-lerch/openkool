@@ -177,7 +177,7 @@ foreach($_GET as $k => $v) {
 apply_daten_filter($z_where, $z_limit, $ical_deadline, 'immer', $use_eg);
 
 if(!empty($_GET['terms']) && ko_module_installed("taxonomy")) {
-	include_once($ko_path."taxonomy/inc/taxonomy.inc");
+	include_once __DIR__ . '/../taxonomy/inc/taxonomy.inc.php';
 	$terms = explode(",", format_userinput($_GET['terms'],'intlist'));
 	$eventIds_filter_by_term = [];
 

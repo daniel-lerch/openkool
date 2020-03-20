@@ -1605,7 +1605,7 @@ if(in_array($_SESSION['show'], array('new_login', 'new_admingroup', 'edit_login'
 	//View
 	$list_id = 1;
 	foreach (['view', 'new', 'edit', 'del'] AS $rights_level) {
-		include($ko_path . 'leute/inc/js-groupmenu.inc');
+		include __DIR__ . '/../leute/inc/js-groupmenu.inc.php';
 		$loadcode .= "initList(" . $list_id . ", document.getElementsByName('sel_ds1_sel_groups_rights_" . $rights_level . "')[0]);";
 		$list_id++;
 	}

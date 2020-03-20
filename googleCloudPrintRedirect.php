@@ -27,9 +27,9 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 error_reporting(E_ERROR);
 $ko_path = './';
-require_once "{$ko_path}inc/ko.inc";
-require_once "{$ko_path}inc/googleCloudPrint/Config.php";
-require_once "{$ko_path}inc/googleCloudPrint/koGoogleCloudPrint.php";
+require_once __DIR__ . '/inc/ko.inc.php';
+require_once __DIR__ . '/inc/googleCloudPrint/Config.php';
+require_once __DIR__ . '/inc/googleCloudPrint/koGoogleCloudPrint.php';
 
 if (isset($_GET['op'])) {
 	

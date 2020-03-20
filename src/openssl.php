@@ -1,5 +1,7 @@
 <?php
 
+namespace OpenKool;
+
 class openssl
 {
 	protected $algo;

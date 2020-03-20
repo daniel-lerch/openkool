@@ -250,7 +250,7 @@ switch ($action) {
 		$overflow = isset($request['_overflow']) ? $request['_overflow'] : $moderated;
 		unset($request['_overflow']);
 
-		require_once($ko_path.'subscription/inc/subscription.inc');
+		require_once __DIR__ . '/subscription/inc/subscription.inc.php';
 		ko_log('subscription_post',ko_subscription_get_log_message($request));
 		try {
 			$leute_id = ko_subscription_store_subscription($request,$moderated,$overflow);
@@ -264,7 +264,7 @@ switch ($action) {
 		break;
 
 	case 'newreservation':
-		require($ko_path."reservation/inc/reservation.inc");
+		require_once __DIR__ . '/reservation/inc/reservation.inc.php';
 
 		$moderation = format_userinput($request['_moderate'], 'uint');
 		unset($request['_moderate']);

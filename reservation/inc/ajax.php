@@ -669,7 +669,7 @@ if((isset($_GET) && isset($_GET["action"])) || (isset($_POST) && isset($_POST["a
 			}
 
 			if ($_SESSION['show_absences_res'] && ko_module_installed('leute')) {
-				require_once('../../daten/inc/daten.inc');
+				require_once __DIR__ . '/../../daten/inc/daten.inc.php';
 				$data = array_merge(ko_get_absences_for_calendar($_GET['start'], $_GET['end'], "resource"), $data);
 			}
 

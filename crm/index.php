@@ -521,7 +521,7 @@ ko_set_submenues();
 	$js_files[] = 'inc/crm.js';
 	print ko_include_js($js_files);
 	include __DIR__ . '/../inc/js-sessiontimeout.inc.php';
-	include('inc/js-selproject.inc');
+	include __DIR__ . '/inc/js-selproject.inc.php';
 	?>
 </head>
 

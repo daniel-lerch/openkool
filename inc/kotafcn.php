@@ -1448,7 +1448,7 @@ function kota_post_ko_groups($ids, $columns, $old, $do_save) {
 
 		//Update group/role assignments of addresses if roles of the group have changed
 		if($old_roles != $new_roles) {
-			include_once($BASE_PATH.'groups/inc/groups.inc');
+			require_once __DIR__ . '/../groups/inc/groups.inc.php';
 			ko_update_groups_and_roles($id);
 		}
 	}
@@ -2967,7 +2967,7 @@ function kota_listview_ko_leute_absence(&$value, $person) {
 		return;
 	}
 
-	require_once($BASE_PATH.'daten/inc/daten.inc');
+	require_once __DIR__ . '/../daten/inc/daten.inc.php';
 	$absences = ko_daten_get_absence_by_leute_id($person['id']);
 
 	foreach($absences AS $absence) {
@@ -2993,7 +2993,7 @@ function kota_listview_ko_leute_absence(&$value, $person) {
  */
 function kota_mailing_ko_leute_absence($person) {
 	global $BASE_PATH, $BASE_URL;
-	require_once($BASE_PATH . 'daten/inc/daten.inc');
+	require_once __DIR__ . '/../daten/inc/daten.inc.php';
 	$absences = ko_daten_get_absence_by_leute_id($person['id']);
 	foreach ($absences AS $absence) {
 		if ($absence['to_date'] < date('Y-m-d', time())) continue;
@@ -5736,7 +5736,7 @@ function kota_pre_ko_leute_info_rota_1(&$value, $data) {
 	if(!is_array($access['rota'])) ko_get_access('rota');
 	if($access['rota']['MAX'] < 1) return FALSE;
 
-	include_once($BASE_PATH.'rota/inc/rota.inc');
+	require_once __DIR__ . '/../rota/inc/rota.inc.php';
 
 	$lid = $data['id'];
 
@@ -5831,7 +5831,7 @@ function kota_pre_ko_leute_info_rota_1(&$value, $data) {
 function kota_pre_ko_leute_info_rota_2(&$value, $data) {
 	global $BASE_PATH, $DATETIME;
 
-	include_once($BASE_PATH.'rota/inc/rota.inc');
+	require_once __DIR__ . '/../rota/inc/rota.inc.php';
 
 	$lid = $data['id'];
 	$allTeams = ko_rota_get_all_teams();

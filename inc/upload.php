@@ -8,7 +8,7 @@ $ko_path = '../';
 $ko_menu_akt = 'upload';
 
 ob_start();
-require_once($ko_path . 'inc/ko.inc');
+require __DIR__ . '/ko.inc.php';
 $loginError = ob_get_contents();
 ob_end_clean();
 
@@ -64,7 +64,5 @@ if($loginError) {
 	}
 }
 
-
-array_walk_recursive($retVal, 'utf8_encode_array');
 print json_encode($retVal);
 ?>
