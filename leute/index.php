@@ -2322,7 +2322,7 @@ switch($do_action) {
 
 
 				case 'vcard':
-					$v = new OpenKool\DAV\vCard();
+					$v = new \kOOL\DAV\vCard();
 					foreach($es as $person) {
 						$v->addPerson($person);
 					}

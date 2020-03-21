@@ -17,7 +17,7 @@
 *
 *******************************************************************************/
 
-namespace OpenKool\Migrations;
+namespace kOOL\Migrations;
 
 use Exception;
 use mysqli;

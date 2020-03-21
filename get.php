@@ -45,8 +45,7 @@ else {
 	if((isset($_POST['ssl']) && $_POST['ssl']) || (isset($_GET['ssl']) && $_GET['ssl'])) {
 		$crypt = new \kOOL\OpenSsl('AES-256-CBC');
 	} else {
-		require_once($ko_path."inc/class.mcrypt.php");
-		$crypt = new mcrypt("aes");
+		$crypt = new \kOOL\Mcrypt("aes");
 	}
 	$crypt->setKey(KOOL_ENCRYPTION_KEY);
 	$request_xml = $crypt->decrypt(base64_decode($q));

@@ -4,7 +4,7 @@
 *    OpenKool - Online church organization tool
 *
 *    Copyright © 2003-2015 Renzo Lauper (renzo@churchtool.org)
-*    Copyright © 2019      Daniel Lerch
+*    Copyright © 2019-2020 Daniel Lerch
 *
 *    This program is free software; you can redistribute it and/or modify
 *    it under the terms of the GNU General Public License as published by
@@ -18,9 +18,9 @@
 *
 *******************************************************************************/
 
-namespace OpenKool;
+namespace kOOL;
 
-class mcrypt {
+class Mcrypt {
 	private $mcrypt;     // the resource for the object
 	public $algo;        // the active encryption algorithm
 	private $iv;         // the value of the initialization vector
@@ -52,13 +52,13 @@ class mcrypt {
 		$this->algo = $algorithm;
 
 		// get a new mcrypt resource
-		$this->mcrypt = mcrypt_module_open( $algorithm, '',  MCRYPT_MODE_CBC, '' );
+		$this->mcrypt = phpseclib_mcrypt_module_open( $algorithm, '',  MCRYPT_MODE_CBC, '' );
 
 		// determine size of initialization vector
-		$this->ivsize = mcrypt_enc_get_iv_size( $this->mcrypt );
+		$this->ivsize = phpseclib_mcrypt_enc_get_iv_size( $this->mcrypt );
 
 		// determine key length
-		$this->maxKeysize = mcrypt_enc_get_key_size( $this->mcrypt );
+		$this->maxKeysize = phpseclib_mcrypt_enc_get_key_size( $this->mcrypt );
 
 		// end of _construct() method
 	}
@@ -85,19 +85,19 @@ class mcrypt {
 
 	public function encrypt( $data ) {
 		// generate a new initialization vector
-		$this->iv = mcrypt_create_iv( $this->ivsize, MCRYPT_RAND );
+		$this->iv = phpseclib_mcrypt_create_iv( $this->ivsize, MCRYPT_RAND );
 
 		// init
-		if (mcrypt_generic_init( $this->mcrypt, $this->key, $this->iv ) === -1) {
+		if (phpseclib_mcrypt_generic_init( $this->mcrypt, $this->key, $this->iv ) === -1) {
 			$this->__destruct();
 			exit( 'Fatal error, could not initialize encryption routine.' );
 		}
 
 		// encrypt
-		$ciphertext = mcrypt_generic( $this->mcrypt, $data );
+		$ciphertext = phpseclib_mcrypt_generic( $this->mcrypt, $data );
 
 		// deinit
-		mcrypt_generic_deinit( $this->mcrypt );
+		phpseclib_mcrypt_generic_deinit( $this->mcrypt );
 
 		// prepend initialization vector
 		$out = $this->iv.$ciphertext;
@@ -118,16 +118,16 @@ class mcrypt {
 		$ciphertext = substr( $input, $this->ivsize );
 
 		// init
-		if ( mcrypt_generic_init( $this->mcrypt, $this->key, $this->iv ) === -1) {
+		if ( phpseclib_mcrypt_generic_init( $this->mcrypt, $this->key, $this->iv ) === -1) {
 			$this->__destruct();
 			exit( 'Fatal error, could not initialize encryption routine.' );
 		}
 
 		// decrypt
-		$out = mdecrypt_generic( $this->mcrypt, $ciphertext );
+		$out = phpseclib_mdecrypt_generic( $this->mcrypt, $ciphertext );
 
 		// deinit
-		mcrypt_generic_deinit( $this->mcrypt );
+		phpseclib_mcrypt_generic_deinit( $this->mcrypt );
 
 		// return decrypted data
 		return $out;
@@ -138,7 +138,7 @@ class mcrypt {
 		$this->key = str_repeat( 'X', strlen( $this->key ) );
 
 		// free the mcrypt resource
-		mcrypt_module_close( $this->mcrypt );
+		phpseclib_mcrypt_module_close( $this->mcrypt );
 	}
 
 	// end of mcrypt class

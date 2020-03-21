@@ -17,7 +17,7 @@
 *
 *******************************************************************************/
 
-namespace OpenKool\Migrations;
+namespace kOOL\Migrations;
 
 class M1 extends Migration {
 

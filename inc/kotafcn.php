@@ -4055,7 +4055,7 @@ function kota_pre_leute_family_data(&$value, $data) {
 	$allowed_cols = ko_get_leute_admin_spalten($_SESSION['ses_userid'], 'all', ($id === 0 ? -1 : $id));
 	//Familien-Daten
 	if ($ASYNC_FORM_TAG == 'family_relative') {
-		koFormLayoutEditor::unsetGroup($KOTA, 'ko_leute', 'general', 'family');
+		\kOOL\FormLayoutEditor::unsetGroup($KOTA, 'ko_leute', 'general', 'family');
 	} else if (!is_array($allowed_cols["view"]) || in_array("famid", $allowed_cols["view"])) {
 		ko_get_familien($familien);
 

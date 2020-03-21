@@ -3617,7 +3617,7 @@ function ko_daten_import_ical($eg) {
 	if(!$icalData) return;
 
 	//Convert iCal data to array of kOOL events
-	$ical = new OpenKool\DAV\iCalReader();
+	$ical = new kOOL\DAV\iCalReader();
 	$events = $ical->getEvents($icalData, $egid, $eg['ical_title']);
 
 	//Get all currently imported events for the given event group

@@ -18,6 +18,7 @@
 *
 *******************************************************************************/
 
+use kOOL\FormLayoutEditor;
 
 //KG-Modul einfügen, damit es nicht manuell eingefügt werden muss
 if(ko_module_installed('kg') && file_exists(__DIR__ . '/kg.inc.php'))
@@ -55,11 +56,11 @@ function ko_formular_leute($mode, $id=0, $show_save_as_new=true) {
 	}
 
 	// Handle family data
-	koFormLayoutEditor::unsetField($KOTA, 'ko_leute', 'famfunction');
+	FormLayoutEditor::unsetField($KOTA, 'ko_leute', 'famfunction');
 	$showFamilyData = TRUE;
 	if ($LEUTE_NO_FAMILY || (is_array($allowed_cols["view"]) && !in_array("famid", $allowed_cols["view"]))) {
 		$showFamilyData = FALSE;
-		koFormLayoutEditor::unsetField($KOTA, 'ko_leute', 'family_data');
+		FormLayoutEditor::unsetField($KOTA, 'ko_leute', 'family_data');
 	}
 
 	// unset father and mother (the form definitions are for multi-edit
@@ -81,11 +82,11 @@ function ko_formular_leute($mode, $id=0, $show_save_as_new=true) {
 			if ($l == 'groups') {
 				if (!isset($access['groups'])) ko_get_access('groups');
 				if ($access['groups']['MAX'] < 1) {
-					koFormLayoutEditor::unsetField($KOTA, 'ko_leute', $l);
+					FormLayoutEditor::unsetField($KOTA, 'ko_leute', $l);
 					continue;
 				}
 			} else if (substr($l, 0, 6) != 'MODULE' && array_key_exists($l, $colNames)) {
-				koFormLayoutEditor::unsetField($KOTA, 'ko_leute', $l);
+				FormLayoutEditor::unsetField($KOTA, 'ko_leute', $l);
 				continue;
 			}
 		} else if(is_array($allowed_cols["edit"]) && !in_array($l, $allowed_cols["edit"])) {
@@ -105,7 +106,7 @@ function ko_formular_leute($mode, $id=0, $show_save_as_new=true) {
 			$KOTA['ko_leute'][$l]['pre'] = 'FCN:kota_pre_leute_preferred_field';
 		}
 	}
-	koFormLayoutEditor::collapse($KOTA, 'ko_leute');
+	FormLayoutEditor::collapse($KOTA, 'ko_leute');
 
 	//Add name to title
 	$titleAdd = '';

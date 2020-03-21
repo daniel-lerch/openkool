@@ -4,7 +4,7 @@
 *    OpenKool - Online church organization tool
 *
 *    Copyright © 2003-2015 Renzo Lauper (renzo@churchtool.org)
-*    Copyright © 2019      Daniel Lerch
+*    Copyright © 2019-2020 Daniel Lerch
 *
 *    Loosly based on class ICalExporter from ical2scheduler from dhtmlx.com (GNU GPL v2)
 *    Modified for kOOL - the church tool by Renzo Lauper
@@ -21,7 +21,7 @@
 *
 *******************************************************************************/
 
-namespace OpenKool\DAV;
+namespace kOOL\DAV;
 
 class iCalReader {
 	//returns the string value of the day instead of its ordinal number or return number

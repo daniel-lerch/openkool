@@ -6,8 +6,6 @@ $ko_path = "../";
 $ko_menu_akt = "subscription";
 
 require __DIR__ . '/../inc/ko.inc.php';
-require_once __DIR__ . '/inc/Form.php';
-require_once __DIR__ . '/inc/FormException.php';
 require_once __DIR__ . '/inc/subscription.inc.php';
 
 
@@ -64,7 +62,6 @@ try {
 		exit;
 	}
 
-	require_once('inc/Form.php');
 	$form = new \kOOL\Subscription\Form($formRow);
 
 	if($leuteId) {

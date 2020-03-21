@@ -4,7 +4,7 @@
 *    OpenKool - Online church organization tool
 *
 *    Copyright © 2003-2015 Renzo Lauper (renzo@churchtool.org)
-*    Copyright © 2019      Daniel Lerch
+*    Copyright © 2019-2020 Daniel Lerch
 *
 *    This program is free software; you can redistribute it and/or modify
 *    it under the terms of the GNU General Public License as published by
@@ -18,7 +18,7 @@
 *
 *******************************************************************************/
 
-namespace OpenKool\Console;
+namespace kOOL\Console;
 
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
@@ -42,8 +42,8 @@ class MigrateCommand extends Command {
             $db_migration = 0;
         $result->free();
 
-        for ($i = $db_migration + 1; class_exists('OpenKool\\Migrations\\M' . $i); $i++) {
-            $class = new \ReflectionClass('OpenKool\\Migrations\\M' . $i);
+        for ($i = $db_migration + 1; class_exists('kOOL\\Migrations\\M' . $i); $i++) {
+            $class = new \ReflectionClass('kOOL\\Migrations\\M' . $i);
             $instance = $class->newInstance($db_connection);
             $instance->apply();
         }

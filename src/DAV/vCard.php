@@ -6,7 +6,7 @@
 *    Copyright © 2003-2015 Renzo Lauper (renzo@churchtool.org)
 *    Copyright © 2013      Christoph Fischer (chris@toph.de)
 *                          Volksmission Freudenstadt
-*    Copyright © 2019      Daniel Lerch
+*    Copyright © 2019-2020 Daniel Lerch
 *
 *    This program is free software; you can redistribute it and/or modify
 *    it under the terms of the GNU General Public License as published by
@@ -20,7 +20,7 @@
 *
 *******************************************************************************/
 
-namespace OpenKool\DAV;
+namespace kOOL\DAV;
 
 class vCard {
 	var $properties;

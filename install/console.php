@@ -20,7 +20,7 @@
 $ko_path = '../';
 require __DIR__ . '/../inc/ko.inc.php';
 
-use OpenKool\Console\MigrateCommand;
+use kOOL\Console\MigrateCommand;
 use Symfony\Component\Console\Application;
 
 $app = new Application("OpenKool Console", VERSION);

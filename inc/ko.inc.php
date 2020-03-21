@@ -28,8 +28,9 @@ use PhpOffice\PhpSpreadsheet\Cell\Coordinate;
 use Mika56\SPFCheck\SPFCheck;
 use Mika56\SPFCheck\DNSRecordGetter;
 
+use kOOL\FormLayoutEditor;
+use kOOL\Localizer;
 use kOOL\Notifier;
-use OpenKool\Localizer;
 
 define('VERSION', '2.0.0-preview.0');
 
@@ -447,13 +448,6 @@ if($ko_menu_akt != 'ldap') {
 
 	// Configure autoloading
 	require __DIR__ . '/../vendor/autoload.php';
-	spl_autoload_register(function($class) {
-		$prefix = 'kOOL\\';
-		$prefixLength = mb_strlen($prefix);
-		if (mb_substr($class, 0, $prefixLength) === $prefix) {
-			include __DIR__ . '/../src/' . str_replace('\\', '/', mb_substr($class, $prefixLength)) . '.php';
-		}
-	});
 
 	//Set default notification levels
 	$NOTIFIER_LEVEL_DISPLAY = Notifier::ERRS | Notifier::INFO | Notifier::WARNING;
@@ -554,12 +548,6 @@ $EVENT_PROPAGATE_FIELDS = array(
 	array('from' => 'kommentar', 'to' => 'kommentar', 'type' => 'string'),
 );
 
-
-
-// Include static class to manipulate kota form layout
-if($ko_menu_akt != 'ldap') {
-	require_once($ko_path."inc/class.koFormLayoutEditor.php");
-}
 
 
 // These fields are shown for each group subscription
@@ -12214,7 +12202,7 @@ function ko_multiedit_formular($table, $columns="", $ids=0, $order="", $form_dat
 		}//foreach(columns as col) $group[$gc]["row"][$rowcounter]["inputs"][$col_pos];
 
 		// Arrange Columns according to '_form_layout' entry in KOTA
-		koFormLayoutEditor::sortAll($KOTA, $table);
+		FormLayoutEditor::sortAll($KOTA, $table);
 		$formLayout = $KOTA[$table]['_form_layout'];
 		// set internal default formLayout in case none is set in the KOTA definition
 		if (!is_array($formLayout)) {
@@ -12255,7 +12243,7 @@ function ko_multiedit_formular($table, $columns="", $ids=0, $order="", $form_dat
 						$rowWidth = 0;
 						$continue = FALSE;
 						foreach ($rowLayout as $columnName => $columnType) {
-							$definedColumnWidth = koFormLayoutEditor::getColspan($columnType);
+							$definedColumnWidth = FormLayoutEditor::getColspan($columnType);
 							if (in_array($columnName, $columns) || substr($columnName, 0, 1) == '_') {
 								$rowWidth += $definedColumnWidth;
 							} else {
@@ -12271,7 +12259,7 @@ function ko_multiedit_formular($table, $columns="", $ids=0, $order="", $form_dat
 							$cc = 0;
 							$differenceToFull = $BOOTSTRAP_COLS_PER_ROW;
 							foreach ($formLayout[$gk]['rows'][$rk] as $columnName => $columnType) {
-								$definedColumnWidth = koFormLayoutEditor::getColspan($columnType);
+								$definedColumnWidth = FormLayoutEditor::getColspan($columnType);
 								if ($rowWidth < $BOOTSTRAP_COLS_PER_ROW || !$columnType) {
 									if ($cc < $rowSize - 1) {
 										$columnWidth = round($BOOTSTRAP_COLS_PER_ROW / $rowSize);
@@ -12331,7 +12319,7 @@ function ko_multiedit_formular($table, $columns="", $ids=0, $order="", $form_dat
 							$rowWidth = 0;
 							$continue = FALSE;
 							foreach ($rowLayout as $columnName => $columnType) {
-								$definedColumnWidth = koFormLayoutEditor::getColspan($columnType);
+								$definedColumnWidth = FormLayoutEditor::getColspan($columnType);
 								if (in_array($columnName, $columns) || substr($columnName, 0, 1) == '_') {
 									$rowWidth += $definedColumnWidth;
 								}
@@ -12348,7 +12336,7 @@ function ko_multiedit_formular($table, $columns="", $ids=0, $order="", $form_dat
 								$cc = 0;
 								$differenceToFull = $BOOTSTRAP_COLS_PER_ROW;
 								foreach ($rowLayout as $columnName => $columnType) {
-									$definedColumnWidth = koFormLayoutEditor::getColspan($columnType);
+									$definedColumnWidth = FormLayoutEditor::getColspan($columnType);
 									if ($rowWidth < $BOOTSTRAP_COLS_PER_ROW || !$columnType) {
 										if ($cc < $rowSize - 1) {
 											$columnWidth = round($BOOTSTRAP_COLS_PER_ROW / $rowSize);

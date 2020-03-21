@@ -1,8 +1,6 @@
 <?php
 namespace kOOL\Subscription;
 
-require_once 'FormException.php';
-
 class Form
 {
 	protected $title;

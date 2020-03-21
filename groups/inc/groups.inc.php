@@ -18,8 +18,6 @@
 *
 *******************************************************************************/
 
-use OpenKool\ListView;
-
 function ko_groups_list($highlight=NULL) {
 	global $smarty, $ko_path;
 	global $all_groups, $access, $MAILING_PARAMETER, $RECTYPES;

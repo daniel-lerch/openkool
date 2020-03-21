@@ -33,7 +33,7 @@ if(isset($_GET['id']) && (int)$_GET['id'] > 0) {
 	ko_get_access('leute');
 	if($access['leute']['ALL'] < 1 && $access['leute'][$id] < 1) exit;
 
-	$v = new OpenKool\DAV\vCard();
+	$v = new \kOOL\DAV\vCard();
 	$v->addPerson($id);
 	$v->outputCard();
 } else {

@@ -34,9 +34,9 @@ set_error_handler('exception_error_handler', E_ERROR);
 
 
 //Backends
-$authBackend      = new OpenKool\DAV\DAVAuthBackend(db_get_link());
-$principalBackend = new OpenKool\DAV\DAVACLPrincipalBackend(db_get_link());
-$carddavBackend   = new OpenKool\DAV\CardDAVBackend(db_get_link());
+$authBackend      = new kOOL\DAV\DAVAuthBackend(db_get_link());
+$principalBackend = new kOOL\DAV\DAVACLPrincipalBackend(db_get_link());
+$carddavBackend   = new kOOL\DAV\CardDAVBackend(db_get_link());
 //$caldavBackend    = new Sabre\CalDAV\Backend\PDO($pdo);
 
 //Setting up the directory tree

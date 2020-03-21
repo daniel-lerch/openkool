@@ -62,7 +62,7 @@ try {
 	}
 
 	$_GET['set_lang'] = $transaction->getUserLanguage();
-	\OpenKool\Localizer::init();
+	\kOOL\Localizer::init();
 
 	$transaction->fetch();
 	$transaction->persist();

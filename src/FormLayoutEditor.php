@@ -1,9 +1,8 @@
 <?php
-/**
- * Date: 07.07.14
- * Time: 17:14
- */
-class koFormLayoutEditor {
+
+namespace kOOL;
+
+class FormLayoutEditor {
 
 	const INSERT_FIRST = 0;
 	const INSERT_LAST = 1;

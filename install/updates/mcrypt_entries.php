@@ -31,8 +31,7 @@ function ko_update_mcrypt_entries() {
 	//Check for encryption key
 	if(!KOOL_ENCRYPTION_KEY) return 'No encryption key set';
 
-	include_once($BASE_PATH.'inc/class.mcrypt.php');
-	$cryptM = new mcrypt('aes');
+	$cryptM = new \kOOL\Mcrypt('aes');
 	$cryptM->setKey(KOOL_ENCRYPTION_KEY);
 
 	$crypt = new \kOOL\OpenSsl('AES-256-CBC');

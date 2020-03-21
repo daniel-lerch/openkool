@@ -37,7 +37,7 @@ if(mb_substr($string, 0, 4) == 'pid:') {
 	if(!$pid) exit;
 	ko_get_access('leute');
 	if($access['leute']['ALL'] > 0 || $access['leute'][$pid]) {
-		$vcard = new OpenKool\DAV\vCard(TRUE);
+		$vcard = new \kOOL\DAV\vCard(TRUE);
 		$vcard->addPerson($pid);
 		$string = $vcard->getVCard($pid);
 		if(!$string) exit;

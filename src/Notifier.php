@@ -4,7 +4,7 @@
 *    OpenKool - Online church organization tool
 *
 *    Copyright © 2003-2015 Renzo Lauper (renzo@churchtool.org)
-*    Copyright © 2019      Daniel Lerch
+*    Copyright © 2019-2020 Daniel Lerch
 *
 *    This program is free software; you can redistribute it and/or modify
 *    it under the terms of the GNU General Public License as published by
@@ -72,7 +72,7 @@ class Notifier {
 	private function __clone () {}
 	private function __construct () {
 
-		$reflector = new ReflectionClass('OpenKool\\koNotifier');
+		$reflector = new ReflectionClass('kOOL\\Notifier');
 
 		foreach($reflector->getConstants() as $constantKey => $constantValue) {
 			if ($constantValue != self::ALL && $constantValue != self::NONE && $constantValue != self::ERRS) {

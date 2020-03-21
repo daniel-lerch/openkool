@@ -18,7 +18,7 @@
 *
 *******************************************************************************/
 
-namespace OpenKool;
+namespace kOOL;
 
 class Localizer {
 
