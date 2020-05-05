@@ -42,6 +42,9 @@ function GetPhpLocation () {
         if ($vsConfig.'php.executablePath') {
             return $vsConfig.'php.executablePath'
         }
+        if ($vsConfig.'php.validate.executablePath') {
+            return $vsConfig.'php.validate.executablePath'
+        }
     }
 
     $programFile = "$env:ProgramFiles\PHP\php.exe"
@@ -55,9 +58,7 @@ function GetPhpLocation () {
     }
 }
 
-function SetupEnvironment {
-    Write-Host "Preparing development environment..."
-    Write-Host ""
+function SetupFiles {
     Write-Host "Preparing ~/config..."
     EnsureExists -Path "..\config"
     Copy-Item -Path ".\default\config\footer.php",".\default\config\header.php",`
@@ -85,40 +86,56 @@ function SetupEnvironment {
     Write-Host "Preparing ~/templates_c..."
     EnsureExists -Path "..\templates_c"
     # TODO: Handle permissions
+}
+
+function SetupEnvironment {
+    Write-Host "Preparing development environment..."
+    Write-Host ""
+    Set-Location "install"
+    SetupFiles
+    Set-Location ".."
 
     Write-Host "Preparing PHP runtime components..."
     $executablePath = GetPhpLocation
     if ($executablePath) {
         $extensionDir = Join-Path -Path (Split-Path -Path $executablePath) -ChildPath "ext"
         $xdebugDir = [IO.Path]::GetFileName((Resolve-Path -Path (Join-Path $extensionDir "php_xdebug*.dll")))
-        $ini = (Get-Content -Path ".\default\php-windows.ini" -Raw) `
+        $ini = (Get-Content -Path ".\install\default\php-windows.ini" -Raw) `
             -replace "extension_dir = `"`"", "extension_dir = `"$extensionDir`"" `
             -replace "`"php_xdebug.dll`"", "`"$xdebugDir`""
-        New-Item -Path "..\php.ini" -Value $ini -Force | Out-Null
+        New-Item -Path ".\php.ini" -Value $ini -Force | Out-Null
     } else {
-        Copy-Item -Path ".\default\php-windows.ini" -Destination "..\php.ini" -Force
+        Write-Host "PHP could not be configured automatically. You have to adjust php.ini manually."
+        Copy-Item -Path ".\install\default\php-windows.ini" -Destination ".\php.ini" -Force
     }
 
-    if (Test-Path -Path "..\composer.phar") {
+    if (Test-Path -Path ".\composer.phar") {
         Write-Host "Composer is already installed"
     } else {
-        Invoke-WebRequest -Uri "https://getcomposer.org/installer" -UseBasicParsing -OutFile "..\composer-setup.php"
-        Write-Host "You have to adjust the php.ini and call composer-setup.php with PHP"
+        Write-Host "Downloading Composer Setup..."
+        Invoke-WebRequest -Uri "https://getcomposer.org/installer" -UseBasicParsing -OutFile ".\composer-setup.php"
+        if ($executablePath) {
+            Write-Host "Installing Composer..."
+            Start-Process -FilePath $executablePath -ArgumentList "-c",".\php.ini",".\composer-setup.php" -NoNewWindow -Wait
+            Remove-Item -Path ".\composer-setup.php"
+        } else {
+            Write-Host "You have to adjust the php.ini and call composer-setup.php with PHP"
+        }
     }
 }
 
-function RunComposer ($Arguments) {
-    Write-Host "Invoking Composer..."
+function InvokeComposer {
+    Write-Host "Invoking composer $Composer..."
     Write-Host ""
     $executablePath = GetPhpLocation
-    Start-Process -FilePath $executablePath -ArgumentList "-c",".\php.ini","composer.phar",$Arguments -WorkingDirectory ".\.." -NoNewWindow -Wait
+    Start-Process -FilePath $executablePath -ArgumentList "-c",".\php.ini",".\composer.phar",$Composer -NoNewWindow -Wait
 }
 
 function StartServer {
     Write-Host "Starting development server..."
     Write-Host ""
     $executablePath = GetPhpLocation
-    Start-Process -FilePath $executablePath -ArgumentList "-c",".\php.ini","-S","localhost:8080" -WorkingDirectory ".\.."
+    Start-Process -FilePath $executablePath -ArgumentList "-c",".\php.ini","-S","localhost:8080"
 }
 
 function Main {
@@ -128,18 +145,19 @@ function Main {
         SetupEnvironment
     }
     if ($Composer) {
-        RunComposer $Composer
+        InvokeComposer
     }
     if ($Start) {
         StartServer
     }
-    if (!($Setup) -and !($Start) -and !($Composer)) {
-        Write-Host "Please select an action"
+    if (!($Setup) -and !($Composer) -and !($Start)) {
+        Write-Host "Usage: devenv.ps1 [-Setup] [-Composer <arguments>] [-Start]"
+        Write-Host ""
     }
 }
 
 $oldLocation = Get-Location
-Set-Location $PSScriptRoot
+Set-Location (Split-Path -Path $PSScriptRoot)
 $ErrorActionPreference = "Stop"
 Main
 Set-Location $oldLocation
