@@ -3,6 +3,7 @@
 *  Copyright notice
 *
 *  (c) 2003-2015 Renzo Lauper (renzo@churchtool.org)
+*  (c) 2019-2020 Daniel Lerch
 *  All rights reserved
 *
 *  This script is part of the kOOL project. The kOOL project is
@@ -743,7 +744,7 @@ print ko_get_submenu_code("tapes", "right");
 </td>
 </tr>
 
-<?php include($ko_path . "footer.php"); ?>
+<?php include __DIR__ . '/../config/footer.php'; ?>
 
 </table>
 
