@@ -385,14 +385,9 @@ if(defined('DEBUG') && DEBUG) {
 }
 
 
-//Get base_path from _SERVER if not set during first installation
-if($ko_menu_akt == "install" && !$BASE_PATH) {
-	$bdir = str_replace("install", "", dirname($_SERVER['SCRIPT_NAME']));
-	$droot = $_SERVER["DOCUMENT_ROOT"];
-	if(substr($droot, -1) == "/") $droot = substr($droot, 0, -1);
-	$BASE_PATH = $droot.$bdir;
-}
-if($BASE_PATH != "" && substr($BASE_PATH, -1) != "/") $BASE_PATH .= "/";
+//Set default $BASE_PATH from current location (necessary during first installation)
+if (empty($BASE_PATH)) $BASE_PATH = dirname(__DIR__);
+if (substr($BASE_PATH) != '/') $BASE_PATH .= '/';
 
 //Hooks (Plugins)
 include($BASE_PATH."inc/hooks.inc");
