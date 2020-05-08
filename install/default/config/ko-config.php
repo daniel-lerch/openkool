@@ -3,6 +3,7 @@
 *  Copyright notice
 *
 *  (c) 2003-2015 Renzo Lauper (renzo@churchtool.org)
+*  (c) 2019-2020 Daniel Lerch
 *  All rights reserved
 *
 *  This script is part of the kOOL project. The kOOL project is
@@ -58,9 +59,6 @@ $BASE_PATH = '';
 
 //Smarty
 $smarty_dir = $BASE_PATH;
-
-//Include path for smarty (if installed locally)
-$INCLUDE_PATH_SMARTY = '';
 
 //Set path to pdflatex executable (if installed locally)
 $PDFLATEX_PATH = '';

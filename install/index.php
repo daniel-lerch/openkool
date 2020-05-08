@@ -3,6 +3,7 @@
 *  Copyright notice
 *
 *  (c) 2003-2015 Renzo Lauper (renzo@churchtool.org)
+*  (c) 2019-2020 Daniel Lerch
 *  All rights reserved
 *
 *  This script is part of the kOOL project. The kOOL project is
@@ -345,13 +346,6 @@ switch($_SESSION["show"]) {
 
 	case "checks":
 		print '<h1>'.getLL("install_checks_header").'</h1>';
-
-		//Check for smarty
-		print '<div>'.getLL("install_checks_smarty")."</div>";
-		if(FALSE === include_once("Smarty.class.php")) {
-			print '<div style="color: red;">'.getLL("install_checks_smarty_error").'</div>';
-			$notifier->addError(7, $do_action);
-		} else print '<div style="color: green;">'.getLL("OK")."</div>";
 
 		//Check for filesystem permissions
 		$check_files = array("config/ko-config.php", "config/leute_formular.inc",

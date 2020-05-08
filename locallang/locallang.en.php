@@ -3,6 +3,7 @@
 *  Copyright notice
 *
 *  (c) 2003-2015 Renzo Lauper (renzo@churchtool.org)
+*  (c) 2019-2020 Daniel Lerch
 *  All rights reserved
 *
 *  This script is part of the kOOL project. The kOOL project is
@@ -2029,8 +2030,6 @@ $LL["en"] = array(
 'install_state_name_settings' => "Settings",
 'install_state_name_done' => "Done!",
 'install_checks_header' => "Performing some pre-installation checks.",
-'install_checks_smarty' => "Checking for <b>smarty</b>",
-'install_checks_smarty_error' => "Could not find Smarty. Please install. For more information see http://www.smarty.net",
 'install_checks_files_writable' => "Checking for write access to this file/folder",
 'install_checks_files_writable_error' => "Can't write to this file/folder, please adjust permissions",
 'install_checks_safe_mode' => "Checking for safe_mode=Off",

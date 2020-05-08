@@ -3,6 +3,7 @@
 *  Copyright notice
 *
 *  (c) 2003-2015 Renzo Lauper (renzo@churchtool.org)
+*  (c) 2019-2020 Daniel Lerch
 *  All rights reserved
 *
 *  This script is part of the kOOL project. The kOOL project is
@@ -23,9 +24,6 @@
 *
 *  This copyright notice MUST APPEAR in all copies of the script!
 ***************************************************************/
-
-// Smarty Library Dateien laden
-if(FALSE === include("Smarty.class.php")) ko_die("Could not find Smarty. Please install. For more information see http://www.smarty.net");
 
 //Load smarty template engine
 if(substr($smarty_dir, -1) != "/") $smarty_dir .= "/";

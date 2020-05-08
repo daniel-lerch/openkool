@@ -3,6 +3,7 @@
 *  Copyright notice
 *
 *  (c) 2003-2015 Renzo Lauper (renzo@churchtool.org)
+*  (c) 2019-2020 Daniel Lerch
 *  All rights reserved
 *
 *  This script is part of the kOOL project. The kOOL project is
@@ -1072,8 +1073,6 @@ $LL["de"] = array(
 'install_state_name_settings' => "Einstellungen",
 'install_state_name_done' => "Fertig!",
 'install_checks_header' => "Einige Tests bevor die Installation losgeht.",
-'install_checks_smarty' => "Prüfe, ob <b>smarty</b> vorhanden ist",
-'install_checks_smarty_error' => "Smarty konnte nicht gefunden werden, bitte zuerst installieren. Siehe http://www.smarty.net",
 'install_checks_files_writable' => "Prüfe Schreibrechte für folgende/n Datei/Ordner",
 'install_checks_files_writable_error' => "Diese/r Datei/Ordner hat keine Schreibrechte, bitte korrigieren",
 'install_settings_form_title' => "Einstellungen für diese kOOL-Installation",

@@ -3,6 +3,7 @@
 *  Copyright notice
 *
 *  (c) 2003-2015 Renzo Lauper (renzo@churchtool.org)
+*  (c) 2019-2020 Daniel Lerch
 *  All rights reserved
 *
 *  This script is part of the kOOL project. The kOOL project is
@@ -288,6 +289,10 @@ $COUNTRY_CODES = array(
 	'40' => array('names' => array('ro', 'romania', 'roumania', 'rumänien')),
 );
 
+// Configure autoloading
+if (FALSE === include __DIR__ . '/../vendor/autoload.php') {
+	exit('Composer autoloading could not be found. Please make sure that you have run \'composer install\' before.');
+}
 
 //Set default notification levels
 require($ko_path . "inc/class.koNotifier.php");
@@ -391,9 +396,6 @@ if($BASE_PATH != "" && substr($BASE_PATH, -1) != "/") $BASE_PATH .= "/";
 
 //Hooks (Plugins)
 include($BASE_PATH."inc/hooks.inc");
-
-//Set include path for smarty
-if($INCLUDE_PATH_SMARTY) set_include_path($INCLUDE_PATH_SMARTY.PATH_SEPARATOR.get_include_path());
 
 
 //Connect to the database
