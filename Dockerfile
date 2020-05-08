@@ -11,6 +11,7 @@ RUN set -x \
     && docker-php-ext-configure imap --with-kerberos --with-imap-ssl \
     && docker-php-ext-install imap \
 # Configure environment
+    && echo "default_charset = ISO-8859-1" > /usr/local/etc/php/conf.d/docker-php-charset.ini \
     && a2enmod rewrite \
 # Remove temporary packages
     && apt-get purge -y --autoremove libc-client-dev libkrb5-dev
