@@ -397,6 +397,8 @@ include($BASE_PATH."inc/hooks.inc");
 $db_conn = mysql_connect($mysql_server, $mysql_user, $mysql_pass);
 //Test the connection
 $db_connection = $db_conn !== FALSE;
+//unset STRICT_TRANS_TABLES mode
+mysql_query("SET SESSION sql_mode=(SELECT REPLACE(@@sql_mode,'STRICT_TRANS_TABLES',''))");
 mysql_select_db($mysql_db);
 //Set client-server connection to latin1
 if($ko_menu_akt != 'install') mysql_query('SET NAMES LATIN1');
