@@ -651,8 +651,9 @@ switch($_SESSION["show"]) {
 //--- copyright notice on frontpage:
 //--- Obstructing the appearance of this notice is prohibited by law.
 print '<tr><td colspan="3" class="copyright">';
-print '<a href="https://sourceforge.net/projects/kool"><b>'.getLL("kool").'</b></a> '.sprintf(getLL("copyright_notice"), VERSION).'<br />';
-if(defined("WARRANTY_GIVER")) {
+$copyrightNotice = sprintf(getLL("copyright_notice"), VERSION, '<a href="https://github.com/daniel-lerch/openkool/graphs/contributors">', '</a>');
+print '<a href="https://www.churchtool.org"><b>'.getLL("kool")."</b></a> $copyrightNotice<br />";
+if(defined("WARRANTY_GIVER") && WARRANTY_GIVER != '') {
 	print sprintf(getLL("copyright_warranty"), '<a href="'.WARRANTY_URL.'">'.WARRANTY_GIVER.'</a> ');
 } else {
 	print getLL("copyright_no_warranty")." ";
