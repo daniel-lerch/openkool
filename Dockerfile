@@ -3,13 +3,15 @@ FROM php:5.6-apache
 RUN set -x \
 # Install necessary packages
     && apt-get update \
-    && apt-get install -y zip unzip less vim libc-client-dev libkrb5-dev \
+    && apt-get install -y zip unzip less vim libc-client-dev libkrb5-dev libpng-dev libjpeg-dev \
     && rm -rf /var/lib/apt/list/* \
 # Install PHP extensions
     && docker-php-ext-configure mysql \
     && docker-php-ext-install mysql \
     && docker-php-ext-configure imap --with-kerberos --with-imap-ssl \
     && docker-php-ext-install imap \
+    && docker-php-ext-configure gd --with-jpeg-dir=/usr/include \
+    && docker-php-ext-install gd \
 # Configure environment
     && echo "default_charset = ISO-8859-1" > /usr/local/etc/php/conf.d/docker-php-charset.ini \
     && a2enmod rewrite \
