@@ -35,4 +35,4 @@ RUN set -x \
 LABEL org.label-schema.name="OpenKool" \
       org.label-schema.description="Open source fork of kOOL - Online church organization tool" \
       org.label-schema.vcs-url="https://github.com/daniel-lerch/openkool" \
-      org.label-schema.schema-version="R45"
+      org.label-schema.schema-version="1.0"
