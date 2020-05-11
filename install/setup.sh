@@ -22,6 +22,13 @@
 WEB_UID=www-data
 WEB_GID=www-data
 
+function setup_container() {
+    echo "Setting up container configuration..."
+    cp -f default/docker/docker-php-entrypoint /usr/local/bin
+    cp -f default/docker/docker-php-charset.ini /usr/local/etc/php/conf.d
+    cp -f default/docker/kool-scheduler /etc/cron.d
+}
+
 function dir_config() {
     echo "Preparing ~/config..."
     if [[ ! -d ../config ]]; then mkdir ../config; fi
@@ -80,6 +87,7 @@ function main() {
     cd $(dirname $0)
 
     if [[ $1 == "--docker-build" ]]; then
+        setup_container
         dir_download
         dir_latex
         dir_templates_c
@@ -102,7 +110,7 @@ function main() {
         fi
         
         echo ""
-        echo "Setup finished. Navigate to http://kool.your.tld/install to continue with the webinstaller."
+        echo "Setup finished. Navigate to http://kool.your.tld/install/ to continue with the webinstaller."
         echo ""
     fi
 }
