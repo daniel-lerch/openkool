@@ -387,7 +387,7 @@ if(defined('DEBUG') && DEBUG) {
 
 //Set default $BASE_PATH from current location (necessary during first installation)
 if (empty($BASE_PATH)) $BASE_PATH = dirname(__DIR__);
-if (substr($BASE_PATH) != '/') $BASE_PATH .= '/';
+if (substr($BASE_PATH, -1) != '/') $BASE_PATH .= '/';
 
 //Hooks (Plugins)
 include($BASE_PATH."inc/hooks.inc");
