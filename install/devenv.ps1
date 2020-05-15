@@ -35,7 +35,16 @@ function EnsureExists ($Path) {
     }
 }
 
-function GetPhpLocation () {
+function GetPhpExecutable ([switch]$Ini) {
+    if ($Ini -and (Test-Path -Path ".\php.ini" -PathType Leaf)) {
+        Get-Content -Path ".\php.ini" | Where-Object { $_ -match '^extension_dir.*=.*"(.*)"' } | Out-Null
+        $executablePath = Join-Path (Split-Path -Path $Matches.1) "php.exe"
+        Write-Host $executablePath
+        if (Test-Path -Path $executablePath -PathType Leaf) {
+            return $executablePath
+        }
+    }
+
     $vsConfigPath = "$env:APPDATA\Code\User\settings.json"
     if (Test-Path -Path $vsConfigPath -PathType Leaf) {
         $vsConfig = Get-Content -Path $vsConfigPath | ConvertFrom-Json
@@ -108,7 +117,7 @@ function SetupEnvironment {
     Set-Location ".."
 
     Write-Host "Preparing PHP runtime components..."
-    $executablePath = GetPhpLocation
+    $executablePath = GetPhpExecutable
     if ($executablePath) {
         $extensionDir = Join-Path -Path (Split-Path -Path $executablePath) -ChildPath "ext"
         $xdebugDir = [IO.Path]::GetFileName((Resolve-Path -Path (Join-Path $extensionDir "php_xdebug*.dll")))
@@ -139,14 +148,14 @@ function SetupEnvironment {
 function InvokeComposer {
     Write-Host "Invoking composer $Composer..."
     Write-Host ""
-    $executablePath = GetPhpLocation
+    $executablePath = GetPhpExecutable
     Start-Process -FilePath $executablePath -ArgumentList "-c",".\php.ini",".\composer.phar",$Composer -NoNewWindow -Wait
 }
 
 function StartServer {
     Write-Host "Starting development server..."
     Write-Host ""
-    $executablePath = GetPhpLocation
+    $executablePath = (GetPhpExecutable -Ini)
     Start-Process -FilePath $executablePath -ArgumentList "-c",".\php.ini","-S","localhost:8080"
 }
 
