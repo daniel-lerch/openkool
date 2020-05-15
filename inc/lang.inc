@@ -79,7 +79,13 @@ if(!$_SESSION['lang2']) {
 	}
 }
 
-setlocale(LC_ALL, ($_SESSION["lang"]."_".$_SESSION["lang2"].'.ISO-8859-1'));
+if(FALSE == setlocale(LC_ALL, ($_SESSION["lang"]."_".$_SESSION["lang2"].'.ISO-8859-1'))) {
+	if (FALSE == setlocale(LC_ALL, ($_SESSION["lang"]."_".$_SESSION["lang2"]))) {
+		trigger_error("Could not load locale", E_USER_NOTICE);
+	} else {
+		trigger_error("Could not load ISO-8859-1 version of locale", E_USER_NOTICE);
+	}
+}
 
 
 //Include locallang-files to the current language
