@@ -1,9 +1,13 @@
 FROM php:5.6-apache
 
 RUN set -x \
-# Install necessary packages
     && apt-get update \
-    && apt-get install -y zip unzip less vim cron libc-client-dev libkrb5-dev libpng-dev libjpeg-dev \
+# Install some useful utilities
+    && apt-get install -y zip unzip less vim \ 
+# Install runtime dependencies
+        cron locales \
+# Install PHP extension dependencies
+        libc-client-dev libkrb5-dev libpng-dev libjpeg-dev \
     && rm -rf /var/lib/apt/list/* \
 # Install PHP extensions
     && docker-php-ext-configure mysql \
@@ -14,6 +18,15 @@ RUN set -x \
     && docker-php-ext-install gd \
 # Configure environment
     && a2enmod rewrite \
+    && sed -i \
+        -e 's/# de_CH ISO-8859-1/de_CH ISO-8859-1/' \
+        -e 's/# de_DE ISO-8859-1/de_DE ISO-8859-1/' \
+        -e 's/# en_GB ISO-8859-1/en_GB ISO-8859-1/' \
+        -e 's/# en_US ISO-8859-1/en_US ISO-8859-1/' \
+        -e 's/# fr_CH ISO-8859-1/fr_CH ISO-8859-1/' \
+        -e 's/# nl_NL ISO-8859-1/nl_NL ISO-8859-1/' \
+        /etc/locale.gen \
+    && locale-gen \
 # Remove temporary packages
     && apt-get purge -y --autoremove libc-client-dev libkrb5-dev
     # libpng-dev and libjpeg-dev contain shared files and must not be removed
