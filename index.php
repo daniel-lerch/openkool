@@ -3,6 +3,7 @@
 *  Copyright notice
 *
 *  (c) 2003-2015 Renzo Lauper (renzo@churchtool.org)
+*  (c) 2019-2020 Daniel Lerch
 *  All rights reserved
 *
 *  This script is part of the kOOL project. The kOOL project is
@@ -380,13 +381,14 @@ print '</main>';
 //--- copyright notice on frontpage:
 //--- Obstructing the appearance of this notice is prohibited by law.
 print '<div id="footer" style="text-align:center;">';
-print '<a href="http://www.churchtool.org"><b>'.getLL("kool").'</b></a> '.sprintf(getLL("copyright_notice"), VERSION).'<br />';
-if(WARRANTY_GIVER != "") {
-	print sprintf(getLL("copyright_warranty"), '<a href="'.WARRANTY_URL.'">'.WARRANTY_GIVER.'</a>');
+$copyrightNotice = sprintf(getLL("copyright_notice"), VERSION, '<a href="https://github.com/daniel-lerch/openkool/graphs/contributors">', '</a>');
+print '<a href="https://www.churchtool.org"><b>'.getLL("kool")."</b></a> $copyrightNotice<br />";
+if(defined("WARRANTY_GIVER") && WARRANTY_GIVER != '') {
+	print sprintf(getLL("copyright_warranty"), '<a href="'.WARRANTY_URL.'">'.WARRANTY_GIVER.'</a> ');
 } else {
 	print getLL("copyright_no_warranty")." ";
 }
-print " ".sprintf(getLL("copyright_free_software"), '<a href="http://www.fsf.org/licensing/licenses/gpl.html">', '</a>')."<br />";
+print sprintf(getLL("copyright_free_software"), '<a href="http://www.fsf.org/licensing/licenses/gpl.html">', '</a>')."<br />";
 print getLL("copyright_obstruction");
 print '</div>';
 //--- end of copyright notice

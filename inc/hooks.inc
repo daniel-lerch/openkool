@@ -3,6 +3,7 @@
 *  Copyright notice
 *
 *  (c) 2003-2015 Renzo Lauper (renzo@churchtool.org)
+*  (c) 2019-2020 Daniel Lerch
 *  All rights reserved
 *
 *  This script is part of the kOOL project. The kOOL project is
@@ -132,7 +133,7 @@ function hook_get_by_type($type) {
 
 			//Dateiname nur gemäss BASE_PATH erlauben
 			$full_path = realpath($temp);
-	    if(substr($full_path, 0, strlen($BASE_PATH."plugins")) != ($BASE_PATH."plugins")) {
+	    if(substr($full_path, 0, strlen($BASE_PATH."plugins")) != realpath($BASE_PATH."plugins")) {
 				trigger_error("Not allowed Hook-File: ".$temp, E_USER_ERROR);
 	      exit;
 	    }

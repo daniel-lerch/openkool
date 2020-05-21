@@ -1,0 +1,6 @@
+{
+    "files.associations": {
+        "*.inc": "php"
+    },
+    "files.encoding": "iso88591"
+}

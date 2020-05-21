@@ -3,6 +3,7 @@
  *  Copyright notice
  *
  *  (c) 2003-2015 Renzo Lauper (renzo@churchtool.org)
+ *  (c) 2019-2020 Daniel Lerch
  *  All rights reserved
  *
  *  This script is part of the kOOL project. The kOOL project is
@@ -114,7 +115,7 @@ print '<link rel="stylesheet" type="text/css" href="'.$ko_path.'consensus/consen
 			<h1><?= getLL('ko_consensus') ?></h1>
 		</div>
 		<div id="logo">
-			<?php include($BASE_PATH . 'header.php') ?>
+			<?php include __DIR__ . '/../config/header.php'; ?>
 		</div>
 		<div style="display:none;padding:10px;margin:5px 180px 10px 10px;background-color:#ddd;border:2px solid #3586bd;position:fixed;_position:absolute;right:0;top:0;_top:expression(eval(document.body.scrollTop));z-index:900;width:125px;text-align:center;" name="wait_message" id="wait_message">
 			<img src="<?= $ko_path ?>images/load_anim.gif" />

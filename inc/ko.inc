@@ -3,6 +3,7 @@
 *  Copyright notice
 *
 *  (c) 2003-2015 Renzo Lauper (renzo@churchtool.org)
+*  (c) 2019-2020 Daniel Lerch
 *  All rights reserved
 *
 *  This script is part of the kOOL project. The kOOL project is
@@ -330,6 +331,11 @@ $COUNTRY_CODES = array(
 	'40' => array('names' => array('ro', 'romania', 'roumania', 'rumänien')),
 );
 
+// Configure autoloading
+if (FALSE === include __DIR__ . '/../vendor/autoload.php') {
+	exit('Composer autoloading could not be found. Please make sure that you have run \'composer install\' before.');
+}
+
 if($ko_menu_akt != 'ldap') {
 	//Set default notification levels
 	require($ko_path . "inc/class.koNotifier.php");
@@ -518,26 +524,20 @@ if(defined('DEBUG') && DEBUG) {
 }
 
 
-//Get base_path from _SERVER if not set during first installation
-if($ko_menu_akt == "install" && !$BASE_PATH) {
-	$bdir = str_replace("install", "", dirname($_SERVER['SCRIPT_NAME']));
-	$droot = $_SERVER["DOCUMENT_ROOT"];
-	if(substr($droot, -1) == "/") $droot = substr($droot, 0, -1);
-	$BASE_PATH = $droot.$bdir;
-}
-if($BASE_PATH != "" && substr($BASE_PATH, -1) != "/") $BASE_PATH .= "/";
+//Set default $BASE_PATH from current location (necessary during first installation)
+if (empty($BASE_PATH)) $BASE_PATH = dirname(__DIR__);
+if (substr($BASE_PATH, -1) != '/') $BASE_PATH .= '/';
 
 //Hooks (Plugins)
 include($BASE_PATH."inc/hooks.inc");
-
-//Set include path for smarty
-if($INCLUDE_PATH_SMARTY) set_include_path($INCLUDE_PATH_SMARTY.PATH_SEPARATOR.get_include_path());
 
 
 //Connect to the database
 $db_conn = mysqli_connect($mysql_server, $mysql_user, $mysql_pass);
 //Test the connection
 $db_connection = $db_conn !== FALSE;
+//unset STRICT_TRANS_TABLES mode
+mysqli_query(db_get_link(), "SET SESSION sql_mode=(SELECT REPLACE(@@sql_mode,'STRICT_TRANS_TABLES',''))");
 mysqli_select_db(db_get_link(), $mysql_db);
 //Set client-server connection to latin1
 if($ko_menu_akt != 'install') mysqli_query(db_get_link(), 'SET NAMES LATIN1');
@@ -16583,6 +16583,10 @@ function format_userinput($s, $type, $enforce=FALSE, $length=0, $replace=array()
 			$s = str_replace("\\", "", $s);
 			$new = addslashes($s);
 			return $new;
+		break;
+
+		case "unescaped":
+			return addslashes($s);
 		break;
 
 		case "all":

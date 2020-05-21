@@ -3,6 +3,7 @@
 *  Copyright notice
 *
 *  (c) 2003-2015 Renzo Lauper (renzo@churchtool.org)
+*  (c) 2019-2020 Daniel Lerch
 *  All rights reserved
 *
 *  This script is part of the kOOL project. The kOOL project is
@@ -131,7 +132,8 @@ switch($do_action) {
 		$base_url = format_userinput($_POST["txt_base_url"], "text");
 		if($base_url) ko_update_ko_config("base_url", ('$BASE_URL = "'.$base_url.'";'."\n"));
 
-		$base_path = format_userinput($_POST["txt_base_path"], "text");
+		// Use "unescaped" mode instead of "text" because Windows file paths contain backslashes that need to be escaped
+		$base_path = format_userinput($_POST["txt_base_path"], "unescaped");
 		if(substr($base_path, -1) != "/") $base_path .= "/";
 		if($base_path) ko_update_ko_config("base_path", ('$BASE_PATH = "'.$base_path.'";'."\n"));
 
@@ -187,7 +189,7 @@ switch($do_action) {
 		$warranty_giver = format_userinput($_POST["txt_warranty_giver"], "text");
 		$warranty_url = $_POST["txt_warranty_url"];
 		$warranty_email = $_POST["txt_warranty_email"];
-		if(substr($warranty_url, 0, 7) != "http://") $warranty_url = "http://".$warranty_url;
+		if(substr($warranty_url, 0, 7) != "http://" && substr($warranty_url, 0, 8) != "https://") $warranty_url = "http://".$warranty_url;
 		$data  = sprintf("@define('WARRANTY_GIVER', '%s');", $warranty_giver)."\n";
 		$data .= sprintf("@define('WARRANTY_EMAIL', '%s');", $warranty_email)."\n";
 		$data .= sprintf("@define('WARRANTY_URL', '%s');", $warranty_url)."\n";
@@ -353,13 +355,6 @@ switch($_SESSION["show"]) {
 
 	case "checks":
 		print '<h3>'.getLL("install_checks_header").'</h3>';
-
-		//Check for smarty
-		print '<div>'.getLL("install_checks_smarty")."</div>";
-		if(FALSE === include_once("Smarty.class.php")) {
-			print '<div style="color: red;">'.getLL("install_checks_smarty_error").'</div>';
-			$notifier->addError(7, $do_action);
-		} else print '<div style="color: green;">'.getLL("OK")."</div>";
 
 		//Check for filesystem permissions
 		$check_files = array("config/ko-config.php", "config/leute_formular.inc",
@@ -679,8 +674,9 @@ switch($_SESSION["show"]) {
 //--- copyright notice on frontpage:
 //--- Obstructing the appearance of this notice is prohibited by law.
 print '<div class="copyright">';
-print '<a href="https://sourceforge.net/projects/kool"><b>'.getLL("kool").'</b></a> '.sprintf(getLL("copyright_notice"), VERSION).'<br />';
-if(defined("WARRANTY_GIVER")) {
+$copyrightNotice = sprintf(getLL("copyright_notice"), VERSION, '<a href="https://github.com/daniel-lerch/openkool/graphs/contributors">', '</a>');
+print '<a href="https://www.churchtool.org"><b>'.getLL("kool")."</b></a> $copyrightNotice<br />";
+if(defined("WARRANTY_GIVER") && WARRANTY_GIVER != '') {
 	print sprintf(getLL("copyright_warranty"), '<a href="'.WARRANTY_URL.'">'.WARRANTY_GIVER.'</a> ');
 } else {
 	print getLL("copyright_no_warranty")." ";
