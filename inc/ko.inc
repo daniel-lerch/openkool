@@ -13297,6 +13297,10 @@ function format_userinput($s, $type, $enforce=FALSE, $length=0, $replace=array()
 			return $new;
 		break;
 
+		case "unescaped":
+			return addslashes($s);
+		break;
+
 		case "all":
 			return TRUE;
 		break;

@@ -128,7 +128,8 @@ switch($do_action) {
 		if($html_title) ko_update_ko_config("html_title", ('$HTML_TITLE = "'.$html_title.'";'."\n"));
 		$base_url = format_userinput($_POST["txt_base_url"], "text");
 		if($base_url) ko_update_ko_config("base_url", ('$BASE_URL = "'.$base_url.'";'."\n"));
-		$base_path = format_userinput($_POST["txt_base_path"], "text");
+		// Use "unescaped" mode instead of "text" because Windows file paths contain backslashes that need to be escaped
+		$base_path = format_userinput($_POST["txt_base_path"], "unescaped");
 		if(substr($base_path, -1) != "/") $base_path .= "/";
 		if($base_path) ko_update_ko_config("base_path", ('$BASE_PATH = "'.$base_path.'";'."\n"));
 
@@ -180,7 +181,7 @@ switch($do_action) {
 		$warranty_giver = format_userinput($_POST["txt_warranty_giver"], "text");
 		$warranty_url = $_POST["txt_warranty_url"];
 		$warranty_email = $_POST["txt_warranty_email"];
-		if(substr($warranty_url, 0, 7) != "http://") $warranty_url = "http://".$warranty_url;
+		if(substr($warranty_url, 0, 7) != "http://" && substr($warranty_url, 0, 8) != "https://") $warranty_url = "http://".$warranty_url;
 		$data  = sprintf('@define("WARRANTY_GIVER", "%s");', $warranty_giver)."\n";
 		$data .= sprintf('@define("WARRANTY_EMAIL", "%s");', $warranty_email)."\n";
 		$data .= sprintf('@define("WARRANTY_URL", "%s");', $warranty_url)."\n";
