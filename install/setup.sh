@@ -52,19 +52,11 @@ function dir_download() {
     chown $WEB_UID:$WEB_GID ../download ../download/dp ../download/excel ../download/pdf ../download/word
 }
 
-function dir_latex() {
-    echo "Preparing ~/latex..."
-    if [[ ! -d ../latex/compile ]]; then mkdir ../latex/compile; fi
-    if [[ ! -d ../latex/images ]]; then mkdir ../latex/images; fi
-    cp -f default/latex/images/.htaccess ../latex/images
-    cp -f default/latex/layouts/letter_default.lco ../latex/layouts
-    chown --recursive $WEB_UID:$WEB_GID ../latex/compile ../latex/images
-}
-
 function dir_my_images() {
     echo "Preparing ~/my_images..."
     if [[ ! -d ../my_images ]]; then mkdir ../my_images; fi
     if [[ ! -d ../my_images/cache ]]; then mkdir ../my_images/cache; fi
+    if [[ ! -d ../my_images/v11 ]]; then mkdir ../my_images/v11; fi
     chown --recursive $WEB_UID:$WEB_GID ../my_images
 }
 
@@ -89,7 +81,6 @@ function main() {
     if [[ $1 == "--docker-build" ]]; then
         setup_container
         dir_download
-        dir_latex
         dir_templates_c
 
         echo ""
@@ -103,7 +94,6 @@ function main() {
         else
             dir_config
             dir_download
-            dir_latex
             dir_my_images
             dir_templates_c
             dir_webfolders

@@ -87,16 +87,10 @@ function SetupFiles {
     Copy-Item -Path ".\default\download\index2.php" -Destination "..\download\word\index.php" -Force
     # TODO: Handle permissions
 
-    Write-Host "Preparing ~/latex..."
-    EnsureExists -Path "..\latex\compile"
-    EnsureExists -Path "..\latex\images"
-    Copy-Item -Path ".\default\latex\images\.htaccess" -Destination "..\latex\images" -Force
-    Copy-Item -Path ".\default\latex\layouts\letter_default.lco" -Destination "..\latex\layouts" -Force
-    # TODO: Handle permissions
-
     Write-Host "Preparing ~/my_images..."
     EnsureExists -Path "..\my_images"
     EnsureExists -Path "..\my_images\cache"
+    EnsureExists -Path "..\my_images\v11"
     # TODO: Handle permissions
     
     Write-Host "Preparing ~/templates_c..."
