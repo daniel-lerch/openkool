@@ -3,6 +3,7 @@
 *  Copyright notice
 *
 *  (c) 2003-2015 Renzo Lauper (renzo@churchtool.org)
+*  (c) 2019-2020 Daniel Lerch
 *  All rights reserved
 *
 *  This script is part of the kOOL project. The kOOL project is
@@ -3046,10 +3047,11 @@ function ko_leute_chart($_type="") {
 
 
 
-function ko_leute_chart_generic_pie_from_data($label, $value, $name) {
+function ko_leute_chart_generic_pie_from_data($label, $value, $name, $convertNumbers) {
 	$data = array_map(function($e1, $e2){return array($e1, $e2);}, array_merge(array(getLL('label')), $label), array_merge(array(getLL('value')), $value));
 	array_walk_recursive($data, 'utf8_encode_array');
-	$dataJSON = json_encode($data, JSON_NUMERIC_CHECK);
+	$options = $convertNumbers ? JSON_NUMERIC_CHECK : 0;
+	$dataJSON = json_encode($data, $options);
 
 	$html = "
 <div class=\"fullscreen-elem\" id=\"leute-stats-{$name}-pie\" style=\"height: 500px;\"></div>
@@ -3431,7 +3433,7 @@ function ko_leute_chart_age_pie($where_base) {
 		$label[] = $span[0]."-".$span[1];
 	}
 
-	return ko_leute_chart_generic_pie_from_data($label, $value, 'age');
+	return ko_leute_chart_generic_pie_from_data($label, $value, 'age', true);
 
 }//ko_leute_chart_age_pie()
 
@@ -3488,7 +3490,7 @@ function ko_leute_chart_birthday_months($where_base) {
 		$label[] = strftime("%B", mktime(1,1,1, $m, 1, 2000));
 	}
 
-	return ko_leute_chart_generic_pie_from_data($label, $value, 'birthday');
+	return ko_leute_chart_generic_pie_from_data($label, $value, 'birthday', true);
 }//ko_leute_chart_birthday_months()
 
 
@@ -3514,7 +3516,7 @@ function ko_leute_chart_generic_pie_enum($table, $where_base, $col, $ll_prefix="
 	if($return_data) {
 		return array("value" => $value, "label" => $label);
 	} else {
-		return ko_leute_chart_generic_pie_from_data($label, $value, $col);
+		return ko_leute_chart_generic_pie_from_data($label, $value, $col, true);
 	}
 }//ko_leute_chart_generic_pie_enum()
 
@@ -3555,7 +3557,7 @@ function ko_leute_chart_generic_pie($table, $where_base, $col, $max=12) {
 		$label[] = getLL("leute_chart_misc");
 	}
 
-	return ko_leute_chart_generic_pie_from_data($label, $value, $col);
+	return ko_leute_chart_generic_pie_from_data($label, $value, $col, false);
 }//ko_leute_chart_generic_pie()
 
 
