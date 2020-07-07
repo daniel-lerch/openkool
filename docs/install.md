@@ -11,8 +11,8 @@
 `docker-compose exec app touch /var/www/html/install/ENABLE_INSTALL`
 6. Open http://localhost/install/ in your browser and follow the instructions
 
-## Migrate from kOOL R45
-You can easily migrate your data from an existing kOOL R45 instance to OpenKool R45.
+## Migrate from kOOL
+You can easily migrate your data from an existing kOOL instance to an OpenKool instance with the same major version.
 1. Create a dump of your existing database
 2. Copy the file into the database container
 3. Import your database dump
