@@ -1,15 +1,25 @@
+#navbar-placeholder {
+    &.affix {
+        position: fixed;
+        top: 0;
+        width: 100%;
+        z-index: 1000;
+    }
+}
+
+.affix + .affix-single-placeholder {
+    height: @navbar-height;
+}
+
+.affix + .affix-double-placeholder {
+    height: 2 * @navbar-height;
+}
+
 #navbar-main {
     border-bottom:none;
     width:100%;
 
     .kool-navbar-toggle(@navbar-height);
-
-    &.affix,
-    &.affix-bottom {
-        position:fixed;
-        left:0px;
-        top:0px;
-    }
 }
 
 #navbar-sec {
@@ -21,13 +31,6 @@
     // position:relative is because of trash for shortlinks
     position:relative;
     z-index: 999;
-
-    &.affix,
-    &.affix-bottom {
-        position:fixed;
-        left:0px;
-        top:@navbar-height;
-    }
 
     .navbar-text {
         color: @secondary-navbar-color;

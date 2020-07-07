@@ -74,82 +74,88 @@
 	</div>
 
 
-	<div id="navbar-placeholder"></div>
-	<nav class="navbar navbar-inverse navbar-static-top" id="navbar-main">
-		<div class="container-fluid">
-			<div class="navbar-header">
-				<button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#ko_menu">
+	<div id="navbar-placeholder">
+		<nav class="navbar navbar-inverse navbar-static-top" id="navbar-main">
+			<div class="container-fluid">
+				<div class="navbar-header">
+					<button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#ko_menu">
+						<span class="sr-only">Toggle navigation</span>
+						<span class="icon-bar"></span>
+						<span class="icon-bar"></span>
+						<span class="icon-bar"></span>
+					</button>
+				</div>
+				<div class="collapse navbar-collapse" id="ko_menu">
+					<ul class="nav navbar-nav">
+						<li {if $tpl_menu_akt == "home"}class="active"{/if}>
+							<a href="{$ko_path}index.php">{ll key="submenu_home_title_home"}</a>
+						</li>
+						{foreach from=$tpl_menu item=menu}
+							<li class="dropdown{if $menu.id == $tpl_menu_akt} active{/if}">
+								<a href="{$menu.link}" {if $menu.menu}class="dropdown-toggle" data-toggle="dropdown" {/if}role="button" aria-expanded="false" {$menu.link_param}>{$menu.name}{if $menu.menu || $module_settings_action.$menuId != ''}<span class="caret hidden-xs"></span>{/if}</a>
+								{if $menu.menu || $module_settings_action.$menuId != ''}
+									<ul class="dropdown-menu" role="menu">
+										{assign var="firstSubMenuPoint" value=true}
+										{foreach from=$menu.menu item=submenu}
+											{if $submenu.link}
+												<li class="{if $submenu.active}active{/if} {if $submenu.disabled}disabled{/if}"><a href="{$submenu.link}">{$submenu.title}{if $submenu.badge !== null} <span class="badge">{$submenu.badge}</span>{/if}</a></li>
+											{else}
+												{if !$firstSubMenuPoint}
+													<li class="divider" role="presentation"></li>
+												{/if}
+												<li role="presentation" class="dropdown-header">{$submenu.title}</li>
+											{/if}
+											{assign var="firstSubMenuPoint" value=false}
+										{/foreach}
+										{assign var="menuId" value=$menu.id}
+										{if $module_settings_action.$menuId != ''}
+											{assign var="menuAction" value=$module_settings_action.$menuId }
+											{assign var="menuLLKey" value="submenu_`$menuId`_`$menuAction`"}
+											{if !$firstSubMenuPoint}<li class="divider" role="presentation"></li>{/if}
+											<li class="{if $menu.id == $tpl_menu_akt && $tpl_action == $menuAction}active{/if}"><a class="clearfix" href="/{$menuId}?action={$menuAction}"><span class="pull-left">{ll key=$menuLLKey}</span><i class="fa fa-cog dropdown-icon"></i></a></li>
+										{/if}
+									</ul>
+								{/if}
+							</li>
+						{/foreach}
+					</ul>
+				</div>
+			</div>
+		</nav>
+		{if $tpl_menu_akt != 'home'}
+		<nav id="navbar-sec">
+			<div class="container-fluid">
+				<button type="button" class="sidebar-toggle{if $tpl_sidebar_active} active{/if}" data-toggle="offcanvas" data-target="#sidebar" id="sidebar-toggle-sub">
 					<span class="sr-only">Toggle navigation</span>
 					<span class="icon-bar"></span>
 					<span class="icon-bar"></span>
 					<span class="icon-bar"></span>
 				</button>
-			</div>
-			<div class="collapse navbar-collapse" id="ko_menu">
-				<ul class="nav navbar-nav">
-					<li {if $tpl_menu_akt == "home"}class="active"{/if}>
-						<a href="{$ko_path}index.php">{ll key="submenu_home_title_home"}</a>
-					</li>
-					{foreach from=$tpl_menu item=menu}
-						<li class="dropdown{if $menu.id == $tpl_menu_akt} active{/if}">
-							<a href="{$menu.link}" {if $menu.menu}class="dropdown-toggle" data-toggle="dropdown" {/if}role="button" aria-expanded="false" {$menu.link_param}>{$menu.name}{if $menu.menu || $module_settings_action.$menuId != ''}<span class="caret hidden-xs"></span>{/if}</a>
-							{if $menu.menu || $module_settings_action.$menuId != ''}
-								<ul class="dropdown-menu" role="menu">
-									{assign var="firstSubMenuPoint" value=true}
-									{foreach from=$menu.menu item=submenu}
-										{if $submenu.link}
-											<li class="{if $submenu.active}active{/if} {if $submenu.disabled}disabled{/if}"><a href="{$submenu.link}">{$submenu.title}{if $submenu.badge !== null} <span class="badge">{$submenu.badge}</span>{/if}</a></li>
-										{else}
-											{if !$firstSubMenuPoint}
-												<li class="divider" role="presentation"></li>
-											{/if}
-											<li role="presentation" class="dropdown-header">{$submenu.title}</li>
-										{/if}
-										{assign var="firstSubMenuPoint" value=false}
-									{/foreach}
-									{assign var="menuId" value=$menu.id}
-									{if $module_settings_action.$menuId != ''}
-										{assign var="menuAction" value=$module_settings_action.$menuId }
-										{assign var="menuLLKey" value="submenu_`$menuId`_`$menuAction`"}
-										{if !$firstSubMenuPoint}<li class="divider" role="presentation"></li>{/if}
-										<li class="{if $menu.id == $tpl_menu_akt && $tpl_action == $menuAction}active{/if}"><a class="clearfix" href="/{$menuId}?action={$menuAction}"><span class="pull-left">{ll key=$menuLLKey}</span><i class="fa fa-cog dropdown-icon"></i></a></li>
-									{/if}
-								</ul>
-							{/if}
-						</li>
+				<ul class="nav navbar-nav sortable" style="padding-right:30px;">
+					{foreach from=$tpl_menubar_links item=link}
+						<li class="nowrap{if $link.active} active{/if}" data-action="{$link.action}"  data-sm-id="{$link.sm_id}"><a href="{$link.link}">{$link.title}</a></li>
 					{/foreach}
 				</ul>
+				<ul class="nav navbar-nav">
+					<li id="shortlink-trash" style="display:none;"><a><i class="fa fa-trash icon-line-height"></i></a></li>
+				</ul>
+				{if $settings_page}
+					<ul class="nav navbar-nav pull-right">
+						<li {if $settings_page == $tpl_action || $settings_page == $tpl_ses_show}class="active"{/if}><a href="?action={$settings_page}" title="{ll key="submenu_`$tpl_menu_akt`_`$settings_page`"}"><span class="glyphicon glyphicon-cog icon-line-height"></span></a></li>
+					</ul>
+				{/if}
+				{if $searchbox}
+					<ul id="searchbox" class="nav navbar-nav pull-right">
+						{include file="ko_searchbox.tpl"}
+					</ul>
+				{/if}
 			</div>
-		</div>
-	</nav>
-	{if $tpl_menu_akt != 'home'}
-	<nav id="navbar-sec">
-		<div class="container-fluid">
-			<button type="button" class="sidebar-toggle{if $tpl_sidebar_active} active{/if}" data-toggle="offcanvas" data-target="#sidebar" id="sidebar-toggle-sub">
-				<span class="sr-only">Toggle navigation</span>
-				<span class="icon-bar"></span>
-				<span class="icon-bar"></span>
-				<span class="icon-bar"></span>
-			</button>
-			<ul class="nav navbar-nav sortable" style="padding-right:30px;">
-				{foreach from=$tpl_menubar_links item=link}
-					<li class="nowrap{if $link.active} active{/if}" data-action="{$link.action}"  data-sm-id="{$link.sm_id}"><a href="{$link.link}">{$link.title}</a></li>
-				{/foreach}
-			</ul>
-			<ul class="nav navbar-nav">
-				<li id="shortlink-trash" style="display:none;"><a><i class="fa fa-trash icon-line-height"></i></a></li>
-			</ul>
-			{if $settings_page}
-				<ul class="nav navbar-nav pull-right">
-					<li {if $settings_page == $tpl_action || $settings_page == $tpl_ses_show}class="active"{/if}><a href="?action={$settings_page}" title="{ll key="submenu_`$tpl_menu_akt`_`$settings_page`"}"><span class="glyphicon glyphicon-cog icon-line-height"></span></a></li>
-				</ul>
-			{/if}
-			{if $searchbox}
-				<ul id="searchbox" class="nav navbar-nav pull-right">
-					{include file="ko_searchbox.tpl"}
-				</ul>
-			{/if}
-		</div>
-	</nav>
+		</nav>
+		{/if}
+	</div>
+	{if $tpl_menu_akt == 'home'}
+		<div class="affix-single-placeholder"></div>
+	{else}
+		<div class="affix-double-placeholder"></div>
 	{/if}
 </header>
