@@ -32,8 +32,13 @@ function setup_container() {
 function dir_config() {
     echo "Preparing ~/config..."
     if [[ ! -d ../config ]]; then mkdir ../config; fi
-    cp -f default/config/address.rtf default/config/footer.php default/config/header.php \
-        default/config/ko-config.php default/config/leute_formular.inc ../config
+    if [[ $1 == "--force" ]]; then
+        cp -f default/config/address.rtf default/config/footer.php default/config/header.php \
+            default/config/ko-config.php default/config/leute_formular.inc ../config
+    else
+        cp -i default/config/address.rtf default/config/footer.php default/config/header.php \
+            default/config/ko-config.php default/config/leute_formular.inc ../config
+    fi
     chown --recursive $WEB_UID:$WEB_GID ../config
 }
 
@@ -75,24 +80,31 @@ function dir_webfolders() {
 
 function main() {
     echo "# OpenKool setup script #"
-    echo ""
+    echo
     cd $(dirname $0)
 
-    if [[ $1 == "--docker-build" ]]; then
+    if [[ $1 == "--help" ]]; then
+        echo "Usage: setup.sh [OPTION]"
+        echo
+        echo "  --docker-build    Perform steps for building a docker image"
+        echo "  --force           Override config files without confirmation"
+        echo "  --help            Show this help message"
+        echo
+    elif [[ $1 == "--docker-build" ]]; then
         setup_container
         dir_download
         dir_templates_c
 
-        echo ""
+        echo
         echo "Initial setup finished. You need to run the script again with all Docker volumes mounted."
-        echo ""
+        echo
     else
         if grep -qa docker /proc/1/cgroup; then
-            dir_config
+            dir_config $@
             dir_my_images
             dir_webfolders
         else
-            dir_config
+            dir_config $@
             dir_download
             dir_my_images
             dir_templates_c
