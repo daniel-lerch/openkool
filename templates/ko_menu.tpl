@@ -24,7 +24,7 @@
 						{if $langs|@count > 1}
 							<ul class="dropdown-menu dropdown-menu-right" role="menu">
 							{foreach from=$langs item="lang"}
-								<li{if $lang == $ses_lang} class="active"{/if}><a href="index.php?set_lang={$lang}">{$pre}{strtoupper str=$lang}{$post}</a></li>
+								<li {if $lang == $ses_lang}class="active"{/if}><a href="index.php?set_lang={$lang}">{$pre}{strtoupper str=$lang}{$post}</a></li>
 							{/foreach}
 							</ul>
 						{/if}
@@ -87,8 +87,8 @@
 			</div>
 			<div class="collapse navbar-collapse" id="ko_menu">
 				<ul class="nav navbar-nav">
-					<li{if $tpl_menu_akt == "home"} class="active"{/if}>
-						<a href="/index.php">{ll key="submenu_home_title_home"}</a>
+					<li {if $tpl_menu_akt == "home"}class="active"{/if}>
+						<a href="{$ko_path}index.php">{ll key="submenu_home_title_home"}</a>
 					</li>
 					{foreach from=$tpl_menu item=menu}
 						<li class="dropdown{if $menu.id == $tpl_menu_akt} active{/if}">
@@ -141,7 +141,7 @@
 			</ul>
 			{if $settings_page}
 				<ul class="nav navbar-nav pull-right">
-					<li{if $settings_page == $tpl_action || $settings_page == $tpl_ses_show} class="active"{/if}><a href="?action={$settings_page}" title="{ll key="submenu_`$tpl_menu_akt`_`$settings_page`"}"><span class="glyphicon glyphicon-cog icon-line-height"></span></a></li>
+					<li {if $settings_page == $tpl_action || $settings_page == $tpl_ses_show}class="active"{/if}><a href="?action={$settings_page}" title="{ll key="submenu_`$tpl_menu_akt`_`$settings_page`"}"><span class="glyphicon glyphicon-cog icon-line-height"></span></a></li>
 				</ul>
 			{/if}
 			{if $searchbox}

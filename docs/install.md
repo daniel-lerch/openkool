@@ -19,6 +19,6 @@ You can easily migrate your data from an existing kOOL instance to an OpenKool i
 4. Skip database initialization in the web installation wizard
 
 ## Install in a subfolder
-It is possible to run OpenKool with a specific path base like https://domain.tld/kool.
+It is possible to run OpenKool with a specific path base like https://domain.tld/kool. However, it is not recommended because most of the JavaScript code does not respect custom path bases.
 If you are using the Docker container, you have to add an `Alias` directive to the site configuration in `/etc/apache2/sites-available/000-default.conf` and mount this file outside of the container to persist your changes.
 In any deployment you have to prepend the `RewriteCond` patterns with your pathbase in the `.htaccess` file.
