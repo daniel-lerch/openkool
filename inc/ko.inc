@@ -17278,7 +17278,7 @@ function ko_get_new_serie_id($table) {
 /**
 	* Erstellt einen Log-Eintrag zu definierten Typ. Timestamp und UserID werden automatisch eingefügt
 	*/
-function ko_log($type, $msg, &$id) {
+function ko_log($type, $msg, &$id = null) {
 	global $EMAIL_LOG_TYPES, $BASE_URL;
 
 	//Create db entry
