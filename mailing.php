@@ -31,36 +31,16 @@ if (isset($argc) && $argc >= 1) {
 		$mail_id_in = trim($argv[2]);
 		$recipient_in = trim($argv[3]);
 		if (!$mail_id_in || !$recipient_in || !is_numeric($mail_id_in)) {
-			ko_mailing_help();
-			die;
+			die("This script can only be called from console for testing purposes. Usage >> php mailing.php -t <mail_id> <recipient_mail|recipient_id> \n");
 		} else {
 			$ko_path = './';
 			require_once('inc/ko.inc');
-			print (ko_mailing_main (true, false, $mail_id_in, $recipient_in)."\n");
+			print (ko_mailing_main (true, $mail_id_in, $recipient_in)."\n");
 			exit;
 		}
-	} else if ($argv[1] == '-v') {
-		$ko_path = './';
-		require_one('inc/ko.inc');
-		ko_mailing_main(false, true);
 	} else {
-		ko_mailing_help();
-		die;
+		die("This script can only be called from console for testing purposes. Usage >> php mailing.php -t <mail_id> <recipient_mail|recipient_id> \n");
 	}
-}
-
-function ko_mailing_help() {
-	print <<<EOF
-
-This script can only be called from console for testing purposes. Usage:
-
-mailing.php -t <mail_id> <recipient_mail|recipient_id>
-\tLoads a message from the database and delivers it the specified recipient.
-
-mailing.php -v
-\tRetrieves and processes messages with verbose output.
-\n
-EOF;
 }
 
 // Constants: Mailing status
@@ -69,11 +49,11 @@ define('MAILING_STATUS_CONFIRMED', 2);
 define('MAILING_STATUS_SENT', 3);
 
 
-function ko_mailing_main ($test = false, $verbose = false, $mail_id_in = null, $recipient_in = null) {
+function ko_mailing_main ($test = false, $mail_id_in = null, $recipient_in = null) {
 	global 	$MODULES,$MAILING_PARAMETER, $BASE_PATH, $MAIL_TRANSPORT,
 				  $access,$domain,$edit_base_link,
 				  $done_error_mails,$return_path,$imap,$max_recipients,$sender_email,
-				  $RECTYPES;
+				  $RECTYPES,$verbose;
 
 	error_reporting(E_ALL);
 	define ('CRLF', "\r\n");
@@ -240,16 +220,16 @@ function ko_mailing_main ($test = false, $verbose = false, $mail_id_in = null, $
 	$imap_status = imap_check($imap);
 	$num_mails = $imap_status->Nmsgs;
 
-	ko_log('mailing_started', "There are $num_mails unread messages for further processing");
-
 	if($num_mails > 0) {
+		ko_log('mailing_started', "There are $num_mails unread messages for further processing");
+
 		//Get mails
 		$mails = array();
 		$response = imap_fetch_overview($imap,'1:'.$num_mails);
 		foreach ($response as $msg) $mails[$msg->msgno] = (array)$msg;
 
 		foreach($mails as $mail) {
-			if ($verbose) print "Parsing message from $mail[from]...";
+			if ($verbose) print "Parsing message from $mail[from]..." . PHP_EOL;
 
 			//Get header info
 			$header = imap_rfc822_parse_headers(imap_fetchheader($imap, $mail['msgno']));
@@ -258,7 +238,7 @@ function ko_mailing_main ($test = false, $verbose = false, $mail_id_in = null, $
 			//If one mail has two or more recipients, the same mail will be stored multiple times, so we ignore all but the first one
 			//For each mail all recipients will be handled below, so no need to work through all copies
 			if(in_array($mail['message_id'], $done_mailids)) {
-				if ($verbose) print "Deleting duplicate message $mail[message_id]...";
+				if ($verbose) print "Deleting duplicate message $mail[message_id]..." . PHP_EOL;
 				imap_delete($imap, $mail['msgno']);
 				continue;
 			}
@@ -289,7 +269,7 @@ function ko_mailing_main ($test = false, $verbose = false, $mail_id_in = null, $
 			//Check sender email and find corresponding kOOL login
 			$login_id = ko_mailing_get_sender_login($mail['from']);
 			if($login_id) {
-				if ($verbose) print "Found a login $login_id for $mail[from]";
+				if ($verbose) print "Found a login (id $login_id) for $mail[from]" . PHP_EOL;
 
 				ko_get_login($login_id, $login);
 				$no_access = FALSE;
@@ -459,6 +439,7 @@ function ko_mailing_main ($test = false, $verbose = false, $mail_id_in = null, $
 					} else {
 						if(sizeof($groups) == 1) {
 							$group = array_shift($groups);
+							if ($verbose) print "Mail alias matches group $group[id]" . PHP_EOL;
 							$error = ko_mailing_check_group($login, $group['id'], '', $no_mod, $unsetLogin);
 							if($error) {
 								ko_mailing_error($login, $error, $mail, $to);
@@ -481,6 +462,7 @@ function ko_mailing_main ($test = false, $verbose = false, $mail_id_in = null, $
 							}
 						} else if(sizeof($smallgroups) == 1) {
 							$sg = array_shift($smallgroups);
+							if ($verbose) print "Mail alias matches smallgroup $sg[id]" . PHP_EOL;
 							$error = ko_mailing_check_smallgroup($login, $sg['id'], NULL, $unsetLogin);
 							if($error) {
 								ko_mailing_error($login, $error, $mail, $to);
@@ -492,6 +474,7 @@ function ko_mailing_main ($test = false, $verbose = false, $mail_id_in = null, $
 							}
 						} else if(sizeof($filters) == 1) {
 							$fp = array_shift($filters);
+							if ($verbose) print "Mail alias matches filter preset $fp[id]" . PHP_EOL;
 							$error = ko_mailing_check_filter($login, $fp['id'], $unsetLogin);
 							if($error) {
 								ko_mailing_error($login, $error, $mail, $to);
@@ -523,13 +506,15 @@ function ko_mailing_main ($test = false, $verbose = false, $mail_id_in = null, $
 			}
 
 			//Delete message after it has been processed
-			if ($verbose) print "Processing finished. Deleting message $mail[message_id]...";
+			if ($verbose) print "Processing finished. Deleting message $mail[message_id]..." . PHP_EOL;
 			imap_delete($imap, $mail['msgno']);
 
 			//Store message id, so it won't be processed again (two recipients generate 2 emails each with both recipients)
 			$done_mailids[] = $mail['message_id'];
 
 		}//foreach(mails as mail)
+	} else if ($verbose) {
+		print "No unread messages to be processed" . PHP_EOL;
 	}
 
 	//Close connection and expunge

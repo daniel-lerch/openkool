@@ -3,6 +3,7 @@
 *  Copyright notice
 *
 *  (c) 2003-2015 Renzo Lauper (renzo@churchtool.org)
+*  (c) 2019-2020 Daniel Lerch
 *  All rights reserved
 *
 *  This script is part of the kOOL project. The kOOL project is
@@ -28,6 +29,16 @@ error_reporting(E_ALL);
 
 //Only allow call from cli
 if(!isset($argc) || $argc < 1) exit;
+
+$verbose = false;
+
+if($argc > 1) {
+	if ($argv[1] == '--help') {
+		die("Usage: scheduler.php [--verbose]");
+	} else if ($argv[1] == '--verbose') {
+		$verbose = true;
+	}
+}
 
 //Get ko_path from server settings
 $ko_path = realpath(dirname($_SERVER['SCRIPT_FILENAME']));
