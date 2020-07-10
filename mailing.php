@@ -208,6 +208,9 @@ function ko_mailing_main ($test = false, $mail_id_in = null, $recipient_in = nul
 
 	//Exit if connection to IMAP failed
 	if($imap == FALSE) {
+		$last_error = imap_last_error();
+		$comment = getLL('mailing_error_imap') . (($last_error == false) ? getLL('mailing_error_imap_default') : $last_error);
+		if ($verbose) print $comment . PHP_EOL;
 		db_insert_data('ko_log', array('type' => 'mailing_error', 'comment' => getLL('mailing_error_imap'), 'date' => date('Y-m-d H:i:s')));
 		return;
 	}
@@ -439,7 +442,7 @@ function ko_mailing_main ($test = false, $mail_id_in = null, $recipient_in = nul
 					} else {
 						if(sizeof($groups) == 1) {
 							$group = array_shift($groups);
-							if ($verbose) print "Mail alias matches group $group[id]" . PHP_EOL;
+							if ($verbose) print "Mail alias matches group $group[name] (id $group[id])" . PHP_EOL;
 							$error = ko_mailing_check_group($login, $group['id'], '', $no_mod, $unsetLogin);
 							if($error) {
 								ko_mailing_error($login, $error, $mail, $to);
