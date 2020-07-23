@@ -112,7 +112,7 @@
 											{assign var="menuAction" value=$module_settings_action.$menuId }
 											{assign var="menuLLKey" value="submenu_`$menuId`_`$menuAction`"}
 											{if !$firstSubMenuPoint}<li class="divider" role="presentation"></li>{/if}
-											<li class="{if $menu.id == $tpl_menu_akt && $tpl_action == $menuAction}active{/if}"><a class="clearfix" href="/{$menuId}?action={$menuAction}"><span class="pull-left">{ll key=$menuLLKey}</span><i class="fa fa-cog dropdown-icon"></i></a></li>
+											<li class="{if $menu.id == $tpl_menu_akt && $tpl_action == $menuAction}active{/if}"><a class="clearfix" href="{$ko_path}{$menuId}/index.php?action={$menuAction}"><span class="pull-left">{ll key=$menuLLKey}</span><i class="fa fa-cog dropdown-icon"></i></a></li>
 										{/if}
 									</ul>
 								{/if}
