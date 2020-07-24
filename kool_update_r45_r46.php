@@ -94,7 +94,7 @@ foreach ($users as $user) {
 // transform admin default view in settings and userprefs
 db_update_data(
 	'ko_settings',
-	"WHERE `key` = 'default_view_admin' AND `value` = 'set_layout'",
+	"WHERE `key` = 'default_view_admin' AND (`value` = 'set_layout' OR `value` = 'set_allgemein')",
 	array('key' => 'default_view_admin', 'value' => 'admin_settings')
 );
 
@@ -102,7 +102,7 @@ $users = db_select_distinct('ko_userprefs', 'user_id', '', "WHERE `key` = 'defau
 
 foreach ($users as $user) {
 	$value = ko_get_userpref($user, 'default_view_admin');
-	if ($value == 'set_layout') ko_save_userpref($user, 'default_view_admin', 'admin_settings');
+	if ($value == 'set_layout' || $value == 'set_allgemein') ko_save_userpref($user, 'default_view_admin', 'admin_settings');
 }
 
 
