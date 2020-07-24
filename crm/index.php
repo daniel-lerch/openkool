@@ -3,6 +3,7 @@
  *  Copyright notice
  *
  *  (c) 2003-2015 Renzo Lauper (renzo@churchtool.org)
+ *  (c) 2019-2020 Daniel Lerch
  *  All rights reserved
  *
  *  This script is part of the kOOL project. The kOOL project is
@@ -343,6 +344,7 @@ ko_set_submenues();
 	<meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1" />
 	<meta http-equiv="X-UA-Compatible" content="IE=edge">
 	<meta name="viewport" content="width=device-width, initial-scale=1" />
+	<link rel="icon" href="<?=$ko_path?>images/kOOL_logo.ico" />
 	<title><?php print "$HTML_TITLE: ".getLL("module_".$ko_menu_akt); ?></title>
 	<?php
 	print ko_include_css();

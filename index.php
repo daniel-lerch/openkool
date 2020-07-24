@@ -79,7 +79,7 @@ if(sizeof($hooks) > 0) foreach($hooks as $hook) include($hook);
 <meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1" />
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<link rel="SHORTCUT ICON" href="<?php print $ko_path; ?>images/kOOL_logo.ico" />
+<link rel="icon" href="<?=$ko_path?>images/kOOL_logo.ico" />
 <title><?php print $HTML_TITLE; ?></title>
 <?php
 print ko_include_css();
