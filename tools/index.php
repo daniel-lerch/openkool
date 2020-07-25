@@ -3,6 +3,7 @@
 *  Copyright notice
 *
 *  (c) 2003-2017 Renzo Lauper (renzo@churchtool.org)
+*  (c) 2019-2020 Daniel Lerch
 *  All rights reserved
 *
 *  This script is part of the kOOL project. The kOOL project is
@@ -896,6 +897,7 @@ ko_set_submenues();
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1" />
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
+<link rel="icon" href="<?=$ko_path?>images/kOOL_logo.ico" />
 <title><?php print "$HTML_TITLE: ".getLL("module_".$ko_menu_akt); ?></title>
 <?php
 print ko_include_css();
@@ -1022,7 +1024,7 @@ hook_show_case_add($_SESSION["show"]);
 
 </div>
 
-<?php include($ko_path . "footer.php"); ?>
+<?php include __DIR__ . '/../config/footer.php'; ?>
 
 </body>
 </html>

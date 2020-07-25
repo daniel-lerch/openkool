@@ -14,6 +14,7 @@
     },
     "require": {
         "phpseclib/phpseclib": "~2.0",
-        "phpoffice/phpspreadsheet": "^1.6"
+        "phpoffice/phpspreadsheet": "^1.6",
+        "smarty/smarty": "2.6.*"
     }
 }

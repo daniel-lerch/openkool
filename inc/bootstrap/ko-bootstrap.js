@@ -94,25 +94,13 @@ $(document).ready(function () {
 			}
 		});
 	}*/
-	$('#navbar-main').affix({
+	$('#navbar-placeholder').affix({
 		offset: {
-			top: $('#top-header').outerHeight(),
+			top: function() {
+				return $('#top-header').outerHeight();
+			},
 			bottom: 0
 		}
-	});
-	$('body').on('affix.bs.affix', '#navbar-main', function() {
-		$('#navbar-sec').addClass('affix');
-		$('#navbar-sec').css({
-			top: $(this).outerHeight()
-		});
-		$('#navbar-placeholder').height($(this).outerHeight() + $('#navbar-sec').outerHeight());
-	});
-	$('body').on('affix-top.bs.affix', '#navbar-main', function() {
-		$('#navbar-sec').removeClass('affix');
-		$('#navbar-sec').css({
-			top: 0
-		});
-		$('#navbar-placeholder').height(0);
 	});
 
 	// sidebar handling (show/hide)

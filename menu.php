@@ -3,6 +3,7 @@
  *  Copyright notice
  *
  *  (c) 2003-2017 Renzo Lauper (renzo@churchtool.org)
+ *  (c) 2019-2020 Daniel Lerch
  *  All rights reserved
  *
  *  This script is part of the kOOL project. The kOOL project is
@@ -48,7 +49,7 @@ $smarty->assign("ses_username", $_SESSION["ses_username"]);
 
 // include header
 ob_start();
-include $ko_path.'header.php';
+include __DIR__ . '/config/header.php';
 $smarty->assign("header_code", ob_get_clean());
 
 $user_menu_ = explode(",", ko_get_userpref($_SESSION["ses_userid"], "menu_order"));

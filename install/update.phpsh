@@ -1,9 +1,10 @@
-#! /usr/bin/php -q
+#!/usr/bin/env php
 <?php
 /***************************************************************
 *  Copyright notice
 *
 *  (c) 2003-2017 Renzo Lauper (renzo@churchtool.org)
+*  (c) 2019-2020 Daniel Lerch
 *  All rights reserved
 *
 *  This script is part of the kOOL project. The kOOL project is
@@ -25,7 +26,7 @@
 *  This copyright notice MUST APPEAR in all copies of the script!
 ***************************************************************/
 
-/**
+/*
 Possible options:
 
 -i: interactive

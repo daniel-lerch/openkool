@@ -3,6 +3,7 @@
  *  Copyright notice
  *
  *  (c) 2003-2017 Renzo Lauper (renzo@churchtool.org)
+ *  (c) 2019-2020 Daniel Lerch
  *  All rights reserved
  *
  *  This script is part of the kOOL project. The kOOL project is
@@ -101,7 +102,7 @@ foreach($PLUGINS as $p) {
 	<div class="container-fluid" id="header">
 		<div class="row">
 			<div class="col-sm-7 col-xs-12"  id="logo">
-				<?php include($BASE_PATH . 'header.php') ?>
+				<?php include __DIR__ . '/../config/header.php'; ?>
 			</div>
 			<div class="col-sm-5 hidden-xs"  id="title">
 				<h2><?= getLL('ko_consensus') ?></h2>

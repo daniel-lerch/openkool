@@ -1,0 +1,15 @@
+# Directories created by setup script
+/config/
+/download/
+/my_images/
+/templates_c/
+/.webfolders/
+/webfolders/
+
+# Development files
+/vendor/
+*.phar
+
+# Runtime configuration
+/log.txt
+/php.ini

@@ -4,6 +4,7 @@
  *  Copyright notice
  *
  *  (c) 2003-2017 Renzo Lauper (renzo@churchtool.org)
+ *  (c) 2019-2020 Daniel Lerch
  *  All rights reserved
  *
  *  This script is part of the kOOL project. The kOOL project is
@@ -80,7 +81,7 @@ define('MAILING_ERROR_BCC_HINT', 26);
 
 function ko_mailing_main ($test = false, $mail_id_in = null, $recipient_in = null) {
 
-	global $MAILING_PARAMETER,$BASE_PATH,$domain,$edit_base_link,$done_error_mails,$return_path,$imap,$max_recipients,$ko_menu_akt,$access;
+	global $MAILING_PARAMETER,$BASE_PATH,$domain,$edit_base_link,$done_error_mails,$return_path,$imap,$max_recipients,$ko_menu_akt,$access,$verbose;
 
 	error_reporting(E_ALL);
 	define ('CRLF', "\r\n");
@@ -207,6 +208,9 @@ function ko_mailing_main ($test = false, $mail_id_in = null, $recipient_in = nul
 
 	//Exit if connection to IMAP failed
 	if($imap == FALSE) {
+		$last_error = imap_last_error();
+		$comment = getLL('mailing_error_imap') . (($last_error == false) ? getLL('mailing_error_imap_default') : $last_error);
+		if ($verbose) print $comment . PHP_EOL;
 		db_insert_data('ko_log', array('type' => 'mailing_error', 'comment' => getLL('mailing_error_imap'), 'date' => date('Y-m-d H:i:s')));
 		return;
 	}
@@ -228,7 +232,10 @@ function ko_mailing_main ($test = false, $mail_id_in = null, $recipient_in = nul
 	//Get emails from pop account
 	$imap_status = imap_check($imap);
 	$num_mails = $imap_status->Nmsgs;
+
 	if($num_mails > 0) {
+		ko_log('mailing_started', "There are $num_mails unread messages for further processing");
+
 		//Get mails
 		$mails = array();
 		$response = imap_fetch_overview($imap,'1:'.$num_mails);
@@ -239,6 +246,8 @@ function ko_mailing_main ($test = false, $mail_id_in = null, $recipient_in = nul
 		//For each mail all recipients will be handled below, so no need to work through all copies
 		$unique_mails = array();
 		foreach($mails as $mail) {
+			if ($verbose) print "Parsing message from $mail[from]..." . PHP_EOL;
+
 			$rawheader = imap_fetchheader($imap, $mail['msgno']);
 
 			if(!isset($unique_mails[$mail['message_id']])) {
@@ -286,6 +295,8 @@ function ko_mailing_main ($test = false, $mail_id_in = null, $recipient_in = nul
 			$access = array();
 			$login_id = ko_mailing_get_sender_login($mail['from']);
 			if($login_id) {
+				if ($verbose) print "Found a login (id $login_id) for $mail[from]" . PHP_EOL;
+
 				ko_get_login($login_id,$login);
 			} else {
 				$login = null;
@@ -318,6 +329,7 @@ function ko_mailing_main ($test = false, $mail_id_in = null, $recipient_in = nul
 			}
 
 			//Delete message after it has been processed
+			if ($verbose) print "Processing finished. Deleting message $mail[message_id]..." . PHP_EOL;
 			imap_delete($imap, $mail['msgno']);
 
 		}//foreach(mails as mail)
@@ -532,6 +544,7 @@ function ko_mailing_handle_mail_group(&$mail,$mail_recipients,$login) {
 			} else {
 				if(sizeof($groups) == 1) {
 					$group = array_shift($groups);
+					if ($verbose) print "Mail alias matches group $group[name] (id $group[id])" . PHP_EOL;
 					$error = ko_mailing_check_group($login, $group['id'], '', $no_mod, $unsetLogin);
 					if($error) {
 						ko_mailing_error($login, $error, $mail, $to);
@@ -557,6 +570,7 @@ function ko_mailing_handle_mail_group(&$mail,$mail_recipients,$login) {
 					}
 				} else if(sizeof($smallgroups) == 1) {
 					$sg = array_shift($smallgroups);
+					if ($verbose) print "Mail alias matches smallgroup $sg[id]" . PHP_EOL;
 					$error = ko_mailing_check_smallgroup($login, $sg['id'], NULL, $unsetLogin);
 					if($error) {
 						ko_mailing_error($login, $error, $mail, $to);
@@ -568,6 +582,7 @@ function ko_mailing_handle_mail_group(&$mail,$mail_recipients,$login) {
 					}
 				} else if(sizeof($filters) == 1) {
 					$fp = array_shift($filters);
+					if ($verbose) print "Mail alias matches filter preset $fp[id]" . PHP_EOL;
 					$error = ko_mailing_check_filter($login, $fp['id'], $unsetLogin);
 					if($error) {
 						ko_mailing_error($login, $error, $mail, $to);
