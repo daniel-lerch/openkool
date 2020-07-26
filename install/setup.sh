@@ -33,12 +33,13 @@ function dir_config() {
     echo "Preparing ~/config..."
     if [[ ! -d ../config ]]; then mkdir ../config; fi
     if [[ $1 == "--force" ]]; then
-        cp -f default/config/address.rtf default/config/footer.php default/config/header.php \
-            default/config/ko-config.php default/config/leute_formular.inc ../config
+        cp -f default/config/.htaccess default/config/footer.php \
+            default/config/header.php default/config/ko-config.php ../config
     else
-        cp -i default/config/address.rtf default/config/footer.php default/config/header.php \
-            default/config/ko-config.php default/config/leute_formular.inc ../config
+        cp -i default/config/.htaccess default/config/footer.php \
+            default/config/header.php default/config/ko-config.php ../config
     fi
+    rm -f ../config/address.rtf ../config/leute_formular.inc
     chown --recursive $WEB_UID:$WEB_GID ../config
 }
 
@@ -61,7 +62,9 @@ function dir_my_images() {
     echo "Preparing ~/my_images..."
     if [[ ! -d ../my_images ]]; then mkdir ../my_images; fi
     if [[ ! -d ../my_images/cache ]]; then mkdir ../my_images/cache; fi
+    if [[ ! -d ../my_images/temp ]]; then mkdir ../my_images/temp; fi
     if [[ ! -d ../my_images/v11 ]]; then mkdir ../my_images/v11; fi
+    cp -f default/kota_ko_detailed_person_exports_template_1.docx ../my_images
     chown --recursive $WEB_UID:$WEB_GID ../my_images
 }
 

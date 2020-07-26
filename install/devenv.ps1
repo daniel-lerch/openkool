@@ -70,9 +70,14 @@ function GetPhpExecutable ([switch]$Ini) {
 function SetupFiles {
     Write-Host "Preparing ~/config..."
     EnsureExists -Path "..\config"
-    Copy-Item -Path ".\default\config\address.rtf",".\default\config\footer.php",".\default\config\header.php",`
-        ".\default\config\ko-config.php",".\default\config\leute_formular.inc" -Destination "..\config" -Force
-    # TODO: Handle permissions
+    Copy-Item -Path ".\default\config\.htaccess",".\default\config\footer.php",".\default\config\header.php",`
+        ".\default\config\ko-config.php" -Destination "..\config" -Force
+    if (Test-Path -Path "..\config\address.rtf" -PathType Leaf) {
+        Remove-Item -Path "..\config\address.rtf" -Force
+    }
+    if (Test-Path -Path "..\config\leute_formular.inc" -PathType Leaf) {
+        Remove-Item -Path "..\config\leute_formular.inc" -Force
+    }
 
     Write-Host "Preparing ~/download..."
     EnsureExists -Path "../download"
@@ -85,22 +90,16 @@ function SetupFiles {
     Copy-Item -Path ".\default\download\index2.php" -Destination "..\download\excel\index.php" -Force
     Copy-Item -Path ".\default\download\index2.php" -Destination "..\download\pdf\index.php" -Force
     Copy-Item -Path ".\default\download\index2.php" -Destination "..\download\word\index.php" -Force
-    # TODO: Handle permissions
 
     Write-Host "Preparing ~/my_images..."
     EnsureExists -Path "..\my_images"
     EnsureExists -Path "..\my_images\cache"
+    EnsureExists -Path "..\my_images\temp"
     EnsureExists -Path "..\my_images\v11"
-    # TODO: Handle permissions
+    Copy-Item -Path ".\default\kota_ko_detailed_person_exports_template_1.docx" -Destination "..\my_images" -Force
     
     Write-Host "Preparing ~/templates_c..."
     EnsureExists -Path "..\templates_c"
-    # TODO: Handle permissions
-
-    Write-Host "Preparing ~/webfolders and ~/.webfolders..."
-    EnsureExists -Path "..\webfolders"
-    EnsureExists -Path "..\.webfolders"
-    # TODO: Handle permissions
 }
 
 function SetupEnvironment {
@@ -142,7 +141,7 @@ function SetupEnvironment {
 function InvokeComposer {
     Write-Host "Invoking composer $Composer..."
     Write-Host ""
-    $executablePath = GetPhpExecutable
+    $executablePath = (GetPhpExecutable -Ini)
     Start-Process -FilePath $executablePath -ArgumentList "-c",".\php.ini",".\composer.phar",$Composer -NoNewWindow -Wait
 }
 

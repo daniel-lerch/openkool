@@ -1,4 +1,4 @@
-FROM php:5.6-apache
+FROM php:7.1-apache
 
 RUN set -x \
     && apt-get update \
@@ -12,6 +12,8 @@ RUN set -x \
 # Install PHP extensions
     && docker-php-ext-configure mysqli \
     && docker-php-ext-install mysqli \
+    && docker-php-ext-configure zip \
+    && docker-php-ext-install zip \
     && docker-php-ext-configure imap --with-kerberos --with-imap-ssl \
     && docker-php-ext-install imap \
     && docker-php-ext-configure gd --with-jpeg-dir=/usr/include \
