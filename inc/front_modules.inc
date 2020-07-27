@@ -3,6 +3,7 @@
 *  Copyright notice
 *
 *  (c) 2003-2017 Renzo Lauper (renzo@churchtool.org)
+*  (c) 2019-2020 Daniel Lerch
 *  All rights reserved
 *
 *  This script is part of the kOOL project. The kOOL project is
@@ -928,7 +929,8 @@ function ko_fm_today($uid, $pos) {
 					}
 					if(!$foundChanges) continue;
 				} else {  //..else show all changes
-					$tpl_person[$p_counter]['log'] = '<br />'.ko_html(substr($log['comment'], strpos($log['comment'], ':')+2));
+					$comment_changes = str_replace('-->', '»', substr($log['comment'], strpos($log['comment'], ':')+2));
+					$tpl_person[$p_counter]['log'] = '<br />'.ko_html(stripcslashes($comment_changes));
 				}
 
 				$tpl_person[$p_counter]['user'] = $logins[$log['user_id']]['login'];
