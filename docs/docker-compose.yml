@@ -2,13 +2,11 @@ version: '2'
 
 services:
   app:
-    image: daniellerch/openkool:r46
+    image: daniellerch/openkool:r47
     restart: unless-stopped
     volumes:
       - config:/var/www/html/config
       - my_images:/var/www/html/my_images
-      - webfolders:/var/www/html/webfolders
-      - .webfolders:/var/www/html/.webfolders
   db:
     image: mariadb:latest
     restart: unless-stopped
