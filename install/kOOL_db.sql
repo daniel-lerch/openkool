@@ -1150,7 +1150,7 @@ INSERT INTO `ko_settings` VALUES('xls_default_font', '');
 INSERT INTO `ko_settings` VALUES('xls_title_font', '');
 INSERT INTO `ko_settings` VALUES('xls_title_bold', '1');
 INSERT INTO `ko_settings` VALUES('xls_title_color', 'blue');
-INSERT INTO `ko_settings` VALUES('default_view_admin', 'logins');
+INSERT INTO `ko_settings` VALUES('default_view_admin', 'admin_settings');
 INSERT INTO `ko_settings` VALUES('default_view_daten', 'show_cal_monat');
 INSERT INTO `ko_settings` VALUES('default_view_leute', 'show_all');
 INSERT INTO `ko_settings` VALUES('default_view_reservation', 'show_cal_monat');
