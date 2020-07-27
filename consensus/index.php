@@ -76,6 +76,7 @@ if($do_action == '') {
 	<meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1" />
 	<meta http-equiv="X-UA-Compatible" content="IE=edge">
 	<meta name="viewport" content="width=device-width, initial-scale=1" />
+	<link rel="icon" href="<?=$ko_path?>images/webclip/favicon.ico" />
 	<title><?php print $HTML_TITLE.': '.getLL('ko_consensus'); ?></title>
 <?php
 print '<script type="text/javascript" src="' . $ko_path . 'inc/jquery/jquery.js?'.filemtime($ko_path.'inc/jquery/jquery.js').'"></script>';

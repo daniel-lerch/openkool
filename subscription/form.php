@@ -155,6 +155,7 @@ function ko_subscription_render_form_page($content,$title = null, &$formRow) {
 <meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1" />
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="icon" href="<?=$ko_path?>images/webclip/favicon.ico" />
 <title><?= "$HTML_TITLE: ".($title ?: getLL("module_".$ko_menu_akt)) ?></title>
 <?php
 foreach(array(
