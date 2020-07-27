@@ -3,10 +3,9 @@
 /download/
 /my_images/
 /templates_c/
-/.webfolders/
-/webfolders/
 
 # Development files
+/.vs/
 /vendor/
 *.phar
 
