@@ -25,7 +25,7 @@
 *  This copyright notice MUST APPEAR in all copies of the script!
 ***************************************************************/
 
-error_reporting(E_ALL);
+error_reporting(E_ALL & ~E_NOTICE & ~E_DEPRECATED);
 
 //Only allow call from cli
 if(!isset($argc) || $argc < 1) exit;

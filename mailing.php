@@ -333,6 +333,8 @@ function ko_mailing_main ($test = false, $mail_id_in = null, $recipient_in = nul
 			imap_delete($imap, $mail['msgno']);
 
 		}//foreach(mails as mail)
+	} else if ($verbose) {
+		print "No unread messages to be processed" . PHP_EOL;
 	}
 
 	//Close connection and expunge
@@ -357,7 +359,7 @@ function ko_mailing_main ($test = false, $mail_id_in = null, $recipient_in = nul
 
 
 function ko_mailing_handle_mail_group(&$mail,$mail_recipients,$login) {
-	global $access,$domain,$imap,$sender_email,$RECTYPES;
+	global $access,$domain,$imap,$sender_email,$RECTYPES,$verbose;
 
 	if($login) {
 		$no_access = FALSE;
