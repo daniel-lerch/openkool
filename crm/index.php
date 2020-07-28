@@ -630,7 +630,7 @@ ko_get_outer_submenu_code('crm');
 
 </div>
 
-<?php include($ko_path . "footer.php"); ?>
+<?php include __DIR__ . '/../config/footer.php'; ?>
 
 </body>
 </html>

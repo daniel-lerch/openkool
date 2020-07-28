@@ -215,7 +215,7 @@ if($formRow['layout']) {
 		<?php if($_GET['mode'] != 'iframe') { ?>
 			<div id="header">
 				<div id="default-header">
-					<?php include $BASE_PATH.'header.php'; ?>
+					<?php include __DIR__ . '/../config/header.php'; ?>
 				</div>
 			</div>
 		<?php } ?>
