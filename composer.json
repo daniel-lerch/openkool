@@ -1,4 +1,6 @@
 {
+    "name": "daniel-lerch/openkool",
+    "description": "Open source fork of kOOL - Online church organization tool",
     "require-dev": {
         "behat/behat": "^3.4",
         "behat/mink-extension": "^2.0",
@@ -13,6 +15,13 @@
         }
     },
     "require": {
+        "php": ">=7.1.0",
+        "ext-gd": "*",
+        "ext-gettext": "*",
+        "ext-imap": "*",
+        "ext-mbstring": "*",
+        "ext-mysqli": "*",
+        "ext-openssl": "*",
         "phpseclib/phpseclib": "~2.0",
         "phpoffice/phpspreadsheet": "^1.6",
         "smarty/smarty": "2.6.*"

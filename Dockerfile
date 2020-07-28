@@ -10,14 +10,16 @@ RUN set -x \
         libc-client-dev libkrb5-dev libpng-dev libjpeg-dev \
     && rm -rf /var/lib/apt/list/* \
 # Install PHP extensions
+    && docker-php-ext-configure gd --with-jpeg-dir=/usr/include \
+    && docker-php-ext-install gd \
+    && docker-php-ext-configure gettext \
+    && docker-php-ext-install gettext \
+    && docker-php-ext-configure imap --with-kerberos --with-imap-ssl \
+    && docker-php-ext-install imap \
     && docker-php-ext-configure mysqli \
     && docker-php-ext-install mysqli \
     && docker-php-ext-configure zip \
     && docker-php-ext-install zip \
-    && docker-php-ext-configure imap --with-kerberos --with-imap-ssl \
-    && docker-php-ext-install imap \
-    && docker-php-ext-configure gd --with-jpeg-dir=/usr/include \
-    && docker-php-ext-install gd \
 # Configure environment
     && a2enmod rewrite \
     && sed -i \
