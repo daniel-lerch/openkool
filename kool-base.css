@@ -9698,6 +9698,18 @@ div.form_ft_header h4.panel-title {
 #wait_message i.fa {
   font-size: 1.4em;
 }
+#navbar-placeholder.affix {
+  position: fixed;
+  top: 0;
+  width: 100%;
+  z-index: 1000;
+}
+.affix + .affix-single-placeholder {
+  height: 37px;
+}
+.affix + .affix-double-placeholder {
+  height: 74px;
+}
 #navbar-main {
   border-bottom: none;
   width: 100%;
@@ -9753,12 +9765,6 @@ div.form_ft_header h4.panel-title {
 #navbar-main .sidebar-toggle .icon-bar {
   background-color: #fff;
 }
-#navbar-main.affix,
-#navbar-main.affix-bottom {
-  position: fixed;
-  left: 0px;
-  top: 0px;
-}
 #navbar-sec {
   width: 100%;
   background-color: #03437b;
@@ -9767,12 +9773,6 @@ div.form_ft_header h4.panel-title {
   margin-bottom: 0px;
   position: relative;
   z-index: 999;
-}
-#navbar-sec.affix,
-#navbar-sec.affix-bottom {
-  position: fixed;
-  left: 0px;
-  top: 37px;
 }
 #navbar-sec .navbar-text {
   color: #dfdde8;

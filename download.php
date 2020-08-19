@@ -3,6 +3,7 @@
 *  Copyright notice
 *
 *  (c) 2003-2020 Renzo Lauper (renzo@churchtool.org)
+*  (c) 2019-2020 Daniel Lerch
 *  All rights reserved
 *
 *  This script is part of the kOOL project. The kOOL project is
@@ -39,8 +40,12 @@ switch($_GET["action"]) {
 		//Find empty file
 		if($full_path == '') ko_die('No file found');
 		//Replace \ with / for windows systems otherwise the check below will always trigger an error
-		if(DIRECTORY_SEPARATOR == '\\') $full_path = str_replace('\\', '/', $full_path);
-		if(substr($full_path, 0, strlen($BASE_PATH."download")) != ($BASE_PATH."download")) {
+		$reference = $BASE_PATH.'download';
+		if(DIRECTORY_SEPARATOR == '\\') {
+			$full_path = str_replace('\\', '/', $full_path);
+			$reference = str_replace('\\', '/', $reference);
+		}
+		if(substr_compare($full_path, $reference, 0, strlen($reference)) != 0) {
 			trigger_error('Not allowed download file: '.$_GET['file'], E_USER_ERROR);
 			exit;
 		}

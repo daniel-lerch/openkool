@@ -1,9 +1,23 @@
-.*.swp
-*.DS_Store
+# Directories created by setup script
+/config/
+/download/
+/my_images/
+/templates_c/
+
+# Development files
 .idea/
+.sass-cache/
+.vs/
+/tests/screenshots/
+/tests/reports/
+/vendor/
+
+*.DS_Store
+*.phar
+.*.swp
 .vimrc
 cscope.out
-.sass-cache/
-tests/screenshots/
-tests/reports/
-vendor/*
+
+# Runtime configuration
+/log.txt
+/php.ini

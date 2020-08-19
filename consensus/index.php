@@ -3,6 +3,7 @@
  *  Copyright notice
  *
  *  (c) 2003-2020 Renzo Lauper (renzo@churchtool.org)
+ *  (c) 2019-2020 Daniel Lerch
  *  All rights reserved
  *
  *  This script is part of the kOOL project. The kOOL project is
@@ -84,6 +85,7 @@ if ($do_action == '') {
 	<meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1"/>
 	<meta http-equiv="X-UA-Compatible" content="IE=edge">
 	<meta name="viewport" content="width=device-width, initial-scale=1" />
+	<link rel="icon" href="<?=$ko_path?>images/webclip/favicon.ico" />
 	<title><?php print $HTML_TITLE.': '.getLL('ko_consensus'); ?></title>
 <?php
 print '<script type="text/javascript" src="' . $ko_path . 'inc/jquery/jquery.js?'.filemtime($ko_path.'inc/jquery/jquery.js').'"></script>';
@@ -134,7 +136,7 @@ foreach($PLUGINS as $p) {
 		<div class="container-fluid" id="header">
 			<div class="row">
 				<div class="col-sm-7 col-xs-12" id="logo">
-					<?php include($BASE_PATH . 'header.php') ?>
+					<?php include __DIR__ . '/../config/header.php'; ?>
 				</div>
 				<div class="col-sm-5 hidden-xs" id="title">
 					<h2><?= getLL('ko_consensus') ?></h2>

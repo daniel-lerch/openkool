@@ -1,0 +1,19 @@
+version: '2'
+
+services:
+  app:
+    image: daniellerch/openkool:r47
+    restart: unless-stopped
+    volumes:
+      - config:/var/www/html/config
+      - my_images:/var/www/html/my_images
+  db:
+    image: mariadb:latest
+    restart: unless-stopped
+    environment:
+      - MYSQL_ROOT_PASSWORD=
+      - MYSQL_DATABASE=kool
+      - MYSQL_USER=kool
+      - MYSQL_PASSWORD=
+    volumes:
+      - db:/var/lib/mysql

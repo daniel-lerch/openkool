@@ -3,6 +3,7 @@
 *  Copyright notice
 *
 *  (c) 2003-2020 Renzo Lauper (renzo@churchtool.org)
+*  (c) 2019-2020 Daniel Lerch
 *  All rights reserved
 *
 *  This script is part of the kOOL project. The kOOL project is
@@ -439,6 +440,11 @@ if(! function_exists("array_key_last")) {
 
 
 
+// Configure autoloading
+if ($ko_menu_akt != 'ldap' && FALSE === include __DIR__ . '/../vendor/autoload.php') {
+	exit('Composer autoloading could not be found. Please make sure that you have run \'composer install\' before.');
+}
+
 if($ko_menu_akt != 'ldap') {
 	require_once($ko_path.'inc/swiftmailer/swift_required.php');
 
@@ -450,9 +456,6 @@ if($ko_menu_akt != 'ldap') {
 	$NOTIFIER_LOG_FILE_NAME = 'log.txt';
 }
 
-if($ko_menu_akt != 'ldap') {
-	require($ko_path.'vendor/autoload.php');
-}
 
 
 //Set log types, that cause server to send an email to the warranty email
@@ -686,20 +689,12 @@ if(!defined('DEBUG_INSERT')) define('DEBUG_INSERT',FALSE);
 if(!defined('DEBUG_DELETE')) define('DEBUG_DELETE',FALSE);
 
 
-//Get base_path from _SERVER if not set during first installation
-if($ko_menu_akt == "install" && !$BASE_PATH) {
-	$bdir = str_replace("install", "", dirname($_SERVER['SCRIPT_NAME']));
-	$droot = $_SERVER["DOCUMENT_ROOT"];
-	if(substr($droot, -1) == "/") $droot = substr($droot, 0, -1);
-	$BASE_PATH = $droot.$bdir;
-}
-if($BASE_PATH != "" && substr($BASE_PATH, -1) != "/") $BASE_PATH .= "/";
+//Set default $BASE_PATH from current location (necessary during first installation)
+if (empty($BASE_PATH)) $BASE_PATH = dirname(__DIR__);
+if (substr($BASE_PATH, -1) != '/') $BASE_PATH .= '/';
 
 //Hooks (Plugins)
 include($BASE_PATH."inc/hooks.inc");
-
-//Set include path for smarty
-if($INCLUDE_PATH_SMARTY) set_include_path($INCLUDE_PATH_SMARTY.PATH_SEPARATOR.get_include_path());
 
 
 //Connect to the database
@@ -21968,6 +21963,10 @@ function format_userinput($s, $type, $enforce=FALSE, $length=0, $replace=array()
 			return mysqli_real_escape_string(db_get_link(), $s);
 		break;
 
+		case "unescaped":
+			return addslashes($s);
+		break;
+
 		case "all":
 			return TRUE;
 		break;
@@ -23014,26 +23013,26 @@ function ko_include_css($files='') {
 
 
 	//Include favicon and webclip
-	$r .= '
-<link rel="apple-touch-icon" sizes="57x57" href="/images/webclip/apple-icon-57x57.png">
-<link rel="apple-touch-icon" sizes="60x60" href="/images/webclip/apple-icon-60x60.png">
-<link rel="apple-touch-icon" sizes="72x72" href="/images/webclip/apple-icon-72x72.png">
-<link rel="apple-touch-icon" sizes="76x76" href="/images/webclip/apple-icon-76x76.png">
-<link rel="apple-touch-icon" sizes="114x114" href="/images/webclip/apple-icon-114x114.png">
-<link rel="apple-touch-icon" sizes="120x120" href="/images/webclip/apple-icon-120x120.png">
-<link rel="apple-touch-icon" sizes="144x144" href="/images/webclip/apple-icon-144x144.png">
-<link rel="apple-touch-icon" sizes="152x152" href="/images/webclip/apple-icon-152x152.png">
-<link rel="apple-touch-icon" sizes="180x180" href="/images/webclip/apple-icon-180x180.png">
-<link rel="icon" type="image/png" sizes="192x192"  href="/images/webclip/android-icon-192x192.png">
-<link rel="icon" type="image/png" sizes="32x32" href="/images/webclip/favicon-32x32.png">
-<link rel="icon" type="image/png" sizes="96x96" href="/images/webclip/favicon-96x96.png">
-<link rel="icon" type="image/png" sizes="16x16" href="/images/webclip/favicon-16x16.png">
-<link rel="manifest" href="/images/webclip/manifest.json">
-<meta name="msapplication-TileColor" content="#ffffff">
-<meta name="msapplication-TileImage" content="/images/webclip/ms-icon-144x144.png">
-<meta name="theme-color" content="#ffffff">
-<link rel="shortcut icon" href="/images/webclip/favicon.ico" type="image/x-icon">
-<link rel="icon" href="/images/webclip/favicon.ico" type="image/x-icon">';
+	$r .= "
+<link rel=\"apple-touch-icon\" sizes=\"57x57\" href=\"${ko_path}images/webclip/apple-icon-57x57.png\">
+<link rel=\"apple-touch-icon\" sizes=\"60x60\" href=\"${ko_path}images/webclip/apple-icon-60x60.png\">
+<link rel=\"apple-touch-icon\" sizes=\"72x72\" href=\"${ko_path}images/webclip/apple-icon-72x72.png\">
+<link rel=\"apple-touch-icon\" sizes=\"76x76\" href=\"${ko_path}images/webclip/apple-icon-76x76.png\">
+<link rel=\"apple-touch-icon\" sizes=\"114x114\" href=\"${ko_path}images/webclip/apple-icon-114x114.png\">
+<link rel=\"apple-touch-icon\" sizes=\"120x120\" href=\"${ko_path}images/webclip/apple-icon-120x120.png\">
+<link rel=\"apple-touch-icon\" sizes=\"144x144\" href=\"${ko_path}images/webclip/apple-icon-144x144.png\">
+<link rel=\"apple-touch-icon\" sizes=\"152x152\" href=\"${ko_path}images/webclip/apple-icon-152x152.png\">
+<link rel=\"apple-touch-icon\" sizes=\"180x180\" href=\"${ko_path}images/webclip/apple-icon-180x180.png\">
+<link rel=\"icon\" type=\"image/png\" sizes=\"192x192\"  href=\"${ko_path}images/webclip/android-icon-192x192.png\">
+<link rel=\"icon\" type=\"image/png\" sizes=\"32x32\" href=\"${ko_path}images/webclip/favicon-32x32.png\">
+<link rel=\"icon\" type=\"image/png\" sizes=\"96x96\" href=\"${ko_path}images/webclip/favicon-96x96.png\">
+<link rel=\"icon\" type=\"image/png\" sizes=\"16x16\" href=\"${ko_path}images/webclip/favicon-16x16.png\">
+<link rel=\"manifest\" href=\"${ko_path}images/webclip/manifest.json\">
+<meta name=\"msapplication-TileColor\" content=\"#ffffff\">
+<meta name=\"msapplication-TileImage\" content=\"${ko_path}images/webclip/ms-icon-144x144.png\">
+<meta name=\"theme-color\" content=\"#ffffff\">
+<link rel=\"shortcut icon\" href=\"${ko_path}images/webclip/favicon.ico\" type=\"image/x-icon\">
+<link rel=\"icon\" href=\"${ko_path}images/webclip/favicon.ico\" type=\"image/x-icon\">";
 
 	return $r;
 }//ko_include_css()

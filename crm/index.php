@@ -3,6 +3,7 @@
  *  Copyright notice
  *
  *  (c) 2003-2020 Renzo Lauper (renzo@churchtool.org)
+ *  (c) 2019-2020 Daniel Lerch
  *  All rights reserved
  *
  *  This script is part of the kOOL project. The kOOL project is
@@ -629,7 +630,7 @@ ko_get_outer_submenu_code('crm');
 
 </div>
 
-<?php include($ko_path . "footer.php"); ?>
+<?php include __DIR__ . '/../config/footer.php'; ?>
 
 </body>
 </html>

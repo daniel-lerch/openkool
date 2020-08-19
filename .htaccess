@@ -1,0 +1,23 @@
+# Prevent access to some application files
+<ifModule mod_rewrite.c>
+    RewriteEngine on
+
+    RewriteCond "%{REQUEST_URI}" "^\/.git" [OR]
+    RewriteCond "%{REQUEST_URI}" "^\/.docker" [OR]
+    RewriteCond "%{REQUEST_URI}" "^\/config" [OR]
+    RewriteCond "%{REQUEST_URI}" "^\/docs" [OR]
+    RewriteCond "%{REQUEST_URI}" "^\/install\/default" [OR]
+    RewriteCond "%{REQUEST_URI}" "^\/locallang" [OR]
+    RewriteCond "%{REQUEST_URI}" "^\/src" [OR]
+    RewriteCond "%{REQUEST_URI}" "^\/templates" [OR]
+    RewriteCond "%{REQUEST_URI}" "^\/templates_c" [OR]
+    RewriteCond "%{REQUEST_URI}" "^\/vendor" [OR]
+    RewriteCond "%{REQUEST_URI}" "^\/composer" [OR]
+    RewriteCond "%{REQUEST_URI}" "^\/Dockerfile$" [OR]
+    RewriteCond "%{REQUEST_URI}" "^\/LICENSE$" [OR]
+    RewriteCond "%{REQUEST_URI}" "^\/README\.md$" [OR]
+    RewriteCond "%{REQUEST_URI}" "\.inc$"
+    RewriteRule .* - [L,R=404]
+
+    RewriteRule ^form/([^/]*)(?:/([^/]*))?(?:/([^/]*))?$ subscription/form.php?form=$1&action=$2&key=$3 [L,QSA]
+</ifModule>

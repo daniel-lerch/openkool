@@ -3,6 +3,7 @@
 *  Copyright notice
 *
 *  (c) 2003-2020 Renzo Lauper (renzo@churchtool.org)
+*  (c) 2019-2020 Daniel Lerch
 *  All rights reserved
 *
 *  This script is part of the kOOL project. The kOOL project is
@@ -973,7 +974,8 @@ $LL['fr'] = array(
 'mailing_error_7' => "L'alias e-mail n'est pas unique",
 'mailing_error_8' => "Trop de destinataires",
 'mailing_error_9' => "Aucun accès",
-'mailing_error_imap' => "Erreur-IMAP : échec de la connexion au serveur de la messagerie",
+'mailing_error_imap' => "Erreur-IMAP: ",
+'mailing_error_imap_default' => "échec de la connexion au serveur de la messagerie",
 'mailing_errormail_subject' => "Message d'erreur",
 'mailing_errormail_text_1' => "Identifiant-groupe inconnu '@_RECIPIENT@'",
 'mailing_errormail_text_10' => "Droits d'accès insuffisants pour envoyer un email groupé aux membres de ce groupe",

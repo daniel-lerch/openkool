@@ -3,6 +3,7 @@
 *  Copyright notice
 *
 *  (c) 2003-2020 Renzo Lauper (renzo@churchtool.org)
+*  (c) 2019-2020 Daniel Lerch
 *  All rights reserved
 *
 *  This script is part of the kOOL project. The kOOL project is
@@ -80,7 +81,7 @@ $LL["nl"] = array(
 'submenu_admin_set_show_admingroups' => "Admin-groepen tonen",
 'error_file_not_found' => "Kan bestand niet vinden",
 'error_not_allowed' => "Actie niet toegestaan",
-'copyright_notice' => "Versie %s, Copyright © 2003-2012 Renzo Lauper - Plugins zijn het copyright van hun respectievelijke eigenaren.",
+'copyright_notice' => "Versie %s, Copyright © 2003-2015 Renzo Lauper, © 2019-2020 Daniel Lerch en %sanderen%s.",
 'copyright_warranty' => "Garantie wordt verleend door %s.",
 'copyright_no_warranty' => "kOOL biedt GEEN ENKELE GARANTIE",
 'copyright_free_software' => "Dit is vrije software en het staat u vrij deze opnieuw te distribueren onder %sbepaalde condities%s.",
@@ -948,8 +949,6 @@ $LL["nl"] = array(
 'install_state_name_settings' => "Instellingen",
 'install_state_name_done' => "Klaar!",
 'install_checks_header' => "Bezig met uitvoeren van enkele voor de installatie benodigde controles.",
-'install_checks_smarty' => "Bezig met controleren op Smarty",
-'install_checks_smarty_error' => "Kon Smarty niet vinden. A.u.b. installeren. Voor meer informatie, zie http://www.smarty.net",
 'install_checks_files_writable' => "Bezig met controleren op schrijfrechten voor dit bestand/deze map",
 'install_checks_files_writable_error' => "Kan niet naar dit bestand/deze map schrijven, pas a.u.b. de rechten aan",
 'install_settings_form_title' => "Instellingen voor deze installatie van kOOL",
