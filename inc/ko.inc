@@ -22972,24 +22972,10 @@ function ko_include_css($files='') {
 		'inc/jquery-dragtable/dragtable.css',
 		'inc/bootstrap/plugins/bootstrap-slider/dist/css/bootstrap-slider.css',
 		'kOOL.css',
-		'ie6.css',
-		'ie7.css',
 	);
 
 	foreach ($defaultCSSFiles as $defaultCSSFile) {
-		if ($defaultCSSFile == 'ie6.css') {
-			$r .= '<!--[if lte IE 6]>' . "\n";
-			$r .= '<link rel="stylesheet" type="text/css" href="' . $ko_path . $defaultCSSFile . '?' . filemtime($ko_path . $defaultCSSFile) . '" />' . "\n";
-			$r .= '<![endif]-->' . "\n";
-		}
-		else if ($defaultCSSFile == 'ie7.css') {
-			$r .= '<!--[if lte IE 7]>' . "\n";
-			$r .= '<link rel="stylesheet" type="text/css" href="' . $ko_path . $defaultCSSFile . '?' . filemtime($ko_path . $defaultCSSFile) . '" />' . "\n";
-			$r .= '<![endif]-->' . "\n";
-		}
-		else {
-			$r .= '<link rel="stylesheet" type="text/css" href="' . $ko_path . $defaultCSSFile . '?' . filemtime($ko_path . $defaultCSSFile) . '" />' . "\n";
-		}
+		$r .= '<link rel="stylesheet" type="text/css" href="' . $ko_path . $defaultCSSFile . '?' . filemtime($ko_path . $defaultCSSFile) . '" />' . "\n";
 	}
 
 	if(file_exists($ko_path.'ko.css')) {
