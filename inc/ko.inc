@@ -779,7 +779,7 @@ $FRONTMODULES_LAYOUT = array(
 );
 
 
-require_once($ko_path."taxonomy/inc/taxonomy.inc");
+if ($ko_menu_akt != 'install') require_once($ko_path."taxonomy/inc/taxonomy.inc");
 include($BASE_PATH."inc/front_modules.inc");
 
 //Read in settings etc
