@@ -7,10 +7,10 @@ RUN set -x \
 # Install runtime dependencies
         cron locales \
 # Install PHP extension dependencies
-        libc-client-dev libkrb5-dev libpng-dev libjpeg-dev \
+        libc-client-dev libkrb5-dev libpng-dev libjpeg-dev libzip-dev \
     && rm -rf /var/lib/apt/list/* \
 # Install PHP extensions
-    && docker-php-ext-configure gd --with-jpeg-dir=/usr/include \
+    && docker-php-ext-configure gd \
     && docker-php-ext-install gd \
     && docker-php-ext-configure gettext \
     && docker-php-ext-install gettext \
@@ -47,7 +47,7 @@ COPY . /var/www/html
 
 # Install PHP libraries and run setup
 RUN set -x \
-    && php composer.phar install \
+    && php composer.phar install --no-dev \
     && bash /var/www/html/install/setup.sh --docker-build
 
 LABEL org.label-schema.name="OpenKool" \
