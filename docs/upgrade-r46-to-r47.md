@@ -1,4 +1,4 @@
-# OpenKool upgrade instructions
+# OpenKool R47 upgrade instructions
 
 ## Prerequisites
 - Dockerized OpenKool R46 installation
