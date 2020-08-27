@@ -3,6 +3,7 @@
 *  Copyright notice
 *
 *  (c) 2003-2020 Renzo Lauper (renzo@churchtool.org)
+*  (c) 2019-2020 Daniel Lerch
 *  All rights reserved
 *
 *  This script is part of the kOOL project. The kOOL project is
@@ -467,7 +468,7 @@ if((isset($_GET) && isset($_GET["action"])) || (isset($_POST) && isset($_POST["a
 				$where = "WHERE `team_id` = '$team_id' AND `event_id` = '$event_id'";
 				$current_schedule = db_select_data('ko_rota_schedulling', $where, '*', '', '', TRUE);
 				if(isset($current_schedule['event_id']) && ($current_schedule['event_id'] != $event_id || $current_schedule['status'] != 1)) {
-					continue;
+					break;
 				}
 
 				//Get current schedule entry and append new value

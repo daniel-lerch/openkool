@@ -25,6 +25,7 @@ WEB_GID=www-data
 function setup_container() {
     echo "Setting up container configuration..."
     cp -f default/docker/docker-php-entrypoint /usr/local/bin
+    cp -f default/docker/docker-php-errors.ini /usr/local/etc/php/conf.d
     cp -f default/docker/docker-php-locale.ini /usr/local/etc/php/conf.d
     cp -f default/docker/kool-scheduler /etc/cron.d
 }
