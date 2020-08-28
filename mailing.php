@@ -1118,11 +1118,11 @@ function ko_mailing_store_moderation($imap, $mail, $login, $modifyRcpts = true, 
 	$header = preg_replace('/(\n|^)X-Spam-Report:(.*)(\n\s+(.*))*\n/i', '$1', $header);
 	$header = preg_replace('/(\n|^)DKIM-Signature:(.*)(\n\s+(.*))*\n/i', '$1', $header);
 
-	$manualReplyTo = FALSE;
-	$replyTo = '';
+	// Delete any existing Reply-To headers to avoid duplicates
+	$header = preg_replace('/(\n|^)Reply-To:(.*)(\n\s+(.*))*\n/i', '$1', $header);
+
+	$replyTo = NULL;
 	if($mail['_reply_to']) {
-		//Remove Reply-To
-		$header = preg_replace('/(\n|^)Reply-To:(.*)(\n\s+(.*))*\n/i', '$1', $header);
 		//Set new Reply-To
 		switch($mail['_reply_to']) {
 			case 'list':
@@ -1134,14 +1134,12 @@ function ko_mailing_store_moderation($imap, $mail, $login, $modifyRcpts = true, 
 			break;
 		}
 		$header = trim($header)."\nReply-To: ".$replyTo."\n";
-		$manualReplyTo = TRUE;
 	}
-
 
 	//Set from address to an spf save sender address
 	$header = preg_replace('/(\n|^)From:(.*)(\n\s+(.*))*\n/i', '$1', $header);
 
-	if(!$manualReplyTo) {
+	if($replyTo === NULL) {
 		$header = trim($header)."\nReply-To: ".$mail['from']."\n";
 	}
 
@@ -1149,7 +1147,12 @@ function ko_mailing_store_moderation($imap, $mail, $login, $modifyRcpts = true, 
 	ko_mail_get_spf_from($mailFrom, $replyTo, $mailSender, $login['id']);
 
 	$fromEmail = array_key_first($mailFrom);
-	$from = '"'.str_replace('"', '', $mailFrom[$fromEmail]).'" <'.$fromEmail.'>';
+	if (empty($mailFrom[$fromEmail])) {
+		$from = $fromEmail;
+	} else {
+		// Computed From fields might contain no ASCII chars and have to be encoded first
+		$from = mb_encode_mimeheader($mailFrom[$fromEmail], 'UTF-8', 'Q').' <'.$fromEmail.'>';
+	}
 	$header = trim($header)."\nFrom: ".$from."\n";
 
 	if($mailSender) {

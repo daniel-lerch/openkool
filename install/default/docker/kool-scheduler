@@ -1,1 +1,1 @@
-*/5 * * * * www-data /usr/local/bin/php /var/www/html/scheduler.php
+*/1 * * * * www-data /usr/local/bin/php /var/www/html/scheduler.php
