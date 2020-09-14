@@ -1118,8 +1118,9 @@ function ko_mailing_store_moderation($imap, $mail, $login, $modifyRcpts = true, 
 	$header = preg_replace('/(\n|^)X-Spam-Report:(.*)(\n\s+(.*))*\n/i', '$1', $header);
 	$header = preg_replace('/(\n|^)DKIM-Signature:(.*)(\n\s+(.*))*\n/i', '$1', $header);
 
-	// Delete any existing Reply-To headers to avoid duplicates
+	// Delete any existing Reply-To and Sender headers to avoid duplicates
 	$header = preg_replace('/(\n|^)Reply-To:(.*)(\n\s+(.*))*\n/i', '$1', $header);
+	$header = preg_replace('/(\n|^)Sender:(.*)(\n\s+(.*))*\n/i', '$1', $header);
 
 	$replyTo = NULL;
 	if($mail['_reply_to']) {
