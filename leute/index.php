@@ -2645,11 +2645,14 @@ switch($do_action) {
 			$header = preg_replace('/(\n|^)Subject: (.*)(\n\s+(.*))*\n/i', '$1', $header);
 			$body = implode(chr(13) . chr(10) . chr(13) . chr(10), $parts);
 
+			// The subject has to be stored MIME encoded in the database
+			// The reply-to field only allows addresses without name and is therefore safe
+
 			$mail = array(
 				'status' => 2,
 				'header' => $header,
 				'body' => $body,
-				'subject' => $subject,
+				'subject' => mb_encode_mimeheader($subject, 'UTF-8', 'Q'),
 				'from' => $replyTo,
 				'sender_email' => $replyTo,
 				'user_id' => $_SESSION['ses_userid'],
