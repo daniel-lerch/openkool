@@ -3,7 +3,7 @@
 *  Copyright notice
 *
 *  (c) 2003-2020 Renzo Lauper (renzo@churchtool.org)
-*  (c) 2019-2020 Daniel Lerch
+*  (c) 2019-2021 Daniel Lerch
 *  All rights reserved
 *
 *  This script is part of the kOOL project. The kOOL project is
@@ -62,7 +62,7 @@ $smarty_dir = $BASE_PATH;
 
 //Transport settings for email (using SwiftMailer)
 //method can be: smtp, mail or sendmail
-//$MAIL_TRANSPORT = array('method' => 'smtp', 'host' => '', 'port' => '', 'ssl' => FALSE, 'tls' => FALSE, 'auth_user' => '', 'auth_pass' => '');
+//$MAIL_TRANSPORT = array('method' => 'smtp', 'host' => '', 'port' => '', 'ssl' => FALSE, 'tls' => FALSE, 'auth_user' => '', 'auth_pass' => '', 'sender' => '');
 
 //SMS-Parameter
 $SMS_PARAMETER = array('provider' => '', 'user' => '', 'pass' => '');

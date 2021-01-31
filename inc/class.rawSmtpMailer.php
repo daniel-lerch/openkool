@@ -282,6 +282,9 @@ class RawSmtpMailer
 				$this->Username = $MAIL_TRANSPORT['auth_user'];
 				$this->Password = $MAIL_TRANSPORT['auth_pass'];
 			}
+			if (isset($MAIL_TRANSPORT['sender'])) {
+				$this->Sender = $MAIL_TRANSPORT['sender'];
+			}
     }
 
     /**
@@ -353,9 +356,12 @@ class RawSmtpMailer
      */
     public function setSender($address)
     {
-        $address = trim($address);
-        $this->Sender = $address;
-        return true;
+		if (empty($this->Sender)) {
+			$this->Sender = trim($address);
+			return true;
+		} else {
+			return false;
+		}
     }
 
     /**

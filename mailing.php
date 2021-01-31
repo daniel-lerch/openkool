@@ -4,7 +4,7 @@
  *  Copyright notice
  *
  *  (c) 2003-2020 Renzo Lauper (renzo@churchtool.org)
- *  (c) 2019-2020 Daniel Lerch
+ *  (c) 2019-2021 Daniel Lerch
  *  All rights reserved
  *
  *  This script is part of the kOOL project. The kOOL project is
@@ -249,7 +249,7 @@ function ko_mailing_main ($test = false, $mail_id_in = null, $recipient_in = nul
 			if(!isset($unique_mails[$mail['message_id']])) {
 				//Get all recipients of this email
 				$header = imap_rfc822_parse_headers($rawheader);
-				$mail_recipients = array();
+				$mail_recipients = array('to' => array(), 'cc' => array());
 				foreach($header->to as $obj) {
 					$mail_recipients['to'][] = format_userinput($obj->mailbox.'@'.$obj->host, 'email');
 				}
@@ -260,6 +260,11 @@ function ko_mailing_main ($test = false, $mail_id_in = null, $recipient_in = nul
 					'mail' => $mail,
 					'recipients' => $mail_recipients,
 				);
+				if ($verbose) {
+					print "TO: " . implode(", ", $mail_recipients['to']) . PHP_EOL;
+					print "CC: " . implode(", ", $mail_recipients['cc']) . PHP_EOL;
+					print "Skipped BCCs: " . count($header->bcc) . PHP_EOL;
+				}
 			} else {
 				$mail_recipients = $unique_mails[$mail['message_id']];
 			}
