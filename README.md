@@ -20,4 +20,4 @@ All major upgrades have to be performed manually as they usually ship with break
 You cannot skip major upgrades. If you want to upgrade from R45 to R48 for example you have to migrate to R46, R47 and finally to R48.
 
 ## Contributing
-Contributions are very welcome. Please open an issue to discuss your wishes before implementing them.
+Contributions are very welcome. Please open an issue to discuss your wishes before implementing them. For setting up a development environment on Windows you will find `install/devenv.ps1` very useful.

@@ -113,13 +113,17 @@ function SetupEnvironment {
     $executablePath = GetPhpExecutable
     if ($executablePath) {
         $extensionDir = Join-Path -Path (Split-Path -Path $executablePath) -ChildPath "ext"
-        $xdebugDir = [IO.Path]::GetFileName((Resolve-Path -Path (Join-Path $extensionDir "php_xdebug*.dll")))
+        $xdebugFileName = [IO.Path]::GetFileName((Resolve-Path -Path (Join-Path $extensionDir "php_xdebug*.dll")))
+        if (!($xdebugFileName)) {
+            Write-Warning "Xdebug is missing. Download it from https://xdebug.org/download and adjust php.ini."
+            $xdebugFileName = "php_xdebug.dll"
+        }
         $ini = (Get-Content -Path ".\install\default\php-windows.ini" -Raw) `
             -replace "extension_dir = `"`"", "extension_dir = `"$extensionDir`"" `
-            -replace "`"php_xdebug.dll`"", "`"$xdebugDir`""
+            -replace "`"php_xdebug.dll`"", "`"$xdebugFileName`""
         New-Item -Path ".\php.ini" -Value $ini -Force | Out-Null
     } else {
-        Write-Host "PHP could not be configured automatically. You have to adjust php.ini manually."
+        Write-Warning "PHP could not be configured automatically. You have to adjust php.ini manually."
         Copy-Item -Path ".\install\default\php-windows.ini" -Destination ".\php.ini" -Force
     }
 
@@ -133,7 +137,7 @@ function SetupEnvironment {
             Start-Process -FilePath $executablePath -ArgumentList "-c",".\php.ini",".\composer-setup.php" -NoNewWindow -Wait
             Remove-Item -Path ".\composer-setup.php"
         } else {
-            Write-Host "You have to adjust the php.ini and call composer-setup.php with PHP"
+            Write-Warning "You have to adjust the php.ini and call composer-setup.php with PHP"
         }
     }
 }
