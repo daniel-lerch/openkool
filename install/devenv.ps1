@@ -1,4 +1,4 @@
-#!/usr/bin/env pwsh
+﻿#!/usr/bin/env pwsh
 
 <###############################################################################
 #
@@ -26,7 +26,9 @@ param (
     [Parameter(Mandatory = $false)]
     [string]$Composer,
     [Parameter(Mandatory = $false)]
-    [switch]$Start
+    [switch]$Start,
+    [Parameter(Mandatory = $false)]
+    [string[]]$Run
 )
 
 function EnsureExists ($Path) {
@@ -156,6 +158,13 @@ function StartServer {
     Start-Process -FilePath $executablePath -ArgumentList "-c",".\php.ini","-S","localhost:8080"
 }
 
+function InvokePhp {
+    $executablePath = (GetPhpExecutable -Ini)
+    $arguments = "-c",".\php.ini"
+    $arguments += $Run
+    Start-Process -FilePath $executablePath -ArgumentList $arguments -NoNewWindow -Wait
+}
+
 function Main {
     Write-Host "OpenKool Development Environment"
     Write-Host ""
@@ -168,8 +177,11 @@ function Main {
     if ($Start) {
         StartServer
     }
-    if (!($Setup) -and !($Composer) -and !($Start)) {
-        Write-Host "Usage: devenv.ps1 [-Setup] [-Composer <arguments>] [-Start]"
+    if ($Run) {
+        InvokePhp
+    }
+    if (!($Setup) -and !($Composer) -and !($Start) -and !($Run)) {
+        Write-Host "Usage: devenv.ps1 [-Setup] [-Composer <arguments>] [-Start] [-Run <file>,<argument>,...]"
         Write-Host ""
     }
 }
