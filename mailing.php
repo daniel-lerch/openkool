@@ -241,50 +241,41 @@ function ko_mailing_main ($test = false, $mail_id_in = null, $recipient_in = nul
 		//If one mail has two or more recipients, the same mail will be stored multiple times, so we group all receivers by message_id
 		//For each mail all recipients will be handled below, so no need to work through all copies
 		$unique_mails = array();
-		foreach($mails as $mail) {
-			if ($verbose) print "Parsing message from $mail[from]..." . PHP_EOL;
+
+		// Upstream versions of kOOL handle messages by To, CC and BCC fields.
+		// Using a catchall inbox this leads to duplicate messages and errors.
+		// OpenKool instead relies on the Received header which can include to recipient.
+		foreach ($mails as $mail) {
+
+			if ($verbose) print "Receiving message from $mail[from]";
 
 			$rawheader = imap_fetchheader($imap, $mail['msgno']);
 
-			if(!isset($unique_mails[$mail['message_id']])) {
-				//Get all recipients of this email
-				$header = imap_rfc822_parse_headers($rawheader);
-				$mail_recipients = array('to' => array(), 'cc' => array());
-				foreach($header->to as $obj) {
-					$mail_recipients['to'][] = format_userinput($obj->mailbox.'@'.$obj->host, 'email');
-				}
-				foreach($header->cc as $obj) {
-					$mail_recipients['cc'][] = format_userinput($obj->mailbox.'@'.$obj->host, 'email');
-				}
-				$unique_mails[$mail['message_id']] = array(
-					'mail' => $mail,
-					'recipients' => $mail_recipients,
-				);
-				if ($verbose) {
-					print "TO: " . implode(", ", $mail_recipients['to']) . PHP_EOL;
-					print "CC: " . implode(", ", $mail_recipients['cc']) . PHP_EOL;
-					print "Skipped BCCs: " . count($header->bcc) . PHP_EOL;
-				}
-			} else {
-				$mail_recipients = $unique_mails[$mail['message_id']];
-			}
+			// Get first Received header which usually consists of multiple lines
+			if (preg_match('/Received: .*(\n\s.*)*/', $rawheader, $headerMatches) 
+				&& preg_match('/for <(.*)>;/', $headerMatches[0], $forMatches)) {
 
-			// try to resolve bcc receiver address from bcc header
-			foreach(preg_split("/\\n(?!\\s)/",$rawheader) as $headerLine) {
-				list($name,$value) = explode(':',$headerLine,2);
-				if(in_array(strtolower($name),array('envelope-to','x-envelope-to','delivered-to','x-delivered-to'))) {
-					foreach($bcc_prefixes as $prefix) {
-						if(preg_match('/^([0-9a-z]+-)?('.preg_quote($prefix).'([^@]+)@'.preg_quote($domain).')$/i',trim($value),$matches)) {
-							$mail_address = $matches[2];
-							foreach($unique_mails[$mail['message_id']]['recipients'] as $recipients) {
-								if(in_array($mail_address,$recipients)) {
-									continue 2;
-								}
-							}
-							$unique_mails[$mail['message_id']]['recipients']['bcc'][] = format_userinput($mail_address, 'email');
-						}
-					}
+				if ($verbose) print " to $forMatches[1]" . PHP_EOL;
+
+				// Legacy array format from upstream kOOL kept for compatibility
+				$unique_mails[] = array(
+					'mail' => $mail,
+					'recipients' => array(
+						'to' => array($forMatches[1]),
+						'cc' => array(),
+						'bcc' => array()
+					)
+				);
+			} else {
+				// Unsupported format of Received header
+				if ($verbose) {
+					if (empty($headerMatches))
+						print " without Received header record" . PHP_EOL;
+					else
+						print " without target mailbox in Received header record:" . PHP_EOL . $headerMatches[0] . PHP_EOL;
 				}
+				
+				ko_mailing_error(null, MAILING_ERROR_NO_RECIPIENTS, $mail, $mail['to']);
 			}
 		}
 
@@ -309,24 +300,17 @@ function ko_mailing_main ($test = false, $mail_id_in = null, $recipient_in = nul
 			}
 
 			//None of the email addresses have been recognized and processed: Return failure notice
+			
 			if(!$handeled) {
-				if(preg_match('/^(x-)?envelope-to:\s*([^\s@]*@'.preg_quote($domain).')\s*$/im',$rawheader,$m)) {
-					if(!in_array($m[2],$mail_recipients['to']) && !in_array($m[2],$mail_recipients['cc'])) {
-						ko_mailing_error($login, MAILING_ERROR_BCC_HINT, $mail, $m[2]);
-						$handeled = true;
-					}
-				}
-				if(!$handeled) {
-					foreach($mail_recipients as $recipients) {
-						foreach($recipients as $recipient) {
-							if(substr($recipient,-strlen($domain)-1) == '@'.$domain) {
-								$to = $recipient;
-								break 2;
-							}
+				foreach($mail_recipients as $recipients) {
+					foreach($recipients as $recipient) {
+						if(substr($recipient,-strlen($domain)-1) == '@'.$domain) {
+							$to = $recipient;
+							break 2;
 						}
 					}
-					ko_mailing_error($login, MAILING_ERROR_INVALID_RECIPIENT, $mail, $to);
 				}
+				ko_mailing_error($login, MAILING_ERROR_INVALID_RECIPIENT, $mail, $to);
 			}
 
 			//Delete message after it has been processed
