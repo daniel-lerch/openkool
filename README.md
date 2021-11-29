@@ -1,7 +1,7 @@
 # OpenKool
 
-[![](https://images.microbadger.com/badges/image/daniellerch/openkool:r48.svg)](https://microbadger.com/images/daniellerch/openkool:r48 "Get your own image badge on microbadger.com")
-[![](https://images.microbadger.com/badges/version/daniellerch/openkool:r48.svg)](https://microbadger.com/images/daniellerch/openkool:r48 "Get your own version badge on microbadger.com")
+[![](https://img.shields.io/docker/pulls/daniellerch/openkool.svg)](https://hub.docker.com/r/daniellerch/openkool)
+[![](https://img.shields.io/docker/image-size/daniellerch/openkool/r48.svg)](https://hub.docker.com/r/daniellerch/openkool)
 
 This application is a dockerized version of kOOL form [churchtool.org](http://www.churchtool.org).
 
@@ -20,4 +20,4 @@ All major upgrades have to be performed manually as they usually ship with break
 You cannot skip major upgrades. If you want to upgrade from R45 to R48 for example you have to migrate to R46, R47 and finally to R48.
 
 ## Contributing
-Contributions are very welcome. Please open an issue to discuss your wishes before implementing them. For setting up a development environment on Windows you will find `install/devenv.ps1` very useful.
+Contributions are very welcome. Please open an issue to discuss your wishes before implementing them. For a development environment you will need PHP, XDebug and Visual Studio Code with PHP Intelephense and PHP Debug extensions. On Windows you will find `install/devenv.ps1` very useful and may use [psmodules](https://github.com/daniel-lerch/psmodules) to install a suitable database server.

@@ -1,8 +1,8 @@
 # OpenKool installation guide
 
 ## General setup
-1. Download _Compose file_ from the `docs` folder
-2. Add your database passwords to the downloaded `docker-compose.yml` file
+1. Download `docker-compose.yml` from the `docs` folder
+2. Add your database passwords to the downloaded Compose file
 3. Download and launch OpenKool  
 `docker-compose up -d`
 4. Run the setup script  
@@ -16,7 +16,7 @@ You can easily migrate your data from an existing kOOL instance to an OpenKool i
 1. Create a dump of your existing database
 2. Copy the file into the database container
 3. Import your database dump
-4. Skip database initialization in the web installation wizard
+4. Skip database initialization in the web installation wizard (step 6 above)
 
 ## Install in a subfolder
 It is possible to run OpenKool with a specific path base like https://domain.tld/kool. However, it is not recommended because most of the JavaScript code does not respect custom path bases.
