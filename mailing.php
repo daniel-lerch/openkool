@@ -619,7 +619,7 @@ function ko_mailing_handle_mail_group(&$mail,$mail_recipients,$login) {
 
 
 /**
- * @param $mailer RawSmtpMailer
+ * @param RawSmtpMailer $mailer
  * @param $mails_per_cycle
  *
  * @throws Exception
@@ -713,7 +713,8 @@ function ko_mailing_send_mails($mailer,$mails_per_cycle) {
 			} catch (Exception $e) {
 				ko_log('mailing_smtp_error', $e->getMessage());
 
-				if(stristr($e->getMessage(), "SMTP Error: The following recipients failed:")) {
+				if (stripos($e->getMessage(), 'SMTP Error: The following recipients failed:') !== false
+					|| stripos($e->getMessage(), 'SMTP Error: data not accepted.') !== false) {
 					// try to send mail a few times. after this: remove from queue and contact sender
 					if ($rec['delivery_attempts'] >= ko_get_setting('mailing_max_attempts')) {
 						$mailsubject = getLL("admin_mailing_max_attempts_subject");
