@@ -245,23 +245,35 @@ function ko_mailing_main ($test = false, $mail_id_in = null, $recipient_in = nul
 		// Upstream versions of kOOL handle messages by To, CC and BCC fields.
 		// Using a catchall inbox this leads to duplicate messages and errors.
 		// OpenKool instead relies on the Received header which can include to recipient.
+		// As a fallback Envelope-To or X-Envelope-To headers are used.
 		foreach ($mails as $mail) {
 
-			if ($verbose) print "Receiving message from $mail[from]";
+			if ($verbose) print "Processing message from $mail[from]";
 
+			$recipient = null;
 			$rawheader = imap_fetchheader($imap, $mail['msgno']);
+			$firstReceivedHeaderIdx = strpos($rawheader, 'Received: ');
+			if ($firstReceivedHeaderIdx !== false) {
+				// Get first Received header which usually consists of multiple lines
+				if (preg_match('/Received: .*(\n\s.*)*/', $rawheader, $headerMatches, 0, $firstReceivedHeaderIdx) 
+					&& preg_match('/for <(.*)>;/', $headerMatches[0], $forMatches)) {
+					$recipient = $forMatches[1];
+					if ($verbose) print " received for $recipient" . PHP_EOL;
+				} 
+				// Fallback to Envelope-To or X-Envelope-To header
+				elseif (preg_match('/Envelope-To: <(.*)>/', substr($rawheader, 0, $firstReceivedHeaderIdx), $headerMatches)) {
+					$recipient = $headerMatches[1];
+					if ($verbose) print " envelope to $recipient" . PHP_EOL;
+				}
+			}
 
 			// Get first Received header which usually consists of multiple lines
-			if (preg_match('/Received: .*(\n\s.*)*/', $rawheader, $headerMatches) 
-				&& preg_match('/for <(.*)>;/', $headerMatches[0], $forMatches)) {
-
-				if ($verbose) print " to $forMatches[1]" . PHP_EOL;
-
+			if ($recipient !== null) {
 				// Legacy array format from upstream kOOL kept for compatibility
 				$unique_mails[] = array(
 					'mail' => $mail,
 					'recipients' => array(
-						'to' => array($forMatches[1]),
+						'to' => array($recipient),
 						'cc' => array(),
 						'bcc' => array()
 					)
@@ -269,13 +281,14 @@ function ko_mailing_main ($test = false, $mail_id_in = null, $recipient_in = nul
 			} else {
 				// Unsupported format of Received header
 				if ($verbose) {
-					if (empty($headerMatches))
-						print " without Received header record" . PHP_EOL;
+					if ($firstReceivedHeaderIdx === false)
+						print " without Received header record: " . PHP_EOL . $rawheader . PHP_EOL;
 					else
-						print " without target mailbox in Received header record:" . PHP_EOL . $headerMatches[0] . PHP_EOL;
+						print " without target mailbox in header records:" . PHP_EOL . $rawheader . PHP_EOL;
 				}
 				
 				ko_mailing_error(null, MAILING_ERROR_NO_RECIPIENTS, $mail, $mail['to']);
+				imap_delete($imap, $mail['msgno']);
 			}
 		}
 
