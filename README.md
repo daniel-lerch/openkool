@@ -11,13 +11,13 @@ Unfortunately, kOOL is built on old software and never had a good architecture. 
 ## Installation
 The recommended deployment option for OpenKool is to use Docker containers. An official image is available at [daniellerch/openkool:r48](https://hub.docker.com/r/daniellerch/openkool).
 
-For a detailed installation guide please refer to the `docs` folder.
+You can install OpenKool from scratch or take over your database from an existing kOOL instance. Please read the [installation guide](docs/install.md) for more information.
 
 
 ## Upgrading
 All major upgrades have to be performed manually as they usually ship with breaking changes which require special attention. Read the changelogs at [OpenKool's releases page](https://github.com/daniel-lerch/openkool/releases) carefully.
 
-You cannot skip major upgrades. If you want to upgrade from R45 to R48 for example you have to migrate to R46, R47 and finally to R48.
+You cannot skip major upgrades. If you want to upgrade from R45 to R48 for example you have to migrate to R46, R47 and finally to R48. Please refer to the `docs` folder for upgrade instructions.
 
 ## Contributing
 Contributions are very welcome. Please open an issue to discuss your wishes before implementing them. For a development environment you will need PHP, XDebug and Visual Studio Code with PHP Intelephense and PHP Debug extensions. On Windows you will find `install/devenv.ps1` very useful and may use [psmodules](https://github.com/daniel-lerch/psmodules) to install a suitable database server.
