@@ -705,7 +705,6 @@ function ko_mailing_send_mails($mailer,$mails_per_cycle) {
 				$done[] = $rec['id'];
 				$doneLeuteIds[] = $rec['leute_id'];
 				$done_names[] = $log_to;
-				$sent_mails++;
 
 				foreach ($crmContactIds as $crmContactId) {
 					db_insert_data('ko_crm_mapping', array('contact_id' => $crmContactId, 'leute_id' => $rec['leute_id']));
@@ -737,6 +736,7 @@ function ko_mailing_send_mails($mailer,$mails_per_cycle) {
 				}
 			}
 
+			$sent_mails++;
 		}
 
 		//Create log entry with all recipients

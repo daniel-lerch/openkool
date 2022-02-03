@@ -17253,7 +17253,7 @@ function ko_export_etiketten($_vorlage, $_start, $_rahmen, $data, $fill_page=0, 
 
 	//Get fonts to be used
 	$all_fonts = ko_get_pdf_fonts();
-	$fonts = array('arial', 'arialb', 'arialm');
+	$fonts = array('arial', 'arialb');
 	if($vorlage['font']) {
 		$fonts[] = $vorlage['font'];
 		$font = $vorlage['font'];
