@@ -3,7 +3,7 @@
  *  Copyright notice
  *
  *  (c) 2003-2020 Renzo Lauper (renzo@churchtool.org)
- *  (c) 2019-2020 Daniel Lerch
+ *  (c) 2019-2022 Daniel Lerch
  *  All rights reserved
  *
  *  This script is part of the kOOL project. The kOOL project is
@@ -28,7 +28,7 @@
 function hook_include_main($type) {
 	global $BASE_PATH;
 
-	$r = NULL;
+	$r = [];
 	$hooks = hook_get_by_type($type);
 
 	if (sizeof($hooks) > 0) {
@@ -45,7 +45,7 @@ function hook_include_main($type) {
 function hook_include_sm() {
 	global $BASE_PATH, $PLUGINS;
 
-	$r = NULL;
+	$r = [];
 
 	foreach ($PLUGINS as $plugin) {
 		$file = $BASE_PATH . "plugins/" . $plugin["name"] . "/submenu.php";
@@ -58,7 +58,7 @@ function hook_include_sm() {
 function hook_include_ll() {
 	global $BASE_PATH, $PLUGINS;
 
-	$r = NULL;
+	$r = [];
 
 	foreach ($PLUGINS as $plugin) {
 		$file = $BASE_PATH . "plugins/" . $plugin["name"] . "/locallang.php";
@@ -71,7 +71,7 @@ function hook_include_ll() {
 function hook_include_scheduler_task() {
 	global $BASE_PATH, $PLUGINS;
 
-	$r = NULL;
+	$r = [];
 
 	foreach ($PLUGINS as $plugin) {
 		$file = $BASE_PATH . 'plugins/' . $plugin['name'] . '/scheduler_task.php';
@@ -84,7 +84,7 @@ function hook_include_scheduler_task() {
 function hook_include_js($type = '') {
 	global $ko_path, $PLUGINS;
 
-	$r = NULL;
+	$r = [];
 
 	if ($type) {
 		$use_plugins = hook_get_by_type($type);

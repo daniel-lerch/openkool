@@ -3,6 +3,7 @@
  *  Copyright notice
  *
  *  (c) 2003-2020 Renzo Lauper (renzo@churchtool.org)
+ *  (c) 2019-2022 Daniel Lerch
  *  All rights reserved
  *
  *  This script is part of the kOOL project. The kOOL project is
@@ -989,7 +990,7 @@ function submenu_leute($namen, $state, $display=1, $doClean = true) {
 			//Show presets
 			$code = '';
 			$presets = ko_get_userpref($_SESSION['ses_userid'], '', 'leute_my_list', 'ORDER BY `key` ASC', TRUE);
-			if($presets === '') $presets = [];
+			if($presets === NULL || $presets === '') $presets = [];
 			if(sizeof($presets) > 0 || $num > 0) {
 				$code  = '<div style="width:100%;text-align:center;"><div class="input-group input-group-sm" style="width: 100%;">';
 

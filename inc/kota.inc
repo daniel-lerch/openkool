@@ -3,6 +3,7 @@
 *  Copyright notice
 *
 *  (c) 2003-2020 Renzo Lauper (renzo@churchtool.org)
+*  (c) 2019-2022 Daniel Lerch
 *  All rights reserved
 *
 *  This script is part of the kOOL project. The kOOL project is
@@ -5317,6 +5318,8 @@ foreach($origLeuteData as $k => $v) {
 	if($k == 'groups') continue;
 	$KOTA['ko_leute']['_form_layout']['data'][$k] = $v;
 }
+
+if (!empty($origLeuteData['groups']))
 $KOTA['ko_leute']['_form_layout']['data']['groups'] = array_merge((array)$KOTA['ko_leute']['_form_layout']['data']['groups'], $origLeuteData['groups']);;
 
 

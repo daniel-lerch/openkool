@@ -3,7 +3,7 @@
 *  Copyright notice
 *
 *  (c) 2003-2020 Renzo Lauper (renzo@churchtool.org)
-*  (c) 2019-2020 Daniel Lerch
+*  (c) 2019-2022 Daniel Lerch
 *  All rights reserved
 *
 *  This script is part of the kOOL project. The kOOL project is
@@ -268,6 +268,9 @@ $FILE_LOGO_BIG = 'images/kool.svg';
 // $EVENT_COLOR['field']: DB field from ko_event
 // $EVENT_COLOR['map']:   Array to map above field values to hex colors (e.g. 'foo' => '00ff00', 'bar' => '0000ff')
 $EVENT_COLOR = array();
+
+
+$RECTYPES = array();
 
 
 //Individually set colors for reservations by res field (overwrite in config/ko-config.php)
@@ -1854,7 +1857,7 @@ function ko_get_leute_admin_assign($userid, $mode='login') {
 	//Store in cache
 	$GLOBALS['kOOL']['leute_admin_assign'][$userid][$mode] = $r;
 
-	if(sizeof($r) > 0) {
+	if(!empty($r)) {
 		return $r;
 	} else {
 		return FALSE;
@@ -1912,7 +1915,7 @@ function ko_get_logged_in_person($id='', $preferAdminEmail=TRUE) {
 												 '', '', TRUE);
 
 	//If no address is set for this login still set email address from login (if given)
-  if(sizeof($person) == 0) {
+  if(empty($person)) {
     ko_get_login($lid, $login);
     if($login['email']) $person = array('email' => $login['email'], 'vorname' => $login['login']);
   }
@@ -2480,7 +2483,7 @@ function kota_get_filter_form($table, $cols, $showNegative=TRUE, $showButtons=TR
 					$descs = array_values($KOTA[$table][$col]['form']['descs']);
 				}
 				foreach($values as $k => $v) {
-					if(in_array($v, $_SESSION['kota_filter'][$table][$col])) continue;
+					if(in_array($v, $_SESSION['kota_filter'][$table][$col] ?? [])) continue;
 
 					$sel = $val == $v ? 'selected="selected"' : '';
 					$r .= '<option value="'.$v.'" '.$sel.'>'.$descs[$k].'</option>';
@@ -4226,6 +4229,8 @@ function ko_get_familien(&$fam) {
 		$members[$row["famid"]][] = $row;
 	}
 
+	$sort = [];
+
 	//Add family ID
 	foreach($fam as $i => $f) {
 		//Ignore families with no members (maybe from hidden persons, where families are still present)
@@ -5182,6 +5187,7 @@ function ko_get_leute_col_name($groups_hierarchie=FALSE, $add_group_datafields=F
 		foreach($groups as $group) {
 			if($access['groups']['ALL'] < 1 && $access['groups'][$group['id']] < 1 && !$force) continue;
 			$name = strlen($group['name']) > ITEMLIST_LENGTH_MAX ? substr($group['name'], 0, ITEMLIST_LENGTH_MAX).'..' : $group['name'];
+			$ml = [];
 			if($groups_hierarchie) {
 				$ml = ko_groups_get_motherline($group['id'], $all_groups);
 				$depth = sizeof($ml);

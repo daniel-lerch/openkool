@@ -3,7 +3,7 @@
 *  Copyright notice
 *
 *  (c) 2003-2020 Renzo Lauper (renzo@churchtool.org)
-*  (c) 2019-2020 Daniel Lerch
+*  (c) 2019-2022 Daniel Lerch
 *  All rights reserved
 *
 *  This script is part of the kOOL project. The kOOL project is
@@ -2183,7 +2183,7 @@ switch($do_action) {
 							}
 							//Add newline or whitespace after value, if value is not empty
 							if(trim($value) == "" || $i == sizeof($cols) - 1) continue;
-							switch($_POST{"sel_col_".$col}) {
+							switch($_POST["sel_col_".$col]) {
 								case "Zeilenumbruch":
 									$temp .= "\n";
 									break;
