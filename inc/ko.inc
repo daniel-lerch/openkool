@@ -1372,7 +1372,7 @@ function ko_get_access($module, $uid='', $force=FALSE, $apply_admingroups=TRUE, 
 
 
 	//Add max value
-	$_access[$module]['MAX'] = max($_access[$module]);
+	$_access[$module]['MAX'] = empty($_access[$module]) ? NULL : max($_access[$module]);
 
 	//Store max and all values in Cache for ko_get_access_all()
 	$GLOBALS['kOOL']['admin_all'][$uid][$col] = $_access[$module]['ALL'];
@@ -2204,7 +2204,7 @@ function ko_check_userpref($id, $key, $type="") {
 		$result = mysqli_query(db_get_link(), $query);
 		$row = mysqli_fetch_assoc($result);
 	}
-	return (sizeof($row) >= 1);
+	return !empty($row);
 }//ko_check_userpref()
 
 
@@ -3829,7 +3829,7 @@ function ko_get_events_mod(&$e, $z_where = "", $z_limit = "") {
 /**
 	* Liefert alle Events an einem Datum
 	*/
-function ko_get_events_by_date($t="", $m, $j, &$r, $z_where="", $table="ko_event") {
+function ko_get_events_by_date($t, $m, $j, &$r, $z_where="", $table="ko_event") {
 	$datum = $j."-".str_to_2($m)."-".($t?str_to_2($t):"01");
 
 	//Replace ko_event in filter with table name
@@ -7774,7 +7774,7 @@ function ko_set_res_color(&$_ress) {
 /**
 	* Liefert alle Reservationen (normale oder zu moderierende) zu einem definierten Datum
 	*/
-function ko_get_res_by_date($t="", $m, $j, &$r, $show_all = TRUE, $mode = "res", $z_where="") {
+function ko_get_res_by_date($t, $m, $j, &$r, $show_all = TRUE, $mode = "res", $z_where="") {
 	global $access, $ko_menu_akt;
 
 	//Reservationen oder Mod-Res
@@ -11025,7 +11025,7 @@ function ko_groups_get_recursive($z_where, $fullarrays=FALSE, $start='NULL') {
 }//ko_groups_get_recursive()
 
 
-function rec_groups(&$t, &$r, $z_where="", &$not_leaves, $fullarrays=FALSE) {
+function rec_groups(&$t, &$r, $z_where, &$not_leaves, $fullarrays=FALSE) {
 	if(!is_array($not_leaves)) $not_leaves = db_select_distinct("ko_groups", "pid");
 
 	//Bei Blättern sofort zurückgeben
@@ -25009,7 +25009,7 @@ function ko_groups_assignment_history_check_entry($entry) {
 
 
 
-function ko_groups_get_assignment_timeline($mode="person", $elementId, $group=NULL, $person=NULL, $drawOnCallback=NULL) {
+function ko_groups_get_assignment_timeline($mode, $elementId, $group=NULL, $person=NULL, $drawOnCallback=NULL) {
 	global $access;
 
 	$roles = db_select_data('ko_grouproles', "WHERE 1=1");
