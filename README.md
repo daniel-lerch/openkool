@@ -8,7 +8,7 @@ This application is a dockerized version of kOOL form [churchtool.org](http://ww
 
 ## Legacy Software
 
-?? If you have never heard about kOOL, **do not use it**! ??
+⚠️ If you have never heard about kOOL, **do not use it**! ⚠️
 
 With PHP 7.4 having reached its end of life on 28 November 2022, OpenKool does not receive security fixes to its underlying Docker images anymore.
 Supporting more recent PHP versions, however, is difficult: [#25](https://github.com/daniel-lerch/openkool/issues/25)

@@ -2,5 +2,13 @@
     "files.associations": {
         "*.inc": "php"
     },
-    "files.encoding": "iso88591"
+    "[php]": {
+        "files.encoding": "iso88591"
+    },
+    "[javascript]": {
+        "files.encoding": "iso88591"
+    },
+    "[css]": {
+        "files.encoding": "iso88591"
+    }
 }
