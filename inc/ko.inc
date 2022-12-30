@@ -701,14 +701,20 @@ include($BASE_PATH."inc/hooks.inc");
 
 
 //Connect to the database
-$db_conn = mysqli_connect($mysql_server, $mysql_user, $mysql_pass);
-//Test the connection
-$db_connection = $db_conn !== FALSE;
-//unset STRICT_TRANS_TABLES mode
-mysqli_query($db_conn,"SET SESSION sql_mode=(SELECT REPLACE(@@sql_mode,'STRICT_TRANS_TABLES',''))");
-mysqli_select_db(db_get_link(), $mysql_db);
-//Set client-server connection to latin1
-if($ko_menu_akt != 'install') mysqli_query(db_get_link(), 'SET NAMES LATIN1');
+try {
+	$db_conn = mysqli_connect($mysql_server, $mysql_user, $mysql_pass);
+	$db_connection = $db_conn !== false;
+} catch (Exception $e) {
+	$db_connection = false;
+}
+
+if ($db_connection) {
+	//unset STRICT_TRANS_TABLES mode
+	$db_conn->query("SET SESSION sql_mode=(SELECT REPLACE(@@sql_mode,'STRICT_TRANS_TABLES',''))");
+	$db_conn->select_db($mysql_db);
+	//Set client-server connection to latin1
+	if($ko_menu_akt != 'install') $db_conn->query('SET NAMES LATIN1');
+}
 
 //Set user to ko_guest if none logged in yet
 if($db_connection && !in_array($ko_menu_akt, array('scheduler', 'install', 'post.php')) && !$_SESSION['ses_userid']) {
